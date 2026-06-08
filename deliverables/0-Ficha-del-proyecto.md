@@ -2,7 +2,7 @@
 
 ## 0.1. Tu nombre completo:
 
-Pendiente de definir. No disponible en la documentación actual. Los documentos revisados identifican el rol de Product Owner, pero no documentan el nombre completo de la persona responsable de la entrega final.
+**Walter Alexander Cordero Lara**
 
 ## 0.2. Nombre del proyecto:
 
