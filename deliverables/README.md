@@ -11,4 +11,6 @@
 6. [Tickets de trabajo](./6-Tickets-de-trabajo.md)
 7. [Pull requests](./7-Pull-requests.md)
 
-Esta documentación se generó a partir de los documentos de Planning y Analysis disponibles en `docs/` y debe actualizarse cuando exista implementación, repositorio final, despliegue, evidencias visuales y ejecución técnica.
+Esta documentación está alineada con la documentación técnica reciente en `/docs` (documentos 1 a 22), incluyendo Architecture Vision, System Architecture, Backend/Frontend Technical Design, API Design, AI Architecture & PromptOps, Database Physical Design, Security & Authorization Design, Testing Strategy, Deployment & DevOps Design y el ADR Log con 46 decisiones formales.
+
+La entrega cubre **documentación y planificación**. La implementación funcional, el despliegue en URL pública, los PRs reales y la evidencia visual permanecen marcados como pendientes en cada deliverable y en el [README raíz](../README.md), y solo deben declararse completados cuando exista evidencia verificable en el repositorio.
