@@ -1,7 +1,7 @@
-Use the eventflow-user-story-refinement skill.
+Use the `eventflow-user-story-refinement` skill.
 
 Review and refine:
 
 ```
-<PASTE_PATH_OF_USER_STORY>
+/Users/waltercordero/AI4Devs/final/AI4Devs-finalproject/management/user-stories/US-099-prisma-schema.md
 ```
