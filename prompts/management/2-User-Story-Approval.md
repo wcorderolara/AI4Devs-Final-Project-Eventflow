@@ -23,5 +23,5 @@ Return the output in Spanish LATAM neutral using the skill output format.
 Here is the refined User Story to approve:
 
 ```markdown
-/Users/waltercordero/AI4Devs/final/AI4Devs-finalproject/management/user-stories/US-099-prisma-schema.md
+<PASTE_USER_STORY_PATH>
 ```

@@ -83,7 +83,24 @@ Los prompts más recientes (12 a 22) extienden esta estrategia hacia diseño té
 | 20 | `20-Generate-Testing-Strategy.md` | Define la estrategia de pruebas del MVP para backend, frontend, API, IA, seguridad, accesibilidad, seed y E2E. | `docs/20-Testing-Strategy.md` | [View prompt](./prompts/20-Generate-Testing-Strategy.md) |
 | 21 | `21-Generate-Deployment-and-DevOps-Design.md` | Define la estrategia de despliegue y DevOps en AWS, CI/CD, entornos, secretos, observabilidad y demo readiness. | `docs/21-Deployment-and-DevOps-Design.md` | [View prompt](./prompts/21-Generate-Deployment-and-DevOps-Design.md) |
 | 22 | `22-Generate-ADR-Design.md` | Define el ADR Log del proyecto y formaliza decisiones arquitectónicas, técnicas, de seguridad, IA, testing y DevOps. | `docs/22-Architecture-Decision-Records.md` | [View prompt](./prompts/22-Generate-ADR-Design.md) |
+| 23 | `23-Generate-Epic-Map-Document.md` | Construye el Epic Map del MVP agrupando capacidades en épicas trazables hacia FRD, casos de uso y entidades. | `management/artifacts/1-EventFlow-Epic-Map.md` (estructura observada). | [View prompt](./prompts/23-Generate-Epic-Map-Document.md) |
+| 24 | `24-Generate-User-Stories.md` | Deriva el catálogo completo de User Stories del MVP a partir del Epic Map y la documentación canónica. | `management/user-stories/US-001-*.md` … `US-150-*.md` (150 archivos observados) + `management/artifacts/2-User-Stories-Coverage-Matrix.md`. | [View prompt](./prompts/24-Generate-User-Stories.md) |
+| 25 | `25-Generate-Product-Backlog-Prioritized.md` | Prioriza el backlog del MVP a partir de las User Stories, valor, riesgo y dependencias técnicas. | `management/artifacts/3-Product-Backlog-Prioritization-Input.md` + `management/artifacts/4-Product-Backlog-Prioritized.md`. | [View prompt](./prompts/25-Generate-Product-Backlog-Prioritized.md) |
 | - | `wacl-prompts.md` | Registra un mapa informal de artefactos y líneas futuras de trabajo para skills/agentes del proyecto. | Nota de referencia, sin artefacto formal definido | [View prompt](./prompts/wacl-prompts.md) |
+
+### 4.1 Prompts de management — User Story Lifecycle (`/prompts/management/`)
+
+Estos prompts orquestan el ciclo de vida de cada User Story desde refinamiento hasta desglose de tareas. Cada uno invoca una skill EventFlow específica (ver §11) y consume/produce artifacts reales bajo `/management/`.
+
+|  # | Prompt file | Propósito | Skill invocada | Inputs reales | Output real observado |
+| -: | ----------- | --------- | -------------- | ------------- | --------------------- |
+| 1 | `1-User-Stories-Refinement.md` | Revisa y refina una User Story aplicando PO/BA review, gaps, scope guardrails y trazabilidad. | `eventflow-user-story-refinement` | `management/user-stories/US-<id>-*.md` | Actualización del archivo `US-<id>-*.md` + `management/user-stories/refinement-reviews/US-<id>-refinement-review.md`. |
+| 1.5 | `1.5-po-ba-decision-resolver.md` | Resuelve formalmente las preguntas bloqueantes y recomendaciones surgidas en el refinamiento. | `eventflow-po-ba-decision-resolver` | User Story + `refinement-reviews/US-<id>-refinement-review.md` | Reescritura del User Story con `PO/BA Decisions Applied` + `management/user-stories/decision-resolutions/US-<id>-decision-resolution.md`. |
+| 2 | `2-User-Story-Approval.md` | Approval Gate formal PO/BA contra Definition of Ready y alineación con FRD, NFR, ADRs y MVP guardrails. | `eventflow-user-story-approval` | User Story refinada + Decision Resolution artifact (si existe) | Actualización del User Story con `Status: Approved`, `Approved By`, `Approval Date`, `Ready for Development Tasks`. |
+| 2.5 | `2.5-User-Story-Tech-Spec.md` | Genera la Technical Specification de la User Story aprobada, alineada con la arquitectura y ADRs. | `eventflow-user-story-technical-spec` | User Story aprobada + Decision Resolution + Product Backlog Prioritized | `management/technical-specs/<PRIORITY>/<BACKLOG_ID>/US-<id>-technical-spec.md` (observado: `P0/PB-P0-001/`). |
+| 3 | `3-User-Story-to-Development.md` | Transforma la Technical Specification en Development Tasks listas para Sprint Planning. | `eventflow-user-story-to-development-tasks` | Technical Specification (primaria) + User Story + Decision Resolution | `management/development-tasks/<PRIORITY>/<BACKLOG_ID>/US-<id>-development-tasks.md` (observado: `P0/PB-P0-001/`). |
+
+Estos prompts son **ejecutables iterativamente** por cada User Story del catálogo (las 150 historias bajo `/management/user-stories/`). Hasta la fecha de este índice, el flujo está completo end-to-end para `US-099` y `US-100` dentro del backlog item `PB-P0-001`.
 
 ## 5. Matriz de prompts y artefactos generados
 
@@ -112,6 +129,14 @@ Los prompts más recientes (12 a 22) extienden esta estrategia hacia diseño té
 | `20-Generate-Testing-Strategy.md` | `docs/20-Testing-Strategy.md` | Testing Strategy | Depends on docs 1–19 | Define estrategia de pruebas por capa, IA determinística, autorización, seed y E2E. |
 | `21-Generate-Deployment-and-DevOps-Design.md` | `docs/21-Deployment-and-DevOps-Design.md` | Deployment & DevOps | Depends on docs 1–20 | Define AWS, CI/CD, entornos, secretos, observabilidad, migraciones y demo readiness. |
 | `22-Generate-ADR-Design.md` | `docs/22-Architecture-Decision-Records.md` | Architecture Decision Records | Depends on docs 1–21 | Consolida decisiones técnicas y arquitectónicas como ADRs trazables. |
+| `23-Generate-Epic-Map-Document.md` | `management/artifacts/1-EventFlow-Epic-Map.md` | Backlog Engineering | Depends on docs 1–22 | Agrupa capacidades MVP en épicas trazables. |
+| `24-Generate-User-Stories.md` | `management/user-stories/US-001..US-150` + `management/artifacts/2-User-Stories-Coverage-Matrix.md` | Backlog Engineering | Depends on Epic Map + docs 1–22 | Cataloga 150 User Stories siguiendo `templates/user-story.tpl.md`. |
+| `25-Generate-Product-Backlog-Prioritized.md` | `management/artifacts/3-Product-Backlog-Prioritization-Input.md` + `management/artifacts/4-Product-Backlog-Prioritized.md` | Backlog Engineering | Depends on User Stories + Epic Map | Prioriza el backlog en P0–P4 con dependencias técnicas. |
+| `management/1-User-Stories-Refinement.md` | Update in-place del User Story + `refinement-reviews/US-<id>-refinement-review.md` | User Story Lifecycle | Per-story iteration | Invoca skill `eventflow-user-story-refinement`. |
+| `management/1.5-po-ba-decision-resolver.md` | Update in-place del User Story + `decision-resolutions/US-<id>-decision-resolution.md` | User Story Lifecycle | Per-story iteration | Invoca skill `eventflow-po-ba-decision-resolver`. |
+| `management/2-User-Story-Approval.md` | Update metadata del User Story (Status → Approved) | User Story Lifecycle | Per-story gate | Invoca skill `eventflow-user-story-approval`. |
+| `management/2.5-User-Story-Tech-Spec.md` | `technical-specs/<PRIORITY>/<BACKLOG_ID>/US-<id>-technical-spec.md` | User Story Lifecycle | Per-story design | Invoca skill `eventflow-user-story-technical-spec`. |
+| `management/3-User-Story-to-Development.md` | `development-tasks/<PRIORITY>/<BACKLOG_ID>/US-<id>-development-tasks.md` | User Story Lifecycle | Per-story breakdown | Invoca skill `eventflow-user-story-to-development-tasks`. |
 | `wacl-prompts.md` | Referencia no formal | Delivery preparation | Review / alignment | Sirve como nota de orientación, no como prompt completo de generación. |
 
 ## 6. Técnicas de prompting utilizadas
@@ -739,7 +764,44 @@ Cada prompt debe ejecutarse cuando ya existe el artefacto previo que declara com
 
 Los documentos resultantes pueden luego alimentar historias de usuario, backlog, tareas, QA, demo y entregables finales.
 
-## 10. Observaciones finales
+## 10. EventFlow Skills (`/.skills/`)
+
+El proyecto incluye un set de **EventFlow Skills** que encapsulan la lógica reutilizable invocada por los prompts de management. Cada skill vive en su propio directorio bajo `/.skills/` con un archivo `SKILL.md` que define su propósito, inputs/outputs y reglas operativas.
+
+| Skill | Ubicación real | Propósito (resumen del SKILL.md) | Invocada por |
+| ----- | -------------- | -------------------------------- | ------------ |
+| `eventflow-domain-discovery` | `.skills/eventflow-domain-discovery/SKILL.md` | Define el dominio de negocio, alcance MVP, oportunidades IA, journeys, entidades, reglas, riesgos y recomendación estratégica para EventFlow. | Prompts de discovery (set 0–22). |
+| `eventflow-user-story-refinement` | `.skills/eventflow-user-story-refinement/SKILL.md` | Revisa, valida y refina User Stories EventFlow desde la perspectiva de PO, BA y Delivery Readiness Reviewer. Genera refinement review artifact cuando existen blocking questions. | `prompts/management/1-User-Stories-Refinement.md`. |
+| `eventflow-po-ba-decision-resolver` | `.skills/eventflow-po-ba-decision-resolver/SKILL.md` | Resuelve preguntas pendientes PO/BA, formaliza decisiones y crea el Decision Resolution artifact para que el refinement no las reabra. | `prompts/management/1.5-po-ba-decision-resolver.md`. |
+| `eventflow-user-story-approval` | `.skills/eventflow-user-story-approval/SKILL.md` | Approval Gate formal PO/BA. Determina si una User Story refinada está lista para implementación. Solo emite estado: Approved / Approved with Minor Notes / Needs Changes / Blocked / Split Required. | `prompts/management/2-User-Story-Approval.md`. |
+| `eventflow-user-story-technical-spec` | `.skills/eventflow-user-story-technical-spec/SKILL.md` | Genera la Technical Specification de una User Story aprobada antes de generar Development Tasks. No genera código. | `prompts/management/2.5-User-Story-Tech-Spec.md`. |
+| `eventflow-user-story-to-development-tasks` | `.skills/eventflow-user-story-to-development-tasks/SKILL.md` | Transforma una User Story aprobada (+ Technical Specification cuando existe) en Development Tasks listas para Sprint Planning. | `prompts/management/3-User-Story-to-Development.md`. |
+
+Estas skills se invocan **dentro del prompt** correspondiente (cada prompt de management instruye `Use the <skill-name> skill`). No se invocan directamente desde la línea de comando.
+
+---
+
+## 11. User Story Lifecycle — Flujo end-to-end
+
+Para cada User Story individual, el flujo recomendado y observado es:
+
+```text
+1. eventflow-user-story-refinement
+2. eventflow-po-ba-decision-resolver  (si la pasada anterior dejó blocking questions)
+3. eventflow-user-story-refinement    (segunda pasada de validación opcional)
+4. eventflow-user-story-approval      (Status → Approved)
+5. eventflow-user-story-technical-spec
+6. eventflow-user-story-to-development-tasks
+```
+
+Estado observado a la fecha de este índice:
+
+- **US-099** (`prisma-schema`) y **US-100** (`prisma-migrations`) tienen el flujo completo end-to-end, incluyendo `decision-resolutions/`, `refinement-reviews/`, `technical-specs/P0/PB-P0-001/` y `development-tasks/P0/PB-P0-001/`.
+- Las 148 User Stories restantes (`US-001` … `US-098`, `US-101` … `US-150`) existen como archivos refinados al nivel inicial bajo `/management/user-stories/` pero aún no han recorrido el lifecycle completo.
+
+---
+
+## 12. Observaciones finales
 
 Este set de prompts muestra un uso disciplinado de IA a lo largo del ciclo de vida del software, ahora extendido a una cadena documental SDLC-oriented que cubre:
 
