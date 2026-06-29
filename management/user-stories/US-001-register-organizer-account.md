@@ -10,11 +10,15 @@
 | Module / Domain    | Auth                                 |
 | User Role          | Anonymous → Organizer                |
 | Priority           | Must Have                            |
-| Status             | Draft                                |
+| Status             | Approved                             |
 | Owner              | Product Owner / Business Analyst     |
+| Approved By        | PO/BA Review                         |
+| Approval Date      | 2026-06-24                           |
+| Ready for Development Tasks | Yes                          |
 | Sprint / Milestone | MVP                                  |
+| Backlog Item       | PB-P1-001                            |
 | Created Date       | 2026-06-09                           |
-| Last Updated       | 2026-06-09                           |
+| Last Updated       | 2026-06-24                           |
 
 ---
 
@@ -66,7 +70,22 @@ El registro como organizador es la puerta de entrada principal al MVP de EventFl
 | API Endpoint(s)        | POST /api/v1/auth/register                          |
 | NFR Reference(s)       | NFR-SEC-001, NFR-SEC-002, NFR-PERF-API-001          |
 | Related ADR(s)         | ADR-SEC-001, ADR-ARCH-001                           |
-| Related Document(s)    | /docs/5-User-Roles-Permissions-Matrix.md, /docs/19-Security-and-Authorization-Design.md, /docs/8.1-Product-Owner-Decisions-Use-Cases-Addendum.md (#8) |
+| Related Document(s)    | /docs/5-User-Roles-Permissions-Matrix.md, /docs/16-API-Design-Specification.md (§/auth/register), /docs/19-Security-and-Authorization-Design.md (§11), /docs/8.1-Product-Owner-Decisions-Use-Cases-Addendum.md (#8), /management/artifacts/4-Product-Backlog-Prioritized.md (PB-P1-001) |
+
+---
+
+## 🧾 PO/BA Decisions Applied
+
+| Decision                                             | Source                                                                          | Resolución aplicada en esta historia                                                                                   |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Captcha / anti-bot obligatorio en registro y login   | PO 8.1 #8; BR-AUTH-011; FR-AUTH-002                                             | Captcha verificado server-side antes de cualquier persistencia; bloqueo del registro si la verificación falla.         |
+| Sólo `organizer` y `vendor` se crean por registro    | BR-AUTH-002; Doc 19 §10                                                          | Backend fuerza `role=organizer` en este endpoint; el rol `admin` se aprovisiona por seed o por admin existente.        |
+| Hashing argon2id como predeterminado MVP             | Doc 19 §11.1; SEC-POL-AUTH-007; ADR-SEC-003                                      | Hash con `argon2id` (params mínimos: memoryCost=19MiB, timeCost=2, parallelism=1). `bcrypt(12)` queda como fallback.   |
+| Política de contraseñas MVP                          | Doc 19 §11.2                                                                     | Mínimo 10 caracteres, al menos una letra y un número, distinta del localpart del email. Validada en frontend y backend. |
+| Cookie de sesión HTTP-only firmada                   | Doc 19 §10; ADR-SEC-001                                                          | Cookie `HttpOnly`, `Secure`, `SameSite=Lax`, firmada con secreto provisto por Secrets Manager.                          |
+| Rate limiting `/auth/register`                       | Doc 19 §10; Doc 16 §Rate Limits                                                  | Máx. 5 registros / IP / 10 minutos. Excedente responde `429 RATE_LIMIT_EXCEEDED`.                                       |
+| Email único y conflicto en registro                  | BR-USER-002; Doc 16 §endpoints (`/auth/register`)                                 | Respuesta `409 EMAIL_TAKEN`. Mensaje al usuario neutro y consistente para evitar feedback explotable de enumeración.    |
+| Sin doble opt-in obligatorio en MVP                  | Doc 3 §MVP Scope; Notes de esta historia                                         | No se exige confirmación de email como bloqueante de login en MVP; podrá aplicarse soft warning en historia separada.   |
 
 ---
 
@@ -100,8 +119,8 @@ El registro como organizador es la puerta de entrada principal al MVP de EventFl
 ### AC-01: Registro exitoso como organizador con captcha válido
 
 **Given** un usuario anónimo accede a `/auth/register?role=organizer`
-**When** ingresa nombre completo, email único, contraseña fuerte, acepta términos y resuelve el captcha
-**Then** el sistema crea un `User` con `role=organizer`, hashea la contraseña con argon2id, inicia sesión vía cookie HTTP-only firmada y redirige al dashboard del organizador.
+**When** ingresa nombre completo, email único, contraseña conforme a la política MVP (mínimo 10 caracteres, al menos una letra y un número, distinta del localpart del email), acepta términos y resuelve el captcha
+**Then** el sistema crea un `User` con `role=organizer`, hashea la contraseña con `argon2id` (parámetros mínimos: memoryCost=19MiB, timeCost=2, parallelism=1), inicia sesión vía cookie HTTP-only firmada y redirige al dashboard del organizador con respuesta `201 Created`.
 
 ### AC-02: Persistencia del idioma preferido
 
@@ -111,9 +130,9 @@ El registro como organizador es la puerta de entrada principal al MVP de EventFl
 
 ### AC-03: Email único garantizado
 
-**Given** ya existe un `User` con un email
+**Given** ya existe un `User` con un email (comparación case-insensitive según BR-USER-002)
 **When** otra persona intenta registrarse con el mismo email
-**Then** el backend rechaza con un mensaje genérico ("No fue posible completar el registro") sin revelar existencia de cuenta.
+**Then** el backend responde `409 EMAIL_TAKEN` siguiendo el envelope de error estándar (Doc 16) y el frontend muestra un mensaje neutro ("No fue posible completar el registro") sin exponer datos diferenciales del usuario existente.
 
 ---
 
@@ -122,22 +141,22 @@ El registro como organizador es la puerta de entrada principal al MVP de EventFl
 ### EC-01: Captcha inválido o expirado
 
 **Given** el usuario completa el formulario
-**When** el captcha falla la verificación en backend
-**Then** el sistema rechaza el registro con error `CAPTCHA_INVALID` y solicita reintentar.
+**When** el captcha falla la verificación en backend (token ausente, inválido o expirado)
+**Then** el sistema rechaza el registro con `400 VALIDATION_ERROR` y `details[].field = "captchaToken"`, indicando "Verificación de seguridad fallida", y solicita reintentar.
 
 #### Handling
 
 * No se crea el `User`.
 * El frontend reinicia el widget de captcha.
-* Se registra evento de auditoría con `correlationId` y razón.
+* Se registra evento de auditoría `auth.register.failure` con `correlationId` y razón (`captcha_failed`), sin loguear el token.
 
 ---
 
 ### EC-02: Contraseña débil
 
-**Given** el usuario ingresa una contraseña que no cumple la política (mínimo 10 caracteres, mayúscula, número, símbolo)
+**Given** el usuario ingresa una contraseña que no cumple la política MVP (mínimo 10 caracteres, al menos una letra y un número, distinta del localpart del email)
 **When** envía el formulario
-**Then** el sistema responde con `VALIDATION_ERROR` detallando los requisitos.
+**Then** el sistema responde con `400 VALIDATION_ERROR` detallando el o los requisitos no cumplidos en `details[]`.
 
 #### Handling
 
@@ -163,7 +182,7 @@ El registro como organizador es la puerta de entrada principal al MVP de EventFl
 | ID    | Rule                                              | Message / Behavior                                   |
 | ----- | ------------------------------------------------- | ---------------------------------------------------- |
 | VR-01 | Email obligatorio, formato RFC válido, único      | "Correo inválido" / "No fue posible completar el registro" |
-| VR-02 | Contraseña mínimo 10 caracteres con complejidad   | "La contraseña no cumple con los requisitos"         |
+| VR-02 | Contraseña: mínimo 10 caracteres, al menos una letra y un número, distinta del localpart del email (Doc 19 §11.2) | "La contraseña no cumple con los requisitos" |
 | VR-03 | Nombre completo obligatorio, 2-120 caracteres     | "El nombre es obligatorio"                           |
 | VR-04 | Aceptación obligatoria de términos y privacidad   | "Debes aceptar los términos y la política de privacidad" |
 | VR-05 | Captcha obligatorio (token válido)                | "Verificación de seguridad fallida"                  |
@@ -178,7 +197,7 @@ El registro como organizador es la puerta de entrada principal al MVP de EventFl
 | SEC-01 | Endpoint accesible solo a usuarios anónimos (no autenticados); usuarios autenticados son redirigidos. |
 | SEC-02 | El rol `admin` jamás puede crearse vía registro público; se aprovisiona por seed o por admin existente. |
 | SEC-03 | Captcha verificado server-side antes de cualquier persistencia (Decisión PO 8.1 #8).            |
-| SEC-04 | Rate limiting por IP (ej. 5 registros / 10 min) y por email candidato.                          |
+| SEC-04 | Rate limiting `/auth/register`: máx 5 registros / IP / 10 min (Doc 19 §10); excedente responde `429 RATE_LIMIT_EXCEEDED`. |
 | SEC-05 | Contraseña hasheada con argon2id (parámetros conformes a OWASP); nunca se loguea ni se devuelve. |
 | SEC-06 | Cookie de sesión `HttpOnly`, `Secure`, `SameSite=Lax`, firmada.                                 |
 | SEC-07 | Logs redactan email y nunca incluyen contraseña ni token de captcha.                            |
@@ -187,8 +206,8 @@ El registro como organizador es la puerta de entrada principal al MVP de EventFl
 
 * Usuario ya autenticado que invoca el endpoint → 409 / redirección.
 * Intento de registrar `role=admin` → backend fuerza `organizer`.
-* Bot sin captcha → 400 `CAPTCHA_INVALID`.
-* Exceso de intentos desde misma IP → 429 `RATE_LIMITED`.
+* Bot sin captcha → 400 `VALIDATION_ERROR` con `details[].field = "captchaToken"`.
+* Exceso de intentos desde misma IP → 429 `RATE_LIMIT_EXCEEDED` (5 registros / IP / 10 min según Doc 19 §10).
 
 ---
 
@@ -326,11 +345,11 @@ This story does not invoke AI directly.
 
 | ID    | Scenario                              | Expected Result                            |
 | ----- | ------------------------------------- | ------------------------------------------ |
-| NT-01 | Email duplicado                       | 409 con mensaje genérico                   |
-| NT-02 | Captcha inválido                      | 400 `CAPTCHA_INVALID`                      |
+| NT-01 | Email duplicado                       | 409 `EMAIL_TAKEN`; UI muestra mensaje neutro |
+| NT-02 | Captcha inválido / expirado           | 400 `VALIDATION_ERROR` (field `captchaToken`) |
 | NT-03 | Contraseña débil                      | 400 `VALIDATION_ERROR`                     |
 | NT-04 | Intento de registrar `role=admin`     | Backend fuerza `organizer`; nunca admin    |
-| NT-05 | Rate limit excedido                   | 429 `RATE_LIMITED`                         |
+| NT-05 | Rate limit excedido                   | 429 `RATE_LIMIT_EXCEEDED`                  |
 
 ### AI Tests
 
@@ -416,7 +435,8 @@ Not applicable for this story.
 * [x] Estados UX identificados.
 * [x] Expectativas de API definidas.
 * [x] Escenarios de test definidos.
-* [ ] PO/BA aprobó la story.
+* [x] Decisiones PO/BA aplicadas y trazadas (ver sección PO/BA Decisions Applied).
+* [ ] PO/BA aprobó la story (pendiente del Approval Gate).
 
 ---
 
@@ -438,5 +458,6 @@ Not applicable for this story.
 ## 📝 Notes
 
 * Verificar que el captcha de prueba/clave de test esté disponible en entornos CI y Demo (decisión documentada en EPIC-DEMO-001).
-* Confirmar con el PO si se requiere doble opt-in vía email para MVP o si se difiere a una historia separada.
+* MVP no exige doble opt-in vía email; eventual soft warning se cubrirá en historia separada (no bloquea login).
 * El endpoint debe ser idéntico estructuralmente al de US-002 (vendor) salvo por el `role`.
+* Documentation alignment menor (no bloqueante): la versión previa de la US referenciaba `CAPTCHA_INVALID` y `RATE_LIMITED`; se realineó al catálogo estándar de Doc 16 (`VALIDATION_ERROR`, `RATE_LIMIT_EXCEEDED`). Si en el futuro se desea un código dedicado para captcha, deberá agregarse formalmente al catálogo de errores.
