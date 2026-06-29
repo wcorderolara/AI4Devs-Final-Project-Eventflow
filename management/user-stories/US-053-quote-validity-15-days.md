@@ -1,28 +1,32 @@
-# 🧾 User Story: Vendor define valid_until (default 15 días)
+# 🧾 User Story: Validez de Quote (default 15 días) y expiración automática
 
 ## 🆔 Metadata
 
-| Field              | Value                                |
-| ------------------ | ------------------------------------ |
-| ID                 | US-053                               |
-| Epic               | EPIC-QR-001                          |
-| Feature            | Validez de Quote                     |
-| Module / Domain    | Quotes                               |
-| User Role          | Vendor                               |
-| Priority           | Must Have                            |
-| Status             | Draft                                |
-| Owner              | Product Owner / Business Analyst     |
-| Sprint / Milestone | MVP                                  |
-| Created Date       | 2026-06-09                           |
-| Last Updated       | 2026-06-09                           |
+| Field              | Value                                                                       |
+| ------------------ | --------------------------------------------------------------------------- |
+| ID                 | US-053                                                                      |
+| Backlog Item       | PB-P1-031 — Vendor visualiza y responde Quote (validez 15 días default)     |
+| Epic               | EPIC-QR-001                                                                 |
+| Feature            | UX `ValidUntilPicker` + Job `ExpireQuotesJob` con notificación al vendor    |
+| Module / Domain    | Quotes                                                                      |
+| User Role          | Vendor (UX) / Sistema (Job)                                                  |
+| Priority           | Must Have                                                                   |
+| Status             | Approved                                                                    |
+| Owner              | Product Owner / Business Analyst                                            |
+| Sprint / Milestone | MVP                                                                         |
+| Created Date       | 2026-06-09                                                                  |
+| Last Updated       | 2026-06-27                                                                  |
+| Approved By        | PO/BA Review                                                                |
+| Approval Date      | 2026-06-27                                                                  |
+| Ready for Development Tasks | Yes                                                                 |
 
 ---
 
 ## 🎯 User Story
 
-**As a** proveedor
-**I want** definir o aceptar `valid_until` (default 15 días) en mi Quote
-**So that** establezca un plazo claro de respuesta para el organizador
+**As a** proveedor (UX) y sistema (job)
+**I want** un `ValidUntilPicker` accesible con default 15 días en el form de Quote, y un job automático que marque como `expired` las Quotes vencidas notificando al vendor
+**So that** los plazos de cotización sean claros para el organizador y el ciclo de vida `Quote → expired` se aplique sin intervención manual (Decisión PO 8.1 #4 + #13)
 
 ---
 
@@ -30,35 +34,58 @@
 
 ### Context Summary
 
-Decisión PO 8.1 #4: validez default 15 días. El vendor puede acortar o extender según política.
+US-053 cierra PB-P1-031 con dos componentes complementarios al envío de Quote de US-052:
+
+1. **UX del `ValidUntilPicker`** (frontend): date picker accesible que pre-rellena `today + 15d` (default), permite editar dentro del rango `[today+1, today+90]` y muestra feedback inline ante valores inválidos.
+2. **Job `ExpireQuotesJob`** (backend): cron diario `00:05 UTC` con jitter ±5min que marca como `expired` toda Quote con `status='sent' AND valid_until < CURRENT_DATE` y notifica al vendor (in-app + email_simulated) dentro de la misma transacción de batch.
+
+La regla de negocio (default 15d + rango) ya quedó implementada server-side en US-052 D3; US-053 entrega la UX correspondiente y la automatización del ciclo de vida (FR-QUOTE-009 + BR-QUOTE-016).
+
+### PO/BA Decisions Applied
+
+| #  | Decisión                                                                                                                                                                                                                                       |
+| -- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| D1 | Job `ExpireQuotesJob` in scope US-053. Cumple FR-QUOTE-009 + BR-QUOTE-016.                                                                                                                                                                       |
+| D2 | Frecuencia: cron diario `00:05 UTC` con jitter aleatorio ±5min. Reuso del scheduler patrón del job auto-complete event (PB-P1-009).                                                                                                              |
+| D3 | Al expirar cada Quote, INSERT 2 rows en `notifications` (`in_app` `delivered` + `email_simulated` `simulated`) al `vendor_profile.user_id`. Payload `{ quote_id, quote_request_id, valid_until }`. Paridad US-049 D6 / US-052 D5.              |
+| D4 | Convención del corte: una Quote es válida HASTA el final del día `valid_until` inclusive. El job ejecutado el día `D` marca `expired` las Quotes con `valid_until < D` (al menos `D-1`).                                                       |
+| D5 | Idempotencia + batching: query `WHERE status='sent' AND valid_until < CURRENT_DATE`; batch de `100` Quotes por transacción; `SELECT ... FOR UPDATE SKIP LOCKED`; reintento en la próxima ejecución (sin reintento intra-run); métricas + logs. |
 
 ### Related Domain Concepts
 
-* Quote.valid_until.
+* `quotes.status='expired'`, `quotes.valid_until`.
+* `notifications` (`event='quote.expired'`).
+* C-019 (validez default), C-031 (default service layer).
+* Scheduler patrón compartido con PB-P1-009 (auto-complete).
 
 ### Assumptions
 
-* Vendor decide en form.
+* `valid_until` es `date` (sin hora).
+* TZ del job: UTC.
+* US-052 ya enforza el rango `[today+1, today+90]` al envío.
 
 ### Dependencies
 
-* US-052.
+* US-052 (envío de Quote con `valid_until`).
+* PB-P0-001 (schema `quotes` + índice `idx_quotes_valid_until_active`).
+* Scheduler de PB-P1-009 (job patrón) reusable o paralelo.
+* `NotificationSenderPort` reutilizado.
 
 ---
 
 ## 🔗 Traceability
 
-| Source                 | Reference                          |
-| ---------------------- | ---------------------------------- |
-| FRD Requirement(s)     | FR-QUOTE-008                        |
-| Use Case(s)            | UC-QUOTE-005                       |
-| Business Rule(s)       | BR-QUOTE-010                       |
-| Permission Rule(s)     | Assignment                         |
-| Data Entity / Entities | Quote                              |
-| API Endpoint(s)        | Embedded en US-052                  |
-| NFR Reference(s)       | —                                  |
-| Related ADR(s)         | —                                  |
-| Related Document(s)    | /docs/8.1 (#4)                     |
+| Source                 | Reference                                                                |
+| ---------------------- | ------------------------------------------------------------------------ |
+| FRD Requirement(s)     | FR-QUOTE-005, FR-QUOTE-009                                              |
+| Use Case(s)            | UC-QUOTE-004, UC-QUOTE-010                                                |
+| Business Rule(s)       | BR-QUOTE-015, BR-QUOTE-016, BR-NOTIF-002, BR-NOTIF-003                  |
+| Permission Rule(s)     | Sistema (job sin user context); Assignment para UX vendor                |
+| Data Entity / Entities | Quote, Notification                                                       |
+| API Endpoint(s)        | Embedded en US-052 (UX); Job sin endpoint público                         |
+| NFR Reference(s)       | NFR-OBS-005, NFR-PERF-001                                                |
+| Related ADR(s)         | —                                                                         |
+| Related Document(s)    | /docs/4 §BR-QUOTE-015/016, /docs/8 §UC-QUOTE-010, /docs/9 §FR-QUOTE-005/009, /docs/14 §Jobs, /docs/21 §Cron, C-019, C-031 |
 
 ---
 
@@ -71,11 +98,16 @@ Decisión PO 8.1 #4: validez default 15 días. El vendor puede acortar o extende
 
 ### Explicitly Out of Scope
 
-* Extensión post-envío sin contraparte.
+* Extensión de `valid_until` post-envío (Quote inmutable post-`sent` per FR-QUOTE-019).
+* Auto-renovación.
+* Ejecuciones intra-day del job.
+* Email real con SMTP.
+* Notificación al organizer por expiración (sólo al vendor en MVP, per BR-NOTIF-002).
 
 ### Scope Notes
 
-* Sin auto-renovación.
+* Job diario único.
+* Convención: válida HASTA el final del día `valid_until`.
 
 ---
 
@@ -83,51 +115,88 @@ Decisión PO 8.1 #4: validez default 15 días. El vendor puede acortar o extende
 
 ## 🎯 Happy Path
 
-### AC-01: Default 15 días
+### AC-01: `ValidUntilPicker` con default 15d
 
-**Given** vendor no especifica `valid_until`
-**When** envía
-**Then** `valid_until = today + 15 días`.
+**Given** vendor abre el form de respuesta de Quote (US-052)
+**When** el componente `ValidUntilPicker` se monta
+**Then** muestra date picker pre-rellenado con `today + 15d` editable; el rango aceptado en cliente es `[today+1, today+90]`; valor fuera del rango muestra feedback inline accesible.
 
-### AC-02: Personalizado
+### AC-02: Job marca Quotes expiradas
 
-**Given** vendor especifica `valid_until` futura
-**When** envía
-**Then** se acepta.
+**Given** ejecución diaria del job `ExpireQuotesJob` en día `D`
+**When** existen N Quotes con `status='sent' AND valid_until < D`
+**Then** el job:
+- selecciona en batches de 100 con `FOR UPDATE SKIP LOCKED`,
+- UPDATE `status='expired'` para cada Quote,
+- INSERT 2 `notifications` (`in_app` + `email_simulated`) al vendor por cada Quote,
+- emite log estructurado `quote.expired.batch` con `correlation_id`, `count`, `duration_ms`,
+- incrementa métrica `quotes.expired.total`.
+
+### AC-03: Job idempotente
+
+**Given** el job ya ejecutó hoy y marcó N Quotes como `expired`
+**When** se vuelve a ejecutar manualmente el mismo día
+**Then** no se crean Notifications adicionales para esas Quotes (filtro `status='sent'` las excluye); el job termina sin side-effects.
+
+### AC-04: Convención del corte
+
+**Given** una Quote con `valid_until = '2026-07-12'`
+**When** el job se ejecuta el `2026-07-12 00:05 UTC`
+**Then** la Quote NO se expira (sigue válida hasta fin del día). Cuando el job se ejecuta el `2026-07-13 00:05 UTC`, la Quote se marca `expired`.
 
 ---
 
 ## ⚠️ Edge Cases
 
-### EC-01: Fecha pasada
+### EC-01: Fallo de Notification en un batch
 
-**Given** envía `valid_until < hoy`
-**When** se valida
-**Then** 400.
+**Given** el job procesa un batch y `NotificationSenderPort.notify` falla para una Quote
+**When** la transacción del batch falla
+**Then** rollback del batch completo; log de error; reintento en la próxima ejecución del cron. Las Quotes restantes se procesarán normalmente.
 
-#### Handling
+### EC-02: 0 Quotes para expirar
 
-* Validación.
+**Given** ejecución sin Quotes vencidas
+**When** el job consulta
+**Then** termina exitosamente con `count=0`; log `quote.expired.batch count=0`.
+
+### EC-03: Quote ya en `expired`
+
+**Given** Quote `status='expired'` con `valid_until` futuro (caso patológico)
+**When** job ejecuta
+**Then** no se toca (filtro `status='sent'`).
+
+### EC-04: Quote `accepted` / `rejected`
+
+**Given** Quote en `status='accepted'` o `'rejected'` con `valid_until` pasado
+**When** job ejecuta
+**Then** no se toca (filtro `status='sent'`).
 
 ---
 
 ## 🚫 Validation Rules
 
-| ID    | Rule                            | Message / Behavior          |
-| ----- | ------------------------------- | --------------------------- |
-| VR-01 | valid_until > hoy               | 400                         |
+| ID    | Rule                                                                  | Message / Behavior                              |
+| ----- | --------------------------------------------------------------------- | ----------------------------------------------- |
+| VR-01 | (UX cliente) `valid_until ∈ [today+1, today+90]`                       | Feedback inline `INVALID_VALID_UNTIL` (delegado al backend en submit) |
+| VR-02 | (Job) `status='sent' AND valid_until < CURRENT_DATE`                    | Filtro de la query                              |
+| VR-03 | (Job) `LIMIT 100` con `FOR UPDATE SKIP LOCKED`                          | Batching                                        |
 
 ---
 
 ## 🔐 Authorization & Security Rules
 
-| ID     | Rule                                                                |
-| ------ | ------------------------------------------------------------------- |
-| SEC-01 | Assignment.                                                          |
+| ID     | Rule                                                                                          |
+| ------ | --------------------------------------------------------------------------------------------- |
+| SEC-01 | Job ejecuta como sistema (sin user context).                                                  |
+| SEC-02 | UX heredada de US-052 (assignment-based al editar Quote en draft no aplica MVP).             |
+| SEC-03 | Sin AdminAction (no es una acción admin-driven).                                              |
+| SEC-04 | Log estructurado del job incluye `correlation_id` por ejecución.                              |
 
 ### Negative Authorization Scenarios
 
-* Otro vendor → 403/404.
+* N/A para el job (sin user context).
+* UX heredada de US-052.
 
 ---
 
@@ -163,20 +232,20 @@ This story does not invoke AI directly.
 
 ## 🎨 UX / UI Notes
 
-| Area                | Notes                                  |
-| ------------------- | -------------------------------------- |
-| Screen / Route      | Form Quote                              |
-| Main UI Pattern     | Date picker con default                  |
-| Primary Action      | Enviar                                  |
-| Secondary Actions   | "Usar default 15 días"                  |
-| Empty State         | No aplica                              |
-| Loading State       | Spinner                                 |
-| Error State         | Inline                                  |
-| Success State       | Toast                                   |
-| Accessibility Notes | Date picker accesible                    |
-| Responsive Notes    | Mobile-first                            |
-| i18n Notes          | 4 locales                              |
-| Currency Notes      | No aplica                              |
+| Area                | Notes                                                                                          |
+| ------------------- | ---------------------------------------------------------------------------------------------- |
+| Screen / Route      | Form de respuesta de Quote (US-052) — `app/[locale]/vendor/quote-requests/[id]/respond`.       |
+| Main UI Pattern     | `ValidUntilPicker` (date picker accesible) con default `today + 15d`.                          |
+| Primary Action      | "Enviar cotización" (heredado de US-052).                                                       |
+| Secondary Actions   | "Usar default 15 días" (botón rápido que restaura el default).                                |
+| Empty State         | No aplica.                                                                                     |
+| Loading State       | Heredado de US-052.                                                                           |
+| Error State         | Feedback inline accesible con código i18n cuando `valid_until` fuera del rango.               |
+| Success State       | Heredado de US-052.                                                                           |
+| Accessibility Notes | Date picker keyboard-accessible (flechas + Enter + Esc); `aria-invalid` y `aria-describedby` en error. |
+| Responsive Notes    | Mobile-first.                                                                                  |
+| i18n Notes          | 4 locales (`vendor.qr.respond.valid_until.*`).                                                 |
+| Currency Notes      | No aplica.                                                                                     |
 
 ---
 
@@ -184,64 +253,45 @@ This story does not invoke AI directly.
 
 ### Frontend
 
-* Route / Page:
-
-  * Form Quote
-* Components:
-
-  * `ValidUntilPicker`
-* State Management:
-
-  * RHF
-* Forms:
-
-  * Default 15d
-* API Client:
-
-  * Embedded
+* Route / Page: form de US-052.
+* Components: `ValidUntilPicker` (Client Component) integrado en `QuoteResponseForm` de US-052.
+* State Management: heredado de US-052 (RHF + Zod).
+* Forms: validación cliente con `react-day-picker` o equivalente accesible.
+* API Client: heredado de US-052.
 
 ### Backend
 
-* Use Case / Service:
-
-  * Embebido en respond
-* Controller / Route:
-
-  * `POST /api/v1/vendor/quote-requests/:id/respond`
+* Job:
+  * `ExpireQuotesJob` (cron diario `0 5 0 * * *` UTC con jitter aplicado en el handler).
+  * `ExpireQuotesUseCase` ejecuta la lógica idempotente.
+* Scheduler:
+  * Reuso del scheduler de PB-P1-009 o introducción de `node-cron` (a decidir en DB-001/OPS-001).
 * Authorization Policy:
-
-  * Assignment
+  * Sistema (sin guards).
 * Validation:
-
-  * Zod
+  * N/A (query interna).
 * Transaction Required:
-
-  * No
+  * Sí, por batch.
 
 ### Database
 
-* Main Tables:
-
-  * `quotes`
-* Constraints:
-
-  * `valid_until > created_at`
-* Index Considerations:
-
-  * Por `valid_until`
+* Main Tables: `quotes`, `notifications`.
+* Indexes: reuso de `idx_quotes_valid_until_active (valid_until) WHERE status = 'sent'` (PB-P0-001).
+* Constraints: existentes.
 
 ### API
 
-| Method | Endpoint                                            | Purpose             |
-| ------ | --------------------------------------------------- | ------------------- |
-| POST   | `/api/v1/vendor/quote-requests/:id/respond`         | Define valid_until  |
+| Method | Endpoint | Purpose                              |
+| ------ | -------- | ------------------------------------ |
+| —      | —        | Sin endpoint público (job interno).  |
 
 ### Observability / Audit
 
-* Correlation ID Required: Yes
-* Log Event Required: No
+* Correlation ID Required: Yes (generado por ejecución).
+* Log Event Required: Yes (`quote.expired`, `quote.expired.batch`, `quote.expired.run.start`, `quote.expired.run.end`).
 * AdminAction Required: No
 * AIRecommendation Required: No
+* Métricas: `quotes.expired.total`, `quotes.expired.duration_ms`.
 
 ---
 
@@ -249,15 +299,21 @@ This story does not invoke AI directly.
 
 ### Functional Tests
 
-| ID    | Scenario                          | Type        |
-| ----- | --------------------------------- | ----------- |
-| TS-01 | Default 15d aplicado              | Unit        |
+| ID    | Scenario                                                                          | Type        |
+| ----- | --------------------------------------------------------------------------------- | ----------- |
+| TS-01 | Picker pre-rellena `today + 15d`.                                                  | Unit/UI     |
+| TS-02 | Job marca 1 Quote expirada y crea 2 Notifications.                                | Integration |
+| TS-03 | Job procesa batch de 100 con SKIP LOCKED.                                          | Integration |
+| TS-04 | Re-ejecución del job es idempotente.                                              | Integration |
+| TS-05 | Convención del corte: Quote vence al inicio del día `valid_until + 1`.            | Integration |
+| TS-06 | Quote `accepted`/`rejected` con `valid_until` pasado NO se toca.                  | Integration |
 
 ### Negative Tests
 
-| ID    | Scenario                              | Expected Result          |
-| ----- | ------------------------------------- | ------------------------ |
-| NT-01 | Fecha pasada                          | 400                      |
+| ID    | Scenario                                              | Expected Result                  |
+| ----- | ----------------------------------------------------- | -------------------------------- |
+| NT-01 | `valid_until` cliente fuera del rango                  | Feedback inline + `400 INVALID_VALID_UNTIL` (en submit, heredado US-052) |
+| NT-02 | Notification falla en un batch                         | Rollback del batch; reintento next run |
 
 ### AI Tests
 
@@ -265,13 +321,19 @@ Not applicable for this story.
 
 ### Authorization Tests
 
-| ID         | Scenario           | Expected Result |
-| ---------- | ------------------ | --------------- |
-| AUTH-TS-01 | Vendor target      | 201             |
+| ID         | Scenario                            | Expected Result          |
+| ---------- | ----------------------------------- | ------------------------ |
+| AUTH-TS-01 | Vendor edita picker en form         | Heredado de US-052        |
+| AUTH-TS-02 | Job ejecuta sin user                 | OK                       |
 
 ### Accessibility Tests
 
-* Date picker accesible.
+* `ValidUntilPicker` keyboard-accessible.
+* `aria-invalid` + `aria-describedby` en error.
+
+### Performance
+
+* Job debe procesar 10,000 Quotes vencidas en `< 60s` (smoke).
 
 ---
 
@@ -279,10 +341,10 @@ Not applicable for this story.
 
 | Field               | Value                                                |
 | ------------------- | ---------------------------------------------------- |
-| KPI Affected        | Tiempo a decisión                                    |
-| Expected Impact     | Plazos claros                                        |
-| Success Criteria    | Default aplicado                                      |
-| Academic Demo Value | Decisión PO #4 visible                                |
+| KPI Affected        | Tiempo a decisión + higiene del catálogo.            |
+| Expected Impact     | Plazos claros + ciclo de vida automatizado.          |
+| Success Criteria    | Default aplicado, picker accesible, job idempotente. |
+| Academic Demo Value | Decisión PO 8.1 #4 + #13 visibles + cron job demostrable. |
 
 ---
 
@@ -290,15 +352,19 @@ Not applicable for this story.
 
 ### Potential Frontend Tasks
 
-* Date picker.
+* `ValidUntilPicker` accesible + integración en `QuoteResponseForm` (US-052).
+* i18n `vendor.qr.respond.valid_until.*`.
 
 ### Potential Backend Tasks
 
-* Default lógica.
+* `ExpireQuotesUseCase` idempotente.
+* `ExpireQuotesJob` (handler de cron).
+* Scheduler bootstrap.
+* Logger + métricas.
 
 ### Potential Database Tasks
 
-* Constraint.
+* Verificar índice parcial.
 
 ### Potential AI / PromptOps Tasks
 
@@ -306,11 +372,11 @@ Not applicable for this story.
 
 ### Potential QA Tasks
 
-* Tests unit.
+* TS funcional + concurrencia + idempotencia + performance smoke.
 
 ### Potential DevOps / Config Tasks
 
-* Not applicable for this story.
+* Configurar scheduler en `.env` y proceso `npm run worker`.
 
 ---
 
@@ -327,20 +393,26 @@ Not applicable for this story.
 * [x] Out of Scope explícito.
 * [x] Dependencias conocidas.
 * [x] UX states identificados.
-* [x] API definida.
+* [x] API definida (job sin endpoint público).
 * [x] Tests definidos.
-* [ ] PO/BA validó.
+* [x] PO/BA validó.
 
 ---
 
 ## 🏁 Definition of Done
 
-* [ ] Funcional.
-* [ ] Tests verdes.
-* [ ] PO valida.
+* [ ] `ValidUntilPicker` accesible integrado en US-052 form.
+* [ ] `ExpireQuotesJob` cron diario operativo.
+* [ ] Idempotencia + batching + SKIP LOCKED verificados.
+* [ ] 2 Notifications por Quote expirada.
+* [ ] Logs estructurados + métricas.
+* [ ] Tests verdes (UI, integration, idempotencia, performance smoke).
+* [ ] i18n 4 locales.
+* [ ] PO valida demo (Quote vence + vendor recibe in-app).
 
 ---
 
 ## 📝 Notes
 
-* Confirmar máximo de validez (sugerido 90d).
+* Convención del corte (final del día `valid_until`) cierra la decisión PO 8.1 #4.
+* Documentation Alignment Required (no bloqueantes) en `management/user-stories/decision-resolutions/US-053-decision-resolution.md`.

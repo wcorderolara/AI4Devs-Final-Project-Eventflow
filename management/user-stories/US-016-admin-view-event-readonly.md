@@ -1,20 +1,25 @@
-# 🧾 User Story: Admin ve mi evento en solo lectura (auditado)
+# 🧾 User Story: Admin ve evento del organizador en solo lectura (auditado)
 
 ## 🆔 Metadata
 
-| Field              | Value                                |
-| ------------------ | ------------------------------------ |
-| ID                 | US-016                               |
-| Epic               | EPIC-EVT-001 — Organizer Event Management |
-| Feature            | Vista admin solo lectura del evento  |
-| Module / Domain    | Events / Admin                       |
-| User Role          | Admin                                |
-| Priority           | Must Have                            |
-| Status             | Draft                                |
-| Owner              | Product Owner / Business Analyst     |
-| Sprint / Milestone | MVP                                  |
-| Created Date       | 2026-06-09                           |
-| Last Updated       | 2026-06-09                           |
+| Field              | Value                                          |
+| ------------------ | ---------------------------------------------- |
+| ID                 | US-016                                         |
+| Epic               | EPIC-EVT-001 — Organizer Event Management      |
+| Backlog Item       | PB-P1-010 — Admin event visibility (read-only) |
+| UI Surface         | PB-P1-044                                      |
+| Feature            | Vista admin solo lectura del evento            |
+| Module / Domain    | Events / Admin                                 |
+| User Role          | Admin                                          |
+| Priority           | Must Have                                      |
+| Status             | Approved                                       |
+| Owner              | Product Owner / Business Analyst               |
+| Approved By        | PO/BA Review                                   |
+| Approval Date      | 2026-06-25                                     |
+| Ready for Development Tasks | Yes                                   |
+| Sprint / Milestone | MVP                                            |
+| Created Date       | 2026-06-09                                     |
+| Last Updated       | 2026-06-25                                     |
 
 ---
 
@@ -30,38 +35,54 @@
 
 ### Context Summary
 
-El admin tiene acceso de sólo lectura a eventos para soporte/moderación. Cada acceso queda registrado en `AdminAction` como `view_event` (Decisión PO 8.1 #16). Esto evita que el admin opere el evento por cuenta propia y mantiene auditabilidad.
+El admin tiene acceso de solo lectura al detalle de eventos para soporte, moderación y gobernanza. Cada apertura del detalle registra una entrada en `AdminAction` con `action='view_event'` (Decisión PO 8.1 #16; BR-EVENT-014). El admin no puede editar, cancelar ni eliminar eventos por cuenta propia; las operaciones de escritura están explícitamente bloqueadas por el backend (source of truth de autorización).
 
 ### Related Domain Concepts
 
-* AdminAction (`view_event`).
-* Read-only access para Admin.
+* `AdminAction` (acción `view_event`, append-only).
+* Read-only access para el rol Admin sobre `Event`.
+* Visibilidad transversal admin sobre eventos de organizadores.
 
 ### Assumptions
 
-* El listado admin se cubre en EPIC-ADM-001 (US-078).
-* Esta historia sólo cubre la vista detallada de UN evento por admin.
+* El listado admin de eventos se cubre en US-078 (PB-P1-010 también).
+* Esta historia cubre exclusivamente la vista de detalle de UN evento por admin.
+* El rol Admin ya está provisto por EPIC-AUTH-001 / PB-P1-007.
+* La pista de auditoría `AdminAction` es la fuente canónica de evidencia de acceso admin (no se envían notificaciones al organizador en MVP).
 
 ### Dependencies
 
-* EPIC-AUTH-001 (rol admin).
-* EPIC-ADM-001 (AdminAction).
+* EPIC-AUTH-001 — rol Admin y sesión autenticada (PB-P1-007).
+* EPIC-ADM-001 — entidad `AdminAction` (PB-P0-001 / PB-P1-007).
+* US-078 — Admin list events (read-only), proporciona la navegación al detalle.
 
 ---
 
 ## 🔗 Traceability
 
-| Source                 | Reference                                |
-| ---------------------- | ---------------------------------------- |
-| FRD Requirement(s)     | FR-ADMIN-005, FR-EVENT-014                |
-| Use Case(s)            | UC-EVENT-008, UC-ADMIN-002               |
-| Business Rule(s)       | BR-ADMIN-005, BR-EVENT-014               |
-| Permission Rule(s)     | Admin only; read-only                    |
-| Data Entity / Entities | Event, AdminAction                       |
-| API Endpoint(s)        | GET /api/v1/admin/events/:id             |
-| NFR Reference(s)       | NFR-OBS-001                              |
-| Related ADR(s)         | ADR-SEC-002                              |
-| Related Document(s)    | /docs/8.1 (#16)                          |
+| Source                 | Reference                                                  |
+| ---------------------- | ---------------------------------------------------------- |
+| Backlog Item           | PB-P1-010                                                  |
+| FRD Requirement(s)     | FR-EVENT-013                                               |
+| Use Case(s)            | UC-ADMIN-002                                               |
+| Business Rule(s)       | BR-EVENT-014                                               |
+| Permission Rule(s)     | Admin only; read-only; writes 403                          |
+| Data Entity / Entities | `Event`, `AdminAction`                                     |
+| API Endpoint(s)        | `GET /api/v1/admin/events/:id`                             |
+| NFR Reference(s)       | NFR-OBS-001                                                |
+| Related ADR(s)         | ADR-API-001 (REST conventions), ADR-SEC-002 (sesión segura — transversal) |
+| PO Decision(s)         | Decisión PO 8.1 #16                                        |
+| Related Document(s)    | `/docs/8.1` (#16), `/docs/4` (BR-EVENT-014), `/docs/19` (admin read-only), `/docs/6` (`AdminActionType.view_event`), `/docs/18` (`admin_actions`, enum), `/docs/10` (NFR-OBS-001) |
+
+---
+
+## 🧩 PO/BA Decisions Applied
+
+1. **Decisión PO 8.1 #16** — El admin tiene acceso de solo lectura a eventos para demo, soporte y gobernanza. No puede editar. Cada acceso al detalle se registra como `AdminAction(action='view_event')`. Estado: Resuelta.
+2. **BR-EVENT-014** — Visibilidad admin sobre eventos sin permisos de modificación; registro en `AdminAction` al ingresar al detalle.
+3. **No notificación al organizador en MVP** — La lectura admin no dispara aviso al organizador (queda como nota futura).
+4. **Eventos eliminados (soft delete)** — El admin puede ver el detalle con banner "Eliminado"; no se ofrece restauración en MVP.
+5. **Endpoint dedicado** — Se utiliza `GET /api/v1/admin/events/:id` para el detalle, complementando el listado `GET /api/v1/admin/events` (US-078).
 
 ---
 
@@ -74,12 +95,17 @@ El admin tiene acceso de sólo lectura a eventos para soporte/moderación. Cada 
 
 ### Explicitly Out of Scope
 
-* Edición por admin.
-* Suplantación de identidad.
+* Edición, cancelación o borrado admin sobre eventos.
+* Suplantación de identidad (sign-in as).
+* Restauración de eventos `soft-deleted`.
+* Notificación al organizador cuando el admin consulta su evento.
+* Exportación/descarga del detalle.
 
 ### Scope Notes
 
-* No introduce escritura admin.
+* No introduce capacidades de escritura admin.
+* No introduce nuevas entidades de dominio; reutiliza `Event` y `AdminAction`.
+* La frecuencia de registro `view_event` es por apertura del detalle (no por re-render del cliente).
 
 ---
 
@@ -89,15 +115,27 @@ El admin tiene acceso de sólo lectura a eventos para soporte/moderación. Cada 
 
 ### AC-01: Lectura admin con auditoría
 
-**Given** admin autenticado
-**When** abre el detalle de un evento por ID
-**Then** se devuelve la vista read-only y se registra `AdminAction(action='view_event', target_event_id, actor_user_id, timestamp)`.
+**Given** un admin autenticado con sesión válida
+**When** abre el detalle de un evento por `eventId` válido
+**Then** el backend devuelve `200` con la representación read-only del evento
+**And** inserta `AdminAction { action='view_event', target_event_id=<eventId>, actor_user_id=<admin.id>, correlation_id=<request.correlationId>, timestamp=<server-now> }`
+**And** el registro de auditoría persiste aunque ocurra un error de render en el cliente.
 
 ### AC-02: Acciones de escritura bloqueadas
 
-**Given** admin viendo el evento
-**When** intenta PATCH/DELETE/cancel
-**Then** 403 `FORBIDDEN`.
+**Given** un admin viendo el evento
+**When** intenta `PATCH /api/v1/admin/events/:id`, `DELETE /api/v1/admin/events/:id` o cualquier acción de cancelación admin
+**Then** el backend responde `403 FORBIDDEN` con envelope de error unificado
+**And** no se modifica el `Event`
+**And** no se registra una mutación.
+
+### AC-03: UI marca el modo lectura
+
+**Given** un admin viendo el detalle
+**When** la página se renderiza
+**Then** se muestra un badge "Modo lectura"
+**And** los campos del evento se renderizan como `readonly`
+**And** no se muestran controles primarios de edición ni de cancelación.
 
 ---
 
@@ -105,21 +143,39 @@ El admin tiene acceso de sólo lectura a eventos para soporte/moderación. Cada 
 
 ### EC-01: Evento eliminado (soft delete)
 
-**Given** evento con `deleted_at`
-**When** admin abre por ID
-**Then** ve banner "Eliminado" y datos básicos (no se permite restaurar en MVP).
+**Given** un evento con `deleted_at IS NOT NULL`
+**When** el admin abre `/admin/events/:id`
+**Then** el backend devuelve `200` con los datos básicos y la marca `deleted=true`
+**And** la UI muestra un banner "Eliminado"
+**And** no se ofrece acción de restauración (fuera de alcance MVP)
+**And** se registra `AdminAction(action='view_event')` igualmente.
 
 #### Handling
 
-* UI bloquea acciones.
+* UI bloquea cualquier acción y muestra solo navegación de retorno.
+
+### EC-02: Evento inexistente
+
+**Given** un `eventId` con formato válido que no existe
+**When** el admin abre el detalle
+**Then** el backend devuelve `404 NOT_FOUND` con envelope unificado
+**And** no se registra `AdminAction`.
+
+### EC-03: `eventId` con formato inválido
+
+**Given** un parámetro `eventId` que no es UUID v4 válido
+**When** el admin intenta abrir el detalle
+**Then** el backend devuelve `400 BAD_REQUEST` con envelope unificado
+**And** no se registra `AdminAction`.
 
 ---
 
 ## 🚫 Validation Rules
 
-| ID    | Rule                            | Message / Behavior          |
-| ----- | ------------------------------- | --------------------------- |
-| VR-01 | `eventId` UUID válido           | 400 si no                   |
+| ID    | Rule                                          | Message / Behavior                |
+| ----- | --------------------------------------------- | --------------------------------- |
+| VR-01 | `eventId` debe ser UUID v4                    | `400 BAD_REQUEST` (`VALIDATION`)  |
+| VR-02 | La respuesta no incluye campos editables internos sensibles fuera del contrato | Serializador dedicado read-only   |
 
 ---
 
@@ -127,15 +183,16 @@ El admin tiene acceso de sólo lectura a eventos para soporte/moderación. Cada 
 
 | ID     | Rule                                                                |
 | ------ | ------------------------------------------------------------------- |
-| SEC-01 | Sólo rol Admin.                                                     |
-| SEC-02 | Operaciones de escritura bloqueadas.                                |
-| SEC-03 | Registrar `AdminAction(view_event)` por cada lectura.                |
+| SEC-01 | Solo el rol `Admin` puede invocar `GET /api/v1/admin/events/:id`.   |
+| SEC-02 | Todas las operaciones de escritura admin sobre el evento responden `403`. |
+| SEC-03 | Registrar `AdminAction(action='view_event')` por cada lectura del detalle. |
+| SEC-04 | El `correlation_id` debe propagarse al log estructurado y al registro `AdminAction`. |
 
 ### Negative Authorization Scenarios
 
-* Organizer/Vendor → 403.
-* Anónimo → 401.
-* Intento de PATCH admin → 403.
+* Organizer / Vendor autenticado → `403 FORBIDDEN`.
+* Usuario anónimo / sesión inválida → `401 UNAUTHORIZED`.
+* Admin autenticado realizando `PATCH` / `DELETE` admin → `403 FORBIDDEN`.
 
 ---
 
@@ -171,20 +228,20 @@ This story does not invoke AI directly.
 
 ## 🎨 UX / UI Notes
 
-| Area                | Notes                                                  |
-| ------------------- | ------------------------------------------------------ |
-| Screen / Route      | `/[locale]/admin/events/:id`                           |
-| Main UI Pattern     | Vista read-only con badge "Modo lectura"               |
-| Primary Action      | No aplica                                              |
-| Secondary Actions   | "Volver al listado"                                    |
-| Empty State         | No aplica                                              |
-| Loading State       | Skeleton                                               |
-| Error State         | Banner                                                 |
-| Success State       | Vista cargada                                          |
-| Accessibility Notes | Marcar inputs como readonly + aria                     |
-| Responsive Notes    | Mobile-first                                           |
-| i18n Notes          | 4 locales                                              |
-| Currency Notes      | Moneda del evento (read-only)                          |
+| Area                | Notes                                                              |
+| ------------------- | ------------------------------------------------------------------ |
+| Screen / Route      | `/[locale]/admin/events/:id`                                       |
+| Main UI Pattern     | Vista de detalle read-only con badge "Modo lectura"                 |
+| Primary Action      | No aplica                                                          |
+| Secondary Actions   | "Volver al listado" (vínculo a US-078)                              |
+| Empty State         | No aplica (entidad única)                                          |
+| Loading State       | Skeleton de detalle                                                |
+| Error State         | Banner para `404` / `403` con envelope unificado                    |
+| Success State       | Vista cargada con badge "Modo lectura"                              |
+| Accessibility Notes | Inputs marcados `aria-readonly="true"`, `aria-live` para banner    |
+| Responsive Notes    | Mobile-first                                                       |
+| i18n Notes          | 4 locales (es, en, pt, fr); textos en archivo i18n                  |
+| Currency Notes      | Mostrar moneda del evento (read-only); no conversión automática     |
 
 ---
 
@@ -197,10 +254,12 @@ This story does not invoke AI directly.
   * `/[locale]/admin/events/:id`
 * Components:
 
-  * `AdminEventViewer`
+  * `AdminEventViewer` (composición con `EventReadOnlySummary`)
+  * Badge `ReadOnlyBadge`
+  * Banner `DeletedEventBanner`
 * State Management:
 
-  * TanStack `useAdminEvent`
+  * TanStack Query `useAdminEvent(eventId)`
 * Forms:
 
   * No aplica
@@ -212,19 +271,19 @@ This story does not invoke AI directly.
 
 * Use Case / Service:
 
-  * `AdminViewEventUseCase` (registra AdminAction)
+  * `AdminViewEventUseCase` — orquesta lectura + persistencia `AdminAction` en la misma transacción.
 * Controller / Route:
 
   * `GET /api/v1/admin/events/:id`
 * Authorization Policy:
 
-  * Admin
+  * Middleware RBAC: solo `Admin`
 * Validation:
 
-  * UUID
+  * Zod schema con `eventId: uuid`
 * Transaction Required:
 
-  * Sí (lectura + insert AdminAction)
+  * Sí (read `Event` + insert `AdminAction`).
 
 ### Database
 
@@ -233,21 +292,21 @@ This story does not invoke AI directly.
   * `events`, `admin_actions`
 * Constraints:
 
-  * AdminAction append-only
+  * `admin_actions` append-only (sin UPDATE/DELETE)
 * Index Considerations:
 
-  * Índice por `actor_user_id` y `target_event_id`
+  * Reutilizar índices existentes en `admin_actions(actor_user_id)` y `admin_actions(target_event_id)` definidos por PB-P0-001.
 
 ### API
 
-| Method | Endpoint                              | Purpose                  |
-| ------ | ------------------------------------- | ------------------------ |
-| GET    | `/api/v1/admin/events/:id`            | Ver evento (read-only)   |
+| Method | Endpoint                              | Purpose                       |
+| ------ | ------------------------------------- | ----------------------------- |
+| GET    | `/api/v1/admin/events/:id`            | Ver evento en read-only       |
 
 ### Observability / Audit
 
-* Correlation ID Required: Yes
-* Log Event Required: Yes
+* Correlation ID Required: Yes (propagado al log y a `AdminAction`)
+* Log Event Required: Yes (`admin.event.view`)
 * AdminAction Required: Yes (`view_event`)
 * AIRecommendation Required: No
 
@@ -257,19 +316,24 @@ This story does not invoke AI directly.
 
 ### Functional Tests
 
-| ID    | Scenario                                              | Type        |
-| ----- | ----------------------------------------------------- | ----------- |
-| TS-01 | Admin lee evento y se registra `view_event`           | Integration |
-| TS-02 | Intentos de escritura admin son rechazados            | API         |
-| TS-03 | E2E con seed                                          | E2E         |
+| ID    | Scenario                                                  | Type        |
+| ----- | --------------------------------------------------------- | ----------- |
+| TS-01 | Admin lee evento existente y se registra `view_event`     | Integration |
+| TS-02 | Intentos de escritura admin son rechazados con `403`       | API         |
+| TS-03 | Admin lee evento `soft-deleted` con banner y auditoría     | Integration |
+| TS-04 | Lectura admin sobre evento inexistente → `404` sin auditoría | API         |
+| TS-05 | Lectura admin con `eventId` inválido → `400`               | API         |
+| TS-06 | E2E con seed (admin abre detalle y lo ve en read-only)    | E2E         |
 
 ### Negative Tests
 
-| ID    | Scenario                              | Expected Result          |
-| ----- | ------------------------------------- | ------------------------ |
-| NT-01 | Organizer abre /admin/events          | 403                      |
-| NT-02 | Vendor abre /admin/events             | 403                      |
-| NT-03 | Admin intenta PATCH                   | 403                      |
+| ID    | Scenario                                              | Expected Result          |
+| ----- | ----------------------------------------------------- | ------------------------ |
+| NT-01 | Organizer abre `/api/v1/admin/events/:id`             | `403 FORBIDDEN`          |
+| NT-02 | Vendor abre `/api/v1/admin/events/:id`                | `403 FORBIDDEN`          |
+| NT-03 | Admin intenta `PATCH /api/v1/admin/events/:id`        | `403 FORBIDDEN`          |
+| NT-04 | Admin intenta `DELETE /api/v1/admin/events/:id`       | `403 FORBIDDEN`          |
+| NT-05 | Petición sin sesión válida                            | `401 UNAUTHORIZED`       |
 
 ### AI Tests
 
@@ -277,15 +341,17 @@ Not applicable for this story.
 
 ### Authorization Tests
 
-| ID         | Scenario           | Expected Result |
-| ---------- | ------------------ | --------------- |
-| AUTH-TS-01 | Admin              | 200 + AdminAction |
-| AUTH-TS-02 | Organizer          | 403             |
-| AUTH-TS-03 | Anónimo            | 401             |
+| ID         | Scenario           | Expected Result        |
+| ---------- | ------------------ | ---------------------- |
+| AUTH-TS-01 | Admin autenticado  | `200` + `AdminAction`   |
+| AUTH-TS-02 | Organizer          | `403 FORBIDDEN`         |
+| AUTH-TS-03 | Anónimo            | `401 UNAUTHORIZED`      |
 
 ### Accessibility Tests
 
-* Etiquetas readonly accesibles.
+* Etiquetas `aria-readonly` accesibles.
+* Banner "Eliminado" con `role="status"`.
+* Navegación por teclado al botón "Volver al listado".
 
 ---
 
@@ -295,8 +361,8 @@ Not applicable for this story.
 | ------------------- | ---------------------------------------------------- |
 | KPI Affected        | Auditabilidad, trazabilidad de soporte               |
 | Expected Impact     | Permite soporte sin compromiso de privacidad         |
-| Success Criteria    | 100% de lecturas admin registradas en AdminAction    |
-| Academic Demo Value | Demuestra gobierno y trazabilidad                    |
+| Success Criteria    | 100% de lecturas admin del detalle registradas en `AdminAction` |
+| Academic Demo Value | Demuestra gobierno y trazabilidad RBAC               |
 
 ---
 
@@ -304,17 +370,22 @@ Not applicable for this story.
 
 ### Potential Frontend Tasks
 
-* Vista admin read-only.
-* Banner "Modo lectura".
+* Página `/[locale]/admin/events/:id` con `AdminEventViewer`.
+* Componentes `ReadOnlyBadge` y `DeletedEventBanner`.
+* Hook `useAdminEvent` con TanStack Query.
+* Mensajería i18n (4 locales).
 
 ### Potential Backend Tasks
 
-* Use case con AdminAction.
-* Validación de rol.
+* Endpoint `GET /api/v1/admin/events/:id`.
+* `AdminViewEventUseCase` con transacción (read + insert `AdminAction`).
+* Middleware RBAC `Admin`.
+* Validación Zod del path param.
+* Manejo de `Event` con `deleted_at`.
 
 ### Potential Database Tasks
 
-* Índices AdminAction.
+* Verificar índices existentes en `admin_actions` (no se crean nuevos).
 
 ### Potential AI / PromptOps Tasks
 
@@ -322,7 +393,10 @@ Not applicable for this story.
 
 ### Potential QA Tasks
 
-* Tests positivos/negativos.
+* Tests de integración (TS-01..TS-05).
+* Tests E2E (TS-06).
+* Tests de autorización negativos (NT-01..NT-05).
+* Tests de accesibilidad mínimos.
 
 ### Potential DevOps / Config Tasks
 
@@ -334,16 +408,16 @@ Not applicable for this story.
 
 * [x] Rol claro (Admin).
 * [x] Goal/valor claros.
-* [x] FRD/UC/BR enlazados.
-* [x] Permisos identificados.
-* [x] Entidades listadas.
+* [x] FRD/UC/BR enlazados (FR-EVENT-013, UC-ADMIN-002, BR-EVENT-014).
+* [x] Permisos identificados (Admin read-only + writes 403).
+* [x] Entidades listadas (`Event`, `AdminAction`).
 * [x] AC en GWT.
-* [x] Edge cases documentados.
+* [x] Edge cases documentados (soft delete, not found, UUID inválido).
 * [x] Validación clara.
 * [x] Out of Scope explícito.
-* [x] Dependencias conocidas.
+* [x] Dependencias conocidas (PB-P1-007, PB-P0-001, US-078).
 * [x] UX states identificados.
-* [x] API definida.
+* [x] API definida (`GET /api/v1/admin/events/:id`).
 * [x] Tests definidos.
 * [ ] PO/BA validó.
 
@@ -351,13 +425,18 @@ Not applicable for this story.
 
 ## 🏁 Definition of Done
 
-* [ ] Endpoint operativo con AdminAction.
-* [ ] Vista read-only enforced.
-* [ ] Tests verdes.
-* [ ] PO valida.
+* [ ] Endpoint `GET /api/v1/admin/events/:id` operativo.
+* [ ] `AdminAction(view_event)` persistido por cada lectura del detalle.
+* [ ] Vista read-only enforced en backend y frontend.
+* [ ] Tests positivos y negativos verdes.
+* [ ] Accesibilidad mínima cumplida.
+* [ ] PO valida en revisión de demo.
 
 ---
 
 ## 📝 Notes
 
-* Confirmar si la lectura genera notificación al organizador (no recomendado para MVP).
+* Documentation Alignment Required: el endpoint `GET /api/v1/admin/events/:id` debe agregarse al snapshot de `/docs/16-API-Design-Specification.md`. La decisión funcional ya está formalizada por BR-EVENT-014 y Decisión PO 8.1 #16, por lo que esto se trata como alineación documental y no bloquea la aprobación.
+* Documentation Alignment Required: `/docs/9-Functional-Requirements-Document.md` debe reflejar `FR-EVENT-013` como el requisito canónico para la visibilidad admin de eventos (las versiones previas de la US referenciaban IDs incorrectos `FR-ADMIN-005` y `FR-EVENT-014`).
+* Documentation Alignment Required: `/docs/4-Business-Rules-Document.md` ya contiene `BR-EVENT-014` correctamente; las versiones previas de la US referenciaban `BR-ADMIN-005` (que aplica a métricas), debe quedar sin esa referencia.
+* La lectura del detalle no genera notificación al organizador en MVP (confirmar si se quisiera evaluar a futuro como mejora).

@@ -5,16 +5,20 @@
 | Field              | Value                                |
 | ------------------ | ------------------------------------ |
 | ID                 | US-007                               |
-| Epic               | EPIC-AUTH-001 — Authentication & User Access |
+| Epic               | EPIC-I18N-001 — Internationalization & Currency (cross-cuts EPIC-AUTH-001) |
+| Backlog Item       | PB-P1-005 — Perfil propio (incluye US-006 y US-007) |
 | Feature            | Selección de idioma preferido        |
 | Module / Domain    | Auth / I18N                          |
 | User Role          | Authenticated (Organizer / Vendor / Admin) |
 | Priority           | Must Have                            |
-| Status             | Draft                                |
+| Status             | Approved                             |
 | Owner              | Product Owner / Business Analyst     |
+| Approved By        | PO/BA Review                         |
+| Approval Date      | 2026-06-25                           |
+| Ready for Development Tasks | Yes                         |
 | Sprint / Milestone | MVP                                  |
 | Created Date       | 2026-06-09                           |
-| Last Updated       | 2026-06-09                           |
+| Last Updated       | 2026-06-25                           |
 
 ---
 
@@ -53,15 +57,16 @@ El idioma preferido se persiste en `User.preferred_language` y es usado por: la 
 
 | Source                 | Reference                              |
 | ---------------------- | -------------------------------------- |
-| FRD Requirement(s)     | FR-USER-003, FR-I18N-001               |
-| Use Case(s)            | UC-AUTH-007, UC-I18N-001               |
-| Business Rule(s)       | BR-USER-006, BR-I18N-001               |
-| Permission Rule(s)     | Ownership /users/me                    |
-| Data Entity / Entities | User                                   |
-| API Endpoint(s)        | PATCH /api/v1/users/me                 |
-| NFR Reference(s)       | NFR-I18N-001                           |
+| FRD Requirement(s)     | FR-USER-003, FR-I18N-001, FR-I18N-002, FR-I18N-004, FR-I18N-006 |
+| Use Case(s)            | UC-AUTH-006, UC-I18N-001               |
+| Business Rule(s)       | BR-USER-006, BR-I18N-001, BR-I18N-003  |
+| Permission Rule(s)     | Ownership `/users/me`                  |
+| Data Entity / Entities | User (`preferred_language`)            |
+| API Endpoint(s)        | PATCH `/api/v1/users/me` (perfil); PATCH `/api/v1/users/me/preferred-language` (selector global) |
+| NFR Reference(s)       | NFR-I18N-001, NFR-I18N-002             |
 | Related ADR(s)         | ADR-FE-001                             |
-| Related Document(s)    | /docs/3 §7.15, /docs/15                |
+| Related Document(s)    | /docs/3 §7.15, /docs/9 §FR-I18N, /docs/15, /docs/16 §Users |
+| Backlog Item           | PB-P1-005                              |
 
 ---
 
@@ -115,11 +120,11 @@ El idioma preferido se persiste en `User.preferred_language` y es usado por: la 
 
 **Given** un manipulador envía `fr-FR`
 **When** intenta guardar
-**Then** 400 `VALIDATION_ERROR`.
+**Then** 400 `VALIDATION_ERROR` con mensaje "Idioma no soportado".
 
 #### Handling
 
-* Backend valida con enum.
+* Backend valida con enum `LanguageCode` ∈ {es-LATAM, es-ES, pt, en}.
 
 ---
 
@@ -131,8 +136,21 @@ El idioma preferido se persiste en `User.preferred_language` y es usado por: la 
 
 #### Handling
 
-* next-intl con fallback.
-* QA cubre cobertura por locale.
+* next-intl con fallback configurado a `en`.
+* QA cubre cobertura por locale en rutas demo principales.
+
+---
+
+### EC-03: Usuario anónimo cambia idioma desde el selector global
+
+**Given** un usuario no autenticado
+**When** usa el selector global
+**Then** la UI cambia el `locale` solo en la URL (`/[locale]/...`) y se persiste en cookie/almacenamiento del navegador, sin invocar la API.
+
+#### Handling
+
+* No se invoca `PATCH /users/me` para sesiones anónimas.
+* La preferencia anónima se descarta al iniciar sesión y se reemplaza por `User.preferred_language`.
 
 ---
 
@@ -260,9 +278,10 @@ This story does not invoke AI directly.
 
 ### API
 
-| Method | Endpoint                          | Purpose                       |
-| ------ | --------------------------------- | ----------------------------- |
-| PATCH  | `/api/v1/users/me`                | Actualizar idioma preferido   |
+| Method | Endpoint                                      | Purpose                                                                 |
+| ------ | --------------------------------------------- | ----------------------------------------------------------------------- |
+| PATCH  | `/api/v1/users/me`                            | Actualizar perfil (incluye `preferred_language`); usado desde `/profile` |
+| PATCH  | `/api/v1/users/me/preferred-language`         | Endpoint dedicado para selector global con payload mínimo               |
 
 ### Observability / Audit
 
@@ -277,18 +296,21 @@ This story does not invoke AI directly.
 
 ### Functional Tests
 
-| ID    | Scenario                                            | Type        |
-| ----- | --------------------------------------------------- | ----------- |
-| TS-01 | Cambio en perfil persiste en BD                     | Integration |
-| TS-02 | Selector global cambia UI inmediatamente            | E2E         |
-| TS-03 | Locale persiste tras logout/login                   | E2E         |
+| ID    | Scenario                                                          | Type        |
+| ----- | ----------------------------------------------------------------- | ----------- |
+| TS-01 | Cambio en perfil persiste `preferred_language` en BD              | Integration |
+| TS-02 | Selector global cambia UI inmediatamente y persiste vía API       | E2E         |
+| TS-03 | Locale persiste tras logout/login del usuario autenticado         | E2E         |
+| TS-04 | Fallback a `en` cuando un dictionary entry falta en el locale activo | Integration |
+| TS-05 | Selector anónimo cambia solo URL/cookie y no llama API            | E2E         |
 
 ### Negative Tests
 
-| ID    | Scenario                              | Expected Result      |
-| ----- | ------------------------------------- | -------------------- |
-| NT-01 | Locale no soportado                   | 400                  |
-| NT-02 | Anónimo intenta PATCH                 | 401                  |
+| ID    | Scenario                                              | Expected Result      |
+| ----- | ----------------------------------------------------- | -------------------- |
+| NT-01 | Locale no soportado (`fr-FR`)                         | 400 VALIDATION_ERROR |
+| NT-02 | Anónimo intenta PATCH                                 | 401 UNAUTHENTICATED  |
+| NT-03 | Body sin `preferred_language` (campo requerido)       | 422                  |
 
 ### AI Tests
 
@@ -357,14 +379,14 @@ Not applicable for this story.
 * [x] Permisos identificados.
 * [x] Entidades listadas.
 * [x] AC en GWT.
-* [x] Edge cases documentados.
+* [x] Edge cases documentados (incluye EC-03 sesión anónima).
 * [x] Validación clara.
 * [x] Out of Scope explícito.
 * [x] Dependencias conocidas.
 * [x] UX states identificados.
-* [x] API definida.
+* [x] API definida (ambos endpoints).
 * [x] Tests definidos.
-* [ ] PO/BA validó.
+* [x] PO/BA validó.
 
 ---
 
@@ -381,3 +403,21 @@ Not applicable for this story.
 
 * Verificar cobertura de diccionarios al 100% en rutas principales.
 * Confirmar nombres nativos en el selector (Español LATAM, Español, Português, English).
+
+---
+
+## 🧾 PO/BA Decisions Applied
+
+* PB-P1-005 agrupa US-006 y US-007 bajo el mismo backlog item; el alcance de US-007 se limita a `preferred_language`.
+* El idioma del evento (`Event.language`) es independiente y queda fuera del alcance (US-082 / PB-P1-047).
+* El selector global puede usar `PATCH /api/v1/users/me/preferred-language` (endpoint dedicado en /docs/16) para reducir payload; la pantalla `/profile` puede usar `PATCH /api/v1/users/me` con el resto del perfil. Ambos endpoints aplican la misma policy de ownership y validación enum.
+* Para usuarios anónimos, el cambio de idioma queda solo en URL (`/[locale]/...`) + cookie/almacenamiento del navegador; no se invoca la API.
+* `es-LATAM` es el idioma por defecto al registrar nuevos usuarios (FR-I18N-006).
+
+---
+
+## 🧭 Documentation Alignment Notes
+
+* `UC-AUTH-007` referenciado originalmente no existe en /docs/8; se reemplaza por `UC-AUTH-006` (Cambiar idioma preferido del usuario) y `UC-I18N-001` (Cambiar idioma de la UI).
+* Backlog item correcto: `PB-P1-005` (agrupa US-006 y US-007). `PB-P1-047` corresponde a US-081/US-082 (idioma del evento) y queda fuera de alcance.
+* NFR-I18N-002 (persistencia por usuario) se añade a la trazabilidad por consistencia con /docs/10.

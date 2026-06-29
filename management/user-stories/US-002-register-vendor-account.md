@@ -10,11 +10,15 @@
 | Module / Domain    | Auth                                 |
 | User Role          | Anonymous → Vendor                   |
 | Priority           | Must Have                            |
-| Status             | Draft                                |
+| Status             | Approved                             |
 | Owner              | Product Owner / Business Analyst     |
+| Approved By        | PO/BA Review                         |
+| Approval Date      | 2026-06-24                           |
+| Ready for Development Tasks | Yes                          |
 | Sprint / Milestone | MVP                                  |
+| Backlog Item       | PB-P1-002                            |
 | Created Date       | 2026-06-09                           |
-| Last Updated       | 2026-06-09                           |
+| Last Updated       | 2026-06-24                           |
 
 ---
 
@@ -40,8 +44,8 @@ El registro como proveedor inicia el ciclo de vida del lado de la oferta del MVP
 
 ### Assumptions
 
-* El proveedor completará su perfil en una historia separada (US-040).
-* El estado inicial de `VendorProfile` será `pending` hasta aprobación admin.
+* El proveedor completará su perfil en una historia separada (US-040). Esta historia NO crea una fila en `vendor_profiles`; sólo crea el `User` con `role=vendor`.
+* Cuando el `VendorProfile` se cree en US-040, su `status` inicial será `pending` hasta aprobación admin (US-074).
 * No requiere documentación legal en MVP (no KYC).
 
 ### Dependencies
@@ -63,7 +67,24 @@ El registro como proveedor inicia el ciclo de vida del lado de la oferta del MVP
 | API Endpoint(s)        | POST /api/v1/auth/register                          |
 | NFR Reference(s)       | NFR-SEC-001, NFR-SEC-002                            |
 | Related ADR(s)         | ADR-SEC-001, ADR-ARCH-001                           |
-| Related Document(s)    | /docs/5, /docs/19, /docs/8.1 (#8), /docs/6           |
+| Related Document(s)    | /docs/5-User-Roles-Permissions-Matrix.md, /docs/16-API-Design-Specification.md (§/auth/register), /docs/19-Security-and-Authorization-Design.md (§11), /docs/8.1-Product-Owner-Decisions-Use-Cases-Addendum.md (#8), /docs/6-Domain-Data-Model.md, /management/artifacts/4-Product-Backlog-Prioritized.md (PB-P1-002) |
+
+---
+
+## 🧾 PO/BA Decisions Applied
+
+| Decision                                             | Source                                                                          | Resolución aplicada en esta historia                                                                                   |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Captcha / anti-bot obligatorio en registro y login   | PO 8.1 #8; BR-AUTH-011; FR-AUTH-002                                             | Captcha verificado server-side antes de cualquier persistencia; bloqueo del registro si la verificación falla.         |
+| Sólo `organizer` y `vendor` se crean por registro    | BR-AUTH-002; Doc 19 §10                                                          | Backend fuerza `role=vendor` en este endpoint; el rol `admin` se aprovisiona por seed o por admin existente.           |
+| Hashing argon2id como predeterminado MVP             | Doc 19 §11.1; SEC-POL-AUTH-007; ADR-SEC-003                                      | Hash con `argon2id` (params mínimos: memoryCost=19MiB, timeCost=2, parallelism=1). `bcrypt(12)` queda como fallback.   |
+| Política de contraseñas MVP                          | Doc 19 §11.2                                                                     | Mínimo 10 caracteres, al menos una letra y un número, distinta del localpart del email. Validada en frontend y backend. |
+| Cookie de sesión HTTP-only firmada                   | Doc 19 §10; ADR-SEC-001                                                          | Cookie `HttpOnly`, `Secure`, `SameSite=Lax`, firmada con secreto provisto por Secrets Manager.                          |
+| Rate limiting `/auth/register`                       | Doc 19 §10; Doc 16 §Rate Limits                                                  | Máx. 5 registros / IP / 10 minutos (compartido con US-001). Excedente responde `429 RATE_LIMIT_EXCEEDED`.               |
+| Email único y conflicto en registro                  | BR-USER-002; Doc 16 §endpoints (`/auth/register`)                                 | Respuesta `409 EMAIL_TAKEN`. Mensaje al usuario neutro: no revela si el email existe como `organizer` o `vendor`.       |
+| Sin doble opt-in obligatorio en MVP                  | Doc 3 §MVP Scope                                                                 | No se exige confirmación de email como bloqueante de login en MVP.                                                       |
+| VendorProfile no se crea en este endpoint            | Doc 18 §15.1; US-040; US-074                                                     | El endpoint crea sólo el `User`; el `VendorProfile` se construye en US-040 con `status=pending` y se aprueba en US-074. |
+| Single-role MVP                                      | Doc 3 §MVP Scope; BR-AUTH-002                                                    | Un email no puede pertenecer simultáneamente a un `organizer` y a un `vendor`; conflicto resuelto con `409 EMAIL_TAKEN`. |
 
 ---
 
@@ -97,20 +118,20 @@ El registro como proveedor inicia el ciclo de vida del lado de la oferta del MVP
 ### AC-01: Registro exitoso como proveedor
 
 **Given** un usuario anónimo accede a `/auth/register?role=vendor`
-**When** ingresa nombre, email único, contraseña fuerte, acepta términos y resuelve captcha
-**Then** se crea un `User` con `role=vendor`, se inicia sesión, se redirige al onboarding del proveedor.
+**When** ingresa nombre comercial, email único, contraseña conforme a la política MVP (mínimo 10 caracteres, al menos una letra y un número, distinta del localpart del email), acepta términos y resuelve captcha
+**Then** el sistema crea un `User` con `role=vendor`, hashea la contraseña con `argon2id` (parámetros mínimos: memoryCost=19MiB, timeCost=2, parallelism=1), inicia sesión vía cookie HTTP-only firmada y responde `201 Created` redirigiendo al onboarding del proveedor.
 
 ### AC-02: Onboarding hacia creación de perfil
 
-**Given** registro exitoso
-**When** entra a su dashboard
-**Then** ve un CTA para completar su `VendorProfile` con estado `pending`.
+**Given** registro exitoso (sin `VendorProfile` aún creado en BD)
+**When** el proveedor aterriza en el dashboard vendor
+**Then** ve un CTA "Completar mi perfil" que abre el formulario de US-040; tras crearlo, el `VendorProfile` quedará `status=pending` esperando aprobación admin (US-074).
 
 ### AC-03: Idioma e identidad coherentes
 
 **Given** el navegador en `pt`
 **When** el registro es exitoso
-**Then** `preferred_language=pt` y la UI se carga en portugués.
+**Then** `User.preferred_language=pt` y la UI se carga en portugués; el `VendorProfile` heredará `languages_supported` por defecto cuando se cree en US-040.
 
 ---
 
@@ -118,27 +139,42 @@ El registro como proveedor inicia el ciclo de vida del lado de la oferta del MVP
 
 ### EC-01: Email duplicado entre roles
 
-**Given** existe un `User` con ese email (organizador)
+**Given** existe un `User` con ese email (independiente del rol: organizer o vendor)
 **When** intenta registrarse como proveedor con el mismo email
-**Then** rechazo con mensaje genérico; no revela rol existente.
+**Then** el backend responde `409 EMAIL_TAKEN` siguiendo el envelope de error estándar (Doc 16) y el frontend muestra un mensaje neutro ("No fue posible completar el registro") sin revelar el rol del usuario existente.
 
 #### Handling
 
-* No se permite multi-rol con mismo email.
-* Mensaje neutro y registro en logs con `correlationId`.
+* No se permite multi-rol con mismo email (single-role MVP).
+* Mensaje neutro idéntico en UI para evitar enumeración de cuentas o roles.
+* Se registra evento de auditoría `auth.register.failure` con `reason=email_taken` y `correlationId`, sin loguear el email completo en prod.
 
 ---
 
 ### EC-02: Captcha fallido
 
-**Given** captcha no válido
-**When** envía formulario
-**Then** rechazo con `CAPTCHA_INVALID`.
+**Given** el captcha falla la verificación en backend (token ausente, inválido o expirado)
+**When** envía el formulario
+**Then** el sistema rechaza el registro con `400 VALIDATION_ERROR` y `details[].field = "captchaToken"`, indicando "Verificación de seguridad fallida".
 
 #### Handling
 
 * Reinicio del widget captcha en frontend.
 * Sin persistencia de datos.
+* Se registra evento de auditoría `auth.register.failure` con `reason=captcha_failed` y `correlationId`, sin loguear el token.
+
+---
+
+### EC-03: Contraseña débil
+
+**Given** el usuario ingresa una contraseña que no cumple la política MVP (mínimo 10 caracteres, al menos una letra y un número, distinta del localpart del email)
+**When** envía el formulario
+**Then** el sistema responde con `400 VALIDATION_ERROR` detallando el o los requisitos no cumplidos en `details[]`.
+
+#### Handling
+
+* Validación Zod en frontend y backend (defensa en profundidad).
+* Mensaje a nivel de campo y banner global.
 
 ---
 
@@ -146,11 +182,12 @@ El registro como proveedor inicia el ciclo de vida del lado de la oferta del MVP
 
 | ID    | Rule                                            | Message / Behavior                                |
 | ----- | ----------------------------------------------- | ------------------------------------------------- |
-| VR-01 | Email obligatorio, único y válido               | "No fue posible completar el registro"            |
-| VR-02 | Contraseña fuerte (≥10, complejidad)            | "La contraseña no cumple los requisitos"          |
-| VR-03 | Nombre comercial obligatorio (2-150 caracteres) | "El nombre comercial es obligatorio"              |
-| VR-04 | Aceptación de términos y privacidad             | "Debes aceptar los términos"                      |
-| VR-05 | Captcha válido                                  | "Verificación de seguridad fallida"               |
+| VR-01 | Email obligatorio, formato RFC válido, único case-insensitive (BR-USER-002) | "No fue posible completar el registro" |
+| VR-02 | Contraseña: mínimo 10 caracteres, al menos una letra y un número, distinta del localpart del email (Doc 19 §11.2) | "La contraseña no cumple con los requisitos" |
+| VR-03 | Nombre comercial obligatorio (2-150 caracteres) | "El nombre comercial es obligatorio" |
+| VR-04 | Aceptación obligatoria de términos y privacidad | "Debes aceptar los términos y la política de privacidad" |
+| VR-05 | Captcha obligatorio (token válido) | "Verificación de seguridad fallida" |
+| VR-06 | Rol asignado debe ser `vendor` en este endpoint | Backend ignora cualquier intento de elevar a `admin` o cambiar a `organizer` |
 
 ---
 
@@ -158,18 +195,20 @@ El registro como proveedor inicia el ciclo de vida del lado de la oferta del MVP
 
 | ID     | Rule                                                                                |
 | ------ | ----------------------------------------------------------------------------------- |
-| SEC-01 | Endpoint accesible solo a anónimos.                                                 |
-| SEC-02 | Captcha verificado server-side antes de persistir.                                  |
-| SEC-03 | Rate limiting por IP y por email candidato.                                         |
-| SEC-04 | Hashing argon2id; nunca se loguea la contraseña.                                    |
-| SEC-05 | Cookies HTTP-only, Secure, SameSite=Lax.                                            |
-| SEC-06 | Backend nunca permite `role=admin` aquí.                                            |
+| SEC-01 | Endpoint accesible solo a usuarios anónimos; usuarios autenticados son redirigidos. |
+| SEC-02 | Captcha verificado server-side antes de cualquier persistencia (Decisión PO 8.1 #8). |
+| SEC-03 | Rate limiting `/auth/register`: máx 5 registros / IP / 10 min (Doc 19 §10); excedente responde `429 RATE_LIMIT_EXCEEDED`. |
+| SEC-04 | Contraseña hasheada con `argon2id` (parámetros conformes a OWASP); nunca se loguea ni se devuelve. |
+| SEC-05 | Cookie de sesión `HttpOnly`, `Secure`, `SameSite=Lax`, firmada. |
+| SEC-06 | El rol `admin` jamás puede crearse vía registro público; backend fuerza `role=vendor` en este endpoint. |
+| SEC-07 | Logs redactan email y nunca incluyen contraseña ni token de captcha. |
 
 ### Negative Authorization Scenarios
 
-* Usuario ya autenticado → redirección.
-* Intento de `role=admin` → forzado a `vendor`.
-* Exceso de intentos → 429.
+* Usuario ya autenticado que invoca el endpoint → 409 / redirección.
+* Intento de registrar `role=admin` o `role=organizer` → backend fuerza `vendor`.
+* Bot sin captcha → 400 `VALIDATION_ERROR` con `details[].field = "captchaToken"`.
+* Exceso de intentos desde misma IP → 429 `RATE_LIMIT_EXCEEDED` (5 registros / IP / 10 min según Doc 19 §10).
 
 ---
 
@@ -301,11 +340,11 @@ This story does not invoke AI directly.
 
 | ID    | Scenario                  | Expected Result        |
 | ----- | ------------------------- | ---------------------- |
-| NT-01 | Email duplicado           | 409 genérico           |
-| NT-02 | Captcha inválido          | 400                    |
-| NT-03 | Contraseña débil          | 400                    |
-| NT-04 | Intento de role=admin     | Forzado a vendor       |
-| NT-05 | Rate limit excedido       | 429                    |
+| NT-01 | Email duplicado           | 409 `EMAIL_TAKEN`; UI muestra mensaje neutro |
+| NT-02 | Captcha inválido / expirado | 400 `VALIDATION_ERROR` (field `captchaToken`) |
+| NT-03 | Contraseña débil          | 400 `VALIDATION_ERROR` |
+| NT-04 | Intento de `role=admin` o `role=organizer` | Backend fuerza `vendor`; nunca admin/organizer |
+| NT-05 | Rate limit excedido       | 429 `RATE_LIMIT_EXCEEDED` |
 
 ### AI Tests
 
@@ -385,7 +424,8 @@ Not applicable for this story.
 * [x] UX states identificados.
 * [x] API definida.
 * [x] Test scenarios definidos.
-* [ ] PO/BA validó.
+* [x] Decisiones PO/BA aplicadas y trazadas (ver sección PO/BA Decisions Applied).
+* [ ] PO/BA validó la story (pendiente del Approval Gate).
 
 ---
 
@@ -405,4 +445,6 @@ Not applicable for this story.
 ## 📝 Notes
 
 * Tras esta historia, el proveedor debe ir a US-040 (crear VendorProfile) y luego ser aprobado en US-074.
-* Confirmar con PO si conviene exigir nombre comercial vs. nombre de persona en registro.
+* Decisión aplicada: el registro captura nombre comercial (`business_name` futuro del `VendorProfile`); el `User.name` persistido espeja el nombre comercial hasta que el proveedor diferencie nombre de contacto en US-040.
+* Endpoint estructuralmente idéntico al de US-001 (organizador), salvo por el `role=vendor` derivado del parámetro `role` en query/payload (siempre forzado en backend).
+* Documentation alignment menor (no bloqueante): la versión previa de la US referenciaba `CAPTCHA_INVALID`; se realineó al catálogo estándar de Doc 16 (`VALIDATION_ERROR` + `field='captchaToken'`).

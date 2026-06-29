@@ -1,28 +1,32 @@
-# 🧾 User Story: Admin oculta/elimina (soft) reseña con auditoría
+# 🧾 User Story: Admin hide/remove reseña con AdminAction + denormalize atómico (soft delete)
 
 ## 🆔 Metadata
 
-| Field              | Value                                |
-| ------------------ | ------------------------------------ |
-| ID                 | US-067                               |
-| Epic               | EPIC-REV-001                          |
-| Feature            | Moderación de reseñas                |
-| Module / Domain    | Reviews / Admin                      |
-| User Role          | Admin                                |
-| Priority           | Must Have                            |
-| Status             | Draft                                |
-| Owner              | Product Owner / Business Analyst     |
-| Sprint / Milestone | MVP                                  |
-| Created Date       | 2026-06-09                           |
-| Last Updated       | 2026-06-09                           |
+| Field | Value |
+|---|---|
+| ID | US-067 |
+| Backlog Item | PB-P1-040 — Moderación admin de reseñas (soft delete) |
+| Epic | EPIC-REV-001 — Reviews & Moderation |
+| Feature | Endpoint admin `POST /admin/reviews/:id/moderate` con AdminAction + recálculo denormalize |
+| Module / Domain | Reviews / Admin |
+| User Role | Admin |
+| Priority | Must Have |
+| Status | Approved |
+| Owner | Product Owner / Business Analyst |
+| Sprint / Milestone | MVP |
+| Created Date | 2026-06-09 |
+| Last Updated | 2026-06-28 |
+| Approved By | PO/BA Review |
+| Approval Date | 2026-06-28 |
+| Ready for Development Tasks | Yes |
 
 ---
 
 ## 🎯 User Story
 
 **As an** administrador
-**I want** ocultar o eliminar (soft) una reseña con motivo
-**So that** modere contenido inadecuado con auditoría completa (Decisión PO 8.1 #11)
+**I want** ocultar (`hidden`) o eliminar suavemente (`removed`) una reseña con motivo, registrando AdminAction y recalculando atómicamente el rating del VendorProfile
+**So that** modere contenido inadecuado con auditoría completa y trazabilidad (Decisión PO 8.1 #11 + FR-REVIEW-004)
 
 ---
 
@@ -30,322 +34,322 @@
 
 ### Context Summary
 
-Soft delete con `status='removed' | 'hidden'`. AdminAction obligatorio.
+US-067 cierra EPIC-REV-001 con moderación manual de admin (FR-REVIEW-009 prohibe IA). Aplica soft delete (FR-REVIEW-005 prohibe hard delete). El cambio de status dispara recálculo total de `vendor_profiles.rating_avg/reviews_count` (BR-REVIEW-009 + FR-VENDOR-013) excluyendo `hidden`/`removed`. AdminAction obligatorio (BR-ADMIN-011). Sin Notifications al organizer/vendor en MVP.
+
+### PO/BA Decisions Applied
+
+| # | Decisión |
+|---|---|
+| D1 | `hidden`: oculto al público, visible al admin (reversible). `removed`: soft delete final visible solo al admin. Ambos excluidos del denormalize. |
+| D2 | Transiciones permitidas: `published→hidden`, `published→removed`, `hidden→removed`. Otros ⇒ `409 INVALID_TRANSITION`. |
+| D3 | Migración menor: añadir `moderated_by`, `moderated_at`, `moderation_reason`, `admin_action_id` en `reviews`. |
+| D4 | `prisma.$transaction`: UPDATE review + INSERT AdminAction + UPDATE review.admin_action_id + recálculo denormalize VendorProfile + log. |
+| D5 | Reason `[10..500]` chars. |
+| D6 | `404 REVIEW_NOT_FOUND` uniforme. |
+| D7 | Sin notif organizer/vendor en MVP. |
+| D8 | AdminAction shape: `{admin_id, target_type='review', target_id, action: 'hide'|'remove', reason, payload?}`. |
+| D9 | Body: `{action, reason}` con DTO `.strict()`. |
 
 ### Related Domain Concepts
 
-* Review moderation.
-* AdminAction.
+* `reviews.status ∈ {published, hidden, removed, deleted}` (last cuatro estados).
+* Audit fields en `reviews`.
+* AdminAction record obligatorio.
+* Recálculo cross-domain de VendorProfile.
 
 ### Assumptions
 
-* Sin notif al organizador en MVP.
+* US-065 entregó review schema + denormalize.
+* `admin_actions` table existe (PB-P0-001).
+* `users.role='admin'` enforcement.
 
 ### Dependencies
 
-* US-065.
+* US-065 (creación review + denormalize), PB-P0-001 (schemas).
 
 ---
 
 ## 🔗 Traceability
 
-| Source                 | Reference                          |
-| ---------------------- | ---------------------------------- |
-| FRD Requirement(s)     | FR-REVIEW-003                       |
-| Use Case(s)            | UC-REVIEW-003                      |
-| Business Rule(s)       | BR-REVIEW-005, BR-ADMIN-011         |
-| Permission Rule(s)     | Admin                              |
-| Data Entity / Entities | Review, AdminAction                 |
-| API Endpoint(s)        | POST /api/v1/admin/reviews/:id/moderate |
-| NFR Reference(s)       | NFR-OBS-001                        |
-| Related ADR(s)         | ADR-SEC-002                        |
-| Related Document(s)    | /docs/8.1 (#11)                    |
+| Source | Reference |
+|---|---|
+| FRD Requirement(s) | FR-REVIEW-004, FR-REVIEW-005, FR-REVIEW-009, FR-ADMIN-005, FR-VENDOR-013 |
+| Use Case(s) | UC-REVIEW-003, UC-ADMIN-008 |
+| Business Rule(s) | BR-REVIEW-005, BR-REVIEW-006, BR-REVIEW-009, BR-ADMIN-003, BR-ADMIN-011 |
+| Permission Rule(s) | Admin only |
+| Data Entity / Entities | Review, AdminAction, VendorProfile, User |
+| API Endpoint(s) | POST /api/v1/admin/reviews/:id/moderate |
+| NFR Reference(s) | NFR-OBS-005 |
+| Related ADR(s) | ADR-SEC-002 |
+| Related Document(s) | /docs/4 §BR-REVIEW-005/BR-ADMIN-003/011, /docs/8 §UC-REVIEW-003, /docs/9 §FR-REVIEW-004/005/009/FR-ADMIN-005, /docs/8.1 #11 |
 
 ---
 
 ## 🧭 Scope Guardrails
 
 ### MVP Scope
-
-* Scope Classification: In Scope
-* MVP Relevance: Must Have
+* In Scope
+* Must Have
 
 ### Explicitly Out of Scope
-
-* Moderación IA.
+* Moderación automática IA (FR-REVIEW-009).
+* Hard delete (FR-REVIEW-005).
+* Notif al organizer/vendor MVP.
+* Rollback de moderación (US-077 si aplica).
+* Bulk moderation.
+* Moderation queue automática.
 
 ### Scope Notes
-
-* Manual.
+* Manual + auditado.
 
 ---
 
 ## ✅ Acceptance Criteria
 
-## 🎯 Happy Path
+### AC-01: Hide con AdminAction + denormalize
+**Given** admin autenticado, review `published`, body `{action: 'hide', reason: 'Contenido inapropiado verificado.'}`
+**When** `POST /api/v1/admin/reviews/:id/moderate`
+**Then** en `prisma.$transaction`:
+- UPDATE review SET `status='hidden', moderated_by, moderated_at, moderation_reason`,
+- INSERT AdminAction con action='hide',
+- UPDATE review.admin_action_id,
+- recálculo `vendor_profiles.rating_avg/reviews_count` (solo published),
+- log `review.moderated`,
+- responde `200 OK` con `{id, status, moderated_at, moderated_by, admin_action_id}`.
 
-### AC-01: Ocultar
+### AC-02: Remove con AdminAction + denormalize
+**Given** review `published`, body `{action: 'remove', reason: '...'}`
+**When** se ejecuta
+**Then** status=`removed` + idem AC-01.
 
-**Given** review visible
-**When** admin oculta con motivo
-**Then** `status='hidden'`, AdminAction registrada.
+### AC-03: Hidden → Removed (transición permitida)
+**Given** review `hidden`, body `{action: 'remove', ...}`
+**When** se ejecuta
+**Then** status pasa a `removed` + AdminAction nueva.
 
-### AC-02: Eliminar (soft)
-
-**Given** review visible
-**When** admin elimina con motivo
-**Then** `status='removed'`, AdminAction.
+### AC-04: Denormalize correcto excluye hidden/removed
+**Given** vendor con 5 reviews `published` (avg=4.0) y se modera una con rating=5
+**When** UPDATE
+**Then** `vendor_profiles.rating_avg` recalculado sobre 4 reviews restantes.
 
 ---
 
 ## ⚠️ Edge Cases
 
-### EC-01: Ya removed
+### EC-01: Review ya `removed`
+**Given** status `removed`, intenta nueva acción
+**When** se valida transición
+**Then** `409 INVALID_TRANSITION` con `details.from='removed'`. AdminAction NO se crea.
 
-**Given** removed
-**When** intenta
-**Then** 409.
+### EC-02: Transición inválida (removed→hidden, removed→published, etc.)
+**Given** transiciones fuera de D2
+**When** se valida
+**Then** `409 INVALID_TRANSITION` con `details.from` + `details.to`.
 
-#### Handling
+### EC-03: Reason demasiado corto/largo
+**Given** `reason.length < 10` o `> 500`
+**When** se valida
+**Then** `400 INVALID_REASON_LENGTH`.
 
-* State machine.
+### EC-04: Review inexistente o UUID malformado
+* `400 INVALID_UUID`.
+* `404 REVIEW_NOT_FOUND`.
+
+### EC-05: Body con action inválido
+**Given** `action='delete'` o cualquier otro
+**When** se valida
+**Then** `400 INVALID_ACTION`.
 
 ---
 
 ## 🚫 Validation Rules
 
-| ID    | Rule                            | Message / Behavior          |
-| ----- | ------------------------------- | --------------------------- |
-| VR-01 | Motivo obligatorio              | 400                         |
-| VR-02 | Status válido                   | 400                         |
+| ID | Rule | Behavior |
+|---|---|---|
+| VR-01 | `:id` UUID válido | `400 INVALID_UUID` |
+| VR-02 | `action ∈ {hide, remove}` | `400 INVALID_ACTION` |
+| VR-03 | `reason` length [10..500] | `400 INVALID_REASON_LENGTH` |
+| VR-04 | DTO `.strict()` | `400 INVALID_BODY` |
+| VR-05 | Review existe | `404 REVIEW_NOT_FOUND` |
+| VR-06 | Transición permitida (D2) | `409 INVALID_TRANSITION` |
+| VR-07 | Admin role | `403` |
 
 ---
 
 ## 🔐 Authorization & Security Rules
 
-| ID     | Rule                                                                |
-| ------ | ------------------------------------------------------------------- |
-| SEC-01 | Admin only.                                                         |
-| SEC-02 | AdminAction obligatoria.                                             |
+| ID | Rule |
+|---|---|
+| SEC-01 | Sesión `admin` |
+| SEC-02 | AdminAction obligatoria (BR-ADMIN-011) |
+| SEC-03 | Soft delete; sin hard delete (FR-REVIEW-005) |
+| SEC-04 | Sin AI moderation (FR-REVIEW-009) |
+| SEC-05 | `404 REVIEW_NOT_FOUND` uniforme |
+| SEC-06 | Reason debe ser informativa ([10..500]) |
 
 ### Negative Authorization Scenarios
-
-* No admin → 403.
+* Sin sesión → 401; organizer/vendor → 403.
 
 ---
 
 ## 🤖 AI Behavior
 
-This story does not invoke AI directly.
-
-### AI Involvement
+This story does not invoke AI directly. FR-REVIEW-009 prohibe explícitamente moderación automática IA.
 
 * AI Feature: None
 * Provider Layer: Not applicable
-* Human Validation Required: Not applicable
-* Persist AIRecommendation: No
-* Fallback Required: Not applicable
-
-### AI Input
-
-* Not applicable for this story.
-
-### AI Output
-
-* Not applicable for this story.
-
-### Human-in-the-loop Rules
-
-* Not applicable for this story.
-
-### AI Error / Fallback Behavior
-
-* Not applicable for this story.
+* AI Input/Output/HITL/Fallback: Not applicable
 
 ---
 
 ## 🎨 UX / UI Notes
 
-| Area                | Notes                                  |
-| ------------------- | -------------------------------------- |
-| Screen / Route      | `/[locale]/admin/reviews`               |
-| Main UI Pattern     | Lista + diálogo motivo                   |
-| Primary Action      | Moderar                                 |
-| Secondary Actions   | Cancelar                                |
-| Empty State         | "Sin reseñas por moderar"               |
-| Loading State       | Skeleton                                |
-| Error State         | Banner                                  |
-| Success State       | Toast                                   |
-| Accessibility Notes | Modal accesible                          |
-| Responsive Notes    | Mobile-first                            |
-| i18n Notes          | 4 locales                              |
-| Currency Notes      | No aplica                              |
+| Area | Notes |
+|---|---|
+| Screen / Route | `/[locale]/admin/reviews` (lista) + modal por acción |
+| Main UI Pattern | `ReviewModerationTable` (lista paginada con filter por status) + `ModerationDialog` (acción + reason) |
+| Primary Action | "Ocultar" / "Eliminar" según contexto |
+| Secondary Actions | "Cancelar" |
+| Empty State | "No hay reseñas en este estado" |
+| Loading State | Skeleton |
+| Error State | Banner i18n por código |
+| Success State | Toast + actualización de la tabla |
+| Accessibility | Modal `role="dialog"` con focus trap; textarea con label |
+| Responsive | Mobile-first |
+| i18n | 4 locales (`admin.review.moderate.*`) |
+| Currency | No aplica |
 
 ---
 
 ## 🛠 Technical Notes
 
 ### Frontend
-
-* Route / Page:
-
-  * `/[locale]/admin/reviews`
-* Components:
-
-  * `ReviewModerationTable`, `ModerationDialog`
-* State Management:
-
-  * TanStack
-* Forms:
-
-  * RHF
-* API Client:
-
-  * `adminApi.review.moderate`
+* Components: `ReviewModerationTable`, `ModerationDialog`.
+* State: TanStack mutation + invalidación de queries de reviews list.
+* Forms: RHF + Zod alineado.
+* API: `adminApi.review.moderate(id, {action, reason})`.
 
 ### Backend
-
-* Use Case / Service:
-
-  * `ModerateReviewUseCase`
-* Controller / Route:
-
-  * `POST /api/v1/admin/reviews/:id/moderate`
-* Authorization Policy:
-
-  * Admin
-* Validation:
-
-  * Zod
-* Transaction Required:
-
-  * Sí
+* Use Case: `ModerateReviewUseCase` con `prisma.$transaction`.
+* Controller / Route: `POST /api/v1/admin/reviews/:id/moderate`.
+* Authorization: admin guard.
+* Validation: Zod `.strict()`.
+* Transaction: Sí.
 
 ### Database
-
-* Main Tables:
-
-  * `reviews`, `admin_actions`
-* Constraints:
-
-  * Soft delete
-* Index Considerations:
-
-  * Por status
+* Tablas: `reviews` (update), `admin_actions` (insert), `vendor_profiles` (update denormalize).
+* Migración menor: 4 columnas audit en `reviews`.
 
 ### API
 
-| Method | Endpoint                                            | Purpose             |
-| ------ | --------------------------------------------------- | ------------------- |
-| POST   | `/api/v1/admin/reviews/:id/moderate`                | Moderar reseña      |
+| Method | Endpoint | Purpose |
+|---|---|---|
+| POST | `/api/v1/admin/reviews/:id/moderate` | Hide o remove review con audit + denormalize |
 
-### Observability / Audit
+#### Request body
+```json
+{ "action": "hide", "reason": "Contenido inapropiado verificado." }
+```
 
-* Correlation ID Required: Yes
-* Log Event Required: Yes
-* AdminAction Required: Yes
-* AIRecommendation Required: No
+#### Response 200
+```json
+{
+  "id": "<uuid>",
+  "status": "hidden",
+  "moderated_at": "2026-...",
+  "moderated_by": "<uuid>",
+  "moderation_reason": "Contenido inapropiado verificado.",
+  "admin_action_id": "<uuid>"
+}
+```
+
+### Observability
+* Correlation ID: Yes
+* Log Event: Yes (`review.moderated` con `action, reviewId, adminUserId, fromStatus, toStatus`).
+* AdminAction: Yes (obligatoria).
 
 ---
 
 ## 🧪 Test Scenarios
 
-### Functional Tests
+### Functional
+| ID | Scenario | Type |
+|---|---|---|
+| TS-01 | Hide published ⇒ status hidden + AdminAction + denormalize | Integration |
+| TS-02 | Remove published ⇒ status removed + AdminAction + denormalize | Integration |
+| TS-03 | Hidden → Removed permitido | Integration |
+| TS-04 | Denormalize excluye hidden/removed correctamente | Integration |
+| TS-05 | Regresión US-065/066: creación + listado siguen funcionando | Integration |
 
-| ID    | Scenario                          | Type        |
-| ----- | --------------------------------- | ----------- |
-| TS-01 | Hide registra AdminAction         | Integration |
-| TS-02 | Remove registra AdminAction        | Integration |
-
-### Negative Tests
-
-| ID    | Scenario                              | Expected Result          |
-| ----- | ------------------------------------- | ------------------------ |
-| NT-01 | Sin motivo                            | 400                      |
-| NT-02 | No admin                              | 403                      |
+### Negative
+| ID | Scenario | Expected |
+|---|---|---|
+| NT-01 | Review removed → cualquier acción | `409 INVALID_TRANSITION` |
+| NT-02 | Reason < 10 chars | `400 INVALID_REASON_LENGTH` |
+| NT-03 | Reason > 500 chars | `400 INVALID_REASON_LENGTH` |
+| NT-04 | Action inválido | `400 INVALID_ACTION` |
+| NT-05 | UUID malformado | `400 INVALID_UUID` |
+| NT-06 | Review inexistente | `404 REVIEW_NOT_FOUND` |
+| NT-07 | Sin sesión | `401` |
+| NT-08 | Organizer/Vendor | `403` |
+| NT-09 | Body con campos extra | `400 INVALID_BODY` |
 
 ### AI Tests
-
 Not applicable for this story.
 
-### Authorization Tests
+### Authorization
+| ID | Scenario | Expected |
+|---|---|---|
+| AUTH-TS-01 | Admin | 200 |
+| AUTH-TS-02 | Organizer | 403 |
+| AUTH-TS-03 | Vendor | 403 |
+| AUTH-TS-04 | Sin sesión | 401 |
 
-| ID         | Scenario           | Expected Result |
-| ---------- | ------------------ | --------------- |
-| AUTH-TS-01 | Admin              | 200             |
+### Accessibility
+* Dialog accesible con focus trap.
 
-### Accessibility Tests
-
-* Modal accesible.
+### Performance
+* `< 500ms` p95.
 
 ---
 
 ## 📊 Business Impact
 
-| Field               | Value                                                |
-| ------------------- | ---------------------------------------------------- |
-| KPI Affected        | Calidad del catálogo                                 |
-| Expected Impact     | Confianza                                            |
-| Success Criteria    | 100% acciones auditadas                              |
-| Academic Demo Value | Gobernanza admin                                      |
+| Field | Value |
+|---|---|
+| KPI Affected | Calidad del catálogo + gobernanza |
+| Expected Impact | Contenido inadecuado moderado con audit completa |
+| Success Criteria | 100% acciones registradas en AdminAction + denormalize coherente |
+| Academic Demo Value | Cierre del epic con governance admin |
 
 ---
 
 ## 🧩 Task Breakdown Readiness
 
-### Potential Frontend Tasks
-
-* Tabla + diálogo.
-
-### Potential Backend Tasks
-
-* Use case con AdminAction.
-
-### Potential Database Tasks
-
-* Soft delete.
-
-### Potential AI / PromptOps Tasks
-
-* Not applicable for this story.
-
-### Potential QA Tasks
-
-* Tests + auditoría.
-
-### Potential DevOps / Config Tasks
-
-* Not applicable for this story.
+* FE: `ReviewModerationTable` + `ModerationDialog` + i18n.
+* BE: DTO + UseCase atómico + Controller + Logger + AdminGuard.
+* DB: Verificar/migrar audit columns.
+* QA: UT, IT (denormalize + regresión + AdminAction), AUTH, A11Y, Security (FR-REVIEW-005/009).
 
 ---
 
 ## ✅ Definition of Ready
-
-* [x] Rol claro.
-* [x] Goal/valor claros.
-* [x] FRD/UC/BR enlazados.
-* [x] Permisos identificados.
-* [x] Entidades listadas.
-* [x] AC en GWT.
-* [x] Edge cases documentados.
-* [x] Validación clara.
-* [x] Out of Scope explícito.
-* [x] Dependencias conocidas.
-* [x] UX states identificados.
-* [x] API definida.
-* [x] Tests definidos.
-* [ ] PO/BA validó.
+* [x] Rol, goal, FRD/UC/BR, permisos, entidades, AC GWT, edge cases, validación, out of scope, deps, UX, API, tests.
+* [x] PO/BA validó.
 
 ---
 
 ## 🏁 Definition of Done
-
-* [ ] Funcional con auditoría.
-* [ ] Tests verdes.
-* [ ] PO valida.
+* [ ] Endpoint funcional con AdminAction + denormalize.
+* [ ] Audit columns persistidos.
+* [ ] Transiciones validadas.
+* [ ] Tests verdes + regresión US-065/066.
+* [ ] i18n 4 locales.
 
 ---
 
 ## 📝 Notes
 
-* Confirmar mensaje a vendor/organizador.
+* Sin notif al organizer/vendor (Decisión PO no lo obliga; podrá agregarse post-MVP).
+* US-077 podrá manejar rollback de moderación si aplica.
+* Documentation Alignment Required (no bloqueantes) en `management/user-stories/decision-resolutions/US-067-decision-resolution.md`.

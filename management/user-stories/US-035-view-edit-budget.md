@@ -1,28 +1,32 @@
-# 🧾 User Story: Ver y editar mi presupuesto
+# 🧾 User Story: Ver mi presupuesto
 
 ## 🆔 Metadata
 
-| Field              | Value                                |
-| ------------------ | ------------------------------------ |
-| ID                 | US-035                               |
-| Epic               | EPIC-BUD-001 — Budget Management & Currency |
-| Feature            | Vista y edición del presupuesto       |
-| Module / Domain    | Budget                               |
-| User Role          | Organizer                            |
-| Priority           | Must Have                            |
-| Status             | Draft                                |
-| Owner              | Product Owner / Business Analyst     |
-| Sprint / Milestone | MVP                                  |
-| Created Date       | 2026-06-09                           |
-| Last Updated       | 2026-06-09                           |
+| Field              | Value                                              |
+| ------------------ | -------------------------------------------------- |
+| ID                 | US-035                                             |
+| Epic               | EPIC-BUD-001 — Budget Management & Currency        |
+| Backlog Item       | PB-P1-020                                          |
+| Feature            | Vista del presupuesto del evento                    |
+| Module / Domain    | Budget                                             |
+| User Role          | Organizer                                          |
+| Priority           | Must Have                                          |
+| Status             | Approved with Minor Notes                          |
+| Owner              | Product Owner / Business Analyst                   |
+| Approved By        | PO/BA Review                                       |
+| Approval Date      | 2026-06-27                                         |
+| Ready for Development Tasks | Yes                                       |
+| Sprint / Milestone | MVP                                                |
+| Created Date       | 2026-06-09                                         |
+| Last Updated       | 2026-06-27                                         |
 
 ---
 
 ## 🎯 User Story
 
 **As an** organizador
-**I want** ver y editar mi presupuesto del evento
-**So that** controle mis costos por categoría y vea planned vs committed
+**I want** ver el estado integral de mi presupuesto por categoría
+**So that** entienda en un vistazo planned vs committed vs paid y detecte excesos de compromiso
 
 ---
 
@@ -30,35 +34,54 @@
 
 ### Context Summary
 
-Cada evento tiene un `Budget` 1:1 con `BudgetItem` por categoría. Moneda inmutable.
+US-035 entrega la **vista** de `UC-BUDGET-003 — Ver presupuesto con warning de exceso`. El backend calcula los totales derivados (`BR-BUDGET-003`: `total = SUM(BudgetItem.planned)`, `committed = SUM(BudgetItem.committed)`), normaliza `paid null → 0`, y expone el flag `over_committed` (`BR-BUDGET-004`/`FR-BUDGET-005`). La UI consume el response y muestra resumen + tabla por categoría sin recalcular el flag localmente. Todas las mutaciones (CRUD de `BudgetItem`) se delegan a US-036; la sugerencia IA, a US-037.
 
 ### Related Domain Concepts
 
-* Budget, BudgetItem.
+* `Budget` (1:1 con `Event`), `BudgetItem` (por categoría), `ServiceCategory`.
+* Moneda heredada del evento (`BR-BUDGET-006`); inmutable post-creación (`BR-EVENT-007`).
+* `committed` se sincroniza vía `BookingIntent` (`BR-BUDGET-005`, US-038/US-039); fuera del alcance de esta US.
 
 ### Assumptions
 
-* `committed` se actualiza vía BookingIntent.
+* `paid` permanece nullable en BD (`BR-BUDGET-002`); el backend normaliza a `0` en el response.
+* `total_planned` y `total_committed` pueden mantenerse materializados o calcularse en vivo; decisión del Tech Spec, ambas alternativas compatibles con D1.
+* La UI NO recalcula `over_committed`; lee el flag server-side.
 
 ### Dependencies
 
-* US-009.
+* US-009 — creación del evento (provee `event_id` y moneda).
+* US-036 — CRUD de BudgetItem (consumidor de los deeplinks de mutación de esta vista).
+* US-037 — sugerencia IA de presupuesto (opcional; CTA condicionado por feature flag).
+* PB-P1-020 — backlog item padre (Gestión de presupuesto + BudgetItems).
+* PB-P1-016 — HITL para aceptar sugerencias IA (upstream de items con `ai_generated=true`).
+
+### PO/BA Decisions Applied
+
+| ID | Decisión                                                                                                                                                                                                                                                                                  | Resolución |
+| -- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| D1 | Alcance solo vista                                                                                                                                                                                                                                                                       | US-035 expone únicamente `GET /api/v1/events/:eventId/budget`. No introduce PATCH/POST/DELETE. AC-02 "Editar total" se elimina (viola `BR-BUDGET-003` y `docs/16 §M06`). Mutaciones delegadas a US-036. |
+| D2 | CTA "Sugerir IA"                                                                                                                                                                                                                                                                          | Empty State expone deeplink a US-037 (PB-P1-013) condicionado por feature flag `ai.budget-suggestion.enabled`. US-035 NO invoca IA.                                                                  |
+| D3 | Columna `paid` opcional                                                                                                                                                                                                                                                                  | Columna `paid` siempre visible. Backend normaliza `null → 0`. `summary.paid_total = SUM(paid)`. Persistencia BD permanece nullable.                                                                  |
+| D4 | Flag `over_committed`                                                                                                                                                                                                                                                                      | Calculado server-side en `GetBudgetUseCase`. Expuesto en `summary.over_committed: boolean`. La UI lee sin recalcular.                                                                                  |
+
+Referencia completa: `management/user-stories/decision-resolutions/US-035-decision-resolution.md`.
 
 ---
 
 ## 🔗 Traceability
 
-| Source                 | Reference                          |
-| ---------------------- | ---------------------------------- |
-| FRD Requirement(s)     | FR-BUDGET-001, FR-BUDGET-002        |
-| Use Case(s)            | UC-BUDGET-001                      |
-| Business Rule(s)       | BR-BUDGET-001, BR-BUDGET-002        |
-| Permission Rule(s)     | Ownership                          |
-| Data Entity / Entities | Budget, BudgetItem                  |
-| API Endpoint(s)        | GET/PATCH /api/v1/events/:id/budget |
-| NFR Reference(s)       | NFR-PERF-API-001                   |
-| Related ADR(s)         | —                                  |
-| Related Document(s)    | /docs/8                            |
+| Source                 | Reference                                                                                                                                                                                                                              |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FRD Requirement(s)     | FR-BUDGET-001 (1:1) · FR-BUDGET-004 (cálculo en vivo) · FR-BUDGET-005 (warning) · FR-BUDGET-007 (sin conversión FX) · FR-BUDGET-010 (visualización con moneda)                                                                            |
+| Use Case(s)            | UC-BUDGET-003 (Ver presupuesto con warning de exceso)                                                                                                                                                                                  |
+| Business Rule(s)       | BR-BUDGET-001 · BR-BUDGET-002 · BR-BUDGET-003 · BR-BUDGET-004 · BR-BUDGET-006 · BR-BUDGET-007 · BR-BUDGET-010                                                                                                                            |
+| Permission Rule(s)     | Ownership (`Event.owner_id = currentUser.id`) · `OrganizerRoleGuard` · `adminExclusionGuard`                                                                                                                                            |
+| Data Entity / Entities | `Budget` · `BudgetItem` · `ServiceCategory` (para `category_name`)                                                                                                                                                                       |
+| API Endpoint(s)        | `GET /api/v1/events/:eventId/budget` (única ruta; mutaciones viven en US-036)                                                                                                                                                            |
+| NFR Reference(s)       | NFR-PERF-001 (P95 < 1.5 s endpoints no-IA)                                                                                                                                                                                              |
+| Related ADR(s)         | —                                                                                                                                                                                                                                      |
+| Related Document(s)    | `/docs/4 §BR-BUDGET-001..010` · `/docs/6 §Budget §BudgetItem` · `/docs/8 §UC-BUDGET-003` · `/docs/9 §FR-BUDGET-001..010` · `/docs/10 §NFR-PERF-001` · `/docs/16 §M06` · `management/user-stories/US-036-crud-budget-items.md`                |
 
 ---
 
@@ -71,12 +94,19 @@ Cada evento tiene un `Budget` 1:1 con `BudgetItem` por categoría. Moneda inmuta
 
 ### Explicitly Out of Scope
 
-* Multi-moneda.
-* Conversión FX.
+* `PATCH /api/v1/events/:eventId/budget` (descartado; viola `BR-BUDGET-003` y `docs/16 §M06`).
+* CRUD de BudgetItem (cubierto por US-036).
+* Generación IA de presupuesto (US-037).
+* Multi-moneda y conversión FX (`BR-BUDGET-007`).
+* Cambio de moneda (`BR-BUDGET-006`: inmutable).
+* Edición de `paid` (futuro o vía US-036).
+* Gráficos avanzados (tendencias, comparativos por sprint).
 
 ### Scope Notes
 
-* Moneda inmutable.
+* Solo lectura: una única ruta `GET /api/v1/events/:eventId/budget`.
+* La UI expone deeplinks a US-036 (CRUD) y, condicionalmente, a US-037 (sugerencia IA).
+* El cálculo de `over_committed` es server-side; la UI no recalcula.
 
 ---
 
@@ -84,52 +114,151 @@ Cada evento tiene un `Budget` 1:1 con `BudgetItem` por categoría. Moneda inmuta
 
 ## 🎯 Happy Path
 
-### AC-01: Ver presupuesto
+### AC-01: Vista canónica del presupuesto
 
-**Given** evento con budget
-**When** abre la vista
-**Then** ve total, planned, committed por categoría.
+**Given** un organizador autenticado dueño de un evento con `Budget` y al menos un `BudgetItem`
+**When** consulta `GET /api/v1/events/:eventId/budget`
+**Then** recibe un response 200 con `summary` (totales derivados, `currency_code`, `over_committed`) y `items[]` por categoría con campos `category_name`, `planned`, `committed`, `paid`, `ai_generated`. La UI renderiza tabla + resumen, todos los montos en moneda del evento formateados con `Intl.NumberFormat({ style: 'currency', currency: summary.currency_code })`.
 
-### AC-02: Editar total
+### AC-02 (eliminada)
 
-**Given** budget existente
-**When** PATCH `total`
-**Then** se actualiza; warning si committed > nuevo total.
+> **Eliminada por D1** — "Editar total" contradice `BR-BUDGET-003` y `docs/16 §M06`. Las mutaciones pertenecen a US-036.
+
+### AC-03: Warning visible de exceso
+
+**Given** un evento donde `summary.over_committed = true`
+**When** el frontend renderiza la vista
+**Then** muestra un banner accesible (`role="alert"` o `aria-live="polite"`) no bloqueante en la sección de resumen con copy localizado (`budget.overcommit_warning`). El warning NO bloquea ninguna interacción (FR-BUDGET-005, AC-BUDGET-001).
+
+### AC-04: Shape canónico del response
+
+**Given** una respuesta exitosa de `GET /api/v1/events/:eventId/budget`
+**When** el cliente lee el payload
+**Then** encuentra:
+
+```json
+{
+  "summary": {
+    "total_planned": 12500.00,
+    "total_committed": 9800.00,
+    "paid_total": 4200.00,
+    "over_committed": false,
+    "currency_code": "USD"
+  },
+  "items": [
+    {
+      "id": "uuid",
+      "service_category_id": "uuid",
+      "category_name": "Catering",
+      "planned": 4500.00,
+      "committed": 3800.00,
+      "paid": 1500.00,
+      "ai_generated": true
+    }
+  ]
+}
+```
+
+`paid` siempre presente (`>= 0`); cuando en BD es `NULL`, el backend lo serializa como `0`.
+
+### AC-05: i18n y currency formatting CLDR
+
+**Given** un cliente que envía `Accept-Language` ∈ `{es-LATAM, es-ES, pt, en}` (default `es-LATAM`)
+**When** la UI renderiza summary y tabla
+**Then** todas las etiquetas localizables (`budget.label`, `budget.column.planned`, `budget.column.committed`, `budget.column.paid`, `budget.overcommit_warning`, `budget.empty_cta_create`, `budget.empty_cta_ai`) se obtienen del catálogo i18n. Los montos se formatean con `Intl.NumberFormat(locale, { style: 'currency', currency: summary.currency_code })`. No se aplica conversión automática de moneda (`BR-BUDGET-007`).
+
+### AC-06: Independencia del cálculo respecto a `event.status`
+
+**Given** un evento en estado `draft`, `active`, `cancelled` o `completed`
+**When** el dueño consulta el endpoint
+**Then** el cálculo (`summary`, `items[]`) no se ramifica por estado del evento. La autorización 200/401/403/404 tampoco depende del estado. La UI muestra banners read-only para `cancelled`/`completed` (heredados de US-014/US-015).
+
+### AC-07: Performance
+
+**Given** un evento con 30 `BudgetItem` y registros de seed estándar
+**When** se mide el endpoint bajo condiciones normales de demo
+**Then** el P95 del response (incluyendo cálculo del `summary`) se mantiene < 1.5 s (`NFR-PERF-001`).
+
+### AC-08: Accesibilidad de tabla y warning
+
+**Given** la vista renderizada
+**When** un screen reader o axe revisa la página
+**Then** la tabla expone `role="table"`, `<caption>` localizado, encabezados `<th scope="col">`, contraste ≥ AA en el banner de warning y orden de tabulación coherente. Skeleton expone `aria-busy="true"` durante la carga.
 
 ---
 
 ## ⚠️ Edge Cases
 
-### EC-01: Sin budget
+### EC-01: Sin BudgetItems (Empty State)
 
-**Given** evento sin BudgetItems
-**When** abre la vista
-**Then** estado vacío con CTA "Crear primera categoría" o "Sugerir IA".
+**Given** un evento con `Budget` pero sin `BudgetItem`
+**When** se abre la vista
+**Then** se muestra Empty State con dos CTAs: "Crear primera categoría" (deeplink a US-036) y "Sugerir IA" (deeplink a US-037, condicionado por feature flag `ai.budget-suggestion.enabled`). El response devuelve `items: []` con `summary` en ceros y `over_committed: false`.
 
 #### Handling
+* Empty state localizado en 4 locales.
+* CTAs como `<Link>` (Next.js); sin invocar el endpoint de US-036 desde US-035.
 
-* Empty state.
+### EC-02: `summary.over_committed = true`
+
+**Given** un presupuesto donde `total_committed > total_planned`
+**When** se renderiza la vista
+**Then** banner visible y no bloqueante (AC-03); todas las celdas y CTAs permanecen operativos.
+
+### EC-03: Todos los items con `paid IS NULL`
+
+**Given** ningún item registró `paid`
+**When** se renderiza la tabla
+**Then** la columna `Paid` muestra `0` formateado por locale en cada fila; `summary.paid_total = 0`.
+
+### EC-04: Evento `cancelled`
+
+**Given** un evento `cancelled` con `Budget`
+**When** el dueño abre la vista
+**Then** respuesta 200 con cálculo real; la UI muestra banner read-only de cancelación (heredado de US-014 EC-01); botones de mutación deshabilitados.
+
+### EC-05: Evento `completed`
+
+**Given** un evento `completed`
+**When** el dueño abre la vista
+**Then** respuesta 200 con cálculo real; la UI muestra banner "Evento completado"; botones de mutación deshabilitados.
+
+### EC-06: Moneda inmutable
+
+**Given** un evento con `currency_code` definido durante la creación
+**When** se renderiza el encabezado
+**Then** el `currency_code` se muestra como atributo de solo lectura; ningún componente expone control de edición.
 
 ---
 
 ## 🚫 Validation Rules
 
-| ID    | Rule                            | Message / Behavior          |
-| ----- | ------------------------------- | --------------------------- |
-| VR-01 | Total ≥ 0                       | 400                         |
-| VR-02 | Moneda no editable              | Ignorada                    |
+| ID    | Rule                                                              | Message / Behavior                                                  |
+| ----- | ----------------------------------------------------------------- | ------------------------------------------------------------------- |
+| VR-01 | `eventId` debe pertenecer al organizador autenticado              | 403/404 vía `EventOwnershipPolicy` con no-revelación                |
+| VR-02 | `eventId` debe ser UUID válido                                    | 400 con esquema Zod del path param                                  |
+| VR-03 | Solicitud sin sesión válida                                       | 401                                                                 |
+| VR-04 | NO se acepta cambio de moneda en este endpoint                    | Read-only (`BR-BUDGET-006`)                                         |
+| VR-05 | UI NO recalcula `over_committed` localmente                       | Consume `summary.over_committed` server-side (D4)                   |
 
 ---
 
 ## 🔐 Authorization & Security Rules
 
-| ID     | Rule                                                                |
-| ------ | ------------------------------------------------------------------- |
-| SEC-01 | Ownership.                                                          |
+| ID     | Rule                                                                                                                                  |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| SEC-01 | Reuso de `EventOwnershipPolicy` y `OrganizerRoleGuard`. Solo el `owner` accede.                                                       |
+| SEC-02 | `adminExclusionGuard`: admin → 403. Admin consume surface auditado (US-016).                                                          |
+| SEC-03 | No-revelación 404 ante recurso ajeno.                                                                                                 |
+| SEC-04 | El estado del evento NO altera el contrato de autorización (D3 de US-033, consistencia transversal).                                  |
+| SEC-05 | Logging estructurado `budget.viewed` sin PII; montos como atributos numéricos sensibles a auditoría (`docs/19 §logging policy`).      |
 
 ### Negative Authorization Scenarios
 
-* Ajeno → 403/404.
+* Sin sesión → 401.
+* Organizer A consultando evento de Organizer B → 404 (no-revelación).
+* Vendor → 403.
+* Admin → 403 (`adminExclusionGuard`).
 
 ---
 
@@ -155,7 +284,7 @@ This story does not invoke AI directly.
 
 ### Human-in-the-loop Rules
 
-* Not applicable for this story.
+* El CTA "Sugerir IA" del Empty State es un deeplink a US-037; la generación AI-003 y su HITL viven en US-037.
 
 ### AI Error / Fallback Behavior
 
@@ -165,20 +294,26 @@ This story does not invoke AI directly.
 
 ## 🎨 UX / UI Notes
 
-| Area                | Notes                                                  |
-| ------------------- | ------------------------------------------------------ |
-| Screen / Route      | `/[locale]/organizer/events/:id/budget`                |
-| Main UI Pattern     | Tabla de items + tarjetas resumen                       |
-| Primary Action      | "Editar total"                                         |
-| Secondary Actions   | "Crear item", "Sugerir IA"                             |
-| Empty State         | CTAs                                                    |
-| Loading State       | Skeleton                                                |
-| Error State         | Banner                                                  |
-| Success State       | Vista actualizada                                       |
-| Accessibility Notes | Tabla accesible                                         |
-| Responsive Notes    | Mobile-first                                            |
-| i18n Notes          | 4 locales                                              |
-| Currency Notes      | Moneda del evento                                       |
+| Area                | Notes                                                                                                              |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Screen / Route      | `/[locale]/organizer/events/:eventId/budget`                                                                       |
+| Main UI Pattern     | Card de summary + tabla `BudgetItemsTable` por categoría + banner de warning si `over_committed`.                    |
+| Primary Action      | No aplica (visualización). Botones por fila (`Editar`, `Eliminar`) son deeplinks a US-036.                          |
+| Secondary Actions   | "Crear primera categoría" (deeplink US-036), "Sugerir IA" (deeplink US-037, condicional por feature flag).          |
+| Empty State         | `BudgetItems: []` ⇒ ilustración + copy + dos CTAs (US-036 y, condicional, US-037).                                  |
+| Loading State       | Skeleton de summary y tabla con `aria-busy="true"`; visibilidad mínima 300 ms.                                      |
+| Error State         | Banner reusable de US-014; las cards no rompen el resto del dashboard.                                              |
+| Success State       | Summary + tabla + warning condicional.                                                                              |
+| Accessibility Notes | `role="table"`, `<caption>` localizado, `<th scope="col">`, contraste AA del warning, `aria-live="polite"` opcional. |
+| Responsive Notes    | Mobile-first; tabla con scroll horizontal en breakpoints angostos.                                                   |
+| i18n Notes          | Locales: `es-LATAM` (default), `es-ES`, `pt`, `en`. Currency formatting CLDR.                                       |
+| Currency Notes      | Moneda heredada del evento (`summary.currency_code`); inmutable; sin conversión FX (`BR-BUDGET-007`).                |
+
+### UI States por Event Status
+
+* `draft` / `active`: vista completa con CTAs activos.
+* `cancelled`: banner read-only de US-014 EC-01; CTAs deshabilitados; datos visibles para auditoría.
+* `completed`: banner "Evento completado"; CTAs deshabilitados; datos visibles.
 
 ---
 
@@ -187,65 +322,75 @@ This story does not invoke AI directly.
 ### Frontend
 
 * Route / Page:
-
-  * `/[locale]/organizer/events/:id/budget`
+  * `apps/web/app/[locale]/organizer/events/[eventId]/budget/page.tsx`.
 * Components:
-
-  * `BudgetView`, `BudgetSummary`
+  * `BudgetView`, `BudgetSummary`, `BudgetItemsTable`, `OvercommitWarning`, `EmptyBudgetState`.
 * State Management:
-
-  * TanStack
+  * `useEventBudget(eventId)` con TanStack query key `['event', eventId, 'budget']`.
 * Forms:
-
-  * RHF inline
+  * No aplica (la edición vive en US-036).
 * API Client:
-
-  * `budgetApi.get`, `budgetApi.update`
+  * `budgetApi.get(eventId)` retorna `{ summary, items[] }`.
 
 ### Backend
 
 * Use Case / Service:
-
-  * `GetBudgetUseCase`, `UpdateBudgetUseCase`
+  * `GetBudgetUseCase` retorna `{ summary, items[] }`; calcula `over_committed`; normaliza `paid null → 0`.
 * Controller / Route:
-
-  * `GET /api/v1/events/:id/budget`
-  * `PATCH /api/v1/events/:id/budget`
+  * `GET /api/v1/events/:eventId/budget`.
 * Authorization Policy:
-
-  * Ownership
+  * `EventOwnershipPolicy` + `OrganizerRoleGuard` + `adminExclusionGuard`.
 * Validation:
-
-  * Zod
+  * UUID de `eventId` (Zod path param).
 * Transaction Required:
-
-  * No
+  * No (lectura).
 
 ### Database
 
 * Main Tables:
-
-  * `budget`, `budget_items`
+  * `budget` (1:1 con `events` por `event_id` único), `budget_items` (N:1 con `budget`), `service_categories` (referenciada para `category_name`).
 * Constraints:
-
-  * 1:1 con event
+  * `BR-BUDGET-001` (1:1 evento↔budget).
 * Index Considerations:
-
-  * Por `event_id`
+  * Reuso de índices existentes; ninguna migración nueva.
 
 ### API
 
-| Method | Endpoint                                  | Purpose            |
-| ------ | ----------------------------------------- | ------------------ |
-| GET    | `/api/v1/events/:id/budget`               | Ver presupuesto    |
-| PATCH  | `/api/v1/events/:id/budget`               | Editar presupuesto |
+| Method | Endpoint                              | Purpose                                                                       |
+| ------ | ------------------------------------- | ----------------------------------------------------------------------------- |
+| GET    | `/api/v1/events/:eventId/budget`       | Vista del presupuesto: summary derivado + items por categoría + flag warning.  |
+
+#### Response shape (canónico)
+
+```json
+{
+  "summary": {
+    "total_planned": 12500.00,
+    "total_committed": 9800.00,
+    "paid_total": 4200.00,
+    "over_committed": false,
+    "currency_code": "USD"
+  },
+  "items": [
+    {
+      "id": "uuid",
+      "service_category_id": "uuid",
+      "category_name": "Catering",
+      "planned": 4500.00,
+      "committed": 3800.00,
+      "paid": 1500.00,
+      "ai_generated": false
+    }
+  ]
+}
+```
 
 ### Observability / Audit
 
-* Correlation ID Required: Yes
-* Log Event Required: Yes (`budget.updated`)
-* AdminAction Required: No
-* AIRecommendation Required: No
+* Correlation ID Required: Yes.
+* Log Event Required: Sí — `budget.viewed` con `eventId`, `userId`, `currency_code`, `total_planned`, `total_committed`, `paid_total`, `over_committed`, `items_count`, `correlationId`. Sin PII.
+* AdminAction Required: No.
+* AIRecommendation Required: No.
 
 ---
 
@@ -253,17 +398,24 @@ This story does not invoke AI directly.
 
 ### Functional Tests
 
-| ID    | Scenario                          | Type        |
-| ----- | --------------------------------- | ----------- |
-| TS-01 | Ver budget completo               | API         |
-| TS-02 | Editar total                       | Integration |
+| ID    | Scenario                                                                                  | Type        |
+| ----- | ----------------------------------------------------------------------------------------- | ----------- |
+| TS-01 | Ver budget completo con summary y items                                                   | API         |
+| TS-02 | Warning visible cuando `summary.over_committed = true`                                    | Integration |
+| TS-03 | Empty state con CTAs (US-036 visible; US-037 condicional por feature flag)                 | E2E         |
+| TS-04 | Normalización de `paid null → 0`                                                          | Integration |
+| TS-05 | i18n + currency CLDR en `es-LATAM`, `es-ES`, `pt`, `en`                                    | E2E         |
+| TS-06 | `cancelled` y `completed` ⇒ 200 con cálculo real y banner read-only                        | Integration |
 
 ### Negative Tests
 
-| ID    | Scenario                              | Expected Result          |
-| ----- | ------------------------------------- | ------------------------ |
-| NT-01 | Intentar cambiar moneda               | Ignorado                 |
-| NT-02 | Ajeno                                 | 403/404                  |
+| ID    | Scenario                                                                                  | Expected Result                  |
+| ----- | ----------------------------------------------------------------------------------------- | -------------------------------- |
+| NT-01 | Intento de PATCH /budget                                                                  | 404 (endpoint no existe)         |
+| NT-02 | Recurso ajeno                                                                             | 404 (no-revelación)              |
+| NT-03 | Sin sesión                                                                                | 401                              |
+| NT-04 | Admin sobre el endpoint                                                                   | 403                              |
+| NT-05 | `eventId` no UUID                                                                         | 400                              |
 
 ### AI Tests
 
@@ -271,25 +423,44 @@ Not applicable for this story.
 
 ### Authorization Tests
 
-| ID         | Scenario           | Expected Result |
-| ---------- | ------------------ | --------------- |
-| AUTH-TS-01 | Dueño              | 200             |
-| AUTH-TS-02 | Otro               | 403/404         |
+| ID         | Scenario                              | Expected Result |
+| ---------- | ------------------------------------- | --------------- |
+| AUTH-TS-01 | Owner consulta su evento              | 200             |
+| AUTH-TS-02 | Otro organizer consulta evento ajeno  | 404             |
+| AUTH-TS-03 | Vendor sobre el endpoint              | 403             |
+| AUTH-TS-04 | Admin sobre el endpoint               | 403             |
+| AUTH-TS-05 | Solicitud sin sesión                  | 401             |
+
+### Performance Tests
+
+| ID      | Scenario                                                                          | Expected Result               |
+| ------- | --------------------------------------------------------------------------------- | ----------------------------- |
+| PERF-01 | 30 BudgetItems + cálculo de summary en una sola query                              | P95 < 1.5 s (NFR-PERF-001)    |
 
 ### Accessibility Tests
 
-* Tabla accesible.
+| ID       | Scenario                                                                                  | Expected Result                                  |
+| -------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| A11Y-01  | Tabla expone `role="table"`, `<caption>`, `scope="col"`                                    | `jest-axe` sin violaciones                       |
+| A11Y-02  | Banner de warning con `role="alert"` o `aria-live="polite"`                                 | Lectura correcta por screen reader               |
+| A11Y-03  | Skeleton con `aria-busy="true"` durante loading                                            | `jest-axe` sin violaciones                       |
+
+### Contract Tests
+
+| ID           | Scenario                                                              | Expected Result                                |
+| ------------ | --------------------------------------------------------------------- | ---------------------------------------------- |
+| CONTRACT-01  | Shape `{ summary, items[] }` vs OpenAPI snapshot                       | Match exacto (handoff a US-098)                |
 
 ---
 
 ## 📊 Business Impact
 
-| Field               | Value                                                |
-| ------------------- | ---------------------------------------------------- |
-| KPI Affected        | Control de costos                                    |
-| Expected Impact     | Visibilidad financiera                                |
-| Success Criteria    | Carga < 800ms                                        |
-| Academic Demo Value | Demo de control financiero                            |
+| Field               | Value                                                                       |
+| ------------------- | --------------------------------------------------------------------------- |
+| KPI Affected        | Control de costos del organizador; tiempo a detección de exceso.             |
+| Expected Impact     | Visibilidad financiera; reducción de overcommit no detectado en demo.        |
+| Success Criteria    | Endpoint cumple P95 < 1.5 s (NFR-PERF-001); cobertura ≥ 50% en TS/NT/PERF/A11Y; demo muestra warning cuando se compromete > planeado. |
+| Academic Demo Value | Demo de control financiero end-to-end con warning visible.                   |
 
 ---
 
@@ -297,15 +468,23 @@ Not applicable for this story.
 
 ### Potential Frontend Tasks
 
-* Vista + edición inline.
+* `BudgetView`, `BudgetSummary`, `BudgetItemsTable`, `OvercommitWarning`, `EmptyBudgetState`.
+* `useEventBudget(eventId)` hook + query key.
+* i18n: claves `budget.*` en 4 locales.
+* Deeplinks a US-036 (CRUD) y US-037 (sugerencia IA, condicional por feature flag).
+* Estados visuales para `cancelled` y `completed`.
 
 ### Potential Backend Tasks
 
-* Endpoints + reglas.
+* `GetBudgetUseCase` con cálculo de `summary` (`total_planned`, `total_committed`, `paid_total`, `over_committed`).
+* Normalización `paid null → 0` en serialización.
+* Validación Zod del path param `eventId`.
+* Log estructurado `budget.viewed`.
 
 ### Potential Database Tasks
 
-* Schema budget/items.
+* Verificación del plan SQL `EXPLAIN ANALYZE` contra dataset de 30 items.
+* Sin migraciones; reuso de schema existente.
 
 ### Potential AI / PromptOps Tasks
 
@@ -313,11 +492,15 @@ Not applicable for this story.
 
 ### Potential QA Tasks
 
-* Tests.
+* Tests unitarios e integration de cálculo de summary y `over_committed`.
+* Tests de autorización (AUTH-TS-01..05).
+* Test PERF (PERF-01).
+* Tests A11Y (A11Y-01..03).
+* Contract test (CONTRACT-01).
 
 ### Potential DevOps / Config Tasks
 
-* Not applicable for this story.
+* Feature flag `ai.budget-suggestion.enabled` (reuso del sistema de feature flags existente).
 
 ---
 
@@ -336,18 +519,27 @@ Not applicable for this story.
 * [x] UX states identificados.
 * [x] API definida.
 * [x] Tests definidos.
-* [ ] PO/BA validó.
+* [x] PO/BA validó.
 
 ---
 
 ## 🏁 Definition of Done
 
-* [ ] Funcional.
-* [ ] Tests verdes.
-* [ ] PO valida.
+* [ ] Funcional: endpoint devuelve `{ summary, items[] }` con `over_committed` server-side y normalización `paid null → 0`.
+* [ ] Tests verdes: unit, integration, E2E, perf, a11y y contract.
+* [ ] i18n verificado en `es-LATAM`, `es-ES`, `pt`, `en` con currency CLDR.
+* [ ] Accesibilidad verificada (`role="table"`, `<caption>`, banner accesible).
+* [ ] Query key TanStack `['event', eventId, 'budget']` documentada.
+* [ ] Log estructurado `budget.viewed` emitido sin PII.
+* [ ] Deeplinks a US-036 (y US-037 si feature flag) verificados.
+* [ ] OpenAPI snapshot actualizado por US-098 (handoff).
+* [ ] PO valida la demo end-to-end (vista con warning, empty state con CTAs, mutación vía US-036, refresco automático).
 
 ---
 
 ## 📝 Notes
 
-* Confirmar formato de moneda con Intl.NumberFormat.
+* Las políticas para `paid`, alcance (solo vista), origen server-side de `over_committed`, y CTAs de Empty State están formalizadas en D1/D2/D3/D4 (`management/user-stories/decision-resolutions/US-035-decision-resolution.md`).
+* Documentation Alignment Required (no bloqueantes): actualización de `docs/16 §M06` con shape extendido (`summary`, `over_committed`, `paid_total`); nota interpretativa en `BR-BUDGET-002` referenciando D3; corrección del ID `NFR-PERF-001` en backlog (housekeeping).
+* Handoff a US-036: la UI expone deeplinks a CTAs `Editar`/`Eliminar` por fila y `Crear primera categoría` desde Empty State; el cache TanStack `['event', eventId, 'budget']` debe invalidarse desde US-036 tras cada mutación para que esta vista refleje el cambio.
+* Currency formatting CLDR vía `Intl.NumberFormat(locale, { style: 'currency', currency: summary.currency_code })`. Sin conversión automática (`BR-BUDGET-007`).
