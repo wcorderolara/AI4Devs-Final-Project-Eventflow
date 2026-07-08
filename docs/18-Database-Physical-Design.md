@@ -1391,8 +1391,11 @@ Sólo se listan decisiones que requieren resolución antes de implementar.
 - [ ] `is_seed` en todas las tablas operativas.
 
 ### 35.2 Migraciones
-- [ ] Migración baseline `20260601000000_init` generada.
-- [ ] Raw SQL anexada para: unique parciales, check constraints, índice funcional email, default `valid_until`.
+> **Amendado (US-100, ADR-DB-005 · Decision Resolution §Decisión 1):** la baseline es **schema-only**.
+> El raw SQL se entrega en migraciones separadas por historia (split US-100 / US-101 / US-102).
+- [ ] Migración baseline `<YYYYMMDDHHMMSS>_init` generada **schema-only** (US-100): 19 `CREATE TABLE` + `CREATE TYPE ... AS ENUM` + FKs (`ON DELETE RESTRICT` por defecto, `CASCADE` solo en `budget_items.budget_id`). Sin raw SQL.
+- [ ] Raw SQL para índices funcionales / GIN / parciales en migración separada (**US-101**).
+- [ ] Raw SQL para check constraints, unique parciales y enforcement append-only en migración separada (**US-102**).
 - [ ] Backfill scripts para columnas NOT NULL agregadas posteriormente (cuando aplique).
 
 ### 35.3 Constraints
@@ -1407,7 +1410,9 @@ Sólo se listan decisiones que requieren resolución antes de implementar.
 - [ ] Índices `is_seed` parciales en todas las tablas operativas.
 
 ### 35.5 Seed
-- [ ] Script `prisma/seed.ts` implementado con UUIDs deterministas para fixtures críticos.
+> **Amendado (US-100 · Decision Resolution §Decisión 8):** `prisma/seed.ts` y las fixtures
+> **no** pertenecen al baseline US-100; son responsabilidad de **EPIC-SEED-001** (US-085..US-088).
+- [ ] Script `prisma/seed.ts` implementado con UUIDs deterministas para fixtures críticos (**EPIC-SEED-001**).
 - [ ] `seed:demo` y `seed:qa` distinguibles.
 - [ ] Guardas `NODE_ENV` aplicadas.
 
@@ -1471,4 +1476,4 @@ Este Database Physical Design Document materializa el Modelo de Datos del Domini
 - Las migraciones siguen una política **forward-only**, multi-step para cambios incompatibles, con raw SQL acotado a unique parciales, check constraints e índices funcionales.
 - El MVP **excluye explícitamente** estructuras propias de un marketplace transaccional (pagos, comisiones, contratos, chat, push, RSVP, KYC, embeddings).
 
-El siguiente paso es **generar `prisma/schema.prisma` y la migración baseline `20260601000000_init`**, acompañada de los archivos raw SQL para constraints y unique parciales, y el script `prisma/seed.ts` con UUIDs deterministas para fixtures críticos.
+El siguiente paso es **generar `prisma/schema.prisma`** (US-099, entregado) **y la migración baseline `<YYYYMMDDHHMMSS>_init` schema-only** (US-100, entregado). El raw SQL para índices avanzados (US-101) y para check constraints / unique parciales / enforcement append-only (US-102) se entrega en migraciones separadas. El script `prisma/seed.ts` con UUIDs deterministas pertenece a **EPIC-SEED-001** (US-085..US-088). Alineación: ADR-DB-005 + US-100 Decision Resolution §§1, 2, 8.

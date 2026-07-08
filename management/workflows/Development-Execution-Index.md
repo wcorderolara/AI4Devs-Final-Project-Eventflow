@@ -6,3 +6,4 @@
 | Phase | Backlog ID | US ID | Título | Execution Record | Total | Done | In Progress | Blocked | Rework | Skipped | Estado | Última actualización |
 | ----- | ---------- | ----- | ------ | ---------------- | ----: | ---: | ----------: | ------: | -----: | ------: | ------ | -------------------- |
 | P0 | PB-P0-001 | US-099 | Definir schema Prisma declarativo por dominio MVP | [record](development-execution/P0/PB-P0-001/US-099-execution.md) | 27 | 27 | 0 | 0 | 0 | 0 | `Done` | 2026-07-08 |
+| P0 | PB-P0-001 | US-100 | Generar baseline migration Prisma y operar flujo `migrate dev` / `migrate deploy` | [record](development-execution/P0/PB-P0-001/US-100-execution.md) | 18 | 18 | 0 | 0 | 0 | 0 | `Done` | 2026-07-08 |

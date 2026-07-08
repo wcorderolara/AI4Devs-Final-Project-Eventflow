@@ -197,7 +197,7 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 | Type | Technical |
 | MoSCoW | Must Have |
 | Dependencies | — (foundation) |
-| Acceptance Summary | - Schema Prisma cubre todas las entidades MVP de Doc 6/18.<br>- Migraciones reproducibles up/down.<br>- Índices en columnas críticas (FK, status, fechas).<br>- Constraints C-001..C-062 enforced (unique, FK, check, soft delete).<br>- Tests de constraints pasan en CI. |
+| Acceptance Summary | - Schema Prisma cubre todas las entidades MVP de Doc 6/18.<br>- Migraciones reproducibles forward-only con `migrate deploy` idempotente (ADR-DB-005; US-100 Decision Resolution §Decisión 2).<br>- Índices en columnas críticas (FK, status, fechas).<br>- Constraints C-001..C-062 enforced (unique, FK, check, soft delete).<br>- Tests de constraints pasan en CI. |
 | Traceability | FR transversal · BR transversal · Doc 6, Doc 18 · ADR-DB-001 |
 | Notes | Soft delete obligatorio en Attachment y Review (Decisión PO 8.1 #19). `is_seed` en todas las entidades. |
 
