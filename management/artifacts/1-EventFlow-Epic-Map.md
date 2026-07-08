@@ -1252,7 +1252,7 @@ Implementar el schema Prisma + PostgreSQL alineado con el Domain Data Model, inc
 - DBs vectoriales.
 
 ### User Stories candidatas
-- US-DB-001: Definir schema Prisma por dominio.
+- US-DB-001: Definir schema Prisma por dominio. _(Alias interno del Epic Map; ID oficial: **US-099**.)_
 - US-DB-002: Generar migrations base.
 - US-DB-003: Implementar índices críticos.
 - US-DB-004: Validar constraints C-001..C-062.
