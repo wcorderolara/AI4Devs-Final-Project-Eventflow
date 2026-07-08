@@ -39,6 +39,18 @@ export function criticalIndexesMigrationSql(): string {
   return readFileSync(resolve(migrationsDir, criticalIndexesMigrationDir(), 'migration.sql'), 'utf8');
 }
 
+/** Directorio de la migración de constraints (`<ts>_db_constraints`) — US-102. */
+export function dbConstraintsMigrationDir(): string {
+  const dir = migrationDirs().find((name) => /^\d{14}_db_constraints$/.test(name));
+  if (!dir) throw new Error('No se encontró la migración `<ts>_db_constraints` en prisma/migrations');
+  return dir;
+}
+
+/** Contenido crudo del `migration.sql` de la migración de constraints (US-102). */
+export function dbConstraintsMigrationSql(): string {
+  return readFileSync(resolve(migrationsDir, dbConstraintsMigrationDir(), 'migration.sql'), 'utf8');
+}
+
 /** Contenido concatenado de TODOS los `migration.sql` bajo prisma/migrations. */
 export function allMigrationSql(): { file: string; content: string }[] {
   return migrationDirs().map((name) => ({

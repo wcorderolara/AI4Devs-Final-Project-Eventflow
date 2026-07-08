@@ -104,6 +104,35 @@ transacción de Prisma migrate (no `CONCURRENTLY`). Para el volumen MVP (seed 10
 lock de build es despreciable; si el volumen crece post-MVP, evaluar índices concurrentes fuera
 de la transacción de migración.
 
+### Migración de constraints físicos (US-102)
+
+La migración `prisma/migrations/<ts>_db_constraints/` cierra la capa física de PB-P0-001
+agregando, vía **raw SQL** (Doc 18 §28.3), los objetos no representables en Prisma:
+
+- **16 check constraints** (`chk_*`): no-vacíos, rangos (rating 1..5, depth 1..2, retry 0..1),
+  montos no negativos e invariante `is_simulated = true`.
+- **4 unique parciales** (`uq_*`): una solicitud/cotización/booking activo por clave de negocio
+  (C-027, C-030, C-037) y una versión de prompt activa por `prompt_id`.
+
+Incluye columnas y relaciones de soporte agregadas al schema (rework autorizado del modelo,
+ver execution record US-102): `guests_count`, `estimated_budget`, `category_change_count`,
+`languages_supported`, `depth_level`, `is_simulated` + FKs `event`/`service_category` en
+`booking_intents`, `size_bytes`, `timeout_ms`, `retry_count`, `vendor_profile_id` en
+`quote_requests`, y `status`/`prompt_id` (+ enum) en `ai_prompt_versions`.
+
+La clasificación completa de los 62 constraints del catálogo (Doc 6 §17) está en
+`management/technical-specs/P0/PB-P0-001/constraints-validation-matrix.md`.
+
+**Drift (EC-02):** validado empíricamente que `prisma migrate diff` con CHECK constraints y
+unique parciales **no** reporta falso drift (`exit 0`), igual que en US-101; sin ajuste al job.
+
+**Procedimiento ante datos violatorios en re-deploy (EC-01 / R-2):** si `migrate deploy` aplica un
+`ALTER TABLE ... ADD CONSTRAINT` sobre un entorno con datos que violan la regla, la migración
+queda `failed` en `_prisma_migrations`. Recuperación forward-only: (1) generar una migración
+correctiva que **sanee** los datos (UPDATE/DELETE de filas inválidas), (2) reintentar el deploy.
+Nunca editar una migración mergeada. En MVP los entornos son reproducibles (seed reset) y el
+smoke CI aplica desde DB vacía, capturando incompatibilidades temprano.
+
 ### Matriz de entornos (Doc 21 §10)
 
 | Entorno | Comando | Owner / Trigger |

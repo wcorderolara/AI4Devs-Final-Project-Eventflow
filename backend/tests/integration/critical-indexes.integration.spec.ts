@@ -134,20 +134,15 @@ describe.skipIf(!dbUp)('US-101 integración: índices críticos (pg_indexes)', (
       expect(partials.length).toBeGreaterThanOrEqual(12);
     });
 
-    it('excluye los 4 unique parciales (US-102) y el índice trigram (diferido)', async () => {
+    it('el índice trigram (diferido §25.1) NO existe', async () => {
+      // Nota (US-102): los 4 unique parciales estaban EXCLUIDOS del inventario de US-101 y,
+      // tras el merge de US-102, existen legítimamente. Aquí solo se afirma que el índice
+      // trigram/GIN sigue diferido (DR-101 Decisión 5). Los 4 uniques se verifican en US-102.
       const rows = await prisma.$queryRawUnsafe<PgIndexRow[]>(
         `SELECT indexname FROM pg_indexes WHERE schemaname='public'`,
       );
       const names = new Set(rows.map((r) => r.indexname));
-      for (const excluded of [
-        'uq_quote_requests_event_vendor_active',
-        'uq_quotes_request_active',
-        'uq_booking_intents_event_category_confirmed',
-        'uq_prompt_versions_active',
-        'idx_vendor_profiles_business_name_trgm',
-      ]) {
-        expect(names.has(excluded), `${excluded} no debe existir en US-101`).toBe(false);
-      }
+      expect(names.has('idx_vendor_profiles_business_name_trgm')).toBe(false);
     });
 
     it('no hay nombres de índice duplicados', async () => {
