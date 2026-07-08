@@ -1044,7 +1044,7 @@ Tabla consolidada con los constraints físicos derivados del DDM (§17) y de los
 | C-027b | `quote_requests` | Max 5 activas por (event, category) | Service layer transaccional | BR-QUOTE-009 |
 | C-029 | `quote_requests` | `brief` no vacío | Service layer (Zod schema) | BR-QUOTE-002 |
 | C-030 | `quotes` | Una vigente por request | Unique parcial | BR-QUOTE-013 |
-| C-031 | `quotes` | `valid_until` default 15 días | Service layer + opcional `DEFAULT` en motor | BR-QUOTE-015 |
+| C-031 | `quotes` | `valid_until` default 15 días | Service layer (US-052/US-053). **DEFAULT en motor descartado** para MVP (US-102 DR-102 Decisión 7: la regla aplica al transicionar a `sent`, no al INSERT) | BR-QUOTE-015 |
 | C-032 | `quotes` | `valid_until` pasado ⇒ `expired` | Job programado | BR-QUOTE-016 |
 | C-034 | `quotes` | Moneda heredada del evento | Service layer | BR-QUOTE-019 |
 | C-037 | `booking_intents` | Único `confirmed_intent` por (event, category) | Unique parcial | BR-BOOKING-007 |
