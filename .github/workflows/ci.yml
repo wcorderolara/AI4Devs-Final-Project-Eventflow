@@ -191,6 +191,8 @@ jobs:
       DATABASE_URL: postgresql://user:password@localhost:5432/eventflow?schema=public
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
