@@ -191,7 +191,7 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 | Epic | EPIC-DB-001 |
 | Related User Stories | US-099, US-100, US-101, US-102 |
 | Title | Implementar schema Prisma + PostgreSQL alineado al Domain Data Model |
-| Description | Definir el schema Prisma completo por dominio (User, Event, EventType, Task, Budget, BudgetItem, VendorProfile, VendorService, Attachment, VendorWork, QuoteRequest, Quote, BookingIntent, Review, Notification, ServiceCategory, AdminAction, AIRecommendation), generar migraciones base, implementar índices críticos y validar los 62 constraints C-001..C-062. |
+| Description | Definir el schema Prisma completo por dominio (User, Event, EventType, EventTask, Budget, BudgetItem, VendorProfile, VendorService, Attachment, QuoteRequest, Quote, BookingIntent, Review, Notification, ServiceCategory, AdminAction, AIRecommendation, AIPromptVersion), generar migraciones base, implementar índices críticos y validar los 62 constraints C-001..C-062. Nota: el portafolio del vendor (`VendorWork`) se cubre con `Attachment` polimórfico (Doc 6 §6); la entidad canónica de tarea es `EventTask` (alineación US-099). |
 | User Value / Delivery Value | Sin DB no hay persistencia. Habilita todo flujo de producto, IA, admin y seed. |
 | Primary Role | System |
 | Type | Technical |

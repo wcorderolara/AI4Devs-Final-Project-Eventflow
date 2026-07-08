@@ -1,0 +1,75 @@
+name: CI
+
+# US-099 (PB-P0-001) — Gates de schema Prisma. Falla de cualquier job bloquea el merge.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/ci.yml'
+
+defaults:
+  run:
+    working-directory: backend
+
+env:
+  # Valor dummy: `prisma validate`/`generate` no requieren conexión real a BD (US-099).
+  DATABASE_URL: postgresql://user:password@localhost:5432/eventflow?schema=public
+
+jobs:
+  # OPS-003 (VR-01) — prisma validate.
+  prisma-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run db:validate
+
+  # OPS-004 (VR-02) — prisma generate.
+  prisma-generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run db:generate
+
+  # OPS-005 — tests estructurales Vitest (QA-001..QA-008) + typecheck del smoke (BE-001).
+  schema-structural-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run typecheck
+      - run: npm test
+
+  # SEC-001 — secret scan defensivo sobre prisma/ (gitleaks) además del test de secret scan.
+  secret-scan-schema:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks (backend/prisma)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: 'false'

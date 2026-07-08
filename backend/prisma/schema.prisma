@@ -1,0 +1,545 @@
+// EventFlow — Schema Prisma declarativo por dominio MVP
+// User Story: US-099 (PB-P0-001). Fuentes: Doc 6 (Domain Data Model), Doc 18 (Database Physical Design).
+// Alcance: SOLO declaración estática + generación del Prisma Client.
+//   - Migraciones ejecutables            -> US-100
+//   - Índices funcionales/GIN/parciales  -> US-101
+//   - Check constraints / unique parcial -> US-102
+// Convenciones físicas: snake_case (@@map/@map), Decimal(14,2), Timestamptz(6), JsonB,
+// isSeed en modelos operativos, deletedAt en los 7 modelos con soft delete (ADR-DB-004),
+// UUID v4 PK en todas las tablas (ADR-DB-002), @relation explícito + onDelete Restrict por defecto.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enums base (AC-02)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  organizer
+  vendor
+  admin
+}
+
+enum CurrencyCode {
+  GTQ
+  EUR
+  MXN
+  COP
+  USD
+}
+
+enum LanguageCode {
+  es_LATAM @map("es-LATAM")
+  es_ES    @map("es-ES")
+  pt
+  en
+}
+
+enum LLMProvider {
+  openai
+  mock
+  anthropic
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enums de status por entidad (AC-02) — máquinas de estado separadas, sin enum genérico
+// Valores canónicos: Doc 18 §"Catálogo de Enums".
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum EventStatus {
+  draft
+  active
+  completed
+  cancelled
+}
+
+enum EventTaskStatus {
+  pending
+  in_progress
+  done
+  skipped
+}
+
+enum EventTaskOrigin {
+  manual
+  ai
+}
+
+enum QuoteRequestStatus {
+  sent
+  viewed
+  responded
+  expired
+  cancelled
+}
+
+enum QuoteStatus {
+  draft
+  sent
+  accepted
+  rejected
+  expired
+}
+
+enum BookingIntentStatus {
+  pending
+  confirmed_intent
+  cancelled
+}
+
+enum ReviewStatus {
+  published
+  hidden
+  removed
+}
+
+enum NotificationStatus {
+  unread
+  read
+}
+
+enum AttachmentStatus {
+  active
+  deleted
+}
+
+enum VendorProfileStatus {
+  pending
+  approved
+  rejected
+  hidden
+}
+
+enum VendorServiceStatus {
+  active
+  inactive
+}
+
+// Incluye `edited` requerido por el flujo HITL (US-099 §AI Behavior) además de los
+// valores de Doc 18 (pending, accepted, rejected, discarded, failed, expired).
+enum AIRecommendationStatus {
+  pending
+  accepted
+  edited
+  rejected
+  discarded
+  failed
+  expired
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Platform / Shared
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id                String       @id @default(uuid()) @db.Uuid
+  email             String       @unique
+  passwordHash      String       @map("password_hash")
+  fullName          String?      @map("full_name")
+  role              UserRole
+  preferredLanguage LanguageCode @default(es_LATAM) @map("preferred_language")
+
+  events        Event[]
+  vendorProfile VendorProfile?
+  reviews       Review[]
+  notifications Notification[]
+  adminActions  AdminAction[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSeed    Boolean  @default(false) @map("is_seed")
+
+  @@map("users")
+}
+
+model Location {
+  id      String  @id @default(uuid()) @db.Uuid
+  country String
+  region  String?
+  city    String?
+  lat     Float?
+  lng     Float?
+
+  events         Event[]
+  vendorProfiles VendorProfile[]
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSeed    Boolean   @default(false) @map("is_seed")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("locations")
+}
+
+model ServiceCategory {
+  id          String  @id @default(uuid()) @db.Uuid
+  code        String  @unique
+  label       String
+  description String?
+  isActive    Boolean @default(true) @map("is_active")
+
+  vendorServices VendorService[]
+  quoteRequests  QuoteRequest[]
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSeed    Boolean   @default(false) @map("is_seed")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("service_categories")
+}
+
+model EventType {
+  id          String  @id @default(uuid()) @db.Uuid
+  code        String  @unique
+  label       String
+  description String?
+  isActive    Boolean @default(true) @map("is_active")
+
+  events Event[]
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSeed    Boolean   @default(false) @map("is_seed")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("event_types")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Vendor
+// ─────────────────────────────────────────────────────────────────────────────
+
+model VendorProfile {
+  id           String              @id @default(uuid()) @db.Uuid
+  userId       String              @map("user_id") @db.Uuid
+  businessName String              @map("business_name")
+  bio          String?
+  status       VendorProfileStatus @default(pending)
+  locationId   String?             @map("location_id") @db.Uuid
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  location Location? @relation(fields: [locationId], references: [id], onDelete: Restrict)
+
+  services VendorService[]
+  quotes   Quote[]
+  reviews  Review[]
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSeed    Boolean   @default(false) @map("is_seed")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@unique([userId])
+  @@index([locationId])
+  @@map("vendor_profiles")
+}
+
+model VendorService {
+  id                String              @id @default(uuid()) @db.Uuid
+  vendorProfileId   String              @map("vendor_profile_id") @db.Uuid
+  serviceCategoryId String              @map("service_category_id") @db.Uuid
+  title             String
+  description       String?
+  status            VendorServiceStatus @default(active)
+  priceMin          Decimal?            @map("price_min") @db.Decimal(14, 2)
+  priceMax          Decimal?            @map("price_max") @db.Decimal(14, 2)
+
+  vendorProfile   VendorProfile   @relation(fields: [vendorProfileId], references: [id], onDelete: Restrict)
+  serviceCategory ServiceCategory @relation(fields: [serviceCategoryId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSeed    Boolean   @default(false) @map("is_seed")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@index([vendorProfileId])
+  @@index([serviceCategoryId])
+  @@map("vendor_services")
+}
+
+// Attachment polimórfico: owner_type + owner_id (Doc 18 §19). Sin FK formal;
+// la consistencia del owner se valida en la capa de aplicación (constraint funcional -> US-102).
+model Attachment {
+  id        String           @id @default(uuid()) @db.Uuid
+  ownerType String           @map("owner_type")
+  ownerId   String           @map("owner_id") @db.Uuid
+  status    AttachmentStatus @default(active)
+  url       String
+  fileName  String?          @map("file_name")
+  mimeType  String?          @map("mime_type")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSeed    Boolean   @default(false) @map("is_seed")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@index([ownerType, ownerId])
+  @@map("attachments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Event
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Event {
+  id          String       @id @default(uuid()) @db.Uuid
+  userId      String       @map("user_id") @db.Uuid
+  eventTypeId String       @map("event_type_id") @db.Uuid
+  locationId  String?      @map("location_id") @db.Uuid
+  title       String
+  status      EventStatus  @default(draft)
+  currency    CurrencyCode @default(GTQ)
+  language    LanguageCode @default(es_LATAM)
+  eventDate   DateTime?    @map("event_date") @db.Timestamptz(6)
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  eventType EventType @relation(fields: [eventTypeId], references: [id], onDelete: Restrict)
+  location  Location? @relation(fields: [locationId], references: [id], onDelete: Restrict)
+
+  tasks             EventTask[]
+  budget            Budget?
+  quoteRequests     QuoteRequest[]
+  aiRecommendations AIRecommendation[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSeed    Boolean  @default(false) @map("is_seed")
+
+  @@index([userId])
+  @@index([eventTypeId])
+  @@index([locationId])
+  @@map("events")
+}
+
+model EventTask {
+  id      String          @id @default(uuid()) @db.Uuid
+  eventId String          @map("event_id") @db.Uuid
+  title   String
+  dueDate DateTime?       @map("due_date") @db.Timestamptz(6)
+  status  EventTaskStatus @default(pending)
+  origin  EventTaskOrigin @default(manual)
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSeed    Boolean  @default(false) @map("is_seed")
+
+  @@index([eventId])
+  @@map("event_tasks")
+}
+
+model Budget {
+  id             String  @id @default(uuid()) @db.Uuid
+  eventId        String  @unique @map("event_id") @db.Uuid
+  totalPlanned   Decimal @default(0) @map("total_planned") @db.Decimal(14, 2)
+  totalCommitted Decimal @default(0) @map("total_committed") @db.Decimal(14, 2)
+
+  event Event        @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  items BudgetItem[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSeed    Boolean  @default(false) @map("is_seed")
+
+  @@map("budgets")
+}
+
+model BudgetItem {
+  id              String  @id @default(uuid()) @db.Uuid
+  budgetId        String  @map("budget_id") @db.Uuid
+  label           String
+  categoryCode    String? @map("category_code")
+  amountPlanned   Decimal @default(0) @map("amount_planned") @db.Decimal(14, 2)
+  amountCommitted Decimal @default(0) @map("amount_committed") @db.Decimal(14, 2)
+
+  // Única excepción a onDelete: Restrict — composición pura (AC-08).
+  budget Budget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSeed    Boolean  @default(false) @map("is_seed")
+
+  @@index([budgetId])
+  @@map("budget_items")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quote
+// ─────────────────────────────────────────────────────────────────────────────
+
+model QuoteRequest {
+  id                String             @id @default(uuid()) @db.Uuid
+  eventId           String             @map("event_id") @db.Uuid
+  serviceCategoryId String             @map("service_category_id") @db.Uuid
+  status            QuoteRequestStatus @default(sent)
+  aiBriefMeta       Json?              @map("ai_brief_meta") @db.JsonB
+
+  event           Event           @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  serviceCategory ServiceCategory @relation(fields: [serviceCategoryId], references: [id], onDelete: Restrict)
+
+  quotes Quote[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSeed    Boolean  @default(false) @map("is_seed")
+
+  @@index([eventId])
+  @@index([serviceCategoryId])
+  @@map("quote_requests")
+}
+
+model Quote {
+  id              String       @id @default(uuid()) @db.Uuid
+  quoteRequestId  String       @map("quote_request_id") @db.Uuid
+  vendorProfileId String       @map("vendor_profile_id") @db.Uuid
+  amount          Decimal      @db.Decimal(14, 2)
+  currency        CurrencyCode @default(GTQ)
+  validUntil      DateTime?    @map("valid_until") @db.Timestamptz(6)
+  status          QuoteStatus  @default(draft)
+
+  quoteRequest  QuoteRequest  @relation(fields: [quoteRequestId], references: [id], onDelete: Restrict)
+  vendorProfile VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Restrict)
+
+  bookingIntents BookingIntent[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSeed    Boolean  @default(false) @map("is_seed")
+
+  @@index([quoteRequestId])
+  @@index([vendorProfileId])
+  @@map("quotes")
+}
+
+model BookingIntent {
+  id          String              @id @default(uuid()) @db.Uuid
+  quoteId     String              @map("quote_id") @db.Uuid
+  status      BookingIntentStatus @default(pending)
+  confirmedAt DateTime?           @map("confirmed_at") @db.Timestamptz(6)
+
+  quote   Quote    @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+  reviews Review[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSeed    Boolean  @default(false) @map("is_seed")
+
+  @@index([quoteId])
+  @@map("booking_intents")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Transversales
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Review {
+  id              String       @id @default(uuid()) @db.Uuid
+  bookingIntentId String       @map("booking_intent_id") @db.Uuid
+  vendorProfileId String       @map("vendor_profile_id") @db.Uuid
+  authorId        String       @map("author_id") @db.Uuid
+  rating          Int
+  comment         String?
+  status          ReviewStatus @default(published)
+
+  bookingIntent BookingIntent @relation(fields: [bookingIntentId], references: [id], onDelete: Restrict)
+  vendorProfile VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Restrict)
+  author        User          @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSeed    Boolean   @default(false) @map("is_seed")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@index([vendorProfileId])
+  @@index([bookingIntentId])
+  @@index([authorId])
+  @@map("reviews")
+}
+
+model Notification {
+  id      String             @id @default(uuid()) @db.Uuid
+  userId  String             @map("user_id") @db.Uuid
+  type    String
+  payload Json               @db.JsonB
+  status  NotificationStatus @default(unread)
+  readAt  DateTime?          @map("read_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSeed    Boolean  @default(false) @map("is_seed")
+
+  @@index([userId])
+  @@map("notifications")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin / AI
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AdminAction {
+  id           String @id @default(uuid()) @db.Uuid
+  adminUserId  String @map("admin_user_id") @db.Uuid
+  action       String
+  targetEntity String @map("target_entity")
+  targetId     String @map("target_id") @db.Uuid
+  metadata     Json?  @db.JsonB
+
+  adminUser User @relation(fields: [adminUserId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSeed    Boolean  @default(false) @map("is_seed")
+
+  @@index([adminUserId])
+  @@map("admin_actions")
+}
+
+model AIRecommendation {
+  id                String                 @id @default(uuid()) @db.Uuid
+  eventId           String                 @map("event_id") @db.Uuid
+  aiPromptVersionId String                 @map("ai_prompt_version_id") @db.Uuid
+  kind              String
+  inputPayload      Json                   @map("input_payload") @db.JsonB
+  outputPayload     Json                   @map("output_payload") @db.JsonB
+  status            AIRecommendationStatus @default(pending)
+
+  event         Event           @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  promptVersion AIPromptVersion @relation(fields: [aiPromptVersionId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSeed    Boolean  @default(false) @map("is_seed")
+
+  @@index([eventId])
+  @@index([aiPromptVersionId])
+  @@map("ai_recommendations")
+}
+
+// Append-only conceptual (enforcement técnico -> US-102). No declara isSeed ni deletedAt.
+model AIPromptVersion {
+  id               String      @id @default(uuid()) @db.Uuid
+  promptKey        String      @map("prompt_key")
+  version          String
+  provider         LLMProvider
+  templateChecksum String      @map("template_checksum")
+  description      String?
+
+  recommendations AIRecommendation[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([promptKey, version])
+  @@map("ai_prompt_versions")
+}

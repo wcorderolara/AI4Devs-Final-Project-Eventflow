@@ -276,7 +276,7 @@ prisma/
 | User | `users` | `User` | MVP | Multi-rol mediante enum. |
 | Role | (enum) `user_role` | `enum UserRole` | MVP | Sin tabla. |
 | Event | `events` | `Event` | MVP | — |
-| EventType | `event_types` | `EventType` | MVP | Tabla catálogo con `code` PK derivable de enum. |
+| EventType | `event_types` | `EventType` | MVP | Tabla catálogo con `id uuid` PK + `code text UNIQUE NOT NULL` (alineación con ADR-DB-002 y US-099; `code` deja de ser PK físico). |
 | EventTask | `event_tasks` | `EventTask` | MVP | — |
 | Budget | `budgets` | `Budget` | MVP | 1:1 con `Event`. |
 | BudgetItem | `budget_items` | `BudgetItem` | MVP | — |
@@ -308,7 +308,7 @@ Para cada tabla, este catálogo incluye: propósito, fuente, owner funcional, co
 |---:|---|---|---|---|---|---|
 | 1 | `users` | Shared (System + Self) | `id uuid` | No (status) | Sí | No |
 | 2 | `events` | Organizer | `id uuid` | No (status) | Sí | No |
-| 3 | `event_types` | Admin | `code` | Sí (`is_active`) | Sí | No |
+| 3 | `event_types` | Admin | `id uuid` | Sí (`is_active` + `deleted_at`) | Sí | No |
 | 4 | `event_tasks` | Organizer | `id uuid` | No | Sí | No |
 | 5 | `budgets` | Organizer | `id uuid` | No | Sí | No |
 | 6 | `budget_items` | Organizer | `id uuid` | No | Sí | No |
@@ -419,11 +419,12 @@ Persistir la identidad de usuarios (organizer, vendor, admin) con el hash de con
 
 ### 14.2 `event_types`
 
-Tabla catálogo curada por admin con `code` PK derivado del enum `event_type_code`.
+Tabla catálogo curada por admin. PK técnica `id uuid` (ADR-DB-002 / US-099); `code` es identificador funcional único (no PK física).
 
 | Columna | Tipo | NN | Notas |
 |---|---|---|---|
-| `code` | `event_type_code` | Sí | PK. |
+| `id` | `uuid` | Sí | PK (`@default(uuid())`), ADR-DB-002. |
+| `code` | `text` | Sí | UNIQUE. Identificador funcional (antes PK). |
 | `display_name` | `jsonb` | Sí | i18n por idioma. |
 | `description` | `jsonb` | No | i18n. |
 | `default_template_ref` | `text` | No | Referencia a plantilla en código/seed. |
@@ -1123,15 +1124,23 @@ Catálogo query-driven derivado de `/docs/16-API-Design-Specification.md` y de l
 
 ## 26. Estrategia de soft delete
 
-| Tabla | Mecanismo | Filtro estándar | Auditoría |
-|---|---|---|---|
-| `reviews` | `status IN ('hidden','removed')` | Queries públicas: `status='published'`. | `moderated_by`, `moderated_at`, `moderation_reason`, `admin_action_id`. |
-| `attachments` | `status='deleted'` con `deleted_at`, `deleted_by` | `status='active'`. | `deletion_reason`, eventual `admin_action_id` si moderación admin. |
-| `service_categories` | `is_active=false` | `is_active=true`. | `AdminAction`. |
-| `event_types` | `is_active=false`, `deactivated_at`, `deactivated_by` | `is_active=true`. | `AdminAction`. |
-| `vendor_profiles` | `status='hidden'` (no `removed`) | `status='approved'` en directorio. | `AdminAction`. |
-| `vendor_services` | `is_active=false` | `is_active=true`. | — |
-| `locations` | `is_active=false` | `is_active=true`. | — |
+> **Alineación US-099 (ADR-DB-004).** El **marcador canónico y uniforme** de soft delete es
+> `deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)`, declarado en los 7 modelos con soft
+> delete requerido (`reviews`, `attachments`, `vendor_profiles`, `vendor_services`,
+> `service_categories`, `event_types`, `locations`). El filtro estándar de repositorio es
+> `deleted_at IS NULL`. Los atributos `status` / `is_active` **permanecen** como atributos
+> funcionales de visibilidad/estado (máquinas de estado propias), pero **no** son el marcador de
+> soft delete. ADR-DB-004 admite `status` o `deleted_at`; US-099 estandariza `deleted_at`.
+
+| Tabla | Marcador soft delete | Atributo funcional coexistente | Filtro estándar | Auditoría |
+|---|---|---|---|---|
+| `reviews` | `deleted_at` | `status IN ('hidden','removed')` | `deleted_at IS NULL`. | `moderated_by`, `moderated_at`, `moderation_reason`, `admin_action_id`. |
+| `attachments` | `deleted_at` | `status='deleted'`, `deleted_by` | `deleted_at IS NULL`. | `deletion_reason`, eventual `admin_action_id` si moderación admin. |
+| `service_categories` | `deleted_at` | `is_active` | `deleted_at IS NULL`. | `AdminAction`. |
+| `event_types` | `deleted_at` | `is_active`, `deactivated_at`, `deactivated_by` | `deleted_at IS NULL`. | `AdminAction`. |
+| `vendor_profiles` | `deleted_at` | `status='hidden'` (no `removed`) | `deleted_at IS NULL`; `status='approved'` en directorio. | `AdminAction`. |
+| `vendor_services` | `deleted_at` | `is_active` | `deleted_at IS NULL`. | — |
+| `locations` | `deleted_at` | `is_active` | `deleted_at IS NULL`. | — |
 
 ### 26.1 Implementación uniforme
 

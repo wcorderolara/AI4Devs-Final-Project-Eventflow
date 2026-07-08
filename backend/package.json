@@ -1,0 +1,30 @@
+{
+  "name": "eventflow-backend",
+  "version": "0.0.0",
+  "private": true,
+  "description": "EventFlow backend — Prisma schema declarativo (US-099).",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "db:validate": "prisma validate",
+    "db:generate": "prisma generate",
+    "db:format": "prisma format",
+    "db:check": "npm run db:validate && npm run db:generate",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@prisma/client": "5.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "prisma": "5.22.0",
+    "typescript": "5.6.3",
+    "vitest": "2.1.8"
+  }
+}
