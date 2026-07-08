@@ -249,6 +249,8 @@ model VendorService {
   title             String
   description       String?
   status            VendorServiceStatus @default(active)
+  // is_active: flag booleano de disponibilidad para índice parcial idx_vendor_services_active (US-101 / Doc 18 §25).
+  isActive          Boolean             @default(true) @map("is_active")
   priceMin          Decimal?            @map("price_min") @db.Decimal(14, 2)
   priceMax          Decimal?            @map("price_max") @db.Decimal(14, 2)
 
@@ -275,6 +277,9 @@ model Attachment {
   url       String
   fileName  String?          @map("file_name")
   mimeType  String?          @map("mime_type")
+  // work_label: agrupador de galería de trabajos del vendor para índice parcial
+  // idx_attachments_vendor_work_active (US-101 / Doc 18 §25; límite 10 imágenes C-022).
+  workLabel String?          @map("work_label")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -513,6 +518,9 @@ model AIRecommendation {
   inputPayload      Json                   @map("input_payload") @db.JsonB
   outputPayload     Json                   @map("output_payload") @db.JsonB
   status            AIRecommendationStatus @default(pending)
+  // expires_at: expiración de la recomendación para índice parcial idx_ai_rec_pending_expires
+  // (US-101 / Doc 18 §25; job de expiración de AIRecommendation).
+  expiresAt         DateTime?              @map("expires_at") @db.Timestamptz(6)
 
   event         Event           @relation(fields: [eventId], references: [id], onDelete: Restrict)
   promptVersion AIPromptVersion @relation(fields: [aiPromptVersionId], references: [id], onDelete: Restrict)
