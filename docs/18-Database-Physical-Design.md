@@ -528,7 +528,7 @@ Tabla catálogo curada por admin. PK técnica `id uuid` (ADR-DB-002 / US-099); `
 | `uq_vendor_profiles_user_id` | `(user_id)` | unique | 1:1 con `users`. |
 | `idx_vendor_profiles_status` | `(status)` | btree | Cola de aprobación admin. |
 | `idx_vendor_profiles_status_location` | `(status, location_id) WHERE status = 'approved'` | parcial | Directorio público. |
-| `idx_vendor_profiles_business_name_trgm` | `(business_name) WHERE status='approved'` | gin/trigram opcional | Búsqueda directorio (opcional MVP). |
+| `idx_vendor_profiles_business_name_trgm` | `(business_name) WHERE status='approved'` | gin/trigram **DIFERIDO post-MVP** | Búsqueda directorio. **No implementado en US-101** (DR-101 Decisión 5; §25.1): requiere evidencia de latencia + decisión PO + extensión `pg_trgm`. |
 
 **Constraints:** `chk_vendor_profiles_category_change_max (category_change_count <= 5)`.
 

@@ -27,6 +27,18 @@ export function initMigrationSql(): string {
   return readFileSync(resolve(migrationsDir, initMigrationDir(), 'migration.sql'), 'utf8');
 }
 
+/** Directorio de la migración de índices críticos (`<ts>_critical_indexes`) — US-101. */
+export function criticalIndexesMigrationDir(): string {
+  const dir = migrationDirs().find((name) => /^\d{14}_critical_indexes$/.test(name));
+  if (!dir) throw new Error('No se encontró la migración `<ts>_critical_indexes` en prisma/migrations');
+  return dir;
+}
+
+/** Contenido crudo del `migration.sql` de la migración de índices críticos (US-101). */
+export function criticalIndexesMigrationSql(): string {
+  return readFileSync(resolve(migrationsDir, criticalIndexesMigrationDir(), 'migration.sql'), 'utf8');
+}
+
 /** Contenido concatenado de TODOS los `migration.sql` bajo prisma/migrations. */
 export function allMigrationSql(): { file: string; content: string }[] {
   return migrationDirs().map((name) => ({

@@ -79,6 +79,31 @@ DATABASE_URL=postgresql://user:pass@localhost:5432/eventflow \
   npm run db:migrate:dev -- --create-only --name <nombre>
 ```
 
+### Migración de índices críticos (US-101)
+
+La migración `prisma/migrations/<ts>_critical_indexes/` agrega, vía **raw SQL** (Doc 18 §28.3),
+los índices no representables en Prisma Schema Language:
+
+- 1 índice funcional único: `uq_users_email_lower ON users (LOWER(email))` (login case-insensitive).
+- 12 índices parciales del catálogo Doc 18 §25 (listados activos, jobs de expiración/cierre,
+  directorio público, badge unread, límite de imágenes por trabajo).
+- 18 índices parciales `idx_<tabla>_is_seed ... WHERE is_seed = true` (reset quirúrgico de demo, §27.5).
+
+Incluye también 3 columnas de soporte (`vendor_services.is_active`, `attachments.work_label`,
+`ai_recommendations.expires_at`) requeridas por los predicados del catálogo §25. La verificación
+de inventario corre en el job CI `prisma-migrate-smoke` (tests de integración `tests/integration/`).
+
+**Comportamiento del drift job (EC-01 / R-1):** se validó empíricamente con Prisma 5.22 que
+`prisma migrate diff --from-migrations --to-schema-datamodel --exit-code` **no** reporta los
+índices raw SQL (parciales/funcionales) como falso drift (`exit 0`, "No difference detected").
+Por lo tanto **no** se requirió ajustar ni debilitar el job `prisma-migrate-diff`; la detección
+de drift global permanece intacta.
+
+**Deuda consciente (`CONCURRENTLY`, R-2):** los `CREATE INDEX` se ejecutan dentro de la
+transacción de Prisma migrate (no `CONCURRENTLY`). Para el volumen MVP (seed 10–20 vendors) el
+lock de build es despreciable; si el volumen crece post-MVP, evaluar índices concurrentes fuera
+de la transacción de migración.
+
 ### Matriz de entornos (Doc 21 §10)
 
 | Entorno | Comando | Owner / Trigger |

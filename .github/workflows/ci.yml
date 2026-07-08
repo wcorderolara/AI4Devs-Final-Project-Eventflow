@@ -160,6 +160,9 @@ jobs:
           OUT=$(npm run db:migrate:deploy 2>&1)
           echo "$OUT"
           echo "$OUT" | grep -q "No pending migrations to apply"
+      # US-101 OPS-001 — Verificación de inventario de índices (AC-05) tras deploy en DB ephemeral.
+      - name: Inventario de índices críticos (tests de integración US-101)
+        run: npm run db:generate && npx vitest run tests/integration
 
   # OPS-003 (AC-01, AC-05, AC-09, AC-10) — Tests estructurales Vitest sobre migrations.
   migration-structural-tests:
