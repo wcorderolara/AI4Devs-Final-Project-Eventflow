@@ -72,6 +72,7 @@ jobs:
       - name: gitleaks (backend/prisma)
         uses: gitleaks/gitleaks-action@v2
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: 'false'
 
   # ───────────────────────────────────────────────────────────────────────────
@@ -202,6 +203,7 @@ jobs:
       - name: gitleaks scoped (backend/prisma/migrations)
         uses: gitleaks/gitleaks-action@v2
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: 'false'
 
   # OPS-005 (AC-10, SEC-05, NT-03) — Verifica que el wrapper env-aware bloquea reset en CI.
