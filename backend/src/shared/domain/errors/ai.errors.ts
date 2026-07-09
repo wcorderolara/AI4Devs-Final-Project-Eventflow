@@ -26,3 +26,17 @@ export class AiProviderTimeoutError extends AppError {
   readonly code = ErrorCodes.AI_PROVIDER_TIMEOUT; // 503 (US-097; distinto del AITimeoutError→504 de US-093)
   constructor(message = 'AI provider timed out') { super(message); }
 }
+
+// US-117 (PB-P0-009 / BE-004, AC-05): provider LLM sin configuración válida (p. ej. adapter real
+// sin API key/model). Sin dependencia HTTP; el mapping a 503 ocurre en errorHandlerMiddleware.
+// Acepta metadata SEGURA opcional (nunca secrets, raw prompts/outputs, cookies, tokens ni stack).
+export interface AiProviderErrorMeta {
+  provider?: string; // el caller pasa un `ProviderId` (ai-assistance); tipado como string para no
+  correlationId?: string; // acoplar el shared kernel al módulo de feature (dirección de capas).
+  promptVersionId?: string;
+  causeCode?: string;
+}
+export class AIProviderNotConfiguredError extends AppError {
+  readonly code = ErrorCodes.AI_PROVIDER_NOT_CONFIGURED; // 503
+  constructor(message = 'AI provider is not configured', readonly meta?: AiProviderErrorMeta) { super(message); }
+}

@@ -55,6 +55,11 @@ export const configSchema = z.object({
   // AI
   LLM_PROVIDER: z.enum(['openai', 'mock', 'anthropic']),
   OPENAI_API_KEY: z.string().optional(),
+  // US-118 (PB-P0-009): config backend-only de OpenAIProvider. Opcionales a nivel env para no
+  // romper el boot en modo mock/demo; su presencia se valida en `resolveOpenAIConfig` cuando
+  // `LLM_PROVIDER=openai` (AC-02/VR-01/VR-02 → AIProviderNotConfiguredError). Nunca frontend/públicas.
+  OPENAI_MODEL: z.string().optional(),
+  OPENAI_BASE_URL: z.string().url().optional(),
   // US-097 (PB-P0-004): timeout del provider; modo demo (habilita fallback a mock); rate limit AI.
   AI_TIMEOUT_MS: z.coerce.number().int().positive().default(8000),
   AI_DEMO_MODE: booleanFromEnv.default(false),

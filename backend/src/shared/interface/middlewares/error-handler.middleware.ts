@@ -24,6 +24,7 @@ import {
   InvalidStateTransitionError,
   AiProviderUnavailableError,
   AiProviderTimeoutError,
+  AIProviderNotConfiguredError,
 } from '../../domain/errors/ai.errors.js';
 import { BusinessRuleViolationError } from '../../domain/errors/business-rule-violation.error.js';
 import { RateLimitError } from '../../domain/errors/rate-limit.error.js';
@@ -102,6 +103,9 @@ function mapError(err: unknown): MappedError {
   }
   if (err instanceof AiProviderTimeoutError) {
     return { status: 503, code: ErrorCodes.AI_PROVIDER_TIMEOUT, message: err.message };
+  }
+  if (err instanceof AIProviderNotConfiguredError) {
+    return { status: 503, code: ErrorCodes.AI_PROVIDER_NOT_CONFIGURED, message: err.message };
   }
   if (err instanceof ConflictError) {
     return { status: 409, code: ErrorCodes.CONFLICT, message: err.message };

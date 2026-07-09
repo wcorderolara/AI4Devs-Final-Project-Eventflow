@@ -1,6 +1,6 @@
 // US-097 / QA-001+QA-004 — Unit tests deterministas de AI (sin BD, sin red). AC-12/13/14; VR/EC.
 import { describe, it, expect } from 'vitest';
-import { MockAIProvider } from '../../src/modules/ai-assistance/infrastructure/mock-ai-provider.js';
+import { MockAIProvider } from '../../src/modules/ai-assistance/infrastructure/providers/mock/mock-ai-provider.js';
 import { AiGenerationService } from '../../src/modules/ai-assistance/application/ai-generation.service.js';
 import { OUTPUT_SCHEMAS, AI_FEATURE_TYPES, type AiFeatureType } from '../../src/modules/ai-assistance/domain/ai-features.js';
 import { MissingInputError, UnsupportedLanguageError, AiInvalidOutputError, AiProviderTimeoutError, AiProviderUnavailableError } from '../../src/shared/domain/errors/ai.errors.js';
