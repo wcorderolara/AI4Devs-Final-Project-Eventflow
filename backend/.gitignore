@@ -3,3 +3,6 @@ dist/
 .env
 # Prisma Client generado (artefacto de build)
 prisma/generated/
+
+# US-098: viewer local derivado (no canónico)
+openapi-docs.html

@@ -223,3 +223,19 @@ jobs:
           else
             echo "✅ Wrapper bloqueó correctamente en CI (exit != 0)"
           fi
+
+  # US-098 (AC-03, VR-01/02, CT-01) — OpenAPI contract gate: valida el snapshot y detecta drift.
+  openapi-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - name: Lint OpenAPI (validador estructural)
+        run: npm run openapi:lint
+      - name: Drift gate (regenera desde código y compara con backend/openapi.json)
+        run: npm run openapi:check

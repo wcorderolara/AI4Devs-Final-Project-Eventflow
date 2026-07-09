@@ -346,3 +346,49 @@ US-097 agregó a `ai_recommendations`: `requested_by_user_id`(FK), `vendor_profi
 hasta PB-P0-010. Config: `AI_TIMEOUT_MS`, `AI_DEMO_MODE`, `AI_RATE_LIMIT_MAX` (ver `.env.example`).
 
 Trazabilidad: `management/workflows/development-execution/P0/PB-P0-004/US-097-execution.md`.
+
+---
+
+## Snapshot OpenAPI (US-098 / PB-P0-005)
+
+`backend/openapi.json` es el **snapshot canónico versionado** del contrato REST `/api/v1`,
+generado de forma **determinista** desde los schemas Zod de los DTOs (US-092..097) con
+`@asteasolutions/zod-to-openapi`. No define endpoints nuevos: congela el contrato ya implementado
+para consumo de frontend, MSW, tests de contrato y documentación.
+
+### Comandos
+
+| Script | Qué hace |
+| ------ | -------- |
+| `npm run openapi:generate` | Regenera `backend/openapi.json` desde el código (claves ordenadas, sin timestamps). |
+| `npm run openapi:lint` | Valida que el snapshot sea OpenAPI 3.x correcto (`@apidevtools/swagger-parser`, equivalente a redocly lint, offline). |
+| `npm run openapi:check` | Regenera en memoria y **falla si difiere** del `backend/openapi.json` versionado (drift gate). |
+| `npm run openapi:docs` | Genera `backend/openapi-docs.html` (Redoc, dev-only, gitignored) que consume `./openapi.json`. |
+
+### Flujo ante un cambio de contrato
+
+Si modificas un DTO, ruta, response o security metadata del API:
+
+1. `npm run openapi:generate`
+2. `git add backend/openapi.json`
+3. Commitea el cambio contractual junto al código.
+
+El job de CI **`openapi-check`** (y los tests en `tests/openapi/`) ejecutan `openapi:lint` +
+`openapi:check` y **bloquean el merge** si el snapshot está desactualizado o es inválido (AC-03).
+
+### Contenido y garantías
+
+- `components`: `ErrorEnvelope`, `ResponseMeta`, `Pagination`, `AiMeta` y `responses` comunes
+  (401/403/404/409/410/422/429/503/500) sobre el envelope estándar (US-093).
+- `securitySchemes.cookieAuth` (cookie de sesión HTTP-only, ADR-SEC-002). Endpoints públicos
+  (register/login/reset) sin `security`; protegidos con `cookieAuth` + 401/403.
+- Todos los paths usan el prefijo `/api/v1`. Sin secretos, tokens, PII ni datos seed reales.
+
+### Alineación documental (DOC-002)
+
+Decisión formal US-098 / PB-P0-005: el artefacto **canónico** es `backend/openapi.json`. Doc 16 §43
+menciona `/api/openapi.yaml`; cualquier `openapi.yaml`, Swagger UI o Redoc es **derivado local/demo**,
+no una segunda fuente de verdad. Acción recomendada (no bloqueante): actualizar Doc 16 §43 para
+indicar `backend/openapi.json` como snapshot canónico y YAML como derivado opcional.
+
+Trazabilidad: `management/workflows/development-execution/P0/PB-P0-005/US-098-execution.md`.

@@ -18,3 +18,4 @@
 | P0 | PB-P0-004 | US-095 | Implementar endpoints EVENT del contrato REST | [record](development-execution/P0/PB-P0-004/US-095-execution.md) | 16 | 16 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
 | P0 | PB-P0-004 | US-096 | Implementar endpoints Quote / Booking del contrato REST | [record](development-execution/P0/PB-P0-004/US-096-execution.md) | 18 | 18 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
 | P0 | PB-P0-004 | US-097 | Implementar endpoints AI del contrato REST | [record](development-execution/P0/PB-P0-004/US-097-execution.md) | 22 | 22 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
+| P0 | PB-P0-005 | US-098 | Generar snapshot OpenAPI automatizado | [record](development-execution/P0/PB-P0-005/US-098-execution.md) | 16 | 16 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |

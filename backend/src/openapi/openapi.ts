@@ -1,0 +1,332 @@
+// Registry y documento OpenAPI 3.x del contrato REST `/api/v1` (US-098 / PB-P0-005).
+// Fuente única: los schemas Zod de los DTOs (US-092..097). NO define endpoints; documenta los
+// existentes. Determinista: sin timestamps ni valores host-specific. Tooling, no runtime del server.
+import {
+  extendZodWithOpenApi,
+  OpenAPIRegistry,
+  OpenApiGeneratorV3,
+  type RouteConfig,
+} from '@asteasolutions/zod-to-openapi';
+import { z } from 'zod';
+
+// Request/Response DTOs (fuente del contrato).
+import {
+  RegisterUserRequestSchema,
+  LoginUserRequestSchema,
+  PasswordResetRequestSchema,
+  PasswordResetSchema,
+} from '../modules/identity-access/dto/index.js';
+import { AuthUserResponseSchema } from '../shared/dto/auth-user.response.js';
+import {
+  UpdateCurrentUserProfileSchema,
+  ChangePreferredLanguageSchema,
+  ChangePasswordSchema,
+} from '../modules/user-profile/dto/index.js';
+import {
+  CreateEventRequestSchema,
+  UpdateEventRequestSchema,
+  ListEventsQuerySchema,
+  EventResponseSchema,
+  EventIdParamSchema,
+} from '../modules/event-planning/dto/index.js';
+import {
+  CreateQuoteRequestRequestSchema,
+  CreateQuoteRequestBodySchema,
+  UpdateQuoteRequestBodySchema,
+  ListQuoteRequestsQuerySchema,
+  QuoteRequestResponseSchema,
+  QuoteResponseSchema,
+  EventIdParamSchema as QfEventIdParamSchema,
+  QuoteRequestIdParamSchema,
+  QuoteIdParamSchema,
+} from '../modules/quote-flow/dto/index.js';
+import {
+  CreateBookingIntentRequestSchema,
+  CancelBookingIntentRequestSchema,
+  BookingIntentResponseSchema,
+  BookingIntentIdParamSchema,
+} from '../modules/booking-intent/dto/index.js';
+import {
+  AiBaseRequestSchema,
+  ApplyAiRecommendationSchema,
+  EventIdParamSchema as AiEventIdParamSchema,
+  QuoteRequestIdParamSchema as AiQuoteRequestIdParamSchema,
+  AiRecommendationIdParamSchema,
+} from '../modules/ai-assistance/dto/index.js';
+
+extendZodWithOpenApi(z);
+
+const registry = new OpenAPIRegistry();
+
+// ── Security scheme: cookie de sesión HTTP-only firmada (ADR-SEC-002, US-094) ──
+registry.registerComponent('securitySchemes', 'cookieAuth', {
+  type: 'apiKey',
+  in: 'cookie',
+  name: 'eventflow_session',
+  description: 'Cookie de sesión HTTP-only firmada emitida por POST /auth/login.',
+});
+
+// ── Componentes comunes (US-093 envelope) ────────────────────────────────────
+registry.register(
+  'ErrorEnvelope',
+  z
+    .object({
+      error: z
+        .object({
+          code: z.string(),
+          message: z.string(),
+          details: z.array(z.object({ field: z.string(), message: z.string() }).strict()).optional(),
+          correlationId: z.string(),
+        })
+        .strict(),
+    })
+    .strict(),
+);
+
+const ResponseMeta = registry.register(
+  'ResponseMeta',
+  z.object({ correlationId: z.string(), timestamp: z.string().datetime() }).strict(),
+);
+
+const Pagination = registry.register(
+  'Pagination',
+  z
+    .object({
+      page: z.number().int(),
+      pageSize: z.number().int(),
+      total: z.number().int(),
+      totalPages: z.number().int(),
+    })
+    .strict(),
+);
+
+const AiMeta = registry.register(
+  'AiMeta',
+  z
+    .object({
+      provider: z.string(),
+      promptVersion: z.string(),
+      latencyMs: z.number(),
+      fallbackUsed: z.boolean(),
+      languageCode: z.string(),
+    })
+    .strict(),
+);
+
+// Respuestas comunes de error como components.responses (AC-04).
+const ERROR_RESPONSES: Record<string, string> = {
+  BadRequest: 'Solicitud inválida (p. ej. MISSING_INPUT, captcha).',
+  Unauthorized: 'Autenticación requerida.',
+  Forbidden: 'Rol o permiso insuficiente.',
+  NotFound: 'Recurso no encontrado (o enmascarado por seguridad).',
+  Conflict: 'Conflicto de estado (p. ej. EMAIL_TAKEN, límites de quote).',
+  Gone: 'Recurso expirado (QUOTE_EXPIRED).',
+  ValidationError: 'Error de validación de DTO.',
+  RateLimited: 'Límite de tasa excedido.',
+  ProviderUnavailable: 'Proveedor no disponible o timeout (AI).',
+  InternalError: 'Error interno del servidor.',
+};
+for (const [name, description] of Object.entries(ERROR_RESPONSES)) {
+  registry.registerComponent('responses', name, {
+    description,
+    content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorEnvelope' } } },
+  });
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+type ZodAny = z.ZodTypeAny;
+
+function envelope(data: ZodAny): ZodAny {
+  return z.object({ data, meta: ResponseMeta }).strict();
+}
+function listEnvelope(item: ZodAny): ZodAny {
+  return z.object({ data: z.array(item), pagination: Pagination, meta: ResponseMeta }).strict();
+}
+function jsonBody(schema: ZodAny) {
+  return { content: { 'application/json': { schema } } };
+}
+function okResponse(schema: ZodAny, description = 'OK') {
+  return { description, content: { 'application/json': { schema } } };
+}
+const HTTP_TO_RESPONSE: Record<number, string> = {
+  400: 'BadRequest',
+  401: 'Unauthorized',
+  403: 'Forbidden',
+  404: 'NotFound',
+  409: 'Conflict',
+  410: 'Gone',
+  422: 'ValidationError',
+  429: 'RateLimited',
+  503: 'ProviderUnavailable',
+  500: 'InternalError',
+};
+function errorRefs(codes: number[]): Record<number, { $ref: string }> {
+  const out: Record<number, { $ref: string }> = {};
+  for (const c of codes) out[c] = { $ref: `#/components/responses/${HTTP_TO_RESPONSE[c]}` };
+  return out;
+}
+
+const cookieAuth = [{ cookieAuth: [] }];
+
+/** Prefijo canónico versionado. Todos los paths documentados lo incluyen (AC-05, VR-05). */
+const API_PREFIX = '/api/v1';
+
+interface OpParams {
+  method: 'get' | 'post' | 'patch' | 'delete' | 'put';
+  path: string;
+  operationId: string;
+  tags: string[];
+  summary: string;
+  secured: boolean;
+  params?: z.AnyZodObject;
+  query?: z.AnyZodObject;
+  body?: ZodAny;
+  success: { status: number; schema?: ZodAny; description?: string };
+  errors: number[];
+}
+
+function op(o: OpParams): void {
+  const responses: RouteConfig['responses'] = {};
+  responses[o.success.status] = o.success.schema
+    ? okResponse(o.success.schema, o.success.description)
+    : { description: o.success.description ?? 'No Content' };
+  Object.assign(responses, errorRefs(o.errors));
+  registry.registerPath({
+    method: o.method,
+    path: `${API_PREFIX}${o.path}`,
+    operationId: o.operationId,
+    tags: o.tags,
+    summary: o.summary,
+    ...(o.secured ? { security: cookieAuth } : {}),
+    request: {
+      ...(o.params ? { params: o.params } : {}),
+      ...(o.query ? { query: o.query } : {}),
+      ...(o.body ? { body: jsonBody(o.body) } : {}),
+    },
+    responses,
+  });
+}
+
+// ── AUTH (público) ────────────────────────────────────────────────────────────
+op({ method: 'post', path: '/auth/register', operationId: 'registerUser', tags: ['Auth'], summary: 'Registrar organizer o vendor', secured: false, body: RegisterUserRequestSchema, success: { status: 201, schema: envelope(AuthUserResponseSchema), description: 'Usuario creado' }, errors: [400, 409, 422, 429] });
+op({ method: 'post', path: '/auth/login', operationId: 'loginUser', tags: ['Auth'], summary: 'Iniciar sesión (emite cookie)', secured: false, body: LoginUserRequestSchema, success: { status: 200, schema: envelope(AuthUserResponseSchema) }, errors: [400, 401, 422, 429] });
+op({ method: 'post', path: '/auth/logout', operationId: 'logoutUser', tags: ['Auth'], summary: 'Cerrar sesión', secured: true, success: { status: 204 }, errors: [401] });
+op({ method: 'post', path: '/auth/password/reset-request', operationId: 'requestPasswordReset', tags: ['Auth'], summary: 'Solicitar reset de contraseña', secured: false, body: PasswordResetRequestSchema, success: { status: 202, schema: envelope(z.object({ message: z.string() }).strict()), description: 'Respuesta genérica' }, errors: [400, 422, 429] });
+op({ method: 'post', path: '/auth/password/reset', operationId: 'resetPassword', tags: ['Auth'], summary: 'Aplicar reset con token', secured: false, body: PasswordResetSchema, success: { status: 204 }, errors: [401, 422] });
+
+// ── USERS (perfil propio) ──────────────────────────────────────────────────────
+op({ method: 'get', path: '/users/me', operationId: 'getCurrentUser', tags: ['Users'], summary: 'Obtener perfil propio', secured: true, success: { status: 200, schema: envelope(AuthUserResponseSchema) }, errors: [401] });
+op({ method: 'patch', path: '/users/me', operationId: 'updateCurrentUser', tags: ['Users'], summary: 'Actualizar perfil propio', secured: true, body: UpdateCurrentUserProfileSchema, success: { status: 200, schema: envelope(AuthUserResponseSchema) }, errors: [400, 401] });
+op({ method: 'patch', path: '/users/me/preferred-language', operationId: 'changePreferredLanguage', tags: ['Users'], summary: 'Cambiar idioma preferido', secured: true, body: ChangePreferredLanguageSchema, success: { status: 200, schema: envelope(AuthUserResponseSchema) }, errors: [400, 401] });
+op({ method: 'post', path: '/users/me/change-password', operationId: 'changePassword', tags: ['Users'], summary: 'Cambiar contraseña', secured: true, body: ChangePasswordSchema, success: { status: 204 }, errors: [400, 401] });
+
+// ── EVENTS ─────────────────────────────────────────────────────────────────────
+op({ method: 'post', path: '/events', operationId: 'createEvent', tags: ['Events'], summary: 'Crear evento (draft)', secured: true, body: CreateEventRequestSchema, success: { status: 201, schema: envelope(EventResponseSchema) }, errors: [400, 401, 403, 404, 422] });
+op({ method: 'get', path: '/events', operationId: 'listMyEvents', tags: ['Events'], summary: 'Listar eventos propios', secured: true, query: ListEventsQuerySchema, success: { status: 200, schema: listEnvelope(EventResponseSchema) }, errors: [401, 403, 422] });
+op({ method: 'get', path: '/events/{eventId}', operationId: 'getEvent', tags: ['Events'], summary: 'Obtener evento propio', secured: true, params: EventIdParamSchema, success: { status: 200, schema: envelope(EventResponseSchema) }, errors: [401, 403, 404] });
+op({ method: 'patch', path: '/events/{eventId}', operationId: 'updateEvent', tags: ['Events'], summary: 'Actualizar evento', secured: true, params: EventIdParamSchema, body: UpdateEventRequestSchema, success: { status: 200, schema: envelope(EventResponseSchema) }, errors: [400, 401, 404, 409, 422] });
+op({ method: 'post', path: '/events/{eventId}/activate', operationId: 'activateEvent', tags: ['Events'], summary: 'Activar evento (draft→active)', secured: true, params: EventIdParamSchema, success: { status: 200, schema: envelope(EventResponseSchema) }, errors: [401, 404, 422] });
+op({ method: 'post', path: '/events/{eventId}/cancel', operationId: 'cancelEvent', tags: ['Events'], summary: 'Cancelar evento', secured: true, params: EventIdParamSchema, success: { status: 200, schema: envelope(EventResponseSchema) }, errors: [401, 404, 422] });
+
+// ── QUOTE-FLOW ──────────────────────────────────────────────────────────────────
+op({ method: 'get', path: '/events/{eventId}/quote-requests', operationId: 'listEventQuoteRequests', tags: ['QuoteRequests'], summary: 'Listar QuoteRequests del evento', secured: true, params: QfEventIdParamSchema, query: ListQuoteRequestsQuerySchema, success: { status: 200, schema: listEnvelope(QuoteRequestResponseSchema) }, errors: [401, 403, 404, 422] });
+op({ method: 'post', path: '/events/{eventId}/quote-requests', operationId: 'createQuoteRequest', tags: ['QuoteRequests'], summary: 'Crear QuoteRequest', secured: true, params: QfEventIdParamSchema, body: CreateQuoteRequestRequestSchema, success: { status: 201, schema: envelope(QuoteRequestResponseSchema) }, errors: [401, 403, 404, 409, 422] });
+op({ method: 'get', path: '/quote-requests/{quoteRequestId}', operationId: 'getQuoteRequest', tags: ['QuoteRequests'], summary: 'Obtener QuoteRequest', secured: true, params: QuoteRequestIdParamSchema, success: { status: 200, schema: envelope(QuoteRequestResponseSchema) }, errors: [401, 403, 404] });
+op({ method: 'patch', path: '/quote-requests/{quoteRequestId}/cancel', operationId: 'cancelQuoteRequest', tags: ['QuoteRequests'], summary: 'Cancelar QuoteRequest', secured: true, params: QuoteRequestIdParamSchema, success: { status: 200, schema: envelope(QuoteRequestResponseSchema) }, errors: [401, 403, 404, 422] });
+op({ method: 'get', path: '/vendors/me/quote-requests', operationId: 'listVendorQuoteRequests', tags: ['QuoteRequests'], summary: 'Listar QuoteRequests asignados (vendor)', secured: true, query: ListQuoteRequestsQuerySchema, success: { status: 200, schema: listEnvelope(QuoteRequestResponseSchema) }, errors: [401, 403, 422] });
+op({ method: 'patch', path: '/quote-requests/{quoteRequestId}/viewed', operationId: 'markQuoteRequestViewed', tags: ['QuoteRequests'], summary: 'Marcar QuoteRequest como visto (vendor)', secured: true, params: QuoteRequestIdParamSchema, success: { status: 204 }, errors: [401, 403, 404, 422] });
+op({ method: 'get', path: '/quote-requests/{quoteRequestId}/quote', operationId: 'getQuoteForRequest', tags: ['Quotes'], summary: 'Obtener el Quote actual del QuoteRequest', secured: true, params: QuoteRequestIdParamSchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404] });
+op({ method: 'post', path: '/quote-requests/{quoteRequestId}/quote', operationId: 'createQuote', tags: ['Quotes'], summary: 'Crear Quote draft (vendor)', secured: true, params: QuoteRequestIdParamSchema, body: CreateQuoteRequestBodySchema, success: { status: 201, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404, 409, 422] });
+op({ method: 'patch', path: '/quotes/{quoteId}', operationId: 'updateQuote', tags: ['Quotes'], summary: 'Editar Quote draft (vendor)', secured: true, params: QuoteIdParamSchema, body: UpdateQuoteRequestBodySchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404, 422] });
+op({ method: 'post', path: '/quotes/{quoteId}/send', operationId: 'sendQuote', tags: ['Quotes'], summary: 'Enviar Quote (vendor)', secured: true, params: QuoteIdParamSchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404, 422] });
+op({ method: 'post', path: '/quotes/{quoteId}/accept', operationId: 'acceptQuote', tags: ['Quotes'], summary: 'Aceptar Quote (organizer)', secured: true, params: QuoteIdParamSchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404, 410, 422] });
+op({ method: 'post', path: '/quotes/{quoteId}/reject', operationId: 'rejectQuote', tags: ['Quotes'], summary: 'Rechazar Quote (organizer)', secured: true, params: QuoteIdParamSchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404, 422] });
+op({ method: 'post', path: '/quotes/{quoteId}/prefer', operationId: 'preferQuote', tags: ['Quotes'], summary: 'Marcar Quote como preferido (organizer)', secured: true, params: QuoteIdParamSchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404, 422] });
+
+// ── BOOKING-INTENT ──────────────────────────────────────────────────────────────
+op({ method: 'post', path: '/booking-intents', operationId: 'createBookingIntent', tags: ['BookingIntents'], summary: 'Crear BookingIntent (simulado)', secured: true, body: CreateBookingIntentRequestSchema, success: { status: 201, schema: envelope(BookingIntentResponseSchema) }, errors: [401, 403, 404, 410, 422] });
+op({ method: 'get', path: '/booking-intents/{bookingIntentId}', operationId: 'getBookingIntent', tags: ['BookingIntents'], summary: 'Obtener BookingIntent', secured: true, params: BookingIntentIdParamSchema, success: { status: 200, schema: envelope(BookingIntentResponseSchema) }, errors: [401, 403, 404] });
+op({ method: 'post', path: '/booking-intents/{bookingIntentId}/confirm', operationId: 'confirmBookingIntent', tags: ['BookingIntents'], summary: 'Confirmar BookingIntent (vendor)', secured: true, params: BookingIntentIdParamSchema, success: { status: 200, schema: envelope(BookingIntentResponseSchema) }, errors: [401, 403, 404, 422] });
+op({ method: 'post', path: '/booking-intents/{bookingIntentId}/cancel', operationId: 'cancelBookingIntent', tags: ['BookingIntents'], summary: 'Cancelar BookingIntent', secured: true, params: BookingIntentIdParamSchema, body: CancelBookingIntentRequestSchema, success: { status: 200, schema: envelope(BookingIntentResponseSchema) }, errors: [401, 403, 404, 422] });
+
+// ── AI ASSISTANCE ────────────────────────────────────────────────────────────────
+const AiGenerationResponse = envelope(
+  z
+    .object({
+      recommendationId: z.string().uuid(),
+      type: z.string(),
+      status: z.string(),
+      output: z.record(z.unknown()),
+      aiMeta: AiMeta,
+      createdAt: z.string().datetime(),
+    })
+    .strict(),
+);
+const AiDetailResponse = envelope(
+  z
+    .object({
+      recommendationId: z.string().uuid(),
+      type: z.string(),
+      status: z.string(),
+      eventId: z.string().uuid().nullable(),
+      vendorProfileId: z.string().uuid().nullable(),
+      quoteRequestId: z.string().uuid().nullable(),
+      input: z.record(z.unknown()),
+      output: z.record(z.unknown()),
+      aiMeta: AiMeta.nullable(),
+      createdAt: z.string().datetime(),
+    })
+    .strict(),
+);
+
+for (const [path, opId, summary] of [
+  ['event-plan', 'aiGenerateEventPlan', 'Generar plan de evento (AI-001)'],
+  ['checklist', 'aiGenerateChecklist', 'Generar checklist (AI-002)'],
+  ['budget-suggestion', 'aiGenerateBudgetSuggestion', 'Generar sugerencia de presupuesto (AI-003)'],
+  ['vendor-categories', 'aiRecommendVendorCategories', 'Recomendar categorías de vendor (AI-004)'],
+  ['quote-brief', 'aiGenerateQuoteBrief', 'Generar quote brief (AI-005)'],
+  ['task-prioritization', 'aiPrioritizeTasks', 'Priorizar tareas (AI-008)'],
+] as const) {
+  op({ method: 'post', path: `/events/{eventId}/ai/${path}`, operationId: opId, tags: ['AI'], summary, secured: true, params: AiEventIdParamSchema, body: AiBaseRequestSchema, success: { status: 200, schema: AiGenerationResponse }, errors: [400, 401, 403, 404, 422, 429, 503] });
+}
+op({ method: 'post', path: '/quote-requests/{quoteRequestId}/ai/comparison-summary', operationId: 'aiCompareQuotes', tags: ['AI'], summary: 'Generar comparación de cotizaciones (AI-006)', secured: true, params: AiQuoteRequestIdParamSchema, body: AiBaseRequestSchema, success: { status: 200, schema: AiGenerationResponse }, errors: [400, 401, 403, 404, 422, 429, 503] });
+op({ method: 'post', path: '/vendors/me/ai/bio', operationId: 'aiGenerateVendorBio', tags: ['AI'], summary: 'Generar bio de vendor (AI-007)', secured: true, body: AiBaseRequestSchema, success: { status: 200, schema: AiGenerationResponse }, errors: [400, 401, 403, 422, 429, 503] });
+op({ method: 'get', path: '/ai-recommendations/{aiRecommendationId}', operationId: 'getAiRecommendation', tags: ['AI'], summary: 'Obtener AIRecommendation', secured: true, params: AiRecommendationIdParamSchema, success: { status: 200, schema: AiDetailResponse }, errors: [401, 403, 404] });
+op({ method: 'post', path: '/ai-recommendations/{aiRecommendationId}/apply', operationId: 'applyAiRecommendation', tags: ['AI'], summary: 'Aplicar AIRecommendation (human-in-the-loop)', secured: true, params: AiRecommendationIdParamSchema, body: ApplyAiRecommendationSchema, success: { status: 200, schema: AiDetailResponse }, errors: [401, 403, 404, 422] });
+op({ method: 'post', path: '/ai-recommendations/{aiRecommendationId}/discard', operationId: 'discardAiRecommendation', tags: ['AI'], summary: 'Descartar AIRecommendation', secured: true, params: AiRecommendationIdParamSchema, success: { status: 204 }, errors: [401, 403, 404, 422] });
+
+// ── Documento ────────────────────────────────────────────────────────────────
+export const OPENAPI_TAGS = ['Auth', 'Users', 'Events', 'QuoteRequests', 'Quotes', 'BookingIntents', 'AI'] as const;
+
+export function buildOpenApiDocument(): Record<string, unknown> {
+  const generator = new OpenApiGeneratorV3(registry.definitions);
+  return generator.generateDocument({
+    openapi: '3.0.3',
+    info: {
+      title: 'EventFlow REST API',
+      version: '1.0.0',
+      description:
+        'Contrato REST MVP de EventFlow bajo /api/v1 (PB-P0-004). Snapshot generado desde schemas Zod (US-098). Fuente canónica: backend/openapi.json.',
+    },
+    servers: [{ url: '/', description: 'Host root (los paths incluyen el prefijo /api/v1)' }],
+    tags: OPENAPI_TAGS.map((name) => ({ name })),
+    security: [],
+  }) as unknown as Record<string, unknown>;
+}
+
+/** Ordena claves de objetos recursivamente para una salida byte-estable (determinismo, AC-01). */
+function sortKeysDeep(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortKeysDeep);
+  if (value && typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    const sorted: Record<string, unknown> = {};
+    for (const key of Object.keys(obj).sort()) sorted[key] = sortKeysDeep(obj[key]);
+    return sorted;
+  }
+  return value;
+}
+
+/** Serializa el documento de forma determinista (claves ordenadas, 2 espacios, newline final). */
+export function serializeOpenApiDocument(doc: Record<string, unknown>): string {
+  return `${JSON.stringify(sortKeysDeep(doc), null, 2)}\n`;
+}
