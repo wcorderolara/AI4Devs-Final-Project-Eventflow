@@ -24,3 +24,7 @@
 | P0 | PB-P0-007 | US-110 | Rate limiting en auth y endpoints IA | [record](development-execution/P0/PB-P0-007/US-110-execution.md) | 25 | 24 | 0 | 0 | 0 | 1 | `Done` | 2026-07-09 |
 | P0 | PB-P0-007 | US-111 | Validar orden seguro de middlewares | [record](development-execution/P0/PB-P0-007/US-111-execution.md) | 22 | 22 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
 | P0 | PB-P0-008 | US-112 | Suite negativa RBAC + ownership | [record](development-execution/P0/PB-P0-008/US-112-execution.md) | 22 | 22 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
+| P0 | PB-P0-009 | US-117 | Definir puerto LLMProvider | [record](development-execution/P0/PB-P0-009/US-117-execution.md) | 17 | 17 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
+| P0 | PB-P0-009 | US-118 | Implementar OpenAIProvider | [record](development-execution/P0/PB-P0-009/US-118-execution.md) | 22 | 22 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
+| P0 | PB-P0-009 | US-119 | Implementar MockAIProvider determinista | [record](development-execution/P0/PB-P0-009/US-119-execution.md) | 24 | 24 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
+| P0 | PB-P0-009 | US-120 | Crear AnthropicProvider stub no funcional | [record](development-execution/P0/PB-P0-009/US-120-execution.md) | 19 | 19 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |

@@ -26,6 +26,8 @@ export {
   InvalidStateTransitionError,
   AiProviderUnavailableError,
   AiProviderTimeoutError,
+  AIProviderNotConfiguredError,
+  type AiProviderErrorMeta,
 } from './ai.errors.js';
 export { BusinessRuleViolationError } from './business-rule-violation.error.js';
 export { RateLimitError } from './rate-limit.error.js';
