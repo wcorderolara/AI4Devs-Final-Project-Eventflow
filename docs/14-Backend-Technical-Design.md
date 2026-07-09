@@ -1128,7 +1128,7 @@ UnexpectedError                     (500)
 Reglas:
 
 - `message` debe ser **safe para el usuario** (sin stack, sin SQL, sin PII).
-- `code` es estable (e.g., `VALIDATION_FAILED`, `QUOTE_LIMIT_REACHED`, `AI_TIMEOUT`).
+- `code` es estable (e.g., `VALIDATION_ERROR`, `QUOTE_LIMIT_REACHED`, `AI_TIMEOUT`).
 - `details` se usa solo para errores 400 (campos inválidos).
 - `correlationId` siempre presente (lo enriquece `errorHandlerMiddleware`).
 - `errorHandlerMiddleware` loguea **stack + contexto interno** en log estructurado; **no lo expone al cliente**.
@@ -1137,14 +1137,14 @@ Reglas:
 
 | Error de dominio/infra | HTTP | Code ejemplo |
 |------------------------|------|--------------|
-| `ValidationError` | 400 | `VALIDATION_FAILED` |
+| `ValidationError` | 400 | `VALIDATION_ERROR` |
 | `AuthenticationError` | 401 | `AUTHENTICATION_REQUIRED` |
 | `AuthorizationError` | 403 | `FORBIDDEN` |
-| `AuthorizationError` (privado, masking) | 404 | `NOT_FOUND` |
-| `NotFoundError` | 404 | `NOT_FOUND` |
+| `AuthorizationError` (privado, masking) | 404 | `RESOURCE_NOT_FOUND` |
+| `NotFoundError` | 404 | `RESOURCE_NOT_FOUND` |
 | `ConflictError` | 409 | `CONFLICT` |
 | `BusinessRuleViolationError` | 409 o 422 | `QUOTE_LIMIT_REACHED`, `CURRENCY_IMMUTABLE`, etc. |
-| `RateLimitError` | 429 | `RATE_LIMITED` |
+| `RateLimitError` | 429 | `RATE_LIMIT_EXCEEDED` |
 | `AIProviderError` | 502 | `AI_PROVIDER_ERROR` |
 | `AITimeoutError` | 504 | `AI_TIMEOUT` |
 | `PrismaPersistenceError` | 500 | `PERSISTENCE_ERROR` |

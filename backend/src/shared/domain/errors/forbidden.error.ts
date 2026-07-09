@@ -1,11 +1,10 @@
-// Shared kernel — ForbiddenError → HTTP 403 (US-091 / BE-001). Doc 14 §17.2.
-// Usuario autenticado pero sin permisos (rol insuficiente / origin CORS no permitido).
-import { AppError } from './app.error.js';
+// Shared kernel — ForbiddenError → HTTP 403 (US-091 / BE-001; re-basado en US-093 / BE-002).
+// Subclase de AuthorizationError (code FORBIDDEN, maskedAs404=false). La lanzan roleMiddleware y
+// corsMiddleware. El mapeo HTTP lo hace errorHandlerMiddleware.
+import { AuthorizationError } from './authorization.error.js';
 
-export class ForbiddenError extends AppError {
-  readonly code = 'FORBIDDEN';
-
+export class ForbiddenError extends AuthorizationError {
   constructor(message = 'Insufficient permissions') {
-    super(message);
+    super(message, false);
   }
 }

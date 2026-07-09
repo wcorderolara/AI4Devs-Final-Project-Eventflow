@@ -12,6 +12,7 @@ import { helmetMiddleware } from './shared/interface/middlewares/helmet.middlewa
 import { rateLimitMiddleware } from './shared/interface/middlewares/rate-limit.middleware.js';
 import { notFoundMiddleware } from './shared/interface/middlewares/not-found.middleware.js';
 import { errorHandlerMiddleware } from './shared/interface/middlewares/error-handler.middleware.js';
+import { identityAccessRouter } from './modules/identity-access/interface/identity-access.routes.js';
 
 /** Construye y configura la aplicación Express. */
 export function createApp(): Express {
@@ -37,8 +38,10 @@ export function createApp(): Express {
     });
   });
 
-  // 7. Router de API versionada. Vacío en esta US; las rutas se agregan en feature stories.
+  // 7. Router de API versionada. Las rutas se agregan por feature story.
   const apiV1 = Router();
+  // US-092 / BE-006: rutas de referencia con validateRequestMiddleware por ruta.
+  apiV1.use('/auth', identityAccessRouter);
   app.use('/api/v1', apiV1);
 
   app.use(notFoundMiddleware); // 8. penúltimo: 404 catch-all

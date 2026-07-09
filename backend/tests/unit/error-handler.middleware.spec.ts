@@ -13,21 +13,24 @@ describe('errorHandlerMiddleware (US-091)', () => {
     errorHandlerMiddleware(new Error('secret internal detail'), req, asResponse(res), vi.fn());
 
     expect(res.statusCode).toBe(500);
+    // US-093: envelope anidado + código canónico INTERNAL_ERROR.
     expect(res.body).toMatchObject({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Internal server error',
-      correlationId: 'c1',
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Error interno del servidor.',
+        correlationId: 'c1',
+      },
     });
     expect((res.body as Record<string, unknown>).stack).toBeUndefined();
     // El mensaje real del error nunca se filtra en 5xx.
     expect(JSON.stringify(res.body)).not.toContain('secret internal detail');
   });
 
-  it('UnauthorizedError → 401 con code UNAUTHORIZED', () => {
+  it('UnauthorizedError → 401 con code AUTHENTICATION_REQUIRED', () => {
     const res = createMockResponse();
     errorHandlerMiddleware(new UnauthorizedError(), createMockRequest({ correlationId: 'c2' }), asResponse(res), vi.fn());
     expect(res.statusCode).toBe(401);
-    expect(res.body).toMatchObject({ code: 'UNAUTHORIZED', correlationId: 'c2' });
+    expect(res.body).toMatchObject({ error: { code: 'AUTHENTICATION_REQUIRED', correlationId: 'c2' } });
   });
 
   it('ValidationError → 400 con details', () => {
@@ -35,8 +38,8 @@ describe('errorHandlerMiddleware (US-091)', () => {
     const err = new ValidationError('Validation failed', [{ field: 'body.email', message: 'Invalid email' }]);
     errorHandlerMiddleware(err, createMockRequest({ correlationId: 'c3' }), asResponse(res), vi.fn());
     expect(res.statusCode).toBe(400);
-    expect(res.body).toMatchObject({ code: 'VALIDATION_ERROR' });
-    expect((res.body as { details?: unknown[] }).details).toHaveLength(1);
+    expect(res.body).toMatchObject({ error: { code: 'VALIDATION_ERROR' } });
+    expect((res.body as { error: { details?: unknown[] } }).error.details).toHaveLength(1);
   });
 });
 
