@@ -228,7 +228,7 @@ No aplica — esta historia no invoca IA directamente.
 * **`src/shared/domain/`**: `result.ts` (tipo `Result<T,E>`), `id.ts` (tipo `Id`), `clock.ts` (`ClockPort`), `errors/base.error.ts`, `errors/validation.error.ts`, `errors/authorization.error.ts`.
 * **`src/shared/application/`**: `transaction-manager.port.ts` (puerto stub), `notification-sender.port.ts` (puerto stub).
 * **`src/shared/infrastructure/`**: directorio placeholder; `prisma/prisma.client.ts` (stub), `logger/` (placeholder).
-* **`src/shared/interface/middlewares/`**: directorio placeholder; archivos `.ts` vacíos o stubs para los 11 middlewares de Doc 14 §8.2 (implementación en US-091).
+* **`src/shared/interface/middlewares/`**: directorio placeholder; archivos `.ts` vacíos o stubs para los 14 middlewares de Doc 14 §8.2 y §16 (implementación en US-091).
 * Use Case / Service: N/A
 * Controller / Route: N/A
 * Authorization Policy: N/A
@@ -304,7 +304,7 @@ Not applicable for this story.
 * Crear `src/shared/domain/` con stubs tipados: `result.ts`, `id.ts`, `clock.ts`, `errors/base.error.ts`, `errors/validation.error.ts`, `errors/authorization.error.ts`.
 * Crear `src/shared/application/` con puertos stub: `transaction-manager.port.ts`, `notification-sender.port.ts`.
 * Crear `src/shared/infrastructure/` con placeholder de Prisma client y logger.
-* Crear `src/shared/interface/middlewares/` con archivos placeholder para los 11 middlewares (implementación en US-091).
+* Crear `src/shared/interface/middlewares/` con archivos placeholder para los 14 middlewares (implementación en US-091).
 * Configurar ESLint import boundary rule (`import/no-restricted-paths` o `eslint-plugin-boundaries`) por bounded context.
 * Documentar convenciones de nombrado en `src/modules/README.md` referenciando Doc 14 §24.2.
 

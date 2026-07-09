@@ -68,7 +68,7 @@ Foundation técnica del monolito modular MVP. Sin este bootstrap no existe punto
 | Data Entity / Entities | —                                                                                                 |
 | API Endpoint(s)        | GET /health                                                                                       |
 | NFR Reference(s)       | NFR-PERF-001, NFR-OBS-006, NFR-SEC-008, NFR-DEPLOY-002                                           |
-| Related ADR(s)         | ADR-ARCH-001, ADR-ARCH-002, ADR-BE-001, ADR-SEC-006                                              |
+| Related ADR(s)         | ADR-ARCH-001, ADR-ARCH-002, ADR-BE-001, ADR-SEC-005, ADR-SEC-006                                |
 | Related Document(s)    | /docs/12, /docs/13, /docs/14, /docs/16, /docs/19, /docs/20, /docs/21                             |
 
 ---

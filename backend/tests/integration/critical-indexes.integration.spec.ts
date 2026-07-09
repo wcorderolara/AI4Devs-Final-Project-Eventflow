@@ -45,8 +45,8 @@ describe.skipIf(!dbUp)('US-101 integración: índices críticos (pg_indexes)', (
         `SELECT indexname, indexdef FROM pg_indexes WHERE indexname = 'uq_users_email_lower'`,
       );
       expect(rows.length).toBe(1);
-      expect(rows[0].indexdef.toLowerCase()).toContain('unique');
-      expect(rows[0].indexdef.toLowerCase()).toContain('lower(email)');
+      expect(rows[0]!.indexdef.toLowerCase()).toContain('unique');
+      expect(rows[0]!.indexdef.toLowerCase()).toContain('lower(email)');
     });
 
     it('rechaza email duplicado en distinto case (unique violation)', async () => {

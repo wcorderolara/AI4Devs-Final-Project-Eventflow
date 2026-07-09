@@ -77,7 +77,7 @@ describe('QA-001: estructura de la migración de constraints', () => {
     expect(targets.length).toBe(20);
     for (const { i } of targets) {
       let j = i - 1;
-      while (j >= 0 && lines[j].trim() === '') j--;
+      while (j >= 0 && lines[j]?.trim() === '') j--;
       expect(lines[j]).toMatch(/^--\s*Raw SQL:/i);
     }
   });
