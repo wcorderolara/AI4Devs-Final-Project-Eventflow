@@ -61,6 +61,9 @@ jobs:
       - run: npm run db:generate
       - run: npm run typecheck
       - run: npm test
+      # US-121 / OPS-001 (PB-P0-010) — checks PromptOps: registry válido, no duplicate active,
+      # hash/version drift, metadata sync/export, no secrets/PII y no Future/P4 active. Sin red ni secrets.
+      - run: npm run promptops:check
 
   # SEC-001 — secret scan defensivo sobre prisma/ (gitleaks) además del test de secret scan.
   secret-scan-schema:

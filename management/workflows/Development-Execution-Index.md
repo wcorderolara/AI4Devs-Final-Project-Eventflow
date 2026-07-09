@@ -28,3 +28,7 @@
 | P0 | PB-P0-009 | US-118 | Implementar OpenAIProvider | [record](development-execution/P0/PB-P0-009/US-118-execution.md) | 22 | 22 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
 | P0 | PB-P0-009 | US-119 | Implementar MockAIProvider determinista | [record](development-execution/P0/PB-P0-009/US-119-execution.md) | 24 | 24 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
 | P0 | PB-P0-009 | US-120 | Crear AnthropicProvider stub no funcional | [record](development-execution/P0/PB-P0-009/US-120-execution.md) | 19 | 19 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
+| P0 | PB-P0-010 | US-121 | Implementar prompt registry versionado | [record](development-execution/P0/PB-P0-010/US-121-execution.md) | 25 | 25 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
+| P0 | PB-P0-010 | US-122 | Persistir AIRecommendation con metadata completa | [record](development-execution/P0/PB-P0-010/US-122-execution.md) | 28 | 28 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
+| P0 | PB-P0-011 | US-123 | Aplicar timeout 60s y fallback Mock controlado | [record](development-execution/P0/PB-P0-011/US-123-execution.md) | 28 | 28 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
+| P0 | PB-P0-011 | US-124 | Aplicar validación JSON estricta con un reintento controlado | [record](development-execution/P0/PB-P0-011/US-124-execution.md) | 28 | 28 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
