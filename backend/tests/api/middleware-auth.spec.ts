@@ -51,7 +51,7 @@ describe('authMiddleware + roleMiddleware (US-091)', () => {
   });
 
   it('NT-02: JWT firmado con secret incorrecto → 401', async () => {
-    const forged = jwt.sign({ id: 'u1', role: 'organizer' }, 'wrong-secret-that-is-not-real-000', { expiresIn: '1h' }); // gitleaks:allow -- secret falso de test
+    const forged = jwt.sign({ id: 'u1', role: 'organizer' }, 'wrong-secret-that-is-not-real-000', { expiresIn: '1h' });
     const res = await request(app).get('/protected').set('Authorization', `Bearer ${forged}`);
     expect(res.status).toBe(401);
   });
