@@ -25,7 +25,7 @@ describe('Pipeline global — CORS, body limit, correlationId (US-091)', () => {
   it('NT-09: Origin fuera de la allowlist → 403', async () => {
     const res = await request(app).get('/health').set('Origin', 'http://evil.example.com');
     expect(res.status).toBe(403);
-    expect(res.body.code).toBe('FORBIDDEN');
+    expect(res.body.error.code).toBe('FORBIDDEN');
   });
 
   it('NT-09: Origin en la allowlist → 200', async () => {
@@ -40,7 +40,7 @@ describe('Pipeline global — CORS, body limit, correlationId (US-091)', () => {
       .set('Content-Type', 'application/json')
       .send(huge);
     expect(res.status).toBe(400);
-    expect(res.body.correlationId).toBeDefined();
+    expect(res.body.error.correlationId).toBeDefined();
   });
 
   it('TS-06: app.ts registra los middlewares globales en el orden de Doc 14 §8.2', () => {
@@ -84,7 +84,7 @@ describe('Pipeline global — rate limit (US-091 / NT-07)', () => {
     await request(rateApp).get('/health'); // 2 (límite alcanzado)
     const res = await request(rateApp).get('/health'); // 3 → excede
     expect(res.status).toBe(429);
-    expect(res.body.code).toBe('RATE_LIMIT_EXCEEDED');
+    expect(res.body.error.code).toBe('RATE_LIMIT_EXCEEDED');
     const hasRetryAfter =
       res.headers['retry-after'] !== undefined || res.headers['ratelimit-reset'] !== undefined;
     expect(hasRetryAfter).toBe(true);

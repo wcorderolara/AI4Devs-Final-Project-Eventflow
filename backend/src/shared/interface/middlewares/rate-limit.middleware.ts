@@ -10,10 +10,13 @@ export const rateLimitMiddleware = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {
+    // Error envelope anidado (US-093 / BE-006; ADR-API-002).
     res.status(429).json({
-      code: 'RATE_LIMIT_EXCEEDED',
-      message: 'Too many requests',
-      correlationId: req.correlationId,
+      error: {
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: 'Too many requests',
+        correlationId: req.correlationId ?? '',
+      },
     });
   },
 });

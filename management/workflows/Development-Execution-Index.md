@@ -12,3 +12,5 @@
 | P0 | PB-P0-002 | US-089 | Inicializar proyecto Node + Express + TypeScript | [record](development-execution/P0/PB-P0-002/US-089-execution.md) | 14 | 14 | 0 | 0 | 0 | 0 | `Done` | 2026-07-08 |
 | P0 | PB-P0-002 | US-090 | Carpetas por módulo de dominio (feature-first + Clean/Hex) | [record](development-execution/P0/PB-P0-002/US-090-execution.md) | 16 | 16 | 0 | 0 | 0 | 0 | `Done` | 2026-07-08 |
 | P0 | PB-P0-002 | US-091 | Pipeline de middlewares global (Express) | [record](development-execution/P0/PB-P0-002/US-091-execution.md) | 24 | 24 | 0 | 0 | 0 | 0 | `Done` | 2026-07-08 |
+| P0 | PB-P0-003 | US-092 | Validación con Zod en todos los DTOs | [record](development-execution/P0/PB-P0-003/US-092-execution.md) | 14 | 14 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
+| P0 | PB-P0-003 | US-093 | Error envelope unificado | [record](development-execution/P0/PB-P0-003/US-093-execution.md) | 12 | 12 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |

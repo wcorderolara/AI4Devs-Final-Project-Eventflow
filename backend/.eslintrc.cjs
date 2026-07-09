@@ -49,6 +49,20 @@ module.exports = {
       },
     },
     {
+      // US-092 / OPS-001 — Prohíbe `.passthrough()` en schemas Zod (ADR-API-003, VR-02).
+      // `.passthrough()` permite que campos no declarados pasen silenciosamente al controlador,
+      // un riesgo de seguridad (inyección de campos). Todos los DTOs deben usar `.strict()`.
+      // Aplica a los DTOs por módulo y al shared kernel; NO a los tests (pueden usar mocks laxos).
+      files: ['src/modules/*/dto/**/*.ts', 'src/shared/**/*.ts'],
+      excludedFiles: ['**/*.spec.ts', '**/*.test.ts'],
+      rules: {
+        'no-restricted-syntax': ['error', {
+          selector: "CallExpression[callee.property.name='passthrough']",
+          message: '`.passthrough()` está prohibido en schemas Zod (ADR-API-003 / VR-02). Usa `.strict()`.',
+        }],
+      },
+    },
+    {
       // Tipo 2 — Domain no importa infraestructura/framework/SDK (ADR-ARCH-002).
       files: ['src/modules/*/domain/**/*.ts', 'src/shared/domain/**/*.ts'],
       rules: {

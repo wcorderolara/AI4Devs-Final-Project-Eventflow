@@ -39,15 +39,15 @@ describe('authMiddleware + roleMiddleware (US-091)', () => {
   it('NT-01: sin Authorization → 401 UNAUTHORIZED + correlationId', async () => {
     const res = await request(app).get('/protected');
     expect(res.status).toBe(401);
-    expect(res.body.code).toBe('UNAUTHORIZED');
-    expect(typeof res.body.correlationId).toBe('string');
+    expect(res.body.error.code).toBe('AUTHENTICATION_REQUIRED');
+    expect(typeof res.body.error.correlationId).toBe('string');
   });
 
   it('NT-02: JWT expirado → 401', async () => {
     const expired = jwt.sign({ id: 'u1', role: 'organizer' }, config.JWT_SECRET, { expiresIn: -10 });
     const res = await request(app).get('/protected').set('Authorization', `Bearer ${expired}`);
     expect(res.status).toBe(401);
-    expect(res.body.code).toBe('UNAUTHORIZED');
+    expect(res.body.error.code).toBe('AUTHENTICATION_REQUIRED');
   });
 
   it('NT-02: JWT firmado con secret incorrecto → 401', async () => {
@@ -64,7 +64,7 @@ describe('authMiddleware + roleMiddleware (US-091)', () => {
   it('NT-03 / AUTH-TS-02: token válido + rol incorrecto → 403 FORBIDDEN (no 401)', async () => {
     const res = await request(app).get('/organizer-only').set('Authorization', `Bearer ${vendorToken}`);
     expect(res.status).toBe(403);
-    expect(res.body.code).toBe('FORBIDDEN');
+    expect(res.body.error.code).toBe('FORBIDDEN');
   });
 
   it('AUTH-TS-03: sin token en ruta con rol → 401 (authMiddleware primero)', async () => {

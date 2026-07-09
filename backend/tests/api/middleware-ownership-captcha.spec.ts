@@ -41,7 +41,7 @@ describe('ownershipMiddleware (US-091)', () => {
   it('NT-04 / AUTH-TS-04: recurso de otro usuario → 404 ENMASCARADO (no 403)', async () => {
     const res = await request(app).get('/owned-false').set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(404);
-    expect(res.body.code).toBe('NOT_FOUND');
+    expect(res.body.error.code).toBe('RESOURCE_NOT_FOUND');
   });
 
   it('resolver true → 200', async () => {
@@ -61,7 +61,7 @@ describe('captchaVerificationMiddleware (US-091)', () => {
     config.CAPTCHA_PROVIDER = 'mock';
     const res = await request(app).post('/captcha').send({});
     expect(res.status).toBe(400);
-    expect(res.body.code).toBe('BAD_REQUEST');
+    expect(res.body.error.code).toBe('BAD_REQUEST');
   });
 
   it('SEC-003: token "__test__" con CAPTCHA_PROVIDER=recaptcha → 400 (guard activo)', async () => {
