@@ -12,6 +12,13 @@ const booleanFromEnv = z.preprocess((v) => {
   return v;
 }, z.boolean());
 
+// `SameSite` case-insensitive desde entorno (US-108 / BE-001). Normaliza a minúsculas para el
+// enum. `Lax`/`LAX`/`lax` → 'lax'. ADR-SEC-002 / ADR-SEC-006.
+const sameSiteFromEnv = z.preprocess((v) => {
+  if (typeof v === 'string') return v.trim().toLowerCase();
+  return v;
+}, z.enum(['lax', 'none', 'strict']));
+
 export const configSchema = z.object({
   // APP
   PORT: z.coerce.number().int().positive().default(3000),
@@ -24,14 +31,24 @@ export const configSchema = z.object({
   JWT_SECRET: z.string().min(32),
   JWT_EXPIRES_IN: z.string().default('7d'),
 
-  // SESSION (US-094 / PB-P0-004 — ADR-SEC-002 cookie HTTP-only firmada)
+  // SESSION (US-094 / PB-P0-004; US-108 / PB-P0-006 — ADR-SEC-002 cookie HTTP-only firmada)
+  // VR-01: secreto de firma requerido, mínimo 32 bytes (fail-fast en boot).
   SESSION_SECRET: z.string().min(32),
+  // Nombre de la cookie. Default `eventflow_session` (override técnico documentado permitido por
+  // US-108; el default nominal `eventflow.sid` de la spec se sustituye por este valor ya en uso
+  // en US-094 y en el snapshot OpenAPI congelado). Sigue siendo configurable.
   SESSION_COOKIE_NAME: z.string().min(1).default('eventflow_session'),
-  SESSION_TTL_HOURS: z.coerce.number().int().positive().default(168), // 7 días
-  // `Secure` fuera de desarrollo local (§9 API Contract). Default derivado de NODE_ENV en el
-  // cookie helper cuando esta var no se define explícitamente. Usa `booleanFromEnv` (no
+  // VR-05 (US-108): vigencia de sesión/cookie en días. Default 30 (decisión formalizada
+  // PB-P0-006; reemplaza el `SESSION_TTL_HOURS=168`/7 días de US-094). Fuente única para el
+  // `Max-Age` de la cookie y el `expiresAt` de la sesión server-side.
+  SESSION_COOKIE_MAX_AGE_DAYS: z.coerce.number().int().positive().default(30),
+  // `Secure` fuera de desarrollo local (§9 API Contract; VR-02). Default derivado de NODE_ENV en
+  // el cookie helper cuando esta var no se define explícitamente. Usa `booleanFromEnv` (no
   // `z.coerce.boolean`) para que 'false' se interprete como `false` y no como `true`.
   SESSION_COOKIE_SECURE: booleanFromEnv.optional(),
+  // SameSite por entorno (US-108 / VR-03). Default `lax` (MVP same-site). `none` exige `Secure`
+  // y CORS con credentials + allowlist explícita (validado en `superRefine`). `strict` disponible.
+  SESSION_COOKIE_SAMESITE: sameSiteFromEnv.default('lax'),
   RESET_TOKEN_TTL_MINUTES: z.coerce.number().int().positive().default(15), // EC-06 TTL 15 min
   BCRYPT_SALT_ROUNDS: z.coerce.number().int().min(10).max(15).default(12), // SEC-05
 
@@ -44,9 +61,23 @@ export const configSchema = z.object({
   AI_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(30),
 
   // SECURITY
-  CORS_ORIGINS: z.string(),
-  CAPTCHA_PROVIDER: z.enum(['recaptcha', 'mock']),
+  CORS_ORIGINS: z.string(), // allowlist explícita separada por comas (US-091; VR-04)
+  // CORS con credenciales (US-108 / VR-04). Requerido `true` cuando `SameSite=None` (cross-site).
+  // Prohibido combinar `true` con wildcard `*` (EC-04). Default `true` (comportamiento US-091).
+  CORS_CREDENTIALS: booleanFromEnv.default(true),
+  // CAPTCHA (US-091; US-109 / PB-P0-006 — ADR-SEC-004). Provider por entorno + secretos backend.
+  CAPTCHA_PROVIDER: z.enum(['mock', 'recaptcha', 'hcaptcha']),
+  // Legacy genérico (US-091). Conservado por compatibilidad; los providers reales usan las vars
+  // provider-específicas de abajo. No requerido.
   CAPTCHA_SECRET: z.string().optional(),
+  // Secretos backend por proveedor real (US-109 / VR-05). Requeridos según `CAPTCHA_PROVIDER`
+  // (validado en `superRefine`). NUNCA `NEXT_PUBLIC_*` — sólo backend/Secrets Manager (SEC-02).
+  RECAPTCHA_SECRET_KEY: z.string().optional(),
+  HCAPTCHA_SECRET_KEY: z.string().optional(),
+  // Umbral de score reCAPTCHA v3 (US-109 / VR-08). Rango 0..1; default técnico 0.5.
+  CAPTCHA_SCORE_THRESHOLD: z.coerce.number().min(0).max(1).default(0.5),
+  // Timeout corto de verificación con el proveedor real (US-109 / EC-05). Default 3000 ms.
+  CAPTCHA_VERIFY_TIMEOUT_MS: z.coerce.number().int().positive().default(3000),
   HELMET_ENABLED: z.coerce.boolean().default(true),
   RATE_LIMIT_MAX: z.coerce.number().default(100),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
@@ -61,6 +92,102 @@ export const configSchema = z.object({
   SEED_ENABLED: z.coerce.boolean().default(false),
 });
 
+/** `Secure` efectivo: explícito si se define; si no, activo en producción (no-local). */
+function resolveSecure(secure: boolean | undefined, nodeEnv: string): boolean {
+  return secure ?? nodeEnv === 'production';
+}
+
+/** Wildcard de CORS: cualquier origin de la lista es `*`. */
+function corsIsWildcard(origins: string): boolean {
+  return origins
+    .split(',')
+    .map((o) => o.trim())
+    .some((o) => o === '*');
+}
+
+/**
+ * Validación cruzada fail-fast de configuración de cookie/sesión/CORS (US-108 / BE-001; AC-06).
+ * Cubre VR-02, VR-03, VR-04 y EC-03/EC-04. Cualquier configuración insegura hace fallar el boot
+ * con un `ZodError` de mensaje claro (el proceso no levanta un backend con cookies inseguras).
+ * Se aplica sobre `configSchema` (que se conserva como `ZodObject` para exponer `.shape` a
+ * consumidores como el test de `.env.example`).
+ */
+const validatedConfigSchema = configSchema.superRefine((cfg, ctx) => {
+  const secure = resolveSecure(cfg.SESSION_COOKIE_SECURE, cfg.NODE_ENV);
+  const isNonLocal = cfg.NODE_ENV === 'production';
+  const wildcardCors = corsIsWildcard(cfg.CORS_ORIGINS);
+
+  // VR-02 (EC-03): en entornos no-locales (producción/QA/Demo) `Secure=true` es obligatorio.
+  if (isNonLocal && cfg.SESSION_COOKIE_SECURE === false) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['SESSION_COOKIE_SECURE'],
+      message: 'SESSION_COOKIE_SECURE debe ser true en entornos no-locales (NODE_ENV=production).',
+    });
+  }
+
+  // VR-03 (EC-03): `SameSite=None` exige `Secure=true` (requisito del navegador).
+  if (cfg.SESSION_COOKIE_SAMESITE === 'none' && !secure) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['SESSION_COOKIE_SAMESITE'],
+      message: 'SESSION_COOKIE_SAMESITE=none requiere SESSION_COOKIE_SECURE=true.',
+    });
+  }
+
+  // VR-04: `SameSite=None` (cross-site) exige CORS con credentials y allowlist explícita (no wildcard).
+  if (cfg.SESSION_COOKIE_SAMESITE === 'none') {
+    if (!cfg.CORS_CREDENTIALS) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['CORS_CREDENTIALS'],
+        message: 'SESSION_COOKIE_SAMESITE=none requiere CORS_CREDENTIALS=true (envío cross-site de cookies).',
+      });
+    }
+    if (wildcardCors) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['CORS_ORIGINS'],
+        message: 'SESSION_COOKIE_SAMESITE=none requiere CORS_ORIGINS con allowlist explícita (sin wildcard "*").',
+      });
+    }
+  }
+
+  // EC-04: wildcard CORS con credenciales es una combinación insegura prohibida.
+  if (wildcardCors && cfg.CORS_CREDENTIALS) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['CORS_ORIGINS'],
+      message: 'CORS_ORIGINS wildcard "*" no puede combinarse con CORS_CREDENTIALS=true.',
+    });
+  }
+
+  // ── Captcha (US-109 / BE-001; AC-04, EC-06) ────────────────────────────────
+  // VR-04 (EC-06): `mock` sólo se permite en Local/CI; nunca en entornos no-locales.
+  if (cfg.CAPTCHA_PROVIDER === 'mock' && isNonLocal) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['CAPTCHA_PROVIDER'],
+      message: 'CAPTCHA_PROVIDER=mock no está permitido en entornos no-locales (NODE_ENV=production).',
+    });
+  }
+  // VR-05: cada proveedor real exige su secret key backend.
+  if (cfg.CAPTCHA_PROVIDER === 'recaptcha' && !cfg.RECAPTCHA_SECRET_KEY) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['RECAPTCHA_SECRET_KEY'],
+      message: 'CAPTCHA_PROVIDER=recaptcha requiere RECAPTCHA_SECRET_KEY.',
+    });
+  }
+  if (cfg.CAPTCHA_PROVIDER === 'hcaptcha' && !cfg.HCAPTCHA_SECRET_KEY) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['HCAPTCHA_SECRET_KEY'],
+      message: 'CAPTCHA_PROVIDER=hcaptcha requiere HCAPTCHA_SECRET_KEY.',
+    });
+  }
+});
+
 /** Tipo estático de configuración inferido del schema Zod. */
 export type AppConfig = z.infer<typeof configSchema>;
 
@@ -70,7 +197,7 @@ export type AppConfig = z.infer<typeof configSchema>;
  * configuración es inválida.
  */
 export function parseConfig(env: NodeJS.ProcessEnv): AppConfig {
-  return configSchema.parse(env);
+  return validatedConfigSchema.parse(env);
 }
 
 /**

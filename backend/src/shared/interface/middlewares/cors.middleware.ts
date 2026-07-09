@@ -1,6 +1,7 @@
-// corsMiddleware (US-091 / BE-003, Global). ADR-SEC-006; SEC-01.
-// Allowlist explícita desde `CORS_ORIGINS`; sin wildcard con credenciales. Un origin fuera de
-// la allowlist produce un ForbiddenError → 403 (no expone la allowlist).
+// corsMiddleware (US-091 / BE-003, Global; US-108 / BE-001). ADR-SEC-006; SEC-01.
+// Allowlist explícita desde `CORS_ORIGINS`; sin wildcard con credenciales (bloqueado fail-fast en
+// boot por `config.superRefine`, EC-04). `credentials` desde `CORS_CREDENTIALS` (default true; VR-04
+// exige true para `SameSite=None`). Un origin fuera de la allowlist produce ForbiddenError → 403.
 import cors from 'cors';
 import type { RequestHandler } from 'express';
 import { config } from '../../../config/env.js';
@@ -19,6 +20,6 @@ export const corsMiddleware: RequestHandler = cors({
     }
     callback(new ForbiddenError('Origin not allowed'));
   },
-  credentials: true,
+  credentials: config.CORS_CREDENTIALS,
   optionsSuccessStatus: 204,
 });

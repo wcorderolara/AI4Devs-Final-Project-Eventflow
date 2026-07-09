@@ -53,7 +53,9 @@ export class LoginUserUseCase {
       throw new UnauthorizedError(GENERIC_LOGIN_ERROR);
     }
 
-    const expiresAt = new Date(this.clock.now().getTime() + config.SESSION_TTL_HOURS * 60 * 60 * 1000);
+    // Vigencia server-side alineada con el `Max-Age` de la cookie (US-108: 30 días por default).
+    const sessionMaxAgeMs = config.SESSION_COOKIE_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+    const expiresAt = new Date(this.clock.now().getTime() + sessionMaxAgeMs);
     const session = await this.sessions.create({ userId: user.id, expiresAt });
 
     this.events.emit('auth.login.succeeded', {

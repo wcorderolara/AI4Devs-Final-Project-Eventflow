@@ -1,7 +1,8 @@
-// Rutas de identity-access (US-094 / API-001). Doc 14 §24.2; ADR-API-001 (`/api/v1`).
-// Orden de middleware por ruta pública sensible: rate limit → validación Zod → captcha → handler.
-// (Validación antes de captcha: los errores de forma devuelven VALIDATION_ERROR; captcha corta
-// antes de procesar credenciales/crear usuarios — SEC-002/EC-04.) Logout usa auth por cookie.
+// Rutas de identity-access (US-094 / API-001; US-109 / BE-007). Doc 14 §24.2; ADR-API-001 (`/api/v1`).
+// Orden de middleware por ruta pública sensible: rate limit → CAPTCHA → validación Zod → handler.
+// (US-109: captcha ANTES de la validación de payload para que un token ausente devuelva el código
+// estable CAPTCHA_REQUIRED — AC-05/EC-01/NT-01 — en lugar de VALIDATION_ERROR. El captcha corta
+// antes de procesar credenciales/crear usuarios/emitir cookie — SEC-05.) Logout usa auth por cookie.
 import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
@@ -64,16 +65,16 @@ export const identityAccessRouter = Router();
 identityAccessRouter.post(
   '/register',
   registerRateLimit,
-  validateRequestMiddleware(z.object({ body: RegisterUserRequestSchema })),
   captchaVerificationMiddleware,
+  validateRequestMiddleware(z.object({ body: RegisterUserRequestSchema })),
   asyncHandler(controller.register),
 );
 
 identityAccessRouter.post(
   '/login',
   loginRateLimit,
-  validateRequestMiddleware(z.object({ body: LoginUserRequestSchema })),
   captchaVerificationMiddleware,
+  validateRequestMiddleware(z.object({ body: LoginUserRequestSchema })),
   asyncHandler(controller.login),
 );
 
@@ -82,8 +83,8 @@ identityAccessRouter.post('/logout', sessionAuth, asyncHandler(controller.logout
 identityAccessRouter.post(
   '/password/reset-request',
   passwordResetRequestRateLimit,
-  validateRequestMiddleware(z.object({ body: PasswordResetRequestSchema })),
   captchaVerificationMiddleware,
+  validateRequestMiddleware(z.object({ body: PasswordResetRequestSchema })),
   asyncHandler(controller.requestPasswordReset),
 );
 

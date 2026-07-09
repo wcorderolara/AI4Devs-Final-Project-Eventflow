@@ -11,7 +11,7 @@ import type { RequestHandler } from 'express';
 import type { SessionRepository } from '../../auth/ports.js';
 import type { ClockPort } from '../../domain/clock.port.js';
 import { UnauthorizedError } from '../../domain/errors/unauthorized.error.js';
-import { logger } from '../../infrastructure/logger/index.js';
+import { logSessionEvent } from '../../../infrastructure/observability/session-event-logger.js';
 import { config } from '../../../config/env.js';
 
 export interface SessionAuthDeps {
@@ -27,10 +27,11 @@ export function createSessionAuthMiddleware(deps: SessionAuthDeps): RequestHandl
     void (async (): Promise<void> => {
       const sid = req.signedCookies?.[cookieName] as unknown;
       if (typeof sid !== 'string' || sid.length === 0) {
-        logger.warn({
-          event: 'AUTH_FAILURE',
+        // Cookie ausente o firma inválida (cookie-parser descarta las mal firmadas). No se revela
+        // la causa exacta al cliente (AC-04); el log queda como metadato seguro (redactado).
+        logSessionEvent('session.cookie.invalid', {
           correlationId: req.correlationId,
-          reason: 'Missing session cookie',
+          reason: 'missing_or_unsigned',
         });
         next(new UnauthorizedError());
         return;
@@ -39,10 +40,9 @@ export function createSessionAuthMiddleware(deps: SessionAuthDeps): RequestHandl
       try {
         const resolved = await deps.sessions.findValid(sid, deps.clock.now());
         if (!resolved) {
-          logger.warn({
-            event: 'AUTH_FAILURE',
+          logSessionEvent('session.cookie.invalid', {
             correlationId: req.correlationId,
-            reason: 'Invalid or expired session',
+            reason: 'invalid_expired_or_revoked',
           });
           next(new UnauthorizedError());
           return;

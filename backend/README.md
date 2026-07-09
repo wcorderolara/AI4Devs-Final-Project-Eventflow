@@ -214,6 +214,126 @@ Trazabilidad completa: `management/workflows/development-execution/P0/PB-P0-004/
 
 ---
 
+## Cookies de sesión HTTP-only firmadas (US-108 / PB-P0-006)
+
+US-108 endurece la política de cookie de sesión sobre la base de US-094: `SameSite` por entorno,
+lifetime de 30 días, validación fail-fast de configuración insegura y redacción de secretos en logs.
+La emisión/limpieza vive en `src/infrastructure/security/session-cookie.ts`; la verificación en
+`src/shared/interface/http/session-auth.ts`; la validación de config en `src/config/env.ts`.
+
+### Variables de entorno (DOC-001)
+
+| Variable | Default | Propósito |
+|---|---|---|
+| `SESSION_SECRET` | — (requerido) | Firma la cookie (`cookie-parser`). Mínimo **32 bytes** (VR-01). |
+| `SESSION_COOKIE_NAME` | `eventflow_session` | Nombre de la cookie. Configurable. |
+| `SESSION_COOKIE_MAX_AGE_DAYS` | `30` | Vigencia de cookie y sesión server-side en días (VR-05). |
+| `SESSION_COOKIE_SECURE` | derivado de `NODE_ENV` | `Secure`. Obligatorio `true` en no-locales (VR-02). |
+| `SESSION_COOKIE_SAMESITE` | `lax` | `lax` \| `none` \| `strict` (VR-03). |
+| `CORS_ORIGINS` | — | Allowlist explícita separada por comas (nunca `*` con credentials). |
+| `CORS_CREDENTIALS` | `true` | Envío de cookies cross-origin. Requerido `true` si `SameSite=None` (VR-04). |
+
+### Comportamiento por entorno (DOC-001, N4)
+
+- **Local / CI** (`NODE_ENV=development` \| `test`): se permite `SESSION_COOKIE_SECURE=false`
+  (HTTP local controlado) y `SameSite=Lax`.
+- **QA / Demo / Producción** (`NODE_ENV=production`): `Secure=true` es **obligatorio**; el boot
+  falla (exit code ≠ 0) si `SESSION_COOKIE_SECURE=false`. No existe `APP_ENV`: el disparador de
+  "no-local" es `NODE_ENV=production`.
+- **Cross-site** (Amplify ↔ App Runner): `SameSite=None` exige `Secure=true`, `CORS_CREDENTIALS=true`
+  y allowlist explícita (sin wildcard). Mitigación CSRF compatible con ADR-SEC-006.
+
+Configuraciones inseguras que **fallan al boot** (`config.superRefine`, AC-06): secret < 32 bytes;
+`Secure=false` en producción; `SameSite=None` sin `Secure`; `SameSite=None` sin CORS credentials
+o con wildcard; `CORS_ORIGINS=*` con `CORS_CREDENTIALS=true`.
+
+### Redacción de logs (AC-07)
+
+El logger central (`src/shared/infrastructure/logger/`) aplica `redact()` a todo lo que emite:
+`cookie`, `set-cookie`, `authorization`, `sid`, `jti`, cualquier `*secret` / `*token` / `*password`
+se reemplazan por `[REDACTED]`. Eventos de sesión (`session.cookie.issued|cleared|invalid`) solo
+llevan metadatos seguros (`correlationId`, `userId`, `reason`).
+
+### Alineación documental no bloqueante (DOC-002)
+
+- **Lifetime 30 días** — PB-P0-006 fija 30 días configurables (`SESSION_COOKIE_MAX_AGE_DAYS`);
+  Doc 19 §10 menciona 24 horas. Se aplica la decisión más específica del backlog. Reemplaza el
+  `SESSION_TTL_HOURS=168` (7 días) previo de US-094.
+- **SameSite por entorno** — Default `SameSite=Lax` (Doc 16/19); `SameSite=None; Secure` solo para
+  hosting cross-site (Doc 21) con mitigación CSRF. Resuelto por ADR-SEC-002 / ADR-SEC-006.
+- **Nombre de cookie** — La spec nomina `eventflow.sid`; el proyecto conserva `eventflow_session`
+  (ya en uso en US-094 y en el snapshot OpenAPI de US-098) como el **override técnico documentado**
+  que la propia User Story permite. Sigue siendo configurable vía `SESSION_COOKIE_NAME`.
+- **Naming de env vars** — La spec §7 usa `COOKIE_SECURE`/`COOKIE_SAMESITE`/`CORS_ALLOWED_ORIGINS`;
+  el código conserva el prefijo `SESSION_COOKIE_*` y `CORS_ORIGINS` ya establecidos por US-089/094.
+
+Fuente formal de decisiones: User Story §PO/BA Decisions y Technical Spec §16 (el artefacto
+`US-108-decision-resolution.md` referenciado no existe en el repo; las decisiones están capturadas
+en la US y la Tech Spec).
+
+Trazabilidad completa: `management/workflows/development-execution/P0/PB-P0-006/US-108-execution.md`.
+
+---
+
+## Captcha anti-bot en auth (US-109 / PB-P0-006)
+
+US-109 verifica captcha **server-side** en los tres endpoints públicos sensibles de auth, con
+proveedor real configurable y mock determinista para Local/CI. Puerto `CaptchaVerifier`
+(`src/shared/security/captcha/`), adapters en `src/infrastructure/captcha/` (mock, reCAPTCHA,
+hCaptcha) seleccionados por `CAPTCHA_PROVIDER`; middleware `captchaVerificationMiddleware`.
+
+### Endpoints protegidos (decision resolution US-109)
+
+Captcha aplica **sólo** a: `POST /api/v1/auth/register`, `POST /api/v1/auth/login`,
+`POST /api/v1/auth/password/reset-request`. **No** aplica a `password/reset` (confirm), `logout`,
+`/users/me` ni endpoints no-auth. El middleware corre **antes** de la validación de payload para
+que un token ausente devuelva `CAPTCHA_REQUIRED` (no `VALIDATION_ERROR`), y antes de credenciales,
+creación de usuario, reset token o emisión de cookie (SEC-05).
+
+### Variables de entorno (DOC-001)
+
+| Variable | Default | Propósito |
+|---|---|---|
+| `CAPTCHA_PROVIDER` | — (requerido) | `mock` \| `recaptcha` \| `hcaptcha`. `mock` **sólo** Local/CI. |
+| `CAPTCHA_SECRET` | — | Legacy genérico (US-091); los providers reales usan las vars de abajo. |
+| `RECAPTCHA_SECRET_KEY` | — | Secret backend reCAPTCHA (requerido si `CAPTCHA_PROVIDER=recaptcha`). |
+| `HCAPTCHA_SECRET_KEY` | — | Secret backend hCaptcha (requerido si `CAPTCHA_PROVIDER=hcaptcha`). |
+| `CAPTCHA_SCORE_THRESHOLD` | `0.5` | Umbral score reCAPTCHA v3 (0..1). |
+| `CAPTCHA_VERIFY_TIMEOUT_MS` | `3000` | Timeout de verificación con el proveedor real. |
+
+Site keys frontend son **públicas** (`NEXT_PUBLIC_RECAPTCHA_SITE_KEY` / `NEXT_PUBLIC_HCAPTCHA_SITE_KEY`);
+los secret keys **nunca** salen del backend/Secrets Manager (SEC-02, ADR-SEC-005).
+
+### Comportamiento por entorno + fail-fast (AC-04, EC-06)
+
+- **Local / CI**: `CAPTCHA_PROVIDER=mock`; único token válido `'__test__'`. Sin red externa.
+- **QA / Demo / Producción**: proveedor real con secret backend. El boot **falla** si:
+  `CAPTCHA_PROVIDER` inválido; `mock` con `NODE_ENV=production`; proveedor real sin su secret key.
+- No hay fallback automático de proveedor real a `mock` (SEC-06); el token `'__test__'` se rechaza
+  con cualquier proveedor no-mock.
+
+### Errores, observabilidad y no-persistencia
+
+- Códigos estables: `400 CAPTCHA_REQUIRED` (token ausente), `400 CAPTCHA_INVALID`
+  (inválido/expirado/action mismatch/score bajo/provider error/timeout). Mensajes genéricos:
+  no revelan credenciales, email, score ni detalles del proveedor (SEC-07).
+- Eventos: `captcha.verify.succeeded|failed`, `captcha.provider.timeout`, `captcha.config.invalid`
+  con `correlationId`, `endpoint`, `provider`, `outcome`, `expectedAction`, `env` — sin token/secret.
+- El logger central redacta `captchaToken`, `*SECRET*`, `*token`, etc. **No** se persiste ningún
+  token, score, secret ni respuesta cruda del proveedor (VR-09; sin modelo/tabla captcha).
+
+### Alineación documental no bloqueante (DOC-002)
+
+- **Alcance** — Algunos documentos base mencionan captcha sólo en `register`/`login`; ADR-SEC-004
+  y US-091 incluyen también `password reset request`. US-109 aplica los **tres** endpoints.
+- **Provider naming** — Contrato MVP `mock|recaptcha|hcaptcha`. Turnstile u otros equivalentes sólo
+  con decisión técnica documentada (Tech Lead), sin cambiar ACs ni alcance.
+
+Fuente formal: `management/user-stories/decision-resolutions/US-109-decision-resolution.md`.
+Trazabilidad completa: `management/workflows/development-execution/P0/PB-P0-006/US-109-execution.md`.
+
+---
+
 ## Contrato Event API (US-095 / PB-P0-004)
 
 Endpoints REST bajo `/api/v1/events` (Doc 16). Todos requieren **sesión válida** (cookie US-094)

@@ -27,8 +27,11 @@ export const ErrorCodes = {
   AI_PROVIDER_UNAVAILABLE: 'AI_PROVIDER_UNAVAILABLE', // 503
   PERSISTENCE_ERROR: 'PERSISTENCE_ERROR',
   INTERNAL_ERROR: 'INTERNAL_ERROR',
-  // Retenido del bootstrap US-091 para 400 de captcha / upload (no es VALIDATION_ERROR).
+  // Retenido del bootstrap US-091 para 400 de upload / body malformado (no es VALIDATION_ERROR).
   BAD_REQUEST: 'BAD_REQUEST',
+  // US-109 (PB-P0-006): captcha en auth (AC-05, VR-01/VR-02, EC-01/EC-02) → 400.
+  CAPTCHA_REQUIRED: 'CAPTCHA_REQUIRED', // token ausente
+  CAPTCHA_INVALID: 'CAPTCHA_INVALID', // inválido/expirado/action mismatch/score bajo/provider error
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

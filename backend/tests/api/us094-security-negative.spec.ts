@@ -40,16 +40,17 @@ describe('QA-003: registro público no crea admin (SEC-08, AUTH-TS-05, NT-01)', 
 });
 
 describe('QA-003: captcha obligatorio corta antes de credenciales (EC-04, NT-03)', () => {
-  it('register con captcha inválido → 400 BAD_REQUEST, sin Set-Cookie', async () => {
+  it('register con captcha inválido → 400 CAPTCHA_INVALID, sin Set-Cookie', async () => {
     const res = await request(app)
       .post('/api/v1/auth/register')
       .send({ ...validRegister, captchaToken: 'invalid-token' });
     expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('BAD_REQUEST');
+    // US-109 refina BAD_REQUEST → CAPTCHA_INVALID para token inválido (AC-05, VR-02).
+    expect(res.body.error.code).toBe('CAPTCHA_INVALID');
     expect(res.headers['set-cookie']).toBeUndefined();
   });
 
-  it('login con captcha inválido → 400 BAD_REQUEST, sin Set-Cookie (NT-03)', async () => {
+  it('login con captcha inválido → 400 CAPTCHA_INVALID, sin Set-Cookie (NT-03)', async () => {
     const res = await request(app)
       .post('/api/v1/auth/login')
       .send({ email: 'a@b.com', password: 'Secret1234', captchaToken: 'invalid-token' });
@@ -57,7 +58,7 @@ describe('QA-003: captcha obligatorio corta antes de credenciales (EC-04, NT-03)
     expect(res.headers['set-cookie']).toBeUndefined();
   });
 
-  it('password/reset-request con captcha inválido → 400 BAD_REQUEST', async () => {
+  it('password/reset-request con captcha inválido → 400 CAPTCHA_INVALID', async () => {
     const res = await request(app)
       .post('/api/v1/auth/password/reset-request')
       .send({ email: 'a@b.com', captchaToken: 'invalid-token' });
