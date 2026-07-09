@@ -58,7 +58,10 @@ export const configSchema = z.object({
   // US-097 (PB-P0-004): timeout del provider; modo demo (habilita fallback a mock); rate limit AI.
   AI_TIMEOUT_MS: z.coerce.number().int().positive().default(8000),
   AI_DEMO_MODE: booleanFromEnv.default(false),
-  AI_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(30),
+  // Rate limit IA (US-097; US-110 / PB-P0-007). US-110 fija el default MVP en 10 generaciones por
+  // usuario autenticado agregadas por ventana de 1 h (key `ai:user:{userId}`). VR-01: entero positivo.
+  AI_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
+  AI_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(3_600_000),
 
   // SECURITY
   CORS_ORIGINS: z.string(), // allowlist explícita separada por comas (US-091; VR-04)
@@ -81,7 +84,19 @@ export const configSchema = z.object({
   HELMET_ENABLED: z.coerce.boolean().default(true),
   RATE_LIMIT_MAX: z.coerce.number().default(100),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
-  AUTH_RATE_LIMIT_MAX: z.coerce.number().default(5),
+  AUTH_RATE_LIMIT_MAX: z.coerce.number().default(5), // legacy US-091 (authRateLimit genérico)
+  // RATE LIMITING estricto por endpoint (US-110 / PB-P0-007 — ADR-SEC-004). VR-01: enteros positivos
+  // (fail-fast en boot ante 0/negativos/no numéricos). Defaults MVP = contrato de QA/Demo.
+  AUTH_LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
+  AUTH_LOGIN_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(600_000), // 10 min
+  AUTH_REGISTER_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
+  AUTH_REGISTER_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(600_000), // 10 min
+  AUTH_PASSWORD_RESET_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(3),
+  AUTH_PASSWORD_RESET_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(3_600_000), // 1 h
+  // Interruptor de enforcement (US-110 / N3). Default `true` (activo en Local/CI/QA/Demo/prod). El
+  // setup global de tests lo pone en `false` para no contaminar la suite; los tests de US-110 lo
+  // activan explícitamente. NUNCA debe desactivarse en Demo/producción de forma silenciosa.
+  RATE_LIMIT_ENABLED: booleanFromEnv.default(true),
   JSON_BODY_LIMIT: z.string().default('1mb'),
   FILE_SIZE_LIMIT: z.coerce.number().default(5242880),
 

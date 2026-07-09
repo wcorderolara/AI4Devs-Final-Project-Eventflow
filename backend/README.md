@@ -334,6 +334,180 @@ Trazabilidad completa: `management/workflows/development-execution/P0/PB-P0-006/
 
 ---
 
+## Rate limiting en auth e IA (US-110 / PB-P0-007)
+
+US-110 aplica rate limiting **estricto** por endpoint sensible encima del rate limit global laxo de
+US-091, con `express-rate-limit` (store in-memory por proceso, MVP). Los limiters viven en
+`src/shared/interface/http/{auth-rate-limits,ai-rate-limit,rate-limit-response}.ts`. El rechazo
+`429` ocurre **antes** de credenciales / creación de usuario / reset token / email / `LLMProvider` /
+`AIRecommendation` (VR-05). US-111 gobierna el orden del pipeline, Helmet y CORS (fuera de US-110).
+
+### Políticas y variables de entorno (DOC-001)
+
+| Endpoint(s) | Key | Default | Variables |
+|---|---|---|---|
+| `POST /auth/login` | IP | 10 / 10 min | `AUTH_LOGIN_RATE_LIMIT_MAX`, `AUTH_LOGIN_RATE_LIMIT_WINDOW_MS` |
+| `POST /auth/register` | IP | 5 / 10 min | `AUTH_REGISTER_RATE_LIMIT_MAX`, `AUTH_REGISTER_RATE_LIMIT_WINDOW_MS` |
+| `POST /auth/password/reset-request` | email normalizado | 3 / 1 h | `AUTH_PASSWORD_RESET_RATE_LIMIT_MAX`, `AUTH_PASSWORD_RESET_RATE_LIMIT_WINDOW_MS` |
+| `POST /…/ai/*` (generación) | `ai:user:{userId}` (agregado) | 10 / 1 h | `AI_RATE_LIMIT_MAX`, `AI_RATE_LIMIT_WINDOW_MS` |
+
+Todas las variables son **enteros positivos** con fail-fast en boot (AC-05, VR-01). `RATE_LIMIT_ENABLED`
+(default `true`) es un interruptor de enforcement: **no** debe desactivarse en QA/Demo/producción; el
+setup de tests lo pone en `false` y los tests de US-110 lo activan por caso. La cuota IA se agrega por
+usuario a través de todos los endpoints POST de generación IA implementados (mismo limiter, misma key).
+
+### Contrato 429 y headers (AC-06)
+
+`429` usa el error envelope estándar `{ error: { code: "RATE_LIMIT_EXCEEDED", message, correlationId } }`
+y emite `X-RateLimit-Limit`, `X-RateLimit-Remaining` y `Retry-After`. Documentado en OpenAPI (`RateLimited`)
+para los 11 endpoints cubiertos.
+
+### Observabilidad y seguridad (AC-07)
+
+Evento `security.rate_limit.exceeded` (warning, no excepción) con campos seguros: `correlationId`,
+`route`, `policy`, `keyType`, **`keyId` hasheado (sha256 truncado — nunca IP/email crudo)**, `limit`,
+`remaining`, `retryAfterSeconds`, `status`. El logger central además redacta password/cookie/token/secret.
+No se persiste ningún counter (sin migración ni seed).
+
+### IP confiable / proxy (SEC-001, EC-01)
+
+La key por IP usa `req.ip`. El backend **no** habilita `trust proxy`, por lo que `X-Forwarded-For`
+arbitrario **no** se confía (default seguro contra spoofing). Si un despliegue detrás de proxy confiable
+requiere resolver la IP real, la configuración de `trust proxy` pertenece a la cadena de middlewares de
+US-111 y debe hacerse de forma explícita y validada por entorno.
+
+### Demo (SEED-001)
+
+Sin cambios de seed/migración. El guion demo normal se mantiene por debajo de los límites (10 IA/user/h).
+Para demos repetidas, reiniciar el proceso o esperar la ventana; **no** desactivar el rate limiting.
+
+### Alineación documental no bloqueante (DOC-002)
+
+- **Password reset request** entra en el alcance de rate limit (ADR-SEC-004 / Doc 16), aunque algunos
+  BR/NFR sólo mencionan register/login.
+- **QuoteRequest** rate limit (Doc 14) queda **fuera** de US-110 (historia futura si se prioriza).
+- **Vendor AI bio** está implementado (US-097) y comparte la cuota IA agregada; US-110 no crea endpoints IA nuevos.
+- El default IA pasó de 30/min (interino US-097) a **10/user/1h** (US-110 autoritativa).
+
+Fuente formal: `management/user-stories/decision-resolutions/US-110-decision-resolution.md`.
+Trazabilidad completa: `management/workflows/development-execution/P0/PB-P0-007/US-110-execution.md`.
+
+---
+
+## Orden seguro de la cadena de middlewares (US-111 / PB-P0-007)
+
+US-111 endurece y **bloquea con tests de regresión** el orden del pipeline Express para que
+autenticación, autorización, ownership, validación, anti-abuse, headers de seguridad y manejo de
+errores no puedan omitirse por una composición incorrecta. No cambia contratos funcionales, límites
+de rate limit (US-110), captcha (US-109) ni cookies (US-108).
+
+### Cadena global (`src/app.ts`)
+
+```
+correlationId → requestLogger → jsonBodyParser → cookieParser → CORS → helmet →
+rate limit global laxo → /api/v1 (rutas) → notFoundMiddleware → errorHandlerMiddleware
+```
+
+- `correlationIdMiddleware` es **el primero** (base de observabilidad; genera/echoa `x-correlation-id`).
+- `notFoundMiddleware` (404 estructurado) va **después** de las rutas y **antes** del error handler.
+- `errorHandlerMiddleware` es **el último** (envelope seguro, sin stack/secretos, con `correlationId`).
+- Nota (Doc 14 §8.2): body parser + cookie-parser preceden a CORS/Helmet; los tests confirman que
+  CORS y Helmet siguen aplicando globalmente.
+
+### Orden por ruta protegida (helper `composeProtectedRoute`)
+
+`src/shared/interface/http/compose-route.ts` provee el patrón canónico, que **fuerza el orden por
+construcción** (el orden de las claves del spec es irrelevante):
+
+```
+auth → role → ownership → policy → rateLimit → validation → handler
+```
+
+`composePublicSensitiveRoute` cubre rutas públicas sensibles (sin `auth`):
+
+```
+rateLimit → captcha → validation → handler
+```
+
+**Rutas nuevas deben usar estos helpers.** Adoptado en `ai-assistance` como referencia; las demás
+rutas ya cumplen el orden canónico (establecido por US-091/094/097/108/110) y quedan cubiertas por
+los tests de regresión de comportamiento.
+
+### Invariantes verificados (AC-02/AC-07)
+
+- `validateRequestMiddleware` **no** precede a `auth` en rutas protegidas → un anónimo con payload
+  inválido recibe `401`, **no** `400` (no filtra el schema). Cubierto por test.
+- `roleMiddleware` corta con `403` antes del handler; `authMiddleware` con `401` antes de role.
+- Handler **no** se ejecuta si cualquier gate previo (auth/role/ownership/policy/rate limit/captcha/
+  validation) rechaza.
+
+### Seguridad y observabilidad (AC-04/AC-05/AC-08)
+
+- Helmet aplica security headers globales (`X-Content-Type-Options: nosniff`, oculta `X-Powered-By`,
+  etc.); CORS usa allowlist por entorno (un Origin fuera de la lista → `403`).
+- `errorHandlerMiddleware` devuelve `{ error: { code, message, correlationId } }` sin stack/SQL/
+  secretos; el stack va sólo a los logs. `correlationId` se preserva en éxito, rechazo, 404 y error.
+
+Fuente formal: `management/user-stories/decision-resolutions/US-111-decision-resolution.md`.
+Trazabilidad completa: `management/workflows/development-execution/P0/PB-P0-007/US-111-execution.md`.
+
+---
+
+## Suite negativa RBAC + ownership (US-112 / PB-P0-008)
+
+US-112 es un **quality gate P0** que demuestra en CI que el backend es la única fuente de verdad de
+autorización: anónimos, roles incorrectos, dueños distintos y vendors no asignados **no** pueden
+acceder ni mutar recursos protegidos. No cambia endpoints, permisos, schema ni seed.
+
+### Registry de endpoints protegidos (`tests/helpers/protected-endpoints.ts`)
+
+Lista **explícita y revisable** de las rutas foundation bajo `/api/v1/*` que exigen sesión
+(`PROTECTED_ENDPOINTS`) y de las rutas públicas excluidas (`PUBLIC_ENDPOINTS`, VR-06). Cada entry
+declara el tipo de control (`auth`/`role`/`ownership`/`assignment`). Agregar una ruta protegida
+nueva sin añadirla al registry deja un hueco visible en PR.
+
+### Cobertura
+
+- **`tests/api/us112-negative-rbac-ownership.spec.ts`** (nueva suite consolidada):
+  - **DB-free (gate real en CI):** sweep dirigido por registry — cada endpoint protegido con un
+    anónimo → `401 AUTHENTICATION_REQUIRED`; endpoints públicos NO marcados; `validation-before-authz`
+    (anónimo + body inválido → `401`, no `400/422`); envelope seguro con `correlationId` (echo) y
+    sin leaks (stack/SQL/secretos/tokens/cookies); `/api/v1/admin/*` → `404` (sin admin foundation aún).
+  - **DB-gated (`describe.skipIf(!dbUp)`):** wrong-role → `403` antes de validation (sin crear recursos).
+- **Complementaria (por módulo, DB-gated ya existente):** `us094/095/096/097-security.spec.ts` y
+  `error-envelope-security.spec.ts` cubren cross-owner/cross-assignment/masked-404 por recurso.
+- **Helpers:** `tests/helpers/negative-auth.ts` (`expectAuthError`, `expectNoLeak`, `agentFor`).
+
+### Ejecución y CI gate (AC-08)
+
+```bash
+npm test                       # toda la suite (incluye US-112) — gate del job CI schema-structural-tests
+npx vitest run tests/api/us112-negative-rbac-ownership.spec.ts   # sólo la suite negativa
+```
+
+Los casos DB-free corren en CI (sin Postgres) como gate bloqueante; los DB-gated corren con Postgres
+(local o CI con servicio). El envelope validado es el contrato vigente `{ error: { code, message,
+correlationId } }` (US-093), no `meta.correlationId`.
+
+### Alcance P0 vs PB-P2-018 (DOC-002)
+
+US-112 cubre la **suite negativa foundation P0** (endpoints de PB-P0-004 + controles de
+PB-P0-006/007). La cobertura exhaustiva por todos los dominios MVP posteriores corresponde a
+**PB-P2-018 / US-130** y queda como extensión futura sin bajar este gate.
+
+Trazabilidad completa: `management/workflows/development-execution/P0/PB-P0-008/US-112-execution.md`.
+
+### Alineación documental no bloqueante (DOC-002)
+
+- **PB-P0-007** agrupa rate limiting + middleware order + Helmet; US-110 gobierna los *valores* de
+  política y US-111 el *orden* de la cadena.
+- **Doc 14** define el orden global completo; el resumen del backlog lista el orden protegido —
+  US-111 los consolida (orden global y orden protegido por separado).
+- La **elegibilidad de CAPTCHA** pertenece a US-109; US-111 sólo asegura que el control aplicable
+  corra antes del handler.
+
+---
+
 ## Contrato Event API (US-095 / PB-P0-004)
 
 Endpoints REST bajo `/api/v1/events` (Doc 16). Todos requieren **sesión válida** (cookie US-094)

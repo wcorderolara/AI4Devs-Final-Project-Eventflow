@@ -1,47 +1,71 @@
-// Rate limiters por endpoint público sensible (US-094 / SEC-002). ADR-SEC-004; EC-05.
-// Límites (Doc 16/Doc 19): login 10/IP/10min · register 5/IP/10min · reset-request 3/email/h.
-// El rechazo ocurre ANTES de procesar credenciales o crear usuarios. Respuesta 429 con el error
-// envelope anidado estándar (ADR-API-002). No se ubica en `shared/interface/middlewares/` para
-// preservar el invariante estructural de US-090.
-import rateLimit, { type Options } from 'express-rate-limit';
-import { logger } from '../../infrastructure/logger/index.js';
+// Rate limiters por endpoint público sensible (US-094 / SEC-002; US-110 / PB-P0-007 — ADR-SEC-004).
+// Límites configurables (defaults MVP): login 10/IP/10min · register 5/IP/10min · reset 3/email/1h.
+// El rechazo ocurre ANTES de credenciales / creación de usuario / reset token / email (VR-05). 429
+// con envelope estándar + headers `X-RateLimit-*`/`Retry-After` (AC-06) y log seguro con key hasheada
+// (AC-07). `skip` por `RATE_LIMIT_ENABLED` (N3): la suite global corre sin enforcement; los tests de
+// US-110 lo activan. No se ubica en `shared/interface/middlewares/` (invariante estructural US-090).
+import rateLimit, { type RateLimitRequestHandler } from 'express-rate-limit';
+import type { Request } from 'express';
 import { config } from '../../../config/env.js';
+import { buildRateLimitHandler, type RateLimitKeyType } from './rate-limit-response.js';
 
-function makeAuthLimiter(opts: Pick<Options, 'windowMs' | 'max'> & Partial<Options>) {
+/** Key por IP confiable (SEC-02). `req.ip` respeta el `trust proxy` de Express definido por el bootstrap. */
+const ipKey = (req: Request): string => req.ip ?? 'unknown';
+
+/** Key por email normalizado (SEC-03, anti-enumeración); fallback a IP si el email aún no existe. */
+const emailKey = (req: Request): string => {
+  const email = (req.body as { email?: unknown } | undefined)?.email;
+  return typeof email === 'string' && email.length > 0 ? email.trim().toLowerCase() : ipKey(req);
+};
+
+interface AuthLimiterSpec {
+  policy: string;
+  keyType: RateLimitKeyType;
+  windowMs: number;
+  max: () => number;
+  keyGenerator: (req: Request) => string;
+}
+
+function makeAuthLimiter(spec: AuthLimiterSpec): RateLimitRequestHandler {
   return rateLimit({
+    windowMs: spec.windowMs,
+    max: spec.max,
     standardHeaders: true,
-    legacyHeaders: false,
-    // En `test` se omite el límite para evitar contaminación de estado entre specs (el store es
-    // in-memory y proceso-global). El comportamiento 429 se verifica con un limiter dedicado en
-    // los security negative tests (QA-003). Producción/desarrollo aplican los límites reales.
-    skip: () => config.NODE_ENV === 'test',
-    ...opts,
-    handler: (req, res) => {
-      logger.warn({ event: 'auth.rate_limited', correlationId: req.correlationId, path: req.path });
-      res.status(429).json({
-        error: {
-          code: 'RATE_LIMIT_EXCEEDED',
-          message: 'Too many requests',
-          correlationId: req.correlationId ?? '',
-        },
-      });
-    },
+    legacyHeaders: true, // emite `X-RateLimit-*` (AC-06) además de los `RateLimit-*` estándar
+    skip: () => !config.RATE_LIMIT_ENABLED,
+    keyGenerator: spec.keyGenerator,
+    handler: buildRateLimitHandler({ policy: spec.policy, keyType: spec.keyType }, spec.keyGenerator),
   });
 }
 
-const TEN_MINUTES = 10 * 60 * 1000;
-const ONE_HOUR = 60 * 60 * 1000;
+/** Factories (instancia aislada para tests deterministas) + singletons usados por las rutas. */
+export const createLoginRateLimit = (): RateLimitRequestHandler =>
+  makeAuthLimiter({
+    policy: 'auth_login',
+    keyType: 'ip',
+    windowMs: config.AUTH_LOGIN_RATE_LIMIT_WINDOW_MS,
+    max: () => config.AUTH_LOGIN_RATE_LIMIT_MAX,
+    keyGenerator: ipKey,
+  });
 
-export const loginRateLimit = makeAuthLimiter({ windowMs: TEN_MINUTES, max: 10 });
+export const createRegisterRateLimit = (): RateLimitRequestHandler =>
+  makeAuthLimiter({
+    policy: 'auth_register',
+    keyType: 'ip',
+    windowMs: config.AUTH_REGISTER_RATE_LIMIT_WINDOW_MS,
+    max: () => config.AUTH_REGISTER_RATE_LIMIT_MAX,
+    keyGenerator: ipKey,
+  });
 
-export const registerRateLimit = makeAuthLimiter({ windowMs: TEN_MINUTES, max: 5 });
+export const createPasswordResetRequestRateLimit = (): RateLimitRequestHandler =>
+  makeAuthLimiter({
+    policy: 'auth_password_reset',
+    keyType: 'email',
+    windowMs: config.AUTH_PASSWORD_RESET_RATE_LIMIT_WINDOW_MS,
+    max: () => config.AUTH_PASSWORD_RESET_RATE_LIMIT_MAX,
+    keyGenerator: emailKey,
+  });
 
-export const passwordResetRequestRateLimit = makeAuthLimiter({
-  windowMs: ONE_HOUR,
-  max: 3,
-  // Límite por email (anti-abuso dirigido). Fallback a IP si el email aún no está disponible.
-  keyGenerator: (req): string => {
-    const email = (req.body as { email?: unknown } | undefined)?.email;
-    return typeof email === 'string' && email.length > 0 ? email.toLowerCase() : (req.ip ?? 'unknown');
-  },
-});
+export const loginRateLimit = createLoginRateLimit();
+export const registerRateLimit = createRegisterRateLimit();
+export const passwordResetRequestRateLimit = createPasswordResetRequestRateLimit();
