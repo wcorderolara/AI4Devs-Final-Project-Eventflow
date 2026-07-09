@@ -3,6 +3,7 @@
 // importe la app sin abrir un puerto. El bootstrap del proceso (`listen`, `$connect`) vive en
 // `server.ts`. Los middlewares globales se registran en el orden EXACTO de Doc 14 §8.2 (AC-08).
 import express, { type Request, type Response, type Express, Router } from 'express';
+import cookieParser from 'cookie-parser';
 import { config } from './config/env.js';
 import { correlationIdMiddleware } from './shared/interface/middlewares/correlation-id.middleware.js';
 import { requestLoggerMiddleware } from './shared/interface/middlewares/request-logger.middleware.js';
@@ -13,6 +14,11 @@ import { rateLimitMiddleware } from './shared/interface/middlewares/rate-limit.m
 import { notFoundMiddleware } from './shared/interface/middlewares/not-found.middleware.js';
 import { errorHandlerMiddleware } from './shared/interface/middlewares/error-handler.middleware.js';
 import { identityAccessRouter } from './modules/identity-access/interface/identity-access.routes.js';
+import { userProfileRouter } from './modules/user-profile/interface/user-profile.routes.js';
+import { eventPlanningRouter } from './modules/event-planning/interface/events.routes.js';
+import { quoteFlowRouter } from './modules/quote-flow/interface/quote-flow.routes.js';
+import { bookingIntentRouter } from './modules/booking-intent/interface/booking-intent.routes.js';
+import { aiAssistanceRouter } from './modules/ai-assistance/interface/ai.routes.js';
 
 /** Construye y configura la aplicación Express. */
 export function createApp(): Express {
@@ -22,6 +28,9 @@ export function createApp(): Express {
   app.use(correlationIdMiddleware); // 1. correlación (primero: base de observabilidad)
   app.use(requestLoggerMiddleware); // 2. logging (necesita el correlationId)
   app.use(jsonBodyParserMiddleware); // 3. body JSON con límite
+  // 3b. cookie-parser firmado con SESSION_SECRET (US-094 / SEC-001, ADR-SEC-002): habilita
+  // `req.signedCookies` para la auth por cookie de sesión HTTP-only.
+  app.use(cookieParser(config.SESSION_SECRET));
   app.use(corsMiddleware); // 4. CORS (antes de auth para preflight)
   if (config.HELMET_ENABLED) {
     app.use(helmetMiddleware); // 5. security headers (toggle HELMET_ENABLED, default true)
@@ -40,8 +49,16 @@ export function createApp(): Express {
 
   // 7. Router de API versionada. Las rutas se agregan por feature story.
   const apiV1 = Router();
-  // US-092 / BE-006: rutas de referencia con validateRequestMiddleware por ruta.
+  // US-094 / API-001: contrato AUTH y perfil propio bajo `/api/v1`.
   apiV1.use('/auth', identityAccessRouter);
+  apiV1.use('/users', userProfileRouter);
+  // US-096: quote-flow se monta a nivel de `/api/v1` y ANTES de event-planning para capturar
+  // `/events/:eventId/quote-requests` (los demás `/events/*` caen a event-planning).
+  apiV1.use(quoteFlowRouter);
+  // US-097: ai-assistance también a nivel `/api/v1` y ANTES de event-planning (por `/events/:id/ai/*`).
+  apiV1.use(aiAssistanceRouter);
+  apiV1.use('/booking-intents', bookingIntentRouter);
+  apiV1.use('/events', eventPlanningRouter); // US-095 / API-001
   app.use('/api/v1', apiV1);
 
   app.use(notFoundMiddleware); // 8. penúltimo: 404 catch-all

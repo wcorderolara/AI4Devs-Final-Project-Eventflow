@@ -8,6 +8,7 @@ process.env.NODE_ENV ??= 'test';
 process.env.PORT ??= '3000';
 process.env.DATABASE_URL ??= 'postgresql://user:password@localhost:5432/eventflow_test?schema=public';
 process.env.JWT_SECRET ??= 'test_jwt_secret_min_32_characters_long_xx';
+process.env.SESSION_SECRET ??= 'test_session_secret_min_32_characters_long_xx';
 process.env.LLM_PROVIDER ??= 'mock';
 process.env.CORS_ORIGINS ??= 'http://localhost:3000';
 process.env.CAPTCHA_PROVIDER ??= 'mock';

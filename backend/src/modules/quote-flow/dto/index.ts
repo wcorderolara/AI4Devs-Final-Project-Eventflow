@@ -1,5 +1,11 @@
-// Barrel — DTOs de quote-flow (US-092 / BE-005, AI-001).
+// Barrel — DTOs de quote-flow (US-092 base; contrato reemplazado en US-096 / BE-001).
 export * from './create-quote-request.request.js';
-export * from './respond-quote.request.js';
-export * from './list-quotes.query.js';
+export * from './quote-request-params.js';
+export * from './quote-request.response.js';
+export * from './list-quote-requests.query.js';
+export * from './create-quote.request.js';
+export * from './update-quote.request.js';
+export * from './quote-params.js';
+export * from './quote.response.js';
+// AI DTO (US-092 / AI-001) — se conserva para ai-output-schemas.spec.
 export * from './quote-brief-ai-output.js';

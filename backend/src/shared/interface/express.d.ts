@@ -10,6 +10,8 @@ declare global {
       correlationId?: string;
       user?: { id: string; role: string };
       validated?: { body?: unknown; params?: unknown; query?: unknown };
+      // US-094 (SEC-001): id de la sesión resuelta desde la cookie firmada (para logout).
+      sessionId?: string;
     }
   }
 }

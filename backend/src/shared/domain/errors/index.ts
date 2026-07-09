@@ -12,6 +12,21 @@ export { AuthenticationError } from './authentication.error.js';
 export { AuthorizationError } from './authorization.error.js';
 export { NotFoundError } from './not-found.error.js';
 export { ConflictError } from './conflict.error.js';
+export { EmailTakenError } from './email-taken.error.js';
+export { CurrencyImmutableError } from './currency-immutable.error.js';
+export {
+  MaxQuoteRequestsExceededError,
+  DuplicateQuoteRequestActiveError,
+  QuoteExpiredError,
+} from './quote-flow.errors.js';
+export {
+  MissingInputError,
+  UnsupportedLanguageError,
+  AiInvalidOutputError,
+  InvalidStateTransitionError,
+  AiProviderUnavailableError,
+  AiProviderTimeoutError,
+} from './ai.errors.js';
 export { BusinessRuleViolationError } from './business-rule-violation.error.js';
 export { RateLimitError } from './rate-limit.error.js';
 export { BadRequestError } from './bad-request.error.js';

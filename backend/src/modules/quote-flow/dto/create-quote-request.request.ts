@@ -1,15 +1,23 @@
-// Request DTO — Crear solicitud de cotización (US-092 / BE-005). AC-03; VR-01, VR-05.
-// Reglas semánticas (vendor activo, límite de 5 activos) → capa Application.
+// Request DTO — Crear QuoteRequest (US-096 / BE-001). AC-01; VR-02.
+// El organizer envía vendor + categoría + brief (summary/requirements/questions, constraints opc.)
+// y opcionalmente una referencia a AIRecommendation existente (no se invoca IA).
 import { z } from 'zod';
+
+export const QuoteRequestBriefSchema = z
+  .object({
+    summary: z.string().min(1).max(2000),
+    requirements: z.array(z.string().min(1).max(500)).min(1),
+    questions: z.array(z.string().min(1).max(500)).min(1),
+    constraints: z.array(z.string().min(1).max(500)).optional(),
+  })
+  .strict();
 
 export const CreateQuoteRequestRequestSchema = z
   .object({
-    event_id: z.string().uuid(),
-    vendor_id: z.string().uuid(),
-    category_id: z.string().uuid(),
-    brief: z.string().min(10).max(4000),
-    deadline: z.string().datetime().optional(),
-    attachments: z.array(z.string()).optional(),
+    vendorProfileId: z.string().uuid(),
+    serviceCategoryId: z.string().uuid(),
+    brief: QuoteRequestBriefSchema,
+    aiRecommendationId: z.string().uuid().optional(),
   })
   .strict();
 

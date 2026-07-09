@@ -1,0 +1,24 @@
+// LogoutUserUseCase (US-094 / BE-004). AC-05. Revoca la sesión vigente (server-side) para que
+// llamadas protegidas posteriores respondan 401. El controller además limpia la cookie.
+import type { SessionRepository, AuthEventLogger } from '../../../shared/auth/ports.js';
+import type { ClockPort } from '../../../shared/domain/clock.port.js';
+import type { AuthUseCaseContext } from './register-user.use-case.js';
+
+export class LogoutUserUseCase {
+  constructor(
+    private readonly sessions: SessionRepository,
+    private readonly clock: ClockPort,
+    private readonly events: AuthEventLogger,
+  ) {}
+
+  async execute(
+    input: { sessionId: string; userId?: string },
+    ctx: AuthUseCaseContext = {},
+  ): Promise<void> {
+    await this.sessions.revoke(input.sessionId, this.clock.now());
+    this.events.emit('auth.logout.succeeded', {
+      correlationId: ctx.correlationId,
+      userId: input.userId,
+    });
+  }
+}

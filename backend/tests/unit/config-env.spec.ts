@@ -11,6 +11,8 @@ const validEnv = {
   NODE_ENV: 'test',
   DATABASE_URL: 'postgresql://user:password@localhost:5432/eventflow_test?schema=public',
   JWT_SECRET: 'test_jwt_secret_min_32_characters_long_xx',
+  // US-094: SESSION_SECRET es requerido (min 32, sin default por seguridad — ADR-SEC-002).
+  SESSION_SECRET: 'test_session_secret_min_32_characters_long_xx',
   LLM_PROVIDER: 'mock',
   CORS_ORIGINS: 'http://localhost:3000',
   CAPTCHA_PROVIDER: 'mock',
