@@ -14,24 +14,24 @@ export const schema: string = readFileSync(
 export function modelBlock(name: string): string | null {
   const re = new RegExp(`model\\s+${name}\\s*\\{([\\s\\S]*?)\\n\\}`, 'm');
   const m = schema.match(re);
-  return m ? m[1] : null;
+  return m?.[1] ?? null;
 }
 
 /** Extrae el cuerpo `{ ... }` de un bloque `enum <name>`. */
 export function enumBlock(name: string): string | null {
   const re = new RegExp(`enum\\s+${name}\\s*\\{([\\s\\S]*?)\\n\\}`, 'm');
   const m = schema.match(re);
-  return m ? m[1] : null;
+  return m?.[1] ?? null;
 }
 
 /** Nombres de todos los modelos declarados. */
 export function declaredModels(): string[] {
-  return [...schema.matchAll(/^\s*model\s+(\w+)\s*\{/gm)].map((m) => m[1]);
+  return [...schema.matchAll(/^\s*model\s+(\w+)\s*\{/gm)].map((m) => m[1]!);
 }
 
 /** Nombres de todos los enums declarados. */
 export function declaredEnums(): string[] {
-  return [...schema.matchAll(/^\s*enum\s+(\w+)\s*\{/gm)].map((m) => m[1]);
+  return [...schema.matchAll(/^\s*enum\s+(\w+)\s*\{/gm)].map((m) => m[1]!);
 }
 
 /** Los 19 modelos MVP canónicos (AC-01). */

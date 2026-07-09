@@ -45,7 +45,7 @@ describe.skipIf(!dbUp)('US-102 integración: constraints físicos', () => {
     );
 
     // Grafo base válido, capturando UUIDs generados.
-    const row = async (sql: string) => (await q<{ id: string }>(sql))[0].id;
+    const row = async (sql: string) => (await q<{ id: string }>(sql))[0]!.id;
 
     ID.user = await row(`INSERT INTO users (id,email,password_hash,role,updated_at) VALUES (gen_random_uuid(),'qa102_org@eventflow.demo','x','organizer',now()) RETURNING id`);
     ID.vuser = await row(`INSERT INTO users (id,email,password_hash,role,updated_at) VALUES (gen_random_uuid(),'qa102_vendor@eventflow.demo','x','vendor',now()) RETURNING id`);
@@ -131,7 +131,7 @@ describe.skipIf(!dbUp)('US-102 integración: constraints físicos', () => {
     });
 
     it('uq_prompt_versions_active: 2ª versión activa mismo prompt_id → 23505; permitida si la previa está deprecated', async () => {
-      const pid = (await q<{ prompt_id: string }>(`SELECT prompt_id FROM ai_prompt_versions WHERE id = '${ID.apv}'`))[0].prompt_id;
+      const pid = (await q<{ prompt_id: string }>(`SELECT prompt_id FROM ai_prompt_versions WHERE id = '${ID.apv}'`))[0]!.prompt_id;
       const dup = await violation(
         `INSERT INTO ai_prompt_versions (id,prompt_id,prompt_key,version,provider,template_checksum,status,updated_at) VALUES (gen_random_uuid(),'${pid}','qa102_k','2','mock','x','active',now())`,
       );

@@ -9,3 +9,6 @@
 | P0 | PB-P0-001 | US-100 | Generar baseline migration Prisma y operar flujo `migrate dev` / `migrate deploy` | [record](development-execution/P0/PB-P0-001/US-100-execution.md) | 18 | 18 | 0 | 0 | 0 | 0 | `Done` | 2026-07-08 |
 | P0 | PB-P0-001 | US-101 | Implementar índices críticos vía raw SQL y verificar el catálogo físico | [record](development-execution/P0/PB-P0-001/US-101-execution.md) | 16 | 15 | 0 | 0 | 0 | 0 | `Validation` | 2026-07-08 |
 | P0 | PB-P0-001 | US-102 | Implementar constraints físicos vía raw SQL y validar el catálogo C-001..C-062 | [record](development-execution/P0/PB-P0-001/US-102-execution.md) | 13 | 12 | 0 | 0 | 0 | 0 | `Validation` | 2026-07-08 |
+| P0 | PB-P0-002 | US-089 | Inicializar proyecto Node + Express + TypeScript | [record](development-execution/P0/PB-P0-002/US-089-execution.md) | 14 | 14 | 0 | 0 | 0 | 0 | `Done` | 2026-07-08 |
+| P0 | PB-P0-002 | US-090 | Carpetas por módulo de dominio (feature-first + Clean/Hex) | [record](development-execution/P0/PB-P0-002/US-090-execution.md) | 16 | 16 | 0 | 0 | 0 | 0 | `Done` | 2026-07-08 |
+| P0 | PB-P0-002 | US-091 | Pipeline de middlewares global (Express) | [record](development-execution/P0/PB-P0-002/US-091-execution.md) | 24 | 24 | 0 | 0 | 0 | 0 | `Done` | 2026-07-08 |

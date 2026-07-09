@@ -66,7 +66,7 @@ describe('QA-001: estructura de la migración de índices críticos', () => {
     for (const { i } of createLines) {
       // buscar hacia atrás la línea previa no vacía
       let j = i - 1;
-      while (j >= 0 && lines[j].trim() === '') j--;
+      while (j >= 0 && lines[j]?.trim() === '') j--;
       expect(lines[j]).toMatch(/^--\s*Raw SQL:/i);
     }
   });
