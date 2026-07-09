@@ -82,8 +82,8 @@ describe.skipIf(!dbUp)('US-102 integración: constraints físicos', () => {
       { name: 'chk_booking_intents_is_simulated', sql: () => `INSERT INTO booking_intents (id,quote_id,event_id,service_category_id,is_simulated,updated_at) VALUES (gen_random_uuid(),'${ID.quote}','${ID.event}','${ID.scat}',false,now())` },
       { name: 'chk_reviews_rating_range', sql: () => `INSERT INTO reviews (id,booking_intent_id,vendor_profile_id,author_id,rating,comment,updated_at) VALUES (gen_random_uuid(),'${ID.booking}','${ID.vprofile}','${ID.author}',6,'qa102',now())` },
       { name: 'chk_attachments_size_bytes_nonneg', sql: () => `INSERT INTO attachments (id,owner_type,owner_id,url,size_bytes,updated_at) VALUES (gen_random_uuid(),'vendor_work','${ID.vprofile}','http://x',-1,now())` },
-      { name: 'chk_ai_recommendations_timeout_positive', sql: () => `INSERT INTO ai_recommendations (id,event_id,ai_prompt_version_id,kind,input_payload,output_payload,timeout_ms,updated_at) VALUES (gen_random_uuid(),'${ID.event}','${ID.apv}','qa102','{}','{}',0,now())` },
-      { name: 'chk_ai_recommendations_retry_max', sql: () => `INSERT INTO ai_recommendations (id,event_id,ai_prompt_version_id,kind,input_payload,output_payload,retry_count,updated_at) VALUES (gen_random_uuid(),'${ID.event}','${ID.apv}','qa102','{}','{}',2,now())` },
+      { name: 'chk_ai_recommendations_timeout_positive', sql: () => `INSERT INTO ai_recommendations (id,event_id,ai_prompt_version_id,requested_by_user_id,kind,input_payload,output_payload,timeout_ms,updated_at) VALUES (gen_random_uuid(),'${ID.event}','${ID.apv}','${ID.user}','qa102','{}','{}',0,now())` },
+      { name: 'chk_ai_recommendations_retry_max', sql: () => `INSERT INTO ai_recommendations (id,event_id,ai_prompt_version_id,requested_by_user_id,kind,input_payload,output_payload,retry_count,updated_at) VALUES (gen_random_uuid(),'${ID.event}','${ID.apv}','${ID.user}','qa102','{}','{}',2,now())` },
     ];
 
     for (const c of cases) {

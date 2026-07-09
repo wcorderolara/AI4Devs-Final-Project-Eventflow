@@ -10,6 +10,21 @@ import { AuthenticationError } from '../../domain/errors/authentication.error.js
 import { AuthorizationError } from '../../domain/errors/authorization.error.js';
 import { NotFoundError } from '../../domain/errors/not-found.error.js';
 import { ConflictError } from '../../domain/errors/conflict.error.js';
+import { EmailTakenError } from '../../domain/errors/email-taken.error.js';
+import { CurrencyImmutableError } from '../../domain/errors/currency-immutable.error.js';
+import {
+  MaxQuoteRequestsExceededError,
+  DuplicateQuoteRequestActiveError,
+  QuoteExpiredError,
+} from '../../domain/errors/quote-flow.errors.js';
+import {
+  MissingInputError,
+  UnsupportedLanguageError,
+  AiInvalidOutputError,
+  InvalidStateTransitionError,
+  AiProviderUnavailableError,
+  AiProviderTimeoutError,
+} from '../../domain/errors/ai.errors.js';
 import { BusinessRuleViolationError } from '../../domain/errors/business-rule-violation.error.js';
 import { RateLimitError } from '../../domain/errors/rate-limit.error.js';
 import { BadRequestError } from '../../domain/errors/bad-request.error.js';
@@ -54,6 +69,39 @@ function mapError(err: unknown): MappedError {
   }
   if (err instanceof NotFoundError) {
     return { status: 404, code: ErrorCodes.RESOURCE_NOT_FOUND, message: err.message };
+  }
+  if (err instanceof EmailTakenError) {
+    return { status: 409, code: ErrorCodes.EMAIL_TAKEN, message: err.message };
+  }
+  if (err instanceof CurrencyImmutableError) {
+    return { status: 409, code: ErrorCodes.CURRENCY_IMMUTABLE, message: err.message };
+  }
+  if (err instanceof MaxQuoteRequestsExceededError) {
+    return { status: 409, code: ErrorCodes.MAX_QUOTE_REQUESTS_EXCEEDED, message: err.message };
+  }
+  if (err instanceof DuplicateQuoteRequestActiveError) {
+    return { status: 409, code: ErrorCodes.DUPLICATE_QUOTE_REQUEST_ACTIVE, message: err.message };
+  }
+  if (err instanceof QuoteExpiredError) {
+    return { status: 410, code: ErrorCodes.QUOTE_EXPIRED, message: err.message };
+  }
+  if (err instanceof MissingInputError) {
+    return { status: 400, code: ErrorCodes.MISSING_INPUT, message: err.message };
+  }
+  if (err instanceof UnsupportedLanguageError) {
+    return { status: 422, code: ErrorCodes.UNSUPPORTED_LANGUAGE, message: err.message };
+  }
+  if (err instanceof AiInvalidOutputError) {
+    return { status: 422, code: ErrorCodes.AI_INVALID_OUTPUT, message: err.message };
+  }
+  if (err instanceof InvalidStateTransitionError) {
+    return { status: 422, code: ErrorCodes.INVALID_STATE_TRANSITION, message: err.message };
+  }
+  if (err instanceof AiProviderUnavailableError) {
+    return { status: 503, code: ErrorCodes.AI_PROVIDER_UNAVAILABLE, message: err.message };
+  }
+  if (err instanceof AiProviderTimeoutError) {
+    return { status: 503, code: ErrorCodes.AI_PROVIDER_TIMEOUT, message: err.message };
   }
   if (err instanceof ConflictError) {
     return { status: 409, code: ErrorCodes.CONFLICT, message: err.message };
