@@ -10,7 +10,7 @@ const validEnv = {
   PORT: '3000',
   NODE_ENV: 'test',
   DATABASE_URL: 'postgresql://user:password@localhost:5432/eventflow_test?schema=public',
-  JWT_SECRET: 'test_jwt_secret_min_32_characters_long_xx', // gitleaks:allow -- fixture de test, no es un secreto real
+  JWT_SECRET: 'test_jwt_secret_min_32_characters_long_xx',
   LLM_PROVIDER: 'mock',
   CORS_ORIGINS: 'http://localhost:3000',
   CAPTCHA_PROVIDER: 'mock',

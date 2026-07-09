@@ -1,0 +1,15 @@
+# Configuración de gitleaks para el repositorio.
+# Extiende el ruleset por defecto (no lo reemplaza) y añade un allowlist mínimo y explícito
+# para fixtures de test que NO son secretos reales. Se listan los valores exactos (no rutas
+# completas) para no debilitar el escaneo del resto de los archivos de test.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fixtures de test con secretos falsos (no reales) — US-089/US-091"
+regexes = [
+  # JWT_SECRET dummy usado por los tests de config y del pipeline de middlewares.
+  '''test_jwt_secret_min_32_characters_long_xx''',
+  # Secret incorrecto usado para forjar un JWT inválido en el test de authMiddleware.
+  '''wrong-secret-that-is-not-real-000''',
+]
