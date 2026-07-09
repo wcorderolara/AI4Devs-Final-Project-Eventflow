@@ -27,7 +27,12 @@
     "openapi:generate": "tsx scripts/openapi-generate.ts",
     "openapi:lint": "tsx scripts/openapi-lint.ts",
     "openapi:check": "tsx scripts/openapi-check.ts",
-    "openapi:docs": "tsx scripts/openapi-docs.ts"
+    "openapi:docs": "tsx scripts/openapi-docs.ts",
+    "promptops:hash": "tsx scripts/promptops-hash.ts",
+    "promptops:check": "vitest run tests/unit/us121-",
+    "test:us122": "vitest run tests/unit/us122- tests/integration/us122-",
+    "test:us123": "vitest run tests/unit/us123-",
+    "test:us124": "vitest run tests/unit/us124-"
   },
   "prisma": {
     "schema": "prisma/schema.prisma"

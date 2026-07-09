@@ -20,7 +20,7 @@ frontend nunca lo invoca ni recibe la API key.
 | `OPENAI_API_KEY` | sí (si `LLM_PROVIDER=openai`) | — |
 | `OPENAI_MODEL` | sí (si `LLM_PROVIDER=openai`) | — |
 | `OPENAI_BASE_URL` | no | `https://api.openai.com/v1` |
-| `AI_TIMEOUT_MS` | no | `8000` (repo; nominal de la historia 60000) |
+| `AI_TIMEOUT_MS` | no | `60000` (US-123 / PB-P0-011; política oficial PO 8.1 #9, BR-AI-009) |
 
 Config inválida falla de forma segura (`AIProviderNotConfiguredError`) sin imprimir el valor del
 secreto. CI/tests usan `LLM_PROVIDER=mock` y **no** requieren secretos reales (AC-08).

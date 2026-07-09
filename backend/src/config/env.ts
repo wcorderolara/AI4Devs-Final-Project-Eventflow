@@ -61,8 +61,14 @@ export const configSchema = z.object({
   OPENAI_MODEL: z.string().optional(),
   OPENAI_BASE_URL: z.string().url().optional(),
   // US-097 (PB-P0-004): timeout del provider; modo demo (habilita fallback a mock); rate limit AI.
-  AI_TIMEOUT_MS: z.coerce.number().int().positive().default(8000),
+  // US-123 (PB-P0-011 / VR-01, AC-01): default de timeout de la política oficial = 60000 ms
+  // (PO Decision 8.1 #9, BR-AI-009). Reemplaza el placeholder 8000 de US-097.
+  AI_TIMEOUT_MS: z.coerce.number().int().positive().default(60000),
   AI_DEMO_MODE: booleanFromEnv.default(false),
+  // US-123 (PB-P0-011): habilita fallback a MockAIProvider fuera de demo-mode (VR-03). Sólo `mock`.
+  AI_USE_MOCK_FALLBACK: booleanFromEnv.default(false),
+  // US-123 (PB-P0-011 / SEC-04): logging de payloads AI. Prohibido en demo/producción (fail-fast).
+  AI_LOG_PAYLOADS: booleanFromEnv.default(false),
   // Rate limit IA (US-097; US-110 / PB-P0-007). US-110 fija el default MVP en 10 generaciones por
   // usuario autenticado agregadas por ventana de 1 h (key `ai:user:{userId}`). VR-01: entero positivo.
   AI_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
@@ -204,6 +210,34 @@ const validatedConfigSchema = configSchema.superRefine((cfg, ctx) => {
       code: z.ZodIssueCode.custom,
       path: ['HCAPTCHA_SECRET_KEY'],
       message: 'CAPTCHA_PROVIDER=hcaptcha requiere HCAPTCHA_SECRET_KEY.',
+    });
+  }
+
+  // ── AI execution: timeout/fallback (US-123 / PB-P0-011; AC-03, AC-07, SEC-04) ─────────────────
+  // El repo usa NODE_ENV; la matriz de la historia se mapea: demo ≈ AI_DEMO_MODE=true;
+  // production-academic ≈ NODE_ENV=production. La misma lógica vive en `validateAIExecutionConfig`
+  // (path tipado AI_CONFIG_INVALID); aquí se aplica como fail-fast de boot (ZodError).
+  // SEC-04: AI_LOG_PAYLOADS=true prohibido en demo-academic y production-academic.
+  if (cfg.AI_LOG_PAYLOADS && (isNonLocal || cfg.AI_DEMO_MODE)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['AI_LOG_PAYLOADS'],
+      message: 'AI_LOG_PAYLOADS=true no está permitido en demo (AI_DEMO_MODE=true) ni producción (NODE_ENV=production).',
+    });
+  }
+  // AC-03 / VR-04: en producción el fallback no puede ser silencioso — flags de fallback deben estar off.
+  if (isNonLocal && cfg.AI_USE_MOCK_FALLBACK) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['AI_USE_MOCK_FALLBACK'],
+      message: 'AI_USE_MOCK_FALLBACK=true no está permitido en producción (NODE_ENV=production): el fallback no puede ser silencioso.',
+    });
+  }
+  if (isNonLocal && cfg.AI_DEMO_MODE) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['AI_DEMO_MODE'],
+      message: 'AI_DEMO_MODE=true no está permitido en producción (NODE_ENV=production).',
     });
   }
 });
