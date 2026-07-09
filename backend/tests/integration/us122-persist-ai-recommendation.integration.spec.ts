@@ -23,6 +23,8 @@ try {
 
 const USER_ID = '00000000-0000-4000-8000-0000000a1122';
 const USER_EMAIL = 'us122.persist.test@example.com';
+const EVENT_TYPE_ID = '00000000-0000-4000-8000-0000000a1123';
+const EVENT_ID = '00000000-0000-4000-8000-0000000a1124';
 const repo = new PrismaAIRecommendationRepository(prisma);
 const service = new PersistAIRecommendationService(repo);
 
@@ -40,7 +42,8 @@ function validInput(promptVersionId: string) {
     inputPayload: { eventType: 'wedding', apiKey: 'sk-should-be-removed' },
     outputPayload: { summary: 'Plan', phases: [{ name: 'F1', tasks: ['t1'] }] },
     schemaValid: true,
-    eventId: null,
+    // event_plan es scope 'event' → requiere eventId (context-by-type, AC-09/EC-05).
+    eventId: EVENT_ID,
     vendorProfileId: null,
     quoteRequestId: null,
   };
@@ -54,10 +57,23 @@ describe.skipIf(!dbUp)('US-122 integración — persistencia AIRecommendation co
       update: {},
       create: { id: USER_ID, email: USER_EMAIL, passwordHash: 'x'.repeat(20), role: 'organizer' },
     });
+    // event_plan requiere eventId válido (FK). Se crea EventType + Event mínimos para el owner de test.
+    await prisma.eventType.upsert({
+      where: { id: EVENT_TYPE_ID },
+      update: {},
+      create: { id: EVENT_TYPE_ID, code: 'us122-test-type', label: 'US-122 Test Type' },
+    });
+    await prisma.event.upsert({
+      where: { id: EVENT_ID },
+      update: {},
+      create: { id: EVENT_ID, userId: USER_ID, eventTypeId: EVENT_TYPE_ID, title: 'US-122 Test Event' },
+    });
   });
 
   afterAll(async () => {
     await prisma.aIRecommendation.deleteMany({ where: { requestedByUserId: USER_ID } });
+    await prisma.event.deleteMany({ where: { id: EVENT_ID } });
+    await prisma.eventType.deleteMany({ where: { id: EVENT_TYPE_ID } });
     await prisma.user.deleteMany({ where: { id: USER_ID } });
     await prisma.$disconnect();
   });
