@@ -6,10 +6,17 @@
 useDefault = true
 
 [allowlist]
-description = "Fixtures de test con secretos falsos (no reales) — US-089/US-091"
+description = "Fixtures de test con secretos falsos (no reales) — US-089/US-091/US-108/US-109"
 regexes = [
   # JWT_SECRET dummy usado por los tests de config y del pipeline de middlewares.
   '''test_jwt_secret_min_32_characters_long_xx''',
   # Secret incorrecto usado para forjar un JWT inválido en el test de authMiddleware.
   '''wrong-secret-that-is-not-real-000''',
+  # SESSION_SECRET dummy de los tests de config/cookie (US-094/US-108).
+  '''test_session_secret_min_32_characters_long_xx''',
+  # RECAPTCHA_SECRET_KEY falso para fixtures de config de captcha (US-108/US-109).
+  '''real-recaptcha-secret''',
+  # Canaries de redacción de logs (US-108/US-109): valores que los tests verifican NO se filtran.
+  '''leak-secret-value''',
+  '''leak-token-value''',
 ]

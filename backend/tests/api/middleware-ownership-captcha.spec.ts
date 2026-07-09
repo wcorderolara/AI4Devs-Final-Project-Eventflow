@@ -57,16 +57,18 @@ describe('captchaVerificationMiddleware (US-091)', () => {
     expect(res.status).toBe(200);
   });
 
-  it('NT-05: sin captchaToken → 400 BAD_REQUEST', async () => {
+  it('NT-05: sin captchaToken → 400 CAPTCHA_REQUIRED (US-109)', async () => {
     config.CAPTCHA_PROVIDER = 'mock';
     const res = await request(app).post('/captcha').send({});
     expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('BAD_REQUEST');
+    // US-109 refina el código genérico BAD_REQUEST a CAPTCHA_REQUIRED (AC-05, VR-01).
+    expect(res.body.error.code).toBe('CAPTCHA_REQUIRED');
   });
 
-  it('SEC-003: token "__test__" con CAPTCHA_PROVIDER=recaptcha → 400 (guard activo)', async () => {
+  it('SEC-003: token "__test__" con CAPTCHA_PROVIDER=recaptcha → 400 CAPTCHA_INVALID (guard activo)', async () => {
     config.CAPTCHA_PROVIDER = 'recaptcha';
     const res = await request(app).post('/captcha').send({ captchaToken: '__test__' });
     expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('CAPTCHA_INVALID');
   });
 });
