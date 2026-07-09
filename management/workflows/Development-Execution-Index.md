@@ -21,3 +21,6 @@
 | P0 | PB-P0-005 | US-098 | Generar snapshot OpenAPI automatizado | [record](development-execution/P0/PB-P0-005/US-098-execution.md) | 16 | 16 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
 | P0 | PB-P0-006 | US-108 | Configurar cookies HTTP-only firmadas | [record](development-execution/P0/PB-P0-006/US-108-execution.md) | 21 | 19 | 0 | 0 | 0 | 2 | `Partially Completed` | 2026-07-09 |
 | P0 | PB-P0-006 | US-109 | Integrar captcha en auth | [record](development-execution/P0/PB-P0-006/US-109-execution.md) | 25 | 22 | 0 | 0 | 0 | 3 | `Partially Completed` | 2026-07-09 |
+| P0 | PB-P0-007 | US-110 | Rate limiting en auth y endpoints IA | [record](development-execution/P0/PB-P0-007/US-110-execution.md) | 25 | 24 | 0 | 0 | 0 | 1 | `Done` | 2026-07-09 |
+| P0 | PB-P0-007 | US-111 | Validar orden seguro de middlewares | [record](development-execution/P0/PB-P0-007/US-111-execution.md) | 22 | 22 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
+| P0 | PB-P0-008 | US-112 | Suite negativa RBAC + ownership | [record](development-execution/P0/PB-P0-008/US-112-execution.md) | 22 | 22 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |

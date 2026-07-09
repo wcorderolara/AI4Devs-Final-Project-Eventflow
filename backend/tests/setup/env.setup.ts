@@ -12,3 +12,6 @@ process.env.SESSION_SECRET ??= 'test_session_secret_min_32_characters_long_xx';
 process.env.LLM_PROVIDER ??= 'mock';
 process.env.CORS_ORIGINS ??= 'http://localhost:3000';
 process.env.CAPTCHA_PROVIDER ??= 'mock';
+// US-110: rate limiting deshabilitado por defecto en la suite (evita contaminación entre specs con
+// el store in-memory proceso-global). Los tests de US-110 lo activan explícitamente por caso.
+process.env.RATE_LIMIT_ENABLED ??= 'false';

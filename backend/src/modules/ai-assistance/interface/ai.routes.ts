@@ -7,6 +7,7 @@ import { validateRequestMiddleware } from '../../../shared/interface/middlewares
 import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
 import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
+import { composeProtectedRoute } from '../../../shared/interface/http/compose-route.js';
 import { aiGenerationRateLimit } from '../../../shared/interface/http/ai-rate-limit.js';
 import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
 import {
@@ -69,48 +70,68 @@ for (const [path, handler] of [
   ['quote-brief', assistance.quoteBrief],
   ['task-prioritization', assistance.taskPrioritization],
 ] as const) {
-  aiAssistanceRouter.post(`/events/:eventId/ai/${path}`, sessionAuth, organizer, aiGenerationRateLimit, v(eventBody), asyncHandler(handler));
+  // US-111: composición canónica `auth → role → rateLimit → validation → handler` (orden idéntico).
+  aiAssistanceRouter.post(
+    `/events/:eventId/ai/${path}`,
+    ...composeProtectedRoute({
+      auth: sessionAuth,
+      role: organizer,
+      rateLimit: aiGenerationRateLimit,
+      validation: v(eventBody),
+      handler: asyncHandler(handler),
+    }),
+  );
 }
 
 // ── Quote comparison (organizer owner del evento del QuoteRequest) ─────────
 aiAssistanceRouter.post(
   '/quote-requests/:quoteRequestId/ai/comparison-summary',
-  sessionAuth,
-  organizer,
-  aiGenerationRateLimit,
-  v(z.object({ params: QuoteRequestIdParamSchema, body: AiBaseRequestSchema })),
-  asyncHandler(assistance.comparisonSummary),
+  ...composeProtectedRoute({
+    auth: sessionAuth,
+    role: organizer,
+    rateLimit: aiGenerationRateLimit,
+    validation: v(z.object({ params: QuoteRequestIdParamSchema, body: AiBaseRequestSchema })),
+    handler: asyncHandler(assistance.comparisonSummary),
+  }),
 );
 
 // ── Vendor bio (vendor con perfil propio) ──────────────────────────────────
 aiAssistanceRouter.post(
   '/vendors/me/ai/bio',
-  sessionAuth,
-  vendor,
-  aiGenerationRateLimit,
-  v(z.object({ body: AiBaseRequestSchema })),
-  asyncHandler(assistance.vendorBio),
+  ...composeProtectedRoute({
+    auth: sessionAuth,
+    role: vendor,
+    rateLimit: aiGenerationRateLimit,
+    validation: v(z.object({ body: AiBaseRequestSchema })),
+    handler: asyncHandler(assistance.vendorBio),
+  }),
 );
 
 // ── AIRecommendation actions (owner) ───────────────────────────────────────
 aiAssistanceRouter.get(
   '/ai-recommendations/:aiRecommendationId',
-  sessionAuth,
-  owner,
-  v(z.object({ params: AiRecommendationIdParamSchema })),
-  asyncHandler(recommendations.get),
+  ...composeProtectedRoute({
+    auth: sessionAuth,
+    role: owner,
+    validation: v(z.object({ params: AiRecommendationIdParamSchema })),
+    handler: asyncHandler(recommendations.get),
+  }),
 );
 aiAssistanceRouter.post(
   '/ai-recommendations/:aiRecommendationId/apply',
-  sessionAuth,
-  owner,
-  v(z.object({ params: AiRecommendationIdParamSchema, body: ApplyAiRecommendationSchema })),
-  asyncHandler(recommendations.apply),
+  ...composeProtectedRoute({
+    auth: sessionAuth,
+    role: owner,
+    validation: v(z.object({ params: AiRecommendationIdParamSchema, body: ApplyAiRecommendationSchema })),
+    handler: asyncHandler(recommendations.apply),
+  }),
 );
 aiAssistanceRouter.post(
   '/ai-recommendations/:aiRecommendationId/discard',
-  sessionAuth,
-  owner,
-  v(z.object({ params: AiRecommendationIdParamSchema })),
-  asyncHandler(recommendations.discard),
+  ...composeProtectedRoute({
+    auth: sessionAuth,
+    role: owner,
+    validation: v(z.object({ params: AiRecommendationIdParamSchema })),
+    handler: asyncHandler(recommendations.discard),
+  }),
 );
