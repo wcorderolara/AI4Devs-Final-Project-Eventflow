@@ -29,6 +29,7 @@ import {
 import { BusinessRuleViolationError } from '../../domain/errors/business-rule-violation.error.js';
 import { RateLimitError } from '../../domain/errors/rate-limit.error.js';
 import { BadRequestError } from '../../domain/errors/bad-request.error.js';
+import { SeedResetInProgressError, SeedResetFailedError } from '../../domain/errors/seed-demo.errors.js';
 import { AITimeoutError } from '../../domain/errors/ai-timeout.error.js';
 import { AIProviderError } from '../../domain/errors/ai-provider.error.js';
 import { PrismaPersistenceError } from '../../domain/errors/prisma-persistence.error.js';
@@ -106,6 +107,14 @@ function mapError(err: unknown): MappedError {
   }
   if (err instanceof AIProviderNotConfiguredError) {
     return { status: 503, code: ErrorCodes.AI_PROVIDER_NOT_CONFIGURED, message: err.message };
+  }
+  // US-086 (PB-P0-014): reset surgical Demo. Antes del ConflictError genérico para preservar el
+  // código específico `SEED_RESET_IN_PROGRESS` (EC-03) en el envelope.
+  if (err instanceof SeedResetInProgressError) {
+    return { status: 409, code: ErrorCodes.SEED_RESET_IN_PROGRESS, message: err.message };
+  }
+  if (err instanceof SeedResetFailedError) {
+    return { status: 500, code: ErrorCodes.SEED_RESET_FAILED, message: err.message };
   }
   if (err instanceof ConflictError) {
     return { status: 409, code: ErrorCodes.CONFLICT, message: err.message };

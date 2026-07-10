@@ -35,6 +35,7 @@ npm run db:generate
 | `db:migrate:reset` | `bash scripts/db-migrate-reset.sh` | Wrapper env-aware: **bloqueado** en CI/QA/Demo, permitido solo en local. |
 | `typecheck` | `tsc --noEmit` | Verifica el import surface del Prisma Client (BE-001). |
 | `test` | `vitest run` | Tests estructurales de schema y migraciones (Vitest). |
+| `seed` | `tsx src/scripts/seed.ts` | Carga datos demo LATAM idempotentes (`is_seed=true`). Requiere BD + `SEED_DEMO_ENABLED=true`. Ver [Seed de datos demo](#seed-de-datos-demo-y-base-de-datos-local-para-pruebas-us-085). |
 
 ## Estructura
 
@@ -686,3 +687,62 @@ no una segunda fuente de verdad. Acción recomendada (no bloqueante): actualizar
 indicar `backend/openapi.json` como snapshot canónico y YAML como derivado opcional.
 
 Trazabilidad: `management/workflows/development-execution/P0/PB-P0-005/US-098-execution.md`.
+
+## Seed de datos demo y base de datos local para pruebas (US-085 / PB-P0-014)
+
+`npm run seed` carga un dataset LATAM coherente e **idempotente** para la demo y la suite QA. Todas las
+filas quedan marcadas con `is_seed=true`. La guía operativa completa está en
+[`docs/operations/seed.md`](docs/operations/seed.md).
+
+### Comando
+
+```bash
+SEED_DEMO_ENABLED=true LLM_PROVIDER=mock NODE_ENV=development npm run seed
+```
+
+| Variable | Requerida | Descripción |
+| -------- | --------- | ----------- |
+| `DATABASE_URL` | sí | Conexión Postgres (solo del entorno; **nunca** en el repo). |
+| `SEED_DEMO_ENABLED` | sí | Debe ser `true`; en otro caso el seed aborta con **exit 2**. |
+| `LLM_PROVIDER` | no | `mock` por defecto; el seed usa solo `MockAIProvider` (determinista). |
+| `NODE_ENV` | no | Debe ser `!= production`; en `production` aborta con **exit 2**. |
+
+Exit codes: `0` éxito · `1` error de ejecución (rollback del dominio) · `2` precondición incumplida
+(env/gate o drift de migraciones). Re-ejecutarlo N veces no duplica datos (upsert por clave natural);
+la 2ª corrida reporta `created=0`.
+
+### Levantar una base de datos local para pruebas
+
+El seed y los tests de integración requieren un Postgres local. Levántalo aislado con Docker
+(**elige tu propia contraseña — nunca commitees credenciales reales**):
+
+```bash
+# 1) Postgres local aislado para EventFlow (DB `eventflow`, usuario `AdminEF`).
+#    Reemplaza <TU_PASSWORD_SEGURA> por una contraseña propia. Puerto 5433 si el 5432 está ocupado.
+docker run -d --name ef-eventflow \
+  -e POSTGRES_USER=AdminEF \
+  -e POSTGRES_PASSWORD=<TU_PASSWORD_SEGURA> \
+  -e POSTGRES_DB=eventflow \
+  -p 5433:5432 postgres:16
+
+# 2) Exportar la conexión (solo en tu shell local; no la guardes en el repo).
+export DATABASE_URL="postgresql://AdminEF:<TU_PASSWORD_SEGURA>@localhost:5433/eventflow?schema=public"
+
+# 3) Aplicar migraciones (el seed NO migra; falla con exit 2 si detecta drift).
+npm run db:migrate:deploy
+
+# 4) Sembrar.
+SEED_DEMO_ENABLED=true LLM_PROVIDER=mock NODE_ENV=development npm run seed
+
+# 5) (Opcional) Tests de integración del seed contra esa BD.
+npx vitest run tests/integration/us085-
+
+# Para limpiar el contenedor:
+docker rm -f ef-eventflow
+```
+
+Los tests de integración se **auto-omiten** (`describe.skipIf(!dbUp)`) si no hay BD alcanzable, por lo
+que la suite unitaria corre sin Postgres. En CI, el job `seed-idempotency` levanta un Postgres efímero,
+aplica migraciones y ejecuta el seed dos veces verificando `created=0`.
+
+Trazabilidad: `management/workflows/development-execution/P0/PB-P0-014/US-085-execution.md`.

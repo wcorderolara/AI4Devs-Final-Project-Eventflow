@@ -116,6 +116,14 @@ export const configSchema = z.object({
 
   // SEED
   SEED_ENABLED: z.coerce.boolean().default(false),
+  // US-086 (PB-P0-014): flag operativo del reset surgical Demo (Doc 14 §15.2 SEED, THR-012). Por
+  // defecto `false`; sólo `true` en dev/qa/demo. Gate de registro de la ruta `/admin/seed/*`
+  // (con flag off la ruta NO se monta → 404 natural). Coexiste con `SEED_ENABLED` (gate genérico
+  // del arranque del seed) y con el gate del CLI `EnvironmentGuard`. `booleanFromEnv` interpreta
+  // 'true'/'1'/'yes'/'on'; nunca convierte 'false' a `true`.
+  SEED_DEMO_ENABLED: booleanFromEnv.default(false),
+  // US-086 (PB-P0-014): tamaño de lote de los deletes surgicales del reset (`$transaction` chunked).
+  SEED_BATCH_SIZE: z.coerce.number().int().positive().default(1000),
 });
 
 /** `Secure` efectivo: explícito si se define; si no, activo en producción (no-local). */

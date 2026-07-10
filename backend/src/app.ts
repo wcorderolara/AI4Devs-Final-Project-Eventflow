@@ -19,6 +19,7 @@ import { eventPlanningRouter } from './modules/event-planning/interface/events.r
 import { quoteFlowRouter } from './modules/quote-flow/interface/quote-flow.routes.js';
 import { bookingIntentRouter } from './modules/booking-intent/interface/booking-intent.routes.js';
 import { aiAssistanceRouter } from './modules/ai-assistance/interface/ai.routes.js';
+import { seedDemoRouter, isSeedDemoEnabled } from './modules/seed-demo/interface/seed-demo.routes.js';
 
 /** Construye y configura la aplicación Express. */
 export function createApp(): Express {
@@ -59,6 +60,11 @@ export function createApp(): Express {
   apiV1.use(aiAssistanceRouter);
   apiV1.use('/booking-intents', bookingIntentRouter);
   apiV1.use('/events', eventPlanningRouter); // US-095 / API-001
+  // US-086 (PB-P0-014): reset surgical Demo. La ruta `/admin/seed/*` SOLO se monta cuando
+  // `SEED_DEMO_ENABLED=true`; con el flag apagado no existe (404 natural, THR-012 / EC-01).
+  if (isSeedDemoEnabled()) {
+    apiV1.use('/admin/seed', seedDemoRouter);
+  }
   app.use('/api/v1', apiV1);
 
   app.use(notFoundMiddleware); // 8. penúltimo: 404 catch-all

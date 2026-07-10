@@ -61,6 +61,9 @@ export const ErrorCodes = {
   // US-109 (PB-P0-006): captcha en auth (AC-05, VR-01/VR-02, EC-01/EC-02) → 400.
   CAPTCHA_REQUIRED: 'CAPTCHA_REQUIRED', // token ausente
   CAPTCHA_INVALID: 'CAPTCHA_INVALID', // inválido/expirado/action mismatch/score bajo/provider error
+  // US-086 (PB-P0-014): reset surgical Demo. Concurrencia → 409; falla parcial → 500.
+  SEED_RESET_IN_PROGRESS: 'SEED_RESET_IN_PROGRESS', // ya hay un reset en curso (EC-03)
+  SEED_RESET_FAILED: 'SEED_RESET_FAILED', // falla durante limpieza/repoblado (EC-02)
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
