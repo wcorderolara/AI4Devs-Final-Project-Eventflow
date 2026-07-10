@@ -169,6 +169,47 @@ jobs:
       - name: Inventario de índices críticos (tests de integración US-101)
         run: npm run db:generate && npx vitest run tests/integration
 
+  # US-085 OPS-002 — Seed idempotente sobre Postgres efímero (BR-SEED-001, NFR-DEMO-003).
+  # Ejecuta el CLI `npm run seed` dos veces y verifica que la 2ª ejecución reporta created=0.
+  seed-idempotency:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: eventflow
+          POSTGRES_PASSWORD: eventflow
+          POSTGRES_DB: eventflow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U eventflow"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://eventflow:eventflow@localhost:5432/eventflow?schema=public
+      SEED_DEMO_ENABLED: 'true'
+      LLM_PROVIDER: mock
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run db:migrate:deploy
+      - name: Seed (1ª ejecución → created > 0)
+        run: npm run seed | grep '^{"correlationId"' > /tmp/seed1.json
+      - name: Seed (2ª ejecución → idempotente)
+        run: npm run seed | grep '^{"correlationId"' > /tmp/seed2.json
+      - name: Assert created=0 en la 2ª ejecución (idempotencia)
+        run: |
+          node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync('/tmp/seed2.json','utf8'));const created=Object.values(r.domains).reduce((a,d)=>a+d.created,0);if(created!==0){console.error('❌ created='+created);process.exit(1)}console.log('✅ seed idempotente: created=0')"
+
   # OPS-003 (AC-01, AC-05, AC-09, AC-10) — Tests estructurales Vitest sobre migrations.
   migration-structural-tests:
     runs-on: ubuntu-latest
