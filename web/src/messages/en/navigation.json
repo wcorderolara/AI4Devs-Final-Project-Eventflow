@@ -1,0 +1,140 @@
+{
+  "login": "Log in",
+  "register": "Sign up",
+  "logout": "Log out",
+  "localeSwitcher": {
+    "label": "Language"
+  },
+  "placeholder": {
+    "landing": {
+      "title": "EventFlow",
+      "body": "Welcome to EventFlow"
+    },
+    "vendors": {
+      "title": "Vendor directory",
+      "body": "Coming soon"
+    },
+    "login": {
+      "title": "Log in",
+      "body": "Coming soon"
+    },
+    "register": {
+      "title": "Sign up",
+      "body": "Coming soon"
+    },
+    "forgotPassword": {
+      "title": "Reset password",
+      "body": "Coming soon"
+    },
+    "organizer": {
+      "title": "Organizer dashboard",
+      "body": "Coming soon"
+    },
+    "vendor": {
+      "title": "Vendor dashboard",
+      "body": "Coming soon"
+    },
+    "admin": {
+      "title": "Admin panel",
+      "body": "Coming soon"
+    },
+    "organizerEvents": {
+      "title": "Events",
+      "body": "Coming soon"
+    },
+    "organizerNotifications": {
+      "title": "Notifications",
+      "body": "Coming soon"
+    },
+    "organizerProfile": {
+      "title": "Profile",
+      "body": "Coming soon"
+    },
+    "vendorProfile": {
+      "title": "My profile",
+      "body": "Coming soon"
+    },
+    "vendorPortfolio": {
+      "title": "Portfolio",
+      "body": "Coming soon"
+    },
+    "vendorQuotes": {
+      "title": "Quotes",
+      "body": "Coming soon"
+    },
+    "vendorReviews": {
+      "title": "Reviews",
+      "body": "Coming soon"
+    },
+    "vendorNotifications": {
+      "title": "Notifications",
+      "body": "Coming soon"
+    },
+    "adminVendors": {
+      "title": "Vendor approval",
+      "body": "Coming soon"
+    },
+    "adminReviews": {
+      "title": "Review moderation",
+      "body": "Coming soon"
+    },
+    "adminUsers": {
+      "title": "Users",
+      "body": "Coming soon"
+    },
+    "adminSeed": {
+      "title": "Seed-Demo",
+      "body": "Coming soon"
+    }
+  },
+  "logo": {
+    "label": "EventFlow, go home"
+  },
+  "skipLink": "Skip to main content",
+  "public": {
+    "directory": "Directory",
+    "login": "Log in",
+    "register": "Sign up"
+  },
+  "footer": {
+    "copyright": "© {year, number} EventFlow"
+  },
+  "sidebar": {
+    "organizer": {
+      "label": "Organizer navigation",
+      "events": "Events",
+      "notifications": "Notifications",
+      "profile": "Profile"
+    },
+    "vendor": {
+      "label": "Vendor navigation",
+      "dashboard": "Dashboard",
+      "profile": "My profile",
+      "portfolio": "Portfolio",
+      "quotes": "Quotes",
+      "reviews": "Reviews",
+      "notifications": "Notifications"
+    },
+    "admin": {
+      "label": "Admin navigation",
+      "vendors": "Vendor approval",
+      "reviews": "Review moderation",
+      "users": "Users",
+      "seed": "Seed-Demo"
+    }
+  },
+  "topbar": {
+    "menuOpen": "Open menu",
+    "menuClose": "Close menu"
+  },
+  "userMenu": {
+    "myProfile": "My profile",
+    "logout": "Log out"
+  },
+  "notifications": {
+    "label": "Notifications"
+  },
+  "mobile": {
+    "close": "Close"
+  }
+}

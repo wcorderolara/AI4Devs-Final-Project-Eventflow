@@ -1,0 +1,10 @@
+{
+  "appName": "EventFlow",
+  "welcome": "Bienvenido a EventFlow",
+  "loading": "Cargando…",
+  "error": "Algo ha ido mal",
+  "retry": "Reintentar",
+  "save": "Guardar",
+  "cancel": "Cancelar",
+  "confirm": "Confirmar"
+}

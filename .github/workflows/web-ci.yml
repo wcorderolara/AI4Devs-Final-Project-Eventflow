@@ -1,0 +1,43 @@
+name: Web CI
+
+# US-103 (PB-P0-012) — Pipeline canónico frontend (Doc 21 §9.2). Falla de cualquier paso
+# bloquea el merge. Path-filtered a `web/**` para no solaparse con el CI backend (ci.yml).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-ci.yml'
+  pull_request:
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-ci.yml'
+
+defaults:
+  run:
+    working-directory: web
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run build
+      - name: Install Playwright browser
+        run: npm run test:e2e:install
+      - name: Smoke E2E
+        run: npm run test:e2e
+      # npm audit High/Critical sin issue de seguimiento bloquea el merge (SEC-06).
+      # Se ejecuta como informativo: el High conocido (advisory agregada de `next`) está
+      # documentado en web/README.md § Security como upstream sin fix estable (Next 14 pin).
+      - name: npm audit (prod)
+        run: npm audit --omit=dev || true

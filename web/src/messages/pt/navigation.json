@@ -1,0 +1,140 @@
+{
+  "login": "Entrar",
+  "register": "Cadastrar-se",
+  "logout": "Sair",
+  "localeSwitcher": {
+    "label": "Idioma"
+  },
+  "placeholder": {
+    "landing": {
+      "title": "EventFlow",
+      "body": "Bem-vindo ao EventFlow"
+    },
+    "vendors": {
+      "title": "Diretório de fornecedores",
+      "body": "Em breve"
+    },
+    "login": {
+      "title": "Entrar",
+      "body": "Em breve"
+    },
+    "register": {
+      "title": "Cadastro",
+      "body": "Em breve"
+    },
+    "forgotPassword": {
+      "title": "Recuperar senha",
+      "body": "Em breve"
+    },
+    "organizer": {
+      "title": "Painel do organizador",
+      "body": "Em breve"
+    },
+    "vendor": {
+      "title": "Painel do fornecedor",
+      "body": "Em breve"
+    },
+    "admin": {
+      "title": "Painel de administração",
+      "body": "Em breve"
+    },
+    "organizerEvents": {
+      "title": "Eventos",
+      "body": "Em breve"
+    },
+    "organizerNotifications": {
+      "title": "Notificações",
+      "body": "Em breve"
+    },
+    "organizerProfile": {
+      "title": "Perfil",
+      "body": "Em breve"
+    },
+    "vendorProfile": {
+      "title": "Meu perfil",
+      "body": "Em breve"
+    },
+    "vendorPortfolio": {
+      "title": "Portfólio",
+      "body": "Em breve"
+    },
+    "vendorQuotes": {
+      "title": "Orçamentos",
+      "body": "Em breve"
+    },
+    "vendorReviews": {
+      "title": "Avaliações",
+      "body": "Em breve"
+    },
+    "vendorNotifications": {
+      "title": "Notificações",
+      "body": "Em breve"
+    },
+    "adminVendors": {
+      "title": "Aprovação de fornecedores",
+      "body": "Em breve"
+    },
+    "adminReviews": {
+      "title": "Moderação de avaliações",
+      "body": "Em breve"
+    },
+    "adminUsers": {
+      "title": "Usuários",
+      "body": "Em breve"
+    },
+    "adminSeed": {
+      "title": "Seed-Demo",
+      "body": "Em breve"
+    }
+  },
+  "logo": {
+    "label": "EventFlow, ir ao início"
+  },
+  "skipLink": "Pular para o conteúdo principal",
+  "public": {
+    "directory": "Diretório",
+    "login": "Entrar",
+    "register": "Cadastrar-se"
+  },
+  "footer": {
+    "copyright": "© {year, number} EventFlow"
+  },
+  "sidebar": {
+    "organizer": {
+      "label": "Navegação do organizador",
+      "events": "Eventos",
+      "notifications": "Notificações",
+      "profile": "Perfil"
+    },
+    "vendor": {
+      "label": "Navegação do fornecedor",
+      "dashboard": "Painel",
+      "profile": "Meu perfil",
+      "portfolio": "Portfólio",
+      "quotes": "Orçamentos",
+      "reviews": "Avaliações",
+      "notifications": "Notificações"
+    },
+    "admin": {
+      "label": "Navegação de administração",
+      "vendors": "Aprovação de fornecedores",
+      "reviews": "Moderação de avaliações",
+      "users": "Usuários",
+      "seed": "Seed-Demo"
+    }
+  },
+  "topbar": {
+    "menuOpen": "Abrir menu",
+    "menuClose": "Fechar menu"
+  },
+  "userMenu": {
+    "myProfile": "Meu perfil",
+    "logout": "Sair"
+  },
+  "notifications": {
+    "label": "Notificações"
+  },
+  "mobile": {
+    "close": "Fechar"
+  }
+}

@@ -1,0 +1,11 @@
+import { useTranslations } from 'next-intl';
+
+export default function VendorReviewsPage() {
+  const t = useTranslations('navigation');
+  return (
+    <>
+      <h1 className="text-2xl font-bold">{t('placeholder.vendorReviews.title')}</h1>
+      <p className="mt-2 text-neutral-600">{t('placeholder.vendorReviews.body')}</p>
+    </>
+  );
+}

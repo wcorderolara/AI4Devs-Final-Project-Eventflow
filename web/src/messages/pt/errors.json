@@ -1,0 +1,19 @@
+{
+  "envelope": {
+    "UNEXPECTED": "Ocorreu um erro inesperado",
+    "NETWORK": "Erro de conexão",
+    "VALIDATION": "Dados inválidos",
+    "UNAUTHORIZED": "Não autenticado",
+    "FORBIDDEN": "Não autorizado",
+    "NOT_FOUND": "Recurso não encontrado"
+  },
+  "forbidden": {
+    "title": "Acesso negado",
+    "cta": "Voltar ao início"
+  },
+  "notFound": {
+    "title": "Página não encontrada",
+    "body": "A página que você procura não existe ou foi movida.",
+    "cta": "Voltar ao início"
+  }
+}
