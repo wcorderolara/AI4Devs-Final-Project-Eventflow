@@ -1,6 +1,9 @@
 node_modules/
 dist/
 .env
+.env.test
+# US-125 (PB-P0-015): artefactos de testing/cobertura
+coverage/
 # Prisma Client generado (artefacto de build)
 prisma/generated/
 

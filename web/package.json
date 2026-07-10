@@ -16,6 +16,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:ci": "vitest run --reporter=verbose",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install --with-deps chromium",
     "check-no-msw-in-prod": "node scripts/check-no-msw-in-prod.mjs"

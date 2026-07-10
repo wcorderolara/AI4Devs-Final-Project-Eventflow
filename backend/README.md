@@ -37,6 +37,49 @@ npm run db:generate
 | `test` | `vitest run` | Tests estructurales de schema y migraciones (Vitest). |
 | `seed` | `tsx src/scripts/seed.ts` | Carga datos demo LATAM idempotentes (`is_seed=true`). Requiere BD + `SEED_DEMO_ENABLED=true`. Ver [Seed de datos demo](#seed-de-datos-demo-y-base-de-datos-local-para-pruebas-us-085). |
 
+## Docker (US-133 / PB-P0-016)
+
+Imagen **multi-stage** (`deps` → `build` → `runtime`) para desplegar el backend en AWS App Runner
+(ADR-DEVOPS-001, Doc 21 §10). Base pinneada `node:22-alpine` (alineada con `engines.node>=22` y el
+`node-version:22` de CI). El contenedor corre como usuario **no-root** (`node`, UID 1000) y **no
+contiene secretos** (se inyectan por entorno en runtime).
+
+| Comando | Propósito |
+| ------- | --------- |
+| `npm run docker:build` | `docker build -t eventflow-backend:local .` |
+| `npm run docker:run` | `docker run --rm -p 3000:3000 -e PORT=3000 eventflow-backend:local` |
+
+Variables de entorno esperadas en runtime (Doc 21 §10.5 — nunca en la imagen):
+`PORT` (default `3000`), `DATABASE_URL`, `JWT_SECRET`, `SESSION_SECRET`, `CORS_ORIGINS`,
+`CAPTCHA_PROVIDER`, `LLM_PROVIDER`, y las de sesión/AI según entorno.
+
+- **Entrypoint**: `CMD ["node", "dist/server.js"]`. El server valida config (fail-fast), hace
+  `prisma.$connect()` y escucha en `PORT`. Sin `DATABASE_URL` alcanzable el arranque falla con error
+  explícito (EC-02) — no arranca "a medias".
+- **Prisma en Alpine (EC-03)**: el `Dockerfile` instala `openssl` (requerido por el query engine musl)
+  y ejecuta `prisma generate` dentro del stage `build` (genera el motor correcto para el runtime).
+- **`.dockerignore`** excluye `node_modules`, `.git`, `.env*`, `coverage`, `dist`, etc. (Doc 21 §10.3).
+- Smoke local: `docker build` (sin warnings, ~253 MB) → `docker run` → `curl :3000/health` → `200`.
+
+## Testing (US-125 / PB-P0-015)
+
+Tooling QA del backend: **Vitest** (unit + integración) y **Supertest** (API sobre la `app` Express
+sin abrir puerto). Cobertura con `@vitest/coverage-v8` (reporting-only en P0, sin umbrales bloqueantes).
+
+| Comando | Propósito |
+| ------- | --------- |
+| `npm test` | Corre toda la suite Vitest (`tests/**/*.spec.ts`). |
+| `npm run test:watch` | Modo watch para desarrollo. |
+| `npm run test:coverage` | Genera reporte de cobertura en `coverage/` (v8). |
+| `npm run test:ci` | Corrida CI con `--reporter=verbose`. |
+
+- **Ubicación / convención**: `tests/unit/*.spec.ts`, `tests/integration/*.spec.ts`, `tests/api/*.spec.ts`.
+- **DB de integración**: los tests de integración/API requieren `DATABASE_URL` (Postgres). Sin BD alcanzable
+  se **auto-omiten** (`describe.skipIf(!dbUp)`) y la suite unit corre igual — ver
+  [Base de datos local para pruebas](#seed-de-datos-demo-y-base-de-datos-local-para-pruebas-us-085-pb-p0-014).
+- **Supertest**: importa `createApp()` de `src/app.ts` (nunca `server.listen`).
+- `coverage/` y `.env.test` están en `.gitignore` (sin secretos versionados).
+
 ## Estructura
 
 ```

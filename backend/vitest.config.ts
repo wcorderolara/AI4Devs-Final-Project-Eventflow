@@ -9,5 +9,12 @@ export default defineConfig({
     // Los tests de integración comparten una BD PostgreSQL; ejecutarlos en serie
     // (sin paralelismo entre archivos) evita carreras sobre datos compartidos.
     fileParallelism: false,
+    // US-125 (PB-P0-015) — Cobertura reporting-only (sin umbrales bloqueantes en P0). Provider v8.
+    coverage: {
+      provider: 'v8',
+      reportsDirectory: 'coverage',
+      reporter: ['text', 'html', 'lcov'],
+      exclude: ['dist/**', 'node_modules/**', 'prisma/generated/**', 'tests/**', '**/*.config.*', 'src/scripts/**'],
+    },
   },
 });
