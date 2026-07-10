@@ -1,0 +1,19 @@
+{
+  "envelope": {
+    "UNEXPECTED": "An unexpected error occurred",
+    "NETWORK": "Connection error",
+    "VALIDATION": "Invalid data",
+    "UNAUTHORIZED": "Not authenticated",
+    "FORBIDDEN": "Not authorized",
+    "NOT_FOUND": "Resource not found"
+  },
+  "forbidden": {
+    "title": "Access denied",
+    "cta": "Back to home"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "The page you are looking for does not exist or was moved.",
+    "cta": "Back to home"
+  }
+}

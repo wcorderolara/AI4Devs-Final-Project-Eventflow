@@ -1,0 +1,140 @@
+{
+  "login": "Iniciar sesión",
+  "register": "Registrarse",
+  "logout": "Cerrar sesión",
+  "localeSwitcher": {
+    "label": "Idioma"
+  },
+  "placeholder": {
+    "landing": {
+      "title": "EventFlow",
+      "body": "Bienvenido a EventFlow"
+    },
+    "vendors": {
+      "title": "Directorio de proveedores",
+      "body": "Próximamente"
+    },
+    "login": {
+      "title": "Iniciar sesión",
+      "body": "Próximamente"
+    },
+    "register": {
+      "title": "Registro",
+      "body": "Próximamente"
+    },
+    "forgotPassword": {
+      "title": "Recuperar contraseña",
+      "body": "Próximamente"
+    },
+    "organizer": {
+      "title": "Panel del organizador",
+      "body": "Próximamente"
+    },
+    "vendor": {
+      "title": "Panel del proveedor",
+      "body": "Próximamente"
+    },
+    "admin": {
+      "title": "Panel de administración",
+      "body": "Próximamente"
+    },
+    "organizerEvents": {
+      "title": "Eventos",
+      "body": "Próximamente"
+    },
+    "organizerNotifications": {
+      "title": "Notificaciones",
+      "body": "Próximamente"
+    },
+    "organizerProfile": {
+      "title": "Perfil",
+      "body": "Próximamente"
+    },
+    "vendorProfile": {
+      "title": "Mi perfil",
+      "body": "Próximamente"
+    },
+    "vendorPortfolio": {
+      "title": "Portafolio",
+      "body": "Próximamente"
+    },
+    "vendorQuotes": {
+      "title": "Cotizaciones",
+      "body": "Próximamente"
+    },
+    "vendorReviews": {
+      "title": "Reseñas",
+      "body": "Próximamente"
+    },
+    "vendorNotifications": {
+      "title": "Notificaciones",
+      "body": "Próximamente"
+    },
+    "adminVendors": {
+      "title": "Aprobación de proveedores",
+      "body": "Próximamente"
+    },
+    "adminReviews": {
+      "title": "Moderación de reseñas",
+      "body": "Próximamente"
+    },
+    "adminUsers": {
+      "title": "Usuarios",
+      "body": "Próximamente"
+    },
+    "adminSeed": {
+      "title": "Seed-Demo",
+      "body": "Próximamente"
+    }
+  },
+  "logo": {
+    "label": "EventFlow, ir al inicio"
+  },
+  "skipLink": "Saltar al contenido principal",
+  "public": {
+    "directory": "Directorio",
+    "login": "Iniciar sesión",
+    "register": "Registrarse"
+  },
+  "footer": {
+    "copyright": "© {year, number} EventFlow"
+  },
+  "sidebar": {
+    "organizer": {
+      "label": "Navegación de organizador",
+      "events": "Eventos",
+      "notifications": "Notificaciones",
+      "profile": "Perfil"
+    },
+    "vendor": {
+      "label": "Navegación de proveedor",
+      "dashboard": "Panel",
+      "profile": "Mi perfil",
+      "portfolio": "Portafolio",
+      "quotes": "Cotizaciones",
+      "reviews": "Reseñas",
+      "notifications": "Notificaciones"
+    },
+    "admin": {
+      "label": "Navegación de administración",
+      "vendors": "Aprobación de proveedores",
+      "reviews": "Moderación de reseñas",
+      "users": "Usuarios",
+      "seed": "Seed-Demo"
+    }
+  },
+  "topbar": {
+    "menuOpen": "Abrir menú",
+    "menuClose": "Cerrar menú"
+  },
+  "userMenu": {
+    "myProfile": "Mi perfil",
+    "logout": "Cerrar sesión"
+  },
+  "notifications": {
+    "label": "Notificaciones"
+  },
+  "mobile": {
+    "close": "Cerrar"
+  }
+}

@@ -1,0 +1,103 @@
+import type { AbstractIntlMessages } from 'next-intl';
+import { cookies, headers } from 'next/headers';
+import { getRequestConfig } from 'next-intl/server';
+import { defaultLocale, isSupportedLocale, type Locale } from './config';
+
+// Catálogos transversales (Doc 15 §31.3). Import estático (catálogos pequeños): robusto y
+// testeable en Vitest y Next sin depender del context dinámico de webpack (Deviation D2).
+import enCommon from '../../messages/en/common.json';
+import enErrors from '../../messages/en/errors.json';
+import enNavigation from '../../messages/en/navigation.json';
+import enValidation from '../../messages/en/validation.json';
+import esEsCommon from '../../messages/es-ES/common.json';
+import esEsErrors from '../../messages/es-ES/errors.json';
+import esEsNavigation from '../../messages/es-ES/navigation.json';
+import esEsValidation from '../../messages/es-ES/validation.json';
+import esLatamCommon from '../../messages/es-LATAM/common.json';
+import esLatamErrors from '../../messages/es-LATAM/errors.json';
+import esLatamNavigation from '../../messages/es-LATAM/navigation.json';
+import esLatamValidation from '../../messages/es-LATAM/validation.json';
+import ptCommon from '../../messages/pt/common.json';
+import ptErrors from '../../messages/pt/errors.json';
+import ptNavigation from '../../messages/pt/navigation.json';
+import ptValidation from '../../messages/pt/validation.json';
+
+export type Messages = Record<string, unknown>;
+
+const REGISTRY: Record<Locale, Messages> = {
+  'es-LATAM': {
+    common: esLatamCommon,
+    navigation: esLatamNavigation,
+    errors: esLatamErrors,
+    validation: esLatamValidation,
+  },
+  'es-ES': {
+    common: esEsCommon,
+    navigation: esEsNavigation,
+    errors: esEsErrors,
+    validation: esEsValidation,
+  },
+  pt: { common: ptCommon, navigation: ptNavigation, errors: ptErrors, validation: ptValidation },
+  en: { common: enCommon, navigation: enNavigation, errors: enErrors, validation: enValidation },
+};
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** Merge profundo: `override` sobre `base`. Las claves ausentes en `override` conservan `base`. */
+export function deepMerge(base: Messages, override: Messages): Messages {
+  const result: Messages = { ...base };
+  for (const [key, value] of Object.entries(override)) {
+    const current = result[key];
+    result[key] =
+      isPlainObject(current) && isPlainObject(value) ? deepMerge(current, value) : value;
+  }
+  return result;
+}
+
+/**
+ * Mensajes del locale mergeados sobre la base `es-LATAM`: cualquier clave faltante en el locale
+ * activo cae automáticamente a la traducción `es-LATAM` (fallback en producción sin `[ES-LATAM]`).
+ */
+export function loadMessages(locale: Locale): Messages {
+  if (locale === defaultLocale) return REGISTRY[defaultLocale];
+  return deepMerge(REGISTRY[defaultLocale], REGISTRY[locale]);
+}
+
+/**
+ * `getMessageFallback` para claves ausentes incluso en `es-LATAM`:
+ * - dev: clave anotada `[<locale>] <namespace>.<key>` (alerta visual del gap).
+ * - prod: la ruta de la clave (silencioso; el merge ya resolvió las traducciones existentes).
+ */
+export function createMessageFallback(
+  locale: Locale,
+  isDev: boolean,
+): (info: { key: string; namespace?: string }) => string {
+  return ({ key, namespace }) => {
+    const path = [namespace, key].filter(Boolean).join('.');
+    return isDev ? `[${locale}] ${path}` : path;
+  };
+}
+
+/** Resuelve el locale server-side: header `x-locale` (middleware) → cookie → default. */
+function resolveServerLocale(): Locale {
+  const fromHeader = headers().get('x-locale');
+  if (isSupportedLocale(fromHeader)) return fromHeader;
+  const fromCookie = cookies().get('eventflow_locale')?.value;
+  if (isSupportedLocale(fromCookie)) return fromCookie;
+  return defaultLocale;
+}
+
+// App Router sin i18n routing (sin prefijo URL — Doc 15 §17/§31.2): el request config resuelve el
+// locale a partir del header propagado por el middleware.
+export default getRequestConfig(async () => {
+  const locale = resolveServerLocale();
+  return {
+    locale,
+    // `loadMessages` opera sobre `Record<string, unknown>` para el merge; el shape es compatible
+    // con `AbstractIntlMessages` (valores string / objetos anidados) — cast en el borde.
+    messages: loadMessages(locale) as unknown as AbstractIntlMessages,
+    getMessageFallback: createMessageFallback(locale, process.env.NODE_ENV !== 'production'),
+  };
+});
