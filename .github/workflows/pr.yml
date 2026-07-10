@@ -1,0 +1,192 @@
+name: PR Quality Gates
+
+# US-134 (PB-P0-017) — Gates de calidad en Pull Request (Doc 21 §§16–17, ADR-DEVOPS-001,
+# ADR-TEST-001/002). Corre lint + typecheck + tests + build para backend y frontend, más un
+# `docker build` del backend (sin push) y `next build` del frontend. NO usa secretos de cloud,
+# NO usa `pull_request_target` y NO solicita `id-token`. `permissions: contents: read` (SEC).
+#
+# Convive con los workflows especializados existentes: `ci.yml` (gates de schema/migraciones/OpenAPI
+# del backend) y `web-ci.yml` (pipeline frontend + E2E). Ver nota de alineación N1 del execution record.
+
+on:
+  pull_request:
+    branches: [main, qa]
+  workflow_dispatch:
+
+# SEC-01/AC-09: privilegio mínimo — solo lectura del contenido; sin escritura ni id-token.
+permissions:
+  contents: read
+
+# AC-09/EC-05: un nuevo push al mismo PR cancela el run anterior en curso.
+concurrency:
+  group: pr-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # AC-02 — Lint (matriz backend/frontend) con cache npm.
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - pkg: backend
+            node: 22
+          - pkg: web
+            node: 20
+    defaults:
+      run:
+        working-directory: ${{ matrix.pkg }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: ${{ matrix.pkg }}/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+
+  # AC-03 — Typecheck (matriz backend/frontend) con cache npm.
+  typecheck:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - pkg: backend
+            node: 22
+          - pkg: web
+            node: 20
+    defaults:
+      run:
+        working-directory: ${{ matrix.pkg }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: ${{ matrix.pkg }}/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+
+  # AC-04 — Tests backend (Vitest + Supertest). La suite de integración se auto-omite sin
+  # DATABASE_URL alcanzable (`describe.skipIf(!dbUp)`, EC-02); la suite unit corre igual.
+  test-backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm test
+
+  # AC-04 — Tests frontend (Vitest + Testing Library + MSW).
+  test-frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  # AC-05 — Build de la imagen Docker del backend (US-133), sin push a ningún registro.
+  build-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Docker build (sin push)
+        run: DOCKER_BUILDKIT=1 docker build -t eventflow-backend:ci ./backend
+
+  # AC-06 — Build de producción del frontend (`next build`).
+  build-frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
+  # US-139 (PB-P0-018) — Validación de migraciones Prisma: drift detection + `migrate deploy`
+  # contra una Postgres efímera + smoke post-migración. NO usa `prisma migrate reset` (VR-02).
+  migrations-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        # DB-001: imagen pinneada por versión (compatibilidad Prisma + tamaño).
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: eventflow_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/eventflow_ci
+      SHADOW_DATABASE_URL: postgres://postgres:postgres@localhost:5432/eventflow_ci_shadow
+      PGPASSWORD: postgres
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run db:generate
+      # EC-05: falla explícita si falta la conexión (no aplica migraciones a ciegas).
+      - name: Verificar DATABASE_URL
+        run: '[ -n "$DATABASE_URL" ] || { echo "::error::DATABASE_URL ausente"; exit 1; }'
+      - name: Crear shadow database (drift detection)
+        run: psql -h localhost -U postgres -d eventflow_ci -c "CREATE DATABASE eventflow_ci_shadow;"
+      # AC-01/AC-08: drift detection — exit 2 (schema sin migración) bloquea con mensaje guía.
+      - name: Drift detection (migrate diff --exit-code)
+        run: |
+          if ! npm run db:migrate:diff; then
+            echo "::error::Drift detectado: el schema Prisma no coincide con prisma/migrations. Corre 'npx prisma migrate dev' y commitea la migración."
+            exit 1
+          fi
+      # AC-01/AC-02: aplica migraciones vía la composite action reusable (DATABASE_URL enmascarada).
+      - name: Aplicar migraciones (composite action)
+        uses: ./.github/actions/prisma-migrate
+        with:
+          database-url: ${{ env.DATABASE_URL }}
+          working-directory: backend
+      # AC-03: smoke post-migración (conectividad Prisma + tablas migradas).
+      - name: Smoke post-migración
+        run: npm run test:integration:smoke

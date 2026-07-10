@@ -1,0 +1,13 @@
+# US-133 (PB-P0-016) — Doc 21 §10.3. Evita filtrar archivos pesados/sensibles a la imagen.
+node_modules
+.git
+.github
+.env
+.env.*
+*.log
+coverage
+dist
+.husky
+prisma/generated
+test-results
+playwright-report

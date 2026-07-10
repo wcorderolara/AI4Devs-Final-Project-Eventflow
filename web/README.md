@@ -444,3 +444,25 @@ src/
 ├── tests/{e2e,unit,integration,msw}/
 └── messages/            # catálogos i18n → US-104
 ```
+
+## Testing (US-125 / PB-P0-015)
+
+Tres niveles con **Vitest** (unit/componente), **Testing Library + MSW** (componentes con red mockeada)
+y **Playwright** (E2E chromium). Cobertura con `@vitest/coverage-v8` (reporting-only en P0).
+
+| Comando | Propósito |
+| ------- | --------- |
+| `npm test` | Vitest unit/componente (`src/tests/unit/**`). |
+| `npm run test:watch` | Vitest en watch. |
+| `npm run test:coverage` | Reporte de cobertura en `coverage/` (v8). |
+| `npm run test:ci` | Corrida CI (`--reporter=verbose`). |
+| `npm run test:e2e` | Playwright E2E (`src/tests/e2e/**`). |
+| `npm run test:e2e:install` | Instala el browser chromium (`playwright install --with-deps chromium`). |
+
+- **Ubicación**: `src/tests/{unit,integration,e2e,msw}/`.
+- **MSW**: el server de Node se inicializa en `vitest.setup.ts` con `onUnhandledRequest: 'error'` — toda
+  request sin handler **falla de forma determinista**. Los handlers viven en `src/tests/msw/handlers/`;
+  para agregar uno nuevo, añádelo a ese módulo y expórtalo en el arreglo de `handlers`.
+- **Playwright**: `baseURL` se parametriza con `E2E_BASE_URL` (default `http://localhost:3000`, nunca
+  producción). En un entorno limpio, corre `npm run test:e2e:install` antes del primer E2E.
+- `.env*`, `/coverage`, `/playwright-report` y `/test-results` están en `.gitignore`.

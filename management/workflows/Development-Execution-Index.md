@@ -41,3 +41,7 @@
 | P0 | PB-P0-014 | US-086 | Admin reset surgical del entorno Demo vía endpoint HTTP | [record](development-execution/P0/PB-P0-014/US-086-execution.md) | 20 | 20 | 0 | 0 | 0 | 0 | `Done` | 2026-07-10 |
 | P0 | PB-P0-014 | US-087 | Seed fixture garantiza mix de eventos draft/active/completed/cancelled | [record](development-execution/P0/PB-P0-014/US-087-execution.md) | 11 | 11 | 0 | 0 | 0 | 0 | `Done` | 2026-07-10 |
 | P0 | PB-P0-014 | US-088 | Seed fixture incluye BookingIntent.confirmed_intent y reseñas verificadas | [record](development-execution/P0/PB-P0-014/US-088-execution.md) | 17 | 17 | 0 | 0 | 0 | 0 | `Done` | 2026-07-10 |
+| P0 | PB-P0-015 | US-125 | Configurar Vitest + Supertest + Playwright + MSW | [record](development-execution/P0/PB-P0-015/US-125-execution.md) | 20 | 20 | 0 | 0 | 0 | 0 | `Done` | 2026-07-10 |
+| P0 | PB-P0-016 | US-133 | Dockerfile multi-stage para backend | [record](development-execution/P0/PB-P0-016/US-133-execution.md) | 12 | 12 | 0 | 0 | 0 | 0 | `Done` | 2026-07-10 |
+| P0 | PB-P0-017 | US-134 | Pipeline GitHub Actions de CI (lint / typecheck / tests / build) | [record](development-execution/P0/PB-P0-017/US-134-execution.md) | 14 | 11 | 0 | 0 | 0 | 3 | `Partially Completed` | 2026-07-10 |
+| P0 | PB-P0-018 | US-139 | Migraciones Prisma ejecutadas automáticamente en CI/CD | [record](development-execution/P0/PB-P0-018/US-139-execution.md) | 12 | 9 | 0 | 0 | 0 | 3 | `Partially Completed` | 2026-07-10 |
