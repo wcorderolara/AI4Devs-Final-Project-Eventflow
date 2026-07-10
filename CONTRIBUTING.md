@@ -16,7 +16,8 @@ Gates"), que ejecuta los gates de calidad. Un fallo de cualquier job bloquea el 
 | `build-backend` | `docker build` del `Dockerfile` (US-133), **sin push** | AC-05 |
 | `build-frontend` | `npm ci` + `npm run build` (`next build`) | AC-06 |
 
-- **Node**: backend `22`, frontend `20` (`web/.nvmrc`). Cache de npm por `cache-dependency-path`.
+- **Node**: `22` en backend y frontend (`web/.nvmrc` = 22, alineado con `engines.node>=22`). Cache de
+  npm por `cache-dependency-path`.
 - **Concurrency**: `cancel-in-progress: true` — un nuevo push al PR cancela el run anterior.
 - **Permisos**: `permissions: contents: read` (privilegio mínimo). Sin `pull_request_target`, sin
   `id-token`, sin secretos de cloud. Acciones `actions/*` pinneadas por major (`@v4`).
