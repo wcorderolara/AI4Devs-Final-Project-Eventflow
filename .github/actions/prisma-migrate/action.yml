@@ -1,12 +1,10 @@
 name: 'Prisma Migrate Deploy'
 description: >
   US-139 (PB-P0-018) — Aplica migraciones Prisma con `prisma migrate deploy` (forward-only, sin
-  `migrate reset`). Enmascara la DATABASE_URL en los logs (`::add-mask::`). Reusable desde
-  `pr.yml` (job migrations-validate) y desde los futuros workflows de deploy (main/staging,
-  PB-P2-023..026). Ejemplo:
-    - uses: ./.github/actions/prisma-migrate
-      with:
-        database-url: ${{ secrets.DATABASE_URL }}
+  `migrate reset`). Enmascara la DATABASE_URL en los logs (add-mask). Reusable desde `pr.yml`
+  (job migrations-validate) y desde los futuros workflows de deploy (main/staging, PB-P2-023..026).
+  Se invoca con `uses: ./.github/actions/prisma-migrate` pasando `database-url` por input
+  (p. ej. desde un secret del repositorio).
 inputs:
   database-url:
     description: 'Conexión Postgres destino. Se enmascara en logs. NUNCA hardcodear secretos.'
