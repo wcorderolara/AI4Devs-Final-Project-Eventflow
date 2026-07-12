@@ -64,6 +64,12 @@ class FakeRepo implements EventRepository {
     this.byId.delete(eventId);
     return Promise.resolve();
   }
+  findExpiredActive(): Promise<{ id: string; eventDate: Date }[]> {
+    return Promise.resolve([]);
+  }
+  markCompleted(): Promise<{ affected: number }> {
+    return Promise.resolve({ affected: 0 });
+  }
 }
 
 class FakeAudit implements EventAuditLogger {

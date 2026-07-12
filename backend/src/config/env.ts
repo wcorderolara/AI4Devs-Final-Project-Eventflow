@@ -132,6 +132,18 @@ export const configSchema = z.object({
   SEED_DEMO_ENABLED: booleanFromEnv.default(false),
   // US-086 (PB-P0-014): tamaño de lote de los deletes surgicales del reset (`$transaction` chunked).
   SEED_BATCH_SIZE: z.coerce.number().int().positive().default(1000),
+
+  // JOBS — US-015 / PB-P1-009 (ADR-BE-004 Simple Scheduled Jobs).
+  // `JOBS_ENABLED` gobierna el registro de schedulers intra-proceso: sólo la réplica con `true`
+  // programa jobs (EC-03, SEC-01..04). Default `false` para evitar duplicación silenciosa en
+  // multi-instancia y para que los tests no arranquen schedulers reales. `booleanFromEnv`
+  // interpreta 'true'/'1'/'yes'/'on'; NUNCA convierte 'false' a `true` (contraste con
+  // `z.coerce.boolean`).
+  JOBS_ENABLED: booleanFromEnv.default(false),
+  // Cadencia del `AutoCompletePastEventsJob` como parámetro operativo. Default `30 0 * * *`
+  // (00:30 UTC diario, decisión PO 8.1 #6). `docs/14` ofrece `0 * * * *` como opción; la
+  // validación real de la expresión la hace `node-cron` en el adapter (fail-fast en bootstrap).
+  JOBS_AUTOCOMPLETE_CRON: z.string().min(1).default('30 0 * * *'),
 });
 
 /** `Secure` efectivo: explícito si se define; si no, activo en producción (no-local). */

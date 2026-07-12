@@ -750,8 +750,8 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 | MoSCoW | Must Have |
 | Dependencies | PB-P1-007 |
 | Acceptance Summary | - Job programado a 00:30 UTC (Decisión PO).<br>- Clock injectable para tests.<br>- Logs estructurados con conteo.<br>- Idempotente. |
-| Traceability | FR-EVENT-012 · UC-EVENT-007 · Decisión PO 8.1 #6 |
-| Notes | Reseñas dependen de `completed`. |
+| Traceability | FR-EVENT-009 · UC-EVENT-005 · Decisión PO 8.1 #6 |
+| Notes | Reseñas dependen de `completed`. Housekeeping US-015: IDs corregidos (antes `FR-EVENT-012 · UC-EVENT-007`, incorrectos). |
 
 ---
 

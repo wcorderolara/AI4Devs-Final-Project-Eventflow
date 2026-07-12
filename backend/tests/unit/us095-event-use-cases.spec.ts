@@ -93,6 +93,14 @@ class FakeEventRepo implements EventRepository {
     this.byId.delete(eventId);
     return Promise.resolve();
   }
+  findExpiredActive(): Promise<{ id: string; eventDate: Date }[]> {
+    // US-015 helper: US-095 use cases no consumen este método; retorno vacío para satisfacer
+    // el contrato del puerto sin acoplar los tests de US-095 a la lógica de auto-complete.
+    return Promise.resolve([]);
+  }
+  markCompleted(): Promise<{ affected: number }> {
+    return Promise.resolve({ affected: 0 });
+  }
 }
 
 class FakeEventTypeRepo implements EventTypeRepository {

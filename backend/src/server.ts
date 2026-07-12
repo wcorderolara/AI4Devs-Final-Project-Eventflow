@@ -17,6 +17,12 @@ async function main(): Promise<void> {
   await prisma.$connect();
   console.info('Database connection established');
 
+  // (2b) Registro de jobs intra-proceso (US-015 / PB-P1-009 / BE-005). Gated por `JOBS_ENABLED`:
+  // con `false` (default) no se programa nada; con `true` en exactamente una réplica se activa
+  // `AutoCompletePastEventsJob` (ADR-BE-004). Ver docs/14 §7 y OPS runbook.
+  const { registerJobs } = await import('./jobs/index.js');
+  const jobsHandle = registerJobs();
+
   // (3) Servidor escuchando.
   const server: Server = app.listen(config.PORT, () => {
     console.info(`Server listening on port ${config.PORT}`);
@@ -24,6 +30,7 @@ async function main(): Promise<void> {
 
   const shutdown = (signal: string): void => {
     console.info(`${signal} received, shutting down gracefully`);
+    jobsHandle.stopAll();
     server.close(() => {
       void prisma.$disconnect().finally(() => process.exit(0));
     });

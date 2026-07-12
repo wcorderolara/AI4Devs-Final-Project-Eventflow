@@ -7,6 +7,7 @@ import type {
   EventRepository,
   EventListFilters,
   EventListOptions,
+  ExpiredActiveEventRow,
 } from '../ports/event.repository.js';
 import type { CreateEventData, EventView, UpdateEventData } from '../domain/event.js';
 import type { EventStatusValue } from '../domain/event-lifecycle.js';
@@ -146,5 +147,42 @@ export class PrismaEventRepository implements EventRepository {
       where: { id: eventId },
       data: { deletedAt: new Date(), deletedBy },
     });
+  }
+
+  async findExpiredActive(expiredBefore: Date): Promise<ExpiredActiveEventRow[]> {
+    // US-015 / BE-001. Filtro alineado con el índice parcial `idx_events_auto_complete_candidates
+    // (event_date) WHERE status='active'` (docs/18). El caller pasa `now - 2 días` como
+    // `expiredBefore` para desacoplar la política de cadencia del repositorio. El `lte`
+    // sobre `eventDate` (nullable en schema) excluye NULL implícitamente en Postgres.
+    const rows = await this.prisma.event.findMany({
+      where: {
+        status: 'active',
+        deletedAt: null,
+        eventDate: { lte: expiredBefore },
+      },
+      select: { id: true, eventDate: true },
+      orderBy: { eventDate: 'asc' },
+    });
+    return rows
+      .filter((r): r is { id: string; eventDate: Date } => r.eventDate !== null)
+      .map((r) => ({ id: r.id, eventDate: r.eventDate }));
+  }
+
+  async markCompleted(
+    eventId: string,
+    fields: { autoCompleted: boolean; completedAt: Date },
+  ): Promise<{ affected: number }> {
+    // US-015 / BE-002. `updateMany` con filtro defensivo (`status='active'`, `deletedAt=null`)
+    // hace la transición idempotente frente a races: si el evento ya pasó a `completed` o
+    // `cancelled` en otra corrida, `count` será 0 y el caller no vuelve a loguear éxito.
+    const result = await this.prisma.event.updateMany({
+      where: { id: eventId, status: 'active', deletedAt: null },
+      data: {
+        status: 'completed',
+        autoCompleted: fields.autoCompleted,
+        completedAt: fields.completedAt,
+      },
+    });
+    return { affected: result.count };
   }
 }

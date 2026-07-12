@@ -5,6 +5,7 @@
     "completed": "Completado",
     "cancelled": "Cancelado"
   },
+  "statusAria": "Estado del evento: {status}",
   "types": {
     "wedding": "Boda",
     "xv": "XV años",
