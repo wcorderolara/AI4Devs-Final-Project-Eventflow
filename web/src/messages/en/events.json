@@ -5,6 +5,7 @@
     "completed": "Completed",
     "cancelled": "Cancelled"
   },
+  "statusAria": "Event status: {status}",
   "types": {
     "wedding": "Wedding",
     "xv": "Quinceañera",

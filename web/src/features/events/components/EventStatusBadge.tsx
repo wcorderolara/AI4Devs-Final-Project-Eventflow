@@ -10,14 +10,19 @@ const STATUS_CLASSES: Record<EventStatus, string> = {
   cancelled: 'bg-red-100 text-red-800 border-red-300',
 };
 
-/** Badge de estado de evento con etiqueta i18n y color por estado (US-013/US-014). */
+/** Badge de estado de evento con etiqueta i18n y color por estado (US-013/US-014/US-015). */
 export function EventStatusBadge({ status }: { status: EventStatus }): React.JSX.Element {
   const t = useTranslations('events');
+  const label = t(`status.${status}`);
+  // US-015 / FE-001 (AC-06): `aria-label` localizado para lectores de pantalla; el badge es
+  // información no textual (color + estado) y el label garantiza accesibilidad en los 4 locales.
   return (
     <span
+      role="status"
+      aria-label={t('statusAria', { status: label })}
       className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASSES[status]}`}
     >
-      {t(`status.${status}`)}
+      {label}
     </span>
   );
 }

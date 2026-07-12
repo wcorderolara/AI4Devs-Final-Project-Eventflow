@@ -1,0 +1,77 @@
+// US-015 / BE-004 + BE-005. Registrador único de jobs intra-proceso (ADR-BE-004).
+//
+// `registerJobs` es el único punto de bootstrap para schedulers: si `JOBS_ENABLED=false`
+// (default en dev/test/QA y en todas las réplicas salvo la designada) el registrador NO
+// programa nada (EC-03, SEC-01..04). Con `true` valida la expresión cron (fail-fast a través
+// del adapter `NodeCronScheduler`) y registra `AutoCompletePastEventsJob`.
+//
+// No hay ruta HTTP asociada; el job SOLO se activa por scheduler. La ausencia de endpoint es
+// una decisión de seguridad, validada por el test TASK-PB-P1-009-US-015-SEC-001.
+import { config } from '../config/env.js';
+import { logger } from '../shared/infrastructure/logger/index.js';
+import { SystemClock } from '../infrastructure/time/system-clock.js';
+import { PrismaEventRepository } from '../modules/event-planning/infrastructure/prisma-event.repository.js';
+import { AutoCompletePastEventsUseCase } from '../modules/event-planning/application/auto-complete-past-events.use-case.js';
+import { AutoCompletePastEventsJob } from './auto-complete-past-events.job.js';
+import { NodeCronScheduler } from './node-cron-scheduler.js';
+import type { Scheduler, ScheduledTaskHandle } from './scheduler.port.js';
+
+export interface JobRegistryHandle {
+  /** Handles activos (vacío si `JOBS_ENABLED=false`). */
+  handles: ScheduledTaskHandle[];
+  /** Detiene todos los schedulers registrados (para tests y graceful shutdown). */
+  stopAll(): void;
+}
+
+export interface RegisterJobsDeps {
+  scheduler?: Scheduler;
+  clock?: import('../shared/domain/clock.port.js').ClockPort;
+  autoCompleteUseCase?: AutoCompletePastEventsUseCase;
+  now?: () => Date;
+}
+
+/**
+ * Registra los jobs intra-proceso si `config.JOBS_ENABLED` es `true`. Con `false` retorna un
+ * handle vacío sin efectos secundarios (útil para tests de bootstrap: US-015 SEC-001).
+ */
+export function registerJobs(deps: RegisterJobsDeps = {}): JobRegistryHandle {
+  if (!config.JOBS_ENABLED) {
+    logger.info({
+      event: 'jobs.registry.disabled',
+      reason: 'JOBS_ENABLED=false',
+    });
+    return { handles: [], stopAll: () => undefined };
+  }
+
+  const scheduler = deps.scheduler ?? new NodeCronScheduler();
+  const clock = deps.clock ?? new SystemClock();
+  const useCase =
+    deps.autoCompleteUseCase ??
+    new AutoCompletePastEventsUseCase({
+      repo: new PrismaEventRepository(),
+      clock,
+      logger,
+    });
+  const autoCompleteJob = new AutoCompletePastEventsJob({
+    useCase,
+    clock,
+    logger,
+    cadence: config.JOBS_AUTOCOMPLETE_CRON,
+  });
+
+  const handle = scheduler.schedule(config.JOBS_AUTOCOMPLETE_CRON, () => autoCompleteJob.run());
+  const handles = [handle];
+
+  logger.info({
+    event: 'jobs.registry.enabled',
+    jobs: ['auto-complete-past-events'],
+    cadence: config.JOBS_AUTOCOMPLETE_CRON,
+  });
+
+  return {
+    handles,
+    stopAll: (): void => {
+      for (const h of handles) h.stop();
+    },
+  };
+}
