@@ -1,15 +1,14 @@
 import { expect, test } from '@playwright/test';
 
-// AC-10 / TS-16: con /auth/me respondiendo 200, la sesión expone user y role.
-test('sesión autenticada cuando /auth/me responde 200', async ({ page }) => {
-  await page.route('**/auth/me', (route) =>
+// AC-10 / TS-16: con /users/me respondiendo 200, la sesión expone user y role.
+test('sesión autenticada cuando /users/me responde 200', async ({ page }) => {
+  await page.route('**/users/me', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        user: { id: 'u1', email: 'a@b.com', displayName: 'Ana' },
-        role: 'organizer',
-        locale: 'es-LATAM',
+        data: { id: 'u1', email: 'a@b.com', name: 'Ana', role: 'organizer', status: 'active', preferredLanguage: 'es-LATAM', phone: null, createdAt: '2026-07-10T00:00:00.000Z', updatedAt: '2026-07-10T00:00:00.000Z' },
+        meta: { correlationId: 'req_e2e_me' },
       }),
     }),
   );

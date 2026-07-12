@@ -1,19 +1,10 @@
-import { useTranslations } from 'next-intl';
+import { LoginPage } from '@/features/auth';
 
 /**
- * Placeholder de login (US-105). El formulario real (RHF + Zod + submit a `POST /auth/login`)
- * lo entrega US-AUTH-*.
- *
- * SEC requirement (EC-04, US-105): el handler de login DEBE validar el query param `from` como
- * ruta **interna** antes de usarlo en `router.push`, para prevenir open redirect. Regex sugerido:
- * `^/[a-zA-Z0-9_/\-?=&]*$`. Descartar cualquier `from` absoluto (http/https/`//`).
+ * /login (US-003 / FE-001). El query `from` (inyectado por el role guard de US-105) se valida
+ * como ruta interna en `useLogin` antes de redirigir (prevención de open redirect — EC-04 US-105).
+ * `?reset=success` (US-004 / AC-02): muestra el aviso de contraseña restablecida.
  */
-export default function LoginPage() {
-  const t = useTranslations('navigation');
-  return (
-    <>
-      <h1 className="text-2xl font-bold">{t('placeholder.login.title')}</h1>
-      <p>{t('placeholder.login.body')}</p>
-    </>
-  );
+export default function Login({ searchParams }: { searchParams?: { from?: string; reset?: string } }) {
+  return <LoginPage from={searchParams?.from} showResetSuccess={searchParams?.reset === 'success'} />;
 }

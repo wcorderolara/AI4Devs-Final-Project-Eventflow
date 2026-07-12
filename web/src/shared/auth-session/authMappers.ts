@@ -1,14 +1,14 @@
-import type { AuthSession, AuthSessionResponseDTO } from './types';
+import type { AuthSession, UsersMeEnvelopeDTO } from './types';
 
 /** Mapper puro DTO backend → frontend model (Doc 15 §24). No devolver DTOs crudos al UI. */
-export function mapAuthSessionResponseToAuthSession(dto: AuthSessionResponseDTO): AuthSession {
+export function mapUsersMeEnvelopeToAuthSession(dto: UsersMeEnvelopeDTO): AuthSession {
   return {
     user: {
-      id: dto.user.id,
-      email: dto.user.email,
-      displayName: dto.user.displayName,
+      id: dto.data.id,
+      email: dto.data.email,
+      displayName: dto.data.name,
     },
-    role: dto.role,
-    locale: dto.locale,
+    role: dto.data.role,
+    locale: dto.data.preferredLanguage,
   };
 }

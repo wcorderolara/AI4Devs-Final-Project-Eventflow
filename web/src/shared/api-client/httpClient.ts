@@ -84,12 +84,15 @@ async function request<T, B = unknown>(
     } catch {
       parsed = null;
     }
+    const retryAfterRaw = response.headers.get('Retry-After');
+    const retryAfterSeconds = retryAfterRaw !== null ? Number.parseInt(retryAfterRaw, 10) : NaN;
     const apiError = new ApiError({
       code: parsed?.code ?? 'UNEXPECTED',
       message: parsed?.message ?? 'Unexpected error',
       details: parsed?.details,
       status: response.status,
       correlationId: responseCorrelationId ?? undefined,
+      retryAfterSeconds: Number.isFinite(retryAfterSeconds) ? retryAfterSeconds : undefined,
     });
     if (isDev()) {
       // eslint-disable-next-line no-console
@@ -102,6 +105,11 @@ async function request<T, B = unknown>(
       });
     }
     throw apiError;
+  }
+
+  // Contrato Doc 16: 204 No Content no trae body (p. ej. logout US-005, reset US-004).
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   try {

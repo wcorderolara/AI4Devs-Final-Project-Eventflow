@@ -39,6 +39,13 @@ export interface PasswordResetTokenRepository {
   /** Busca un token vigente (no consumido, no expirado) por su hash. */
   findValidByTokenHash(tokenHash: string, now: Date): Promise<{ id: string; userId: string } | null>;
   /**
+   * Busca el token por hash SIN filtrar estado (US-004 EC-01..03): permite distinguir
+   * inexistente (null) vs consumido (`consumedAt`) vs expirado (`expiresAt`).
+   */
+  findByTokenHash(
+    tokenHash: string,
+  ): Promise<{ id: string; userId: string; expiresAt: Date; consumedAt: Date | null } | null>;
+  /**
    * Consume el token y actualiza el hash de contraseña de forma ATÓMICA (una transacción):
    * evita reuso del token y estados intermedios (AC-07). Falla si el token ya fue consumido.
    */
@@ -68,13 +75,26 @@ export interface PasswordResetNotifier {
   deliver(input: { userId: string; email: string; rawToken: string }): Promise<void>;
 }
 
-/** Eventos de seguridad de auth (OBS-001). Nombres estables per Tech Spec §7 Observability. */
+/** Entrega simulada del email de bienvenida (US-001 / OBS-001; MVP: log estructurado
+ * `event='email_simulated'`, template `welcome.<role>`). Nunca incluye tokens ni contraseñas. */
+export interface WelcomeEmailNotifier {
+  deliver(input: {
+    userId: string;
+    email: string;
+    role: 'organizer' | 'vendor';
+    correlationId?: string;
+  }): Promise<void>;
+}
+
+/** Eventos de seguridad de auth (OBS-001; nombres de registro alineados a US-001 §14:
+ * `auth.register.success` / `auth.register.failure`). */
 export type AuthEventName =
-  | 'auth.register.succeeded'
-  | 'auth.register.rejected'
-  | 'auth.login.succeeded'
-  | 'auth.login.failed'
-  | 'auth.logout.succeeded'
+  | 'auth.register.success'
+  | 'auth.register.failure'
+  | 'auth.login.success'
+  | 'auth.login.failure'
+  | 'auth.logout.success'
+  | 'auth.logout.no_session'
   | 'auth.password_reset.requested'
   | 'auth.password_reset.completed'
   | 'auth.password_reset.failed'
@@ -88,6 +108,13 @@ export type AuthEventName =
 export interface AuthEventLogger {
   emit(
     event: AuthEventName,
-    data: { correlationId?: string; userId?: string; reason?: string },
+    data: {
+      correlationId?: string;
+      userId?: string;
+      reason?: string;
+      latencyMs?: number;
+      /** US-002 / OBS-001: etiqueta de rol para métricas por flujo (organizer | vendor). */
+      role?: string;
+    },
   ): void;
 }

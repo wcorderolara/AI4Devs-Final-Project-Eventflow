@@ -25,11 +25,18 @@ export class RequestPasswordResetUseCase {
 
   async execute(input: { email: string }, ctx: AuthUseCaseContext = {}): Promise<void> {
     const email = input.email.toLowerCase();
-    // Evento genérico: no indica si el email existe.
-    this.events.emit('auth.password_reset.requested', { correlationId: ctx.correlationId });
 
     const user = await this.users.findByEmailNormalized(email);
-    if (!user) return; // Respuesta idéntica al caso existente (anti-enumeración).
+    if (!user) {
+      // Respuesta HTTP idéntica al caso existente (anti-enumeración). El log interno diferencia
+      // con `reason=no_email` (US-004 AC-03) sin exponer nada al cliente.
+      this.events.emit('auth.password_reset.requested', {
+        correlationId: ctx.correlationId,
+        reason: 'no_email',
+      });
+      return;
+    }
+    this.events.emit('auth.password_reset.requested', { correlationId: ctx.correlationId });
 
     const { raw, hash } = this.generator.generate();
     const expiresAt = new Date(

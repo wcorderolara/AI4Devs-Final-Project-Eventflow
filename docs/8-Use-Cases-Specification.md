@@ -774,6 +774,9 @@ No.
 
 ### UC-AUTH-002 — Iniciar sesión
 
+> **Override (US-003 / PB-P1-003, DOC-001 — 2026-07-10):** el captcha del login es **condicional**: se exige a partir de `N=3` fallos consecutivos por IP+email candidato dentro de una ventana de 10 minutos (Decisión PO US-003 #1/#2). Antes del umbral el formulario no exige captcha; el rate limit canónico (10/IP/10min) sigue aplicando. No requiere ADR.
+
+
 #### Descripción
 Permite a un usuario registrado iniciar sesión con email y contraseña.
 

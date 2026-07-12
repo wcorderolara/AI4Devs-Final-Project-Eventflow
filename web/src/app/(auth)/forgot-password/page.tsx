@@ -1,11 +1,6 @@
-import { useTranslations } from 'next-intl';
+import { ForgotPasswordPage } from '@/features/auth';
 
-export default function ForgotPasswordPage() {
-  const t = useTranslations('navigation');
-  return (
-    <>
-      <h1 className="text-2xl font-bold">{t('placeholder.forgotPassword.title')}</h1>
-      <p>{t('placeholder.forgotPassword.body')}</p>
-    </>
-  );
+/** /forgot-password (US-004 / FE-001): solicitud de enlace de recuperación (202 neutro). */
+export default function ForgotPassword() {
+  return <ForgotPasswordPage />;
 }

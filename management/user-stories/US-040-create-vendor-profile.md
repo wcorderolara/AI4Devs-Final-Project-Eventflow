@@ -468,4 +468,5 @@ Not applicable for this story.
 
 * US-040 sienta las bases del módulo Vendors; US-041 entrega edición + flujo de re-submit tras `rejected`.
 * Documentation Alignment Required (no bloqueantes): `docs/16 §M07` con shape del body extendido, `docs/4 §BR-VENDOR-002` nota interpretativa cap inicial 1-3, verificación `vendor_profile.slug` UNIQUE en PB-P0-001, housekeeping `NFR-PERF-001`.
+* Sincronización US-002 (DOC-001, 2026-07-10): el registro vendor redirige a `/vendor/onboarding` (placeholder entregado por US-002 con CTA "Completar mi perfil" que hoy enlaza a `/vendor/profile`). Cuando US-040 fije la ruta definitiva del formulario de creación de `VendorProfile`, actualizar ese CTA.
 * Handoff: vendor crea (US-040) → admin lee log/queue (US-016/US futura) → admin aprueba/rechaza → vendor edita (US-041) y/o ajusta categorías con cap acumulado (US-042).

@@ -581,9 +581,9 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 | Type | Product |
 | MoSCoW | Must Have |
 | Dependencies | PB-P0-004, PB-P0-006 |
-| Acceptance Summary | - Validación de password fuerte (Argon2/bcrypt).<br>- Captcha verificado en backend.<br>- Email único enforced.<br>- Rol `organizer` asignado.<br>- Email simulado de bienvenida en log. |
+| Acceptance Summary | - Hash de contraseña con `argon2id` como default MVP (`bcrypt(12)` fallback documentado — Doc 19 §11.1, ADR-SEC-003) y política Doc 19 §11.2.<br>- Captcha verificado en backend.<br>- Email único enforced.<br>- Rol `organizer` asignado.<br>- Email simulado de bienvenida en log. |
 | Traceability | FR-AUTH-001..003 · UC-AUTH-001 · BR-AUTH-001..006 · Decisión PO 8.1 #8 |
-| Notes | Sin verificación de email obligatoria en MVP. |
+| Notes | Sin verificación de email obligatoria en MVP. Alineación US-001 (DOC-001): summary actualizada a `argon2id` default el 2026-07-10. |
 
 ---
 
@@ -602,9 +602,9 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 | Type | Product |
 | MoSCoW | Must Have |
 | Dependencies | PB-P0-004, PB-P0-006 |
-| Acceptance Summary | - Rol `vendor` asignado.<br>- Redirección a creación de `VendorProfile`.<br>- Captcha verificado backend. |
+| Acceptance Summary | - Rol `vendor` asignado.<br>- Email único **cross-role** (single-role MVP): conflicto con cualquier rol existente → `409 EMAIL_TAKEN` con mensaje neutro idéntico entre flujos.<br>- Redirección post-registro a `/vendor/onboarding` (placeholder con CTA hacia el formulario de `VendorProfile` de US-040).<br>- Captcha verificado backend. |
 | Traceability | FR-AUTH-001..003 · UC-AUTH-002 · BR-VENDOR-001 |
-| Notes | El perfil queda en `pending` hasta aprobación admin. |
+| Notes | El perfil queda en `pending` hasta aprobación admin. Alineación US-002 (DOC-001): summary actualizada el 2026-07-10 (EMAIL_TAKEN cross-role + ruta de onboarding). |
 
 ---
 

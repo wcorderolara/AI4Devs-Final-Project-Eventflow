@@ -26,7 +26,7 @@ const SOME_UUID = '11111111-1111-4111-8111-111111111111';
 async function agentFor(role: 'organizer' | 'vendor'): Promise<ReturnType<typeof request.agent>> {
   const email = uniqEmail(role);
   const agent = request.agent(app);
-  await agent.post('/api/v1/auth/register').send({ email, password: 'Secret1234', name: role, role, captchaToken: CAPTCHA });
+  await agent.post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', ...(role === 'vendor' ? { businessName: 'Vendor Demo SA' } : { name: role }), role, captchaToken: CAPTCHA });
   await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
   return agent;
 }

@@ -13,6 +13,8 @@ import { CaptchaRequiredError, CaptchaInvalidError } from '../../domain/errors/c
 import { captchaProviderFactory } from '../../../infrastructure/captcha/captcha-provider.factory.js';
 import { MOCK_CAPTCHA_TOKEN } from '../../../infrastructure/captcha/mock-captcha-provider.js';
 import { logCaptchaEvent } from '../../../infrastructure/observability/captcha-event-logger.js';
+import { authEventLogger } from '../../../infrastructure/auth-composition.js';
+import type { AuthEventName } from '../../auth/ports.js';
 import type { CaptchaAction } from '../../security/captcha/captcha-verifier.port.js';
 
 function extractToken(body: unknown): string {
@@ -31,6 +33,23 @@ function expectedActionFor(path: string): CaptchaAction | undefined {
   return undefined;
 }
 
+/** Evento de auditoría del flujo auth afectado (US-001 EC-01: `auth.register.failure` con razón). */
+function authFailureEventFor(action: CaptchaAction | undefined): AuthEventName | undefined {
+  if (action === 'register') return 'auth.register.failure';
+  if (action === 'login') return 'auth.login.failure';
+  if (action === 'password_reset_request') return 'auth.password_reset.failed';
+  return undefined;
+}
+
+function emitAuthCaptchaFailure(
+  action: CaptchaAction | undefined,
+  correlationId: string | undefined,
+  reason: 'captcha_missing' | 'captcha_failed',
+): void {
+  const event = authFailureEventFor(action);
+  if (event) authEventLogger.emit(event, { correlationId, reason });
+}
+
 export const captchaVerificationMiddleware: RequestHandler = (req, _res, next) => {
   const token = extractToken(req.body);
   const endpoint = req.path;
@@ -42,6 +61,7 @@ export const captchaVerificationMiddleware: RequestHandler = (req, _res, next) =
     logCaptchaEvent('captcha.verify.failed', {
       correlationId: req.correlationId, endpoint, provider, outcome: 'missing_token', expectedAction, env: config.NODE_ENV,
     });
+    emitAuthCaptchaFailure(expectedAction, req.correlationId, 'captcha_missing');
     next(new CaptchaRequiredError());
     return;
   }
@@ -51,6 +71,7 @@ export const captchaVerificationMiddleware: RequestHandler = (req, _res, next) =
     logCaptchaEvent('captcha.verify.failed', {
       correlationId: req.correlationId, endpoint, provider, outcome: 'invalid_token', expectedAction, env: config.NODE_ENV,
     });
+    emitAuthCaptchaFailure(expectedAction, req.correlationId, 'captcha_failed');
     next(new CaptchaInvalidError());
     return;
   }
@@ -72,12 +93,14 @@ export const captchaVerificationMiddleware: RequestHandler = (req, _res, next) =
       logCaptchaEvent(eventName, {
         correlationId: req.correlationId, endpoint, provider: result.provider, outcome: result.outcome, expectedAction, env: config.NODE_ENV,
       });
+      emitAuthCaptchaFailure(expectedAction, req.correlationId, 'captcha_failed');
       next(new CaptchaInvalidError());
     } catch {
       // Fallo inesperado del adapter → error controlado (no se procesa la operación protegida).
       logCaptchaEvent('captcha.verify.failed', {
         correlationId: req.correlationId, endpoint, provider, outcome: 'provider_error', expectedAction, env: config.NODE_ENV,
       });
+      emitAuthCaptchaFailure(expectedAction, req.correlationId, 'captcha_failed');
       next(new CaptchaInvalidError());
     }
   })();

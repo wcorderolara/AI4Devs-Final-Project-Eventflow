@@ -8,14 +8,13 @@ async function authAs(context: BrowserContext, role: string) {
 }
 
 async function mockMe(page: Page, role: string) {
-  await page.route('**/auth/me', (route) =>
+  await page.route('**/users/me', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        user: { id: 'u1', email: 'a@b.com', displayName: 'Ana' },
-        role,
-        locale: 'en',
+        data: { id: 'u1', email: 'a@b.com', name: 'Ana', role, status: 'active', preferredLanguage: 'en', phone: null, createdAt: '2026-07-10T00:00:00.000Z', updatedAt: '2026-07-10T00:00:00.000Z' },
+        meta: { correlationId: 'req_e2e_me' },
       }),
     }),
   );

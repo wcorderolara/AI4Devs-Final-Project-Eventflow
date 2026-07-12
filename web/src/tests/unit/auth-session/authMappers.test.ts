@@ -1,14 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { mapAuthSessionResponseToAuthSession, type AuthSessionResponseDTO } from '@/shared/auth-session';
+import { mapUsersMeEnvelopeToAuthSession, type UsersMeEnvelopeDTO } from '@/shared/auth-session';
 
-describe('mapAuthSessionResponseToAuthSession', () => {
-  it('mapea el DTO backend al frontend model', () => {
-    const dto: AuthSessionResponseDTO = {
-      user: { id: 'u1', email: 'a@b.com', displayName: 'Ana' },
-      role: 'organizer',
-      locale: 'es-LATAM',
+describe('mapUsersMeEnvelopeToAuthSession (US-003 EMERGENT-001: envelope de GET /users/me)', () => {
+  it('mapea el envelope AuthUserResponse al frontend model', () => {
+    const dto: UsersMeEnvelopeDTO = {
+      data: {
+        id: 'u1',
+        email: 'a@b.com',
+        name: 'Ana',
+        role: 'organizer',
+        status: 'active',
+        preferredLanguage: 'es-LATAM',
+        phone: null,
+        createdAt: '2026-07-10T00:00:00.000Z',
+        updatedAt: '2026-07-10T00:00:00.000Z',
+      },
+      meta: { correlationId: 'req_x' },
     };
-    expect(mapAuthSessionResponseToAuthSession(dto)).toEqual({
+    expect(mapUsersMeEnvelopeToAuthSession(dto)).toEqual({
       user: { id: 'u1', email: 'a@b.com', displayName: 'Ana' },
       role: 'organizer',
       locale: 'es-LATAM',

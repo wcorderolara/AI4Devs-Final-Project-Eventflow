@@ -43,7 +43,7 @@ function uniqEmail(prefix: string): string {
 async function adminAgent() {
   const email = uniqEmail('admin');
   const agent = request.agent(app);
-  await agent.post('/api/v1/auth/register').send({ email, password: 'Secret1234', name: 'Admin', role: 'organizer', captchaToken: '__test__' });
+  await agent.post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', name: 'Admin', role: 'organizer', captchaToken: '__test__' });
   await prisma.user.update({ where: { email }, data: { role: 'admin' } });
   await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: '__test__' });
   return { agent, email };
@@ -52,7 +52,7 @@ async function adminAgent() {
 async function organizerAgent() {
   const email = uniqEmail('org');
   const agent = request.agent(app);
-  await agent.post('/api/v1/auth/register').send({ email, password: 'Secret1234', name: 'Org', role: 'organizer', captchaToken: '__test__' });
+  await agent.post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', name: 'Org', role: 'organizer', captchaToken: '__test__' });
   await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: '__test__' });
   return agent;
 }

@@ -12,6 +12,7 @@ const validRegister = {
   password: 'Secret1234',
   name: 'Ana',
   role: 'organizer',
+  acceptedTerms: true,
   captchaToken: '__test__',
 } as const;
 

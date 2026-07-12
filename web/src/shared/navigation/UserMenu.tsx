@@ -1,12 +1,10 @@
 'use client';
 
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
-import { useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, LogOut, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useSession } from '@/shared/auth-session';
+import { useSession, useLogout } from '@/shared/auth-session';
 
 function profileHrefForRole(role: string | null): string {
   if (role === 'vendor') return '/vendor/profile';
@@ -17,8 +15,9 @@ function profileHrefForRole(role: string | null): string {
 export function UserMenu() {
   const t = useTranslations('navigation');
   const { user, role, isAuthenticated, isLoading } = useSession();
-  const router = useRouter();
-  const queryClient = useQueryClient();
+  // US-005 / FE-003: logout real — `POST /auth/logout` revoca la sesión y limpia la cookie
+  // HttpOnly; el hook purga el estado del cliente y redirige a /login (sin modal — Decisión PO #4).
+  const logout = useLogout();
 
   if (isLoading) {
     return <div aria-hidden="true" className="h-8 w-8 animate-pulse rounded-full bg-neutral-200" />;
@@ -28,20 +27,8 @@ export function UserMenu() {
   const label = user.displayName || user.email;
   const initial = label.charAt(0).toUpperCase();
 
-  /**
-   * Logout PLACEHOLDER (US-107): limpia la cookie UX `eventflow_role` (no HttpOnly), invalida
-   * `['me']` y redirige a `/login`. La cookie de sesión HttpOnly `eventflow_session` NO se puede
-   * limpiar desde cliente y **permanece** hasta el logout real. Reemplazar por `authApi.logout()`
-   * en US-AUTH-* (que llama `POST /auth/logout` y limpia ambas cookies).
-   */
   const handleLogout = () => {
-    if (process.env.NODE_ENV !== 'production') {
-      // eslint-disable-next-line no-console
-      console.debug('userMenu.logout.placeholder');
-    }
-    document.cookie = 'eventflow_role=; path=/; max-age=0; SameSite=Lax';
-    queryClient.invalidateQueries({ queryKey: ['me'] });
-    router.replace('/login');
+    if (!logout.isPending) logout.mutate();
   };
 
   return (
@@ -73,7 +60,9 @@ export function UserMenu() {
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm data-[focus]:bg-neutral-100"
+            disabled={logout.isPending}
+            aria-busy={logout.isPending}
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm data-[focus]:bg-neutral-100 disabled:opacity-50"
           >
             <LogOut className="h-4 w-4" aria-hidden="true" />
             {t('userMenu.logout')}

@@ -15,15 +15,18 @@ import {
 import { Sha256ResetTokenGenerator } from '../../src/infrastructure/security/sha256-reset-token.generator.js';
 import { BcryptPasswordHasher } from '../../src/infrastructure/security/bcrypt-password-hasher.js';
 
-describe('passwordSchema (VR-02)', () => {
+describe('passwordSchema (VR-02, Doc 19 §11.2 — política MVP alineada en US-001)', () => {
   it('acepta una contraseña conforme a política', () => {
     expect(passwordSchema.safeParse('Secret1234').success).toBe(true);
+  });
+  it('acepta contraseña sin mayúscula (política MVP: al menos una letra y un número)', () => {
+    expect(passwordSchema.safeParse('secret1234').success).toBe(true);
   });
   it('rechaza < 10 caracteres', () => {
     expect(passwordSchema.safeParse('Ab1').success).toBe(false);
   });
-  it('rechaza sin mayúscula', () => {
-    expect(passwordSchema.safeParse('secret1234').success).toBe(false);
+  it('rechaza sin letra', () => {
+    expect(passwordSchema.safeParse('1234567890').success).toBe(false);
   });
   it('rechaza sin dígito', () => {
     expect(passwordSchema.safeParse('SecretPassword').success).toBe(false);
@@ -31,7 +34,14 @@ describe('passwordSchema (VR-02)', () => {
 });
 
 describe('RegisterUserRequestSchema (AC-01, SEC-08, VR)', () => {
-  const valid = { email: 'User@Example.com', password: 'Secret1234', name: 'Ana', role: 'organizer', captchaToken: 't' };
+  const valid = {
+    email: 'User@Example.com',
+    password: 'Secret1234',
+    name: 'Ana Pérez',
+    role: 'organizer',
+    acceptedTerms: true,
+    captchaToken: 't',
+  };
 
   it('normaliza el email a lowercase (VR-01)', () => {
     const r = RegisterUserRequestSchema.parse(valid);
@@ -40,8 +50,13 @@ describe('RegisterUserRequestSchema (AC-01, SEC-08, VR)', () => {
   it('rechaza role=admin (SEC-08, EC-01)', () => {
     expect(RegisterUserRequestSchema.safeParse({ ...valid, role: 'admin' }).success).toBe(false);
   });
-  it('acepta organizer y vendor', () => {
-    expect(RegisterUserRequestSchema.safeParse({ ...valid, role: 'vendor' }).success).toBe(true);
+  it('acepta organizer y vendor (variant vendor usa businessName — US-002)', () => {
+    const { name: _omit, ...sinName } = valid;
+    expect(
+      RegisterUserRequestSchema.safeParse({ ...sinName, role: 'vendor', businessName: 'Catering Luna' }).success,
+    ).toBe(true);
+    // La variant vendor rechaza `name` (strict) — el campo comercial es businessName.
+    expect(RegisterUserRequestSchema.safeParse({ ...valid, role: 'vendor' }).success).toBe(false);
   });
   it('rechaza campos desconocidos (.strict())', () => {
     expect(RegisterUserRequestSchema.safeParse({ ...valid, isAdmin: true }).success).toBe(false);

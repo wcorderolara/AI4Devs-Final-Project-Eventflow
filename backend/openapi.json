@@ -52,6 +52,16 @@
         },
         "description": "Error interno del servidor."
       },
+      "MethodNotAllowed": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        },
+        "description": "Método HTTP no permitido en esta ruta (US-005 EC-03)."
+      },
       "NotFound": {
         "content": {
           "application/json": {
@@ -575,8 +585,7 @@
                 },
                 "required": [
                   "email",
-                  "password",
-                  "captchaToken"
+                  "password"
                 ],
                 "type": "object"
               }
@@ -666,13 +675,16 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Login OK. Emite `Set-Cookie` (HttpOnly, SameSite=Lax, Max-Age=30d). `captchaToken` solo se exige tras 3 fallos consecutivos por IP+email (US-003). Errores 409: ALREADY_AUTHENTICATED."
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
           },
           "422": {
             "$ref": "#/components/responses/ValidationError"
@@ -681,7 +693,7 @@
             "$ref": "#/components/responses/RateLimited"
           }
         },
-        "summary": "Iniciar sesión (emite cookie)",
+        "summary": "Iniciar sesión (emite cookie; captcha condicional N=3)",
         "tags": [
           "Auth"
         ]
@@ -692,10 +704,13 @@
         "operationId": "logoutUser",
         "responses": {
           "204": {
-            "description": "No Content"
+            "description": "Sesión revocada. `Set-Cookie` de limpieza (Max-Age=0, flags canónicos). Endpoint estricto: sin sesión → 401 (US-005)."
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
           }
         },
         "security": [
@@ -703,7 +718,7 @@
             "cookieAuth": []
           }
         ],
-        "summary": "Cerrar sesión",
+        "summary": "Cerrar sesión (204; revoca sesión y limpia cookie con Max-Age=0)",
         "tags": [
           "Auth"
         ]
@@ -719,7 +734,7 @@
                 "additionalProperties": false,
                 "properties": {
                   "newPassword": {
-                    "maxLength": 200,
+                    "maxLength": 256,
                     "minLength": 10,
                     "type": "string"
                   },
@@ -739,16 +754,22 @@
         },
         "responses": {
           "204": {
-            "description": "No Content"
+            "description": "Contraseña actualizada (argon2id). Errores 400: TOKEN_INVALID | TOKEN_USED · 410: GONE_TOKEN_EXPIRED (US-004). Rate limit 5/IP/10min."
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "410": {
+            "$ref": "#/components/responses/Gone"
           },
           "422": {
             "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
           }
         },
-        "summary": "Aplicar reset con token",
+        "summary": "Aplicar reset con token (single-use)",
         "tags": [
           "Auth"
         ]
@@ -813,7 +834,7 @@
                 }
               }
             },
-            "description": "Respuesta genérica"
+            "description": "Respuesta genérica SIEMPRE (exista o no el email — SEC-POL-AUTH-005). Token ≥32 bytes, TTL 30 min (US-004), entregado por email simulado. Rate limit 3/email/h."
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
@@ -825,7 +846,7 @@
             "$ref": "#/components/responses/RateLimited"
           }
         },
-        "summary": "Solicitar reset de contraseña",
+        "summary": "Solicitar reset de contraseña (202 genérico anti-enumeración)",
         "tags": [
           "Auth"
         ]
@@ -838,57 +859,126 @@
           "content": {
             "application/json": {
               "schema": {
-                "additionalProperties": false,
-                "properties": {
-                  "captchaToken": {
-                    "minLength": 1,
-                    "type": "string"
-                  },
-                  "email": {
-                    "format": "email",
-                    "maxLength": 254,
-                    "type": "string"
-                  },
-                  "name": {
-                    "maxLength": 80,
-                    "minLength": 1,
-                    "type": "string"
-                  },
-                  "password": {
-                    "maxLength": 200,
-                    "minLength": 10,
-                    "type": "string"
-                  },
-                  "phone": {
-                    "maxLength": 30,
-                    "minLength": 1,
-                    "type": "string"
-                  },
-                  "preferredLanguage": {
-                    "enum": [
-                      "es-LATAM",
-                      "es-ES",
-                      "pt",
-                      "en"
+                "oneOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "acceptedTerms": {
+                        "enum": [
+                          true
+                        ],
+                        "type": "boolean"
+                      },
+                      "captchaToken": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "email": {
+                        "format": "email",
+                        "maxLength": 254,
+                        "type": "string"
+                      },
+                      "name": {
+                        "maxLength": 120,
+                        "minLength": 2,
+                        "type": "string"
+                      },
+                      "password": {
+                        "maxLength": 256,
+                        "minLength": 10,
+                        "type": "string"
+                      },
+                      "phone": {
+                        "maxLength": 30,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "preferredLanguage": {
+                        "enum": [
+                          "es-LATAM",
+                          "es-ES",
+                          "pt",
+                          "en"
+                        ],
+                        "type": "string"
+                      },
+                      "role": {
+                        "enum": [
+                          "organizer"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "role",
+                      "name",
+                      "email",
+                      "password",
+                      "acceptedTerms",
+                      "captchaToken"
                     ],
-                    "type": "string"
+                    "type": "object"
                   },
-                  "role": {
-                    "enum": [
-                      "organizer",
-                      "vendor"
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "acceptedTerms": {
+                        "enum": [
+                          true
+                        ],
+                        "type": "boolean"
+                      },
+                      "businessName": {
+                        "maxLength": 150,
+                        "minLength": 2,
+                        "type": "string"
+                      },
+                      "captchaToken": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "email": {
+                        "format": "email",
+                        "maxLength": 254,
+                        "type": "string"
+                      },
+                      "password": {
+                        "maxLength": 256,
+                        "minLength": 10,
+                        "type": "string"
+                      },
+                      "phone": {
+                        "maxLength": 30,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "preferredLanguage": {
+                        "enum": [
+                          "es-LATAM",
+                          "es-ES",
+                          "pt",
+                          "en"
+                        ],
+                        "type": "string"
+                      },
+                      "role": {
+                        "enum": [
+                          "vendor"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "role",
+                      "businessName",
+                      "email",
+                      "password",
+                      "acceptedTerms",
+                      "captchaToken"
                     ],
-                    "type": "string"
+                    "type": "object"
                   }
-                },
-                "required": [
-                  "email",
-                  "password",
-                  "name",
-                  "role",
-                  "captchaToken"
-                ],
-                "type": "object"
+                ]
               }
             }
           }
@@ -976,7 +1066,7 @@
                 }
               }
             },
-            "description": "Usuario creado"
+            "description": "Usuario creado. Emite `Set-Cookie` con la sesión HTTP-only firmada (US-001 AC-01). Errores 409: EMAIL_TAKEN | ALREADY_AUTHENTICATED."
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
@@ -991,7 +1081,7 @@
             "$ref": "#/components/responses/RateLimited"
           }
         },
-        "summary": "Registrar organizer o vendor",
+        "summary": "Registrar organizer o vendor (emite cookie de sesión)",
         "tags": [
           "Auth"
         ]
@@ -6036,7 +6126,7 @@
                     "type": "string"
                   },
                   "newPassword": {
-                    "maxLength": 200,
+                    "maxLength": 256,
                     "minLength": 10,
                     "type": "string"
                   }
