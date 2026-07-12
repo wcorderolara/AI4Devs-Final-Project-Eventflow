@@ -38,20 +38,20 @@ describe('QA-002: marca isSeed', () => {
   });
 });
 
-// QA-003 (TS-05, NT-05) — deletedAt en los 7 modelos con soft delete.
+// QA-003 (TS-05, NT-05) — deletedAt en los modelos con soft delete (7 base + Event por US-012).
 describe('QA-003: soft delete deletedAt', () => {
-  it('declara deletedAt en los 7 modelos con soft delete', () => {
+  it('declara deletedAt en los modelos con soft delete', () => {
     for (const model of SOFT_DELETE_MODELS) {
       const body = modelBlock(model) ?? '';
       expect(body, `${model} sin deletedAt`).toMatch(
         /deletedAt\s+DateTime\?\s+@map\("deleted_at"\)\s+@db\.Timestamptz\(6\)/,
       );
     }
-    expect(SOFT_DELETE_MODELS).toHaveLength(7);
+    expect(SOFT_DELETE_MODELS).toHaveLength(8);
   });
 
-  it('NO declara deletedAt en modelos sin soft delete (p. ej. Event, User)', () => {
-    for (const model of ['User', 'Event', 'EventTask', 'Budget']) {
+  it('NO declara deletedAt en modelos sin soft delete (p. ej. User, EventTask, Budget)', () => {
+    for (const model of ['User', 'EventTask', 'Budget']) {
       expect(modelBlock(model) ?? '').not.toMatch(/deletedAt/);
     }
   });

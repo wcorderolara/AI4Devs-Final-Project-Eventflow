@@ -1,0 +1,62 @@
+{
+  "title": "Meu perfil",
+  "subtitle": "Consulte e atualize seus dados, idioma e senha.",
+  "basics": {
+    "title": "Dados básicos",
+    "saved": "Perfil atualizado."
+  },
+  "fields": {
+    "name": "Nome",
+    "phone": "Telefone",
+    "phonePlaceholder": "Opcional",
+    "email": "E-mail",
+    "emailReadOnly": "O e-mail não pode ser alterado.",
+    "role": "Função"
+  },
+  "roles": {
+    "organizer": "Organizador",
+    "vendor": "Fornecedor",
+    "admin": "Administrador"
+  },
+  "actions": {
+    "save": "Salvar alterações",
+    "saving": "Salvando…",
+    "retry": "Tentar novamente"
+  },
+  "language": {
+    "title": "Idioma",
+    "description": "A alteração é aplicada imediatamente em todo o aplicativo.",
+    "label": "Idioma preferido",
+    "applying": "Aplicando o novo idioma…"
+  },
+  "security": {
+    "title": "Segurança",
+    "description": "Altere sua senha. As outras sessões serão encerradas.",
+    "currentPassword": "Senha atual",
+    "newPassword": "Nova senha",
+    "passwordHint": "Mínimo de 10 caracteres, com pelo menos uma letra e um número.",
+    "confirmPassword": "Confirmar nova senha",
+    "submit": "Alterar senha",
+    "changed": "Senha atualizada."
+  },
+  "validation": {
+    "nameMin": "O nome deve ter pelo menos 2 caracteres.",
+    "nameMax": "O nome não pode ultrapassar 80 caracteres.",
+    "phoneMax": "O telefone não pode ultrapassar 30 caracteres.",
+    "currentPasswordRequired": "Informe sua senha atual.",
+    "passwordPolicy": "Mínimo de 10 caracteres, com pelo menos uma letra e um número.",
+    "confirmRequired": "Confirme a nova senha.",
+    "passwordsMismatch": "As senhas não coincidem."
+  },
+  "errors": {
+    "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente.",
+    "LOAD_FAILED": "Não foi possível carregar seu perfil.",
+    "VALIDATION_ERROR": "Verifique os dados informados.",
+    "UNSUPPORTED_LANGUAGE": "O idioma selecionado não está disponível.",
+    "AUTHENTICATION_REQUIRED": "Sua sessão expirou. Faça login novamente.",
+    "INVALID_CURRENT_PASSWORD": "A senha atual está incorreta.",
+    "PASSWORD_POLICY_VIOLATION": "A nova senha não atende à política.",
+    "RATE_LIMIT_EXCEEDED": "Muitas tentativas. Aguarde {seconds} segundos.",
+    "RATE_LIMIT_EXCEEDED_NO_TIME": "Muitas tentativas. Tente mais tarde."
+  }
+}

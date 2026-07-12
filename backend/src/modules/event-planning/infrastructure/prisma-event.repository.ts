@@ -78,7 +78,7 @@ export class PrismaEventRepository implements EventRepository {
 
   async findByIdForOwner(eventId: string, ownerId: string): Promise<EventView | null> {
     const event = await this.prisma.event.findFirst({
-      where: { id: eventId, userId: ownerId },
+      where: { id: eventId, userId: ownerId, deletedAt: null },
       include: INCLUDE_TYPE,
     });
     return event ? toEventView(event) : null;
@@ -89,7 +89,7 @@ export class PrismaEventRepository implements EventRepository {
     filters: EventListFilters,
     options: EventListOptions,
   ): Promise<{ items: EventView[]; total: number }> {
-    const where: Prisma.EventWhereInput = { userId: ownerId };
+    const where: Prisma.EventWhereInput = { userId: ownerId, deletedAt: null };
     if (filters.status) where.status = filters.status;
     if (filters.eventTypeCode) where.eventType = { code: filters.eventTypeCode };
     if (filters.eventDateFrom || filters.eventDateTo) {
@@ -137,5 +137,14 @@ export class PrismaEventRepository implements EventRepository {
       include: INCLUDE_TYPE,
     });
     return toEventView(event);
+  }
+
+  async softDelete(eventId: string, deletedBy: string): Promise<void> {
+    // US-012: soft delete idempotente. `deleted_at`/`deleted_by` marcan la baja lógica; el registro
+    // se conserva (BR-EVENT-010, sin hard delete). Las lecturas owner-scoped ya filtran deletedAt.
+    await this.prisma.event.update({
+      where: { id: eventId },
+      data: { deletedAt: new Date(), deletedBy },
+    });
   }
 }

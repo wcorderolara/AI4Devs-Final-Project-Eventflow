@@ -89,6 +89,10 @@ class FakeEventRepo implements EventRepository {
     this.byId.set(eventId, v);
     return Promise.resolve(v);
   }
+  softDelete(eventId: string): Promise<void> {
+    this.byId.delete(eventId);
+    return Promise.resolve();
+  }
 }
 
 class FakeEventTypeRepo implements EventTypeRepository {
@@ -96,11 +100,17 @@ class FakeEventTypeRepo implements EventTypeRepository {
   findActiveIdByCode(code: string): Promise<string | null> {
     return Promise.resolve(this.active.has(code) ? `type-${code}` : null);
   }
+  findActive(): Promise<{ code: string; label: string }[]> {
+    return Promise.resolve([...this.active].map((code) => ({ code, label: code })));
+  }
 }
 class FakeLocationRepo implements LocationRepository {
   existing = new Set<string>(['loc-1']);
   existsActive(id: string): Promise<boolean> {
     return Promise.resolve(this.existing.has(id));
+  }
+  listActive(): Promise<{ id: string; country: string; region: string | null; city: string | null }[]> {
+    return Promise.resolve([...this.existing].map((id) => ({ id, country: 'GT', region: null, city: null })));
   }
 }
 class FakeAudit implements EventAuditLogger {

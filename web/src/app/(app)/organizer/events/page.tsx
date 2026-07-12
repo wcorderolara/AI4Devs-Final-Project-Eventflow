@@ -1,11 +1,6 @@
-import { useTranslations } from 'next-intl';
+import { EventsListPage } from '@/features/events';
 
+// US-013 — listado/filtrado de eventos propios del organizer (página de entrada del rol).
 export default function OrganizerEventsPage() {
-  const t = useTranslations('navigation');
-  return (
-    <>
-      <h1 className="text-2xl font-bold">{t('placeholder.organizerEvents.title')}</h1>
-      <p className="mt-2 text-neutral-600">{t('placeholder.organizerEvents.body')}</p>
-    </>
-  );
+  return <EventsListPage />;
 }

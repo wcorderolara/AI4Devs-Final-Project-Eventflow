@@ -1,11 +1,7 @@
-import { useTranslations } from 'next-intl';
+import { ProfilePage } from '@/features/profile';
 
+// US-006 / US-007 — perfil propio del organizer. Los tres roles autenticados comparten
+// `ProfilePage`; el gating de sesión lo aplica el layout `(app)`.
 export default function OrganizerProfilePage() {
-  const t = useTranslations('navigation');
-  return (
-    <>
-      <h1 className="text-2xl font-bold">{t('placeholder.organizerProfile.title')}</h1>
-      <p className="mt-2 text-neutral-600">{t('placeholder.organizerProfile.body')}</p>
-    </>
-  );
+  return <ProfilePage />;
 }

@@ -1,0 +1,62 @@
+{
+  "title": "Mi perfil",
+  "subtitle": "Consulta y actualiza tus datos, idioma y contraseña.",
+  "basics": {
+    "title": "Datos básicos",
+    "saved": "Perfil actualizado."
+  },
+  "fields": {
+    "name": "Nombre",
+    "phone": "Teléfono",
+    "phonePlaceholder": "Opcional",
+    "email": "Correo electrónico",
+    "emailReadOnly": "El correo no se puede modificar.",
+    "role": "Rol"
+  },
+  "roles": {
+    "organizer": "Organizador",
+    "vendor": "Proveedor",
+    "admin": "Administrador"
+  },
+  "actions": {
+    "save": "Guardar cambios",
+    "saving": "Guardando…",
+    "retry": "Reintentar"
+  },
+  "language": {
+    "title": "Idioma",
+    "description": "El cambio se aplica de inmediato en toda la aplicación.",
+    "label": "Idioma preferido",
+    "applying": "Aplicando el nuevo idioma…"
+  },
+  "security": {
+    "title": "Seguridad",
+    "description": "Cambia tu contraseña. Las demás sesiones se cerrarán.",
+    "currentPassword": "Contraseña actual",
+    "newPassword": "Nueva contraseña",
+    "passwordHint": "Mínimo 10 caracteres, con al menos una letra y un número.",
+    "confirmPassword": "Confirmar nueva contraseña",
+    "submit": "Cambiar contraseña",
+    "changed": "Contraseña actualizada."
+  },
+  "validation": {
+    "nameMin": "El nombre debe tener al menos 2 caracteres.",
+    "nameMax": "El nombre no debe superar los 80 caracteres.",
+    "phoneMax": "El teléfono no debe superar los 30 caracteres.",
+    "currentPasswordRequired": "Introduce tu contraseña actual.",
+    "passwordPolicy": "Mínimo 10 caracteres, con al menos una letra y un número.",
+    "confirmRequired": "Confirma la nueva contraseña.",
+    "passwordsMismatch": "Las contraseñas no coinciden."
+  },
+  "errors": {
+    "UNEXPECTED": "Se ha producido un error inesperado. Inténtalo de nuevo.",
+    "LOAD_FAILED": "No se ha podido cargar tu perfil.",
+    "VALIDATION_ERROR": "Revisa los datos introducidos.",
+    "UNSUPPORTED_LANGUAGE": "El idioma seleccionado no está disponible.",
+    "AUTHENTICATION_REQUIRED": "Tu sesión ha caducado. Inicia sesión de nuevo.",
+    "INVALID_CURRENT_PASSWORD": "La contraseña actual es incorrecta.",
+    "PASSWORD_POLICY_VIOLATION": "La nueva contraseña no cumple la política.",
+    "RATE_LIMIT_EXCEEDED": "Demasiados intentos. Espera {seconds} segundos.",
+    "RATE_LIMIT_EXCEEDED_NO_TIME": "Demasiados intentos. Inténtalo más tarde."
+  }
+}

@@ -60,7 +60,10 @@ export const MVP_MODELS = [
 /** Modelos operativos que deben declarar `isSeed` (AC-06). Excluye AIPromptVersion (append-only). */
 export const SEED_MODELS = MVP_MODELS.filter((m) => m !== 'AIPromptVersion');
 
-/** Los 7 modelos con soft delete requerido (AC-07). */
+/**
+ * Modelos con soft delete. US-099 declaró 7; US-012 (PB-P1-007) añade `Event` (soft delete de
+ * borradores), por lo que ahora son 8.
+ */
 export const SOFT_DELETE_MODELS = [
   'Review',
   'Attachment',
@@ -69,6 +72,7 @@ export const SOFT_DELETE_MODELS = [
   'ServiceCategory',
   'EventType',
   'Location',
+  'Event',
 ] as const;
 
 /** Enums base (AC-02). */

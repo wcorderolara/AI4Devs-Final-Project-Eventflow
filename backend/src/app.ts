@@ -16,6 +16,10 @@ import { errorHandlerMiddleware } from './shared/interface/middlewares/error-han
 import { identityAccessRouter } from './modules/identity-access/interface/identity-access.routes.js';
 import { userProfileRouter } from './modules/user-profile/interface/user-profile.routes.js';
 import { eventPlanningRouter } from './modules/event-planning/interface/events.routes.js';
+import {
+  eventTypesRouter,
+  locationsRouter,
+} from './modules/event-planning/interface/catalog.routes.js';
 import { quoteFlowRouter } from './modules/quote-flow/interface/quote-flow.routes.js';
 import { bookingIntentRouter } from './modules/booking-intent/interface/booking-intent.routes.js';
 import { aiAssistanceRouter } from './modules/ai-assistance/interface/ai.routes.js';
@@ -60,6 +64,8 @@ export function createApp(): Express {
   apiV1.use(aiAssistanceRouter);
   apiV1.use('/booking-intents', bookingIntentRouter);
   apiV1.use('/events', eventPlanningRouter); // US-095 / API-001
+  apiV1.use('/event-types', eventTypesRouter); // US-009 / catálogo
+  apiV1.use('/locations', locationsRouter); // US-009 / catálogo
   // US-086 (PB-P0-014): reset surgical Demo. La ruta `/admin/seed/*` SOLO se monta cuando
   // `SEED_DEMO_ENABLED=true`; con el flag apagado no existe (404 natural, THR-012 / EC-01).
   if (isSeedDemoEnabled()) {
