@@ -22,7 +22,7 @@ try {
 const app = createApp();
 const CAPTCHA = '__test__';
 const uniq = (): string => `us109_${Date.now()}_${Math.floor(Math.random() * 1e6)}@eventflow.test`;
-const register = { password: 'Secret1234', name: 'Cap', role: 'organizer' };
+const register = { password: 'Secret1234', name: 'Cap', role: 'organizer', acceptedTerms: true };
 
 describe('US-109 QA-004: token ausente → CAPTCHA_REQUIRED (EC-01, NT-01, sin DB)', () => {
   it('register sin captchaToken → 400 CAPTCHA_REQUIRED', async () => {
@@ -30,10 +30,11 @@ describe('US-109 QA-004: token ausente → CAPTCHA_REQUIRED (EC-01, NT-01, sin D
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('CAPTCHA_REQUIRED');
   });
-  it('login sin captchaToken → 400 CAPTCHA_REQUIRED', async () => {
+  it('login sin captchaToken pre-umbral NO exige captcha (US-003 EC-02: condicional N=3)', async () => {
+    // US-003 (posterior a US-109) hace el captcha de login condicional; la exigencia tras
+    // N=3 fallos se cubre en us003-login.api.spec.ts.
     const res = await request(app).post('/api/v1/auth/login').send({ email: 'a@b.com', password: 'x' });
-    expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('CAPTCHA_REQUIRED');
+    expect(res.body?.error?.code).not.toBe('CAPTCHA_REQUIRED');
   });
   it('password/reset-request sin captchaToken → 400 CAPTCHA_REQUIRED', async () => {
     const res = await request(app).post('/api/v1/auth/password/reset-request').send({ email: 'a@b.com' });
@@ -50,12 +51,11 @@ describe('US-109 QA-004: token inválido → CAPTCHA_INVALID (EC-02, NT-02, sin 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('CAPTCHA_INVALID');
   });
-  it('login con token inválido → 400 CAPTCHA_INVALID', async () => {
+  it('login con token inválido pre-umbral: token IGNORADO (US-003 EC-02)', async () => {
     const res = await request(app)
       .post('/api/v1/auth/login')
       .send({ email: 'a@b.com', password: 'x', captchaToken: 'nope' });
-    expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('CAPTCHA_INVALID');
+    expect(res.body?.error?.code).not.toBe('CAPTCHA_INVALID');
   });
 });
 

@@ -480,11 +480,20 @@ correlationId
 | `EVENT_TYPE_HAS_EVENTS` | 409 | Reglas | Intento de borrar EventType con eventos asociados. |
 | `CATEGORY_DEPTH_EXCEEDED` | 409 | Reglas | ServiceCategory excede profundidad máxima (2). |
 | `RATE_LIMIT_EXCEEDED` | 429 | Anti-abuso | Límite de requests excedido. |
+| `EMAIL_TAKEN` | 409 | Estado | Email ya registrado en `/auth/register` (mensaje neutro anti-enumeración). |
+| `CAPTCHA_REQUIRED` | 400 | Anti-abuso | Token de captcha ausente en endpoint protegido por captcha. |
+| `CAPTCHA_INVALID` | 400 | Anti-abuso | Token de captcha inválido/expirado (causa exacta nunca se revela). |
+| `ALREADY_AUTHENTICATED` | 409 | Estado | Sesión activa invocando un endpoint solo-anónimo (register/login). |
 | `AI_PROVIDER_TIMEOUT` | 504 / 503 | IA | Timeout >60s del proveedor LLM. |
 | `AI_PROVIDER_UNAVAILABLE` | 503 | IA | LLM no disponible y fallback agotado. |
 | `AI_INVALID_OUTPUT` | 422 | IA | Output del LLM no pasó validación JSON Schema. |
 | `FILE_UPLOAD_ERROR` | 400 / 413 | Adjuntos | MIME inválido, tamaño excedido, etc. |
 | `INTERNAL_ERROR` | 500 | Sistema | Falla inesperada. Detalle solo en logs. |
+
+> **Nota de catálogo (2026-07-10, US-001 / DOC-001):** se formalizan `EMAIL_TAKEN`,
+> `CAPTCHA_REQUIRED`, `CAPTCHA_INVALID` y `ALREADY_AUTHENTICATED`, códigos estables ya entregados
+> por PB-P0-004/PB-P0-006 (US-094/US-109) y referenciados por las decisiones PO de US-003/US-004.
+> El caso "captcha inválido" usa código dedicado en lugar de `VALIDATION_ERROR` genérico.
 
 ### 14.3 Reglas
 
@@ -818,6 +827,8 @@ type AuthUserResponseDto = {
 ### 23.1 Propósito
 
 Lectura y actualización del perfil del usuario autenticado.
+
+> **Nota (US-003 / API-001, 2026-07-10):** el path canónico del perfil propio es `GET /api/v1/users/me` (decisión US-094: recurso plural `users`, sin alias `/me` en la raíz). Las referencias a `GET /me` en este documento deben leerse como `GET /api/v1/users/me`; el frontend consume este path para la hidratación de sesión y el ruteo por rol.
 
 ### 23.2 Endpoints
 

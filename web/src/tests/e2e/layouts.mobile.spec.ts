@@ -8,14 +8,13 @@ test('mobile: hamburguesa abre el drawer con los items', async ({ page, context 
     { name: 'eventflow_session', value: 'test', url: 'http://localhost:3000' },
     { name: 'eventflow_role', value: 'organizer', url: 'http://localhost:3000' },
   ]);
-  await page.route('**/auth/me', (route) =>
+  await page.route('**/users/me', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        user: { id: 'u1', email: 'a@b.com', displayName: 'Ana' },
-        role: 'organizer',
-        locale: 'en',
+        data: { id: 'u1', email: 'a@b.com', name: 'Ana', role: 'organizer', status: 'active', preferredLanguage: 'en', phone: null, createdAt: '2026-07-10T00:00:00.000Z', updatedAt: '2026-07-10T00:00:00.000Z' },
+        meta: { correlationId: 'req_e2e_me' },
       }),
     }),
   );

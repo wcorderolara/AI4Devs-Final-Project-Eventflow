@@ -119,6 +119,7 @@ const ERROR_RESPONSES: Record<string, string> = {
   Unauthorized: 'Autenticación requerida.',
   Forbidden: 'Rol o permiso insuficiente.',
   NotFound: 'Recurso no encontrado (o enmascarado por seguridad).',
+  MethodNotAllowed: 'Método HTTP no permitido en esta ruta (US-005 EC-03).',
   Conflict: 'Conflicto de estado (p. ej. EMAIL_TAKEN, límites de quote).',
   Gone: 'Recurso expirado (QUOTE_EXPIRED).',
   ValidationError: 'Error de validación de DTO.',
@@ -153,6 +154,7 @@ const HTTP_TO_RESPONSE: Record<number, string> = {
   401: 'Unauthorized',
   403: 'Forbidden',
   404: 'NotFound',
+  405: 'MethodNotAllowed',
   409: 'Conflict',
   410: 'Gone',
   422: 'ValidationError',
@@ -208,11 +210,11 @@ function op(o: OpParams): void {
 }
 
 // ── AUTH (público) ────────────────────────────────────────────────────────────
-op({ method: 'post', path: '/auth/register', operationId: 'registerUser', tags: ['Auth'], summary: 'Registrar organizer o vendor', secured: false, body: RegisterUserRequestSchema, success: { status: 201, schema: envelope(AuthUserResponseSchema), description: 'Usuario creado' }, errors: [400, 409, 422, 429] });
-op({ method: 'post', path: '/auth/login', operationId: 'loginUser', tags: ['Auth'], summary: 'Iniciar sesión (emite cookie)', secured: false, body: LoginUserRequestSchema, success: { status: 200, schema: envelope(AuthUserResponseSchema) }, errors: [400, 401, 422, 429] });
-op({ method: 'post', path: '/auth/logout', operationId: 'logoutUser', tags: ['Auth'], summary: 'Cerrar sesión', secured: true, success: { status: 204 }, errors: [401] });
-op({ method: 'post', path: '/auth/password/reset-request', operationId: 'requestPasswordReset', tags: ['Auth'], summary: 'Solicitar reset de contraseña', secured: false, body: PasswordResetRequestSchema, success: { status: 202, schema: envelope(z.object({ message: z.string() }).strict()), description: 'Respuesta genérica' }, errors: [400, 422, 429] });
-op({ method: 'post', path: '/auth/password/reset', operationId: 'resetPassword', tags: ['Auth'], summary: 'Aplicar reset con token', secured: false, body: PasswordResetSchema, success: { status: 204 }, errors: [401, 422] });
+op({ method: 'post', path: '/auth/register', operationId: 'registerUser', tags: ['Auth'], summary: 'Registrar organizer o vendor (emite cookie de sesión)', secured: false, body: RegisterUserRequestSchema, success: { status: 201, schema: envelope(AuthUserResponseSchema), description: 'Usuario creado. Emite `Set-Cookie` con la sesión HTTP-only firmada (US-001 AC-01). Errores 409: EMAIL_TAKEN | ALREADY_AUTHENTICATED.' }, errors: [400, 409, 422, 429] });
+op({ method: 'post', path: '/auth/login', operationId: 'loginUser', tags: ['Auth'], summary: 'Iniciar sesión (emite cookie; captcha condicional N=3)', secured: false, body: LoginUserRequestSchema, success: { status: 200, schema: envelope(AuthUserResponseSchema), description: 'Login OK. Emite `Set-Cookie` (HttpOnly, SameSite=Lax, Max-Age=30d). `captchaToken` solo se exige tras 3 fallos consecutivos por IP+email (US-003). Errores 409: ALREADY_AUTHENTICATED.' }, errors: [400, 401, 409, 422, 429] });
+op({ method: 'post', path: '/auth/logout', operationId: 'logoutUser', tags: ['Auth'], summary: 'Cerrar sesión (204; revoca sesión y limpia cookie con Max-Age=0)', secured: true, success: { status: 204, description: 'Sesión revocada. `Set-Cookie` de limpieza (Max-Age=0, flags canónicos). Endpoint estricto: sin sesión → 401 (US-005).' }, errors: [401, 405] });
+op({ method: 'post', path: '/auth/password/reset-request', operationId: 'requestPasswordReset', tags: ['Auth'], summary: 'Solicitar reset de contraseña (202 genérico anti-enumeración)', secured: false, body: PasswordResetRequestSchema, success: { status: 202, schema: envelope(z.object({ message: z.string() }).strict()), description: 'Respuesta genérica SIEMPRE (exista o no el email — SEC-POL-AUTH-005). Token ≥32 bytes, TTL 30 min (US-004), entregado por email simulado. Rate limit 3/email/h.' }, errors: [400, 422, 429] });
+op({ method: 'post', path: '/auth/password/reset', operationId: 'resetPassword', tags: ['Auth'], summary: 'Aplicar reset con token (single-use)', secured: false, body: PasswordResetSchema, success: { status: 204, description: 'Contraseña actualizada (argon2id). Errores 400: TOKEN_INVALID | TOKEN_USED · 410: GONE_TOKEN_EXPIRED (US-004). Rate limit 5/IP/10min.' }, errors: [400, 410, 422, 429] });
 
 // ── USERS (perfil propio) ──────────────────────────────────────────────────────
 op({ method: 'get', path: '/users/me', operationId: 'getCurrentUser', tags: ['Users'], summary: 'Obtener perfil propio', secured: true, success: { status: 200, schema: envelope(AuthUserResponseSchema) }, errors: [401] });

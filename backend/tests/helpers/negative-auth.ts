@@ -63,7 +63,7 @@ export async function agentFor(
 ): Promise<ReturnType<typeof request.agent>> {
   const email = `${tag}_${role}_${Date.now()}_${Math.floor(Math.random() * 1e6)}@eventflow.test`;
   const agent = request.agent(app);
-  await agent.post('/api/v1/auth/register').send({ email, password: 'Secret1234', name: role, role, captchaToken: CAPTCHA });
+  await agent.post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', ...(role === 'vendor' ? { businessName: 'Vendor Demo SA' } : { name: role }), role, captchaToken: CAPTCHA });
   await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
   return agent;
 }

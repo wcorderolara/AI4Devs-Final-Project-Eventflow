@@ -5,9 +5,12 @@ import type { SessionState } from '@/shared/auth-session';
 import { UserMenu } from '@/shared/navigation';
 
 const useSessionMock = vi.hoisted(() => vi.fn());
-vi.mock('@/shared/auth-session', () => ({ useSession: useSessionMock }));
+// US-005: UserMenu ahora consume useLogout (logout real) — se mockea junto a useSession.
+vi.mock('@/shared/auth-session', () => ({
+  useSession: useSessionMock,
+  useLogout: () => ({ mutate: vi.fn(), isPending: false }),
+}));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn() }) }));
-vi.mock('@tanstack/react-query', () => ({ useQueryClient: () => ({ invalidateQueries: vi.fn() }) }));
 
 const messages = { navigation: { userMenu: { myProfile: 'Mi perfil', logout: 'Cerrar sesión' } } };
 

@@ -13,7 +13,7 @@ import { LoggingPasswordResetNotifier } from '../../src/infrastructure/notificat
 import { logger } from '../../src/shared/infrastructure/logger/index.js';
 
 const app = createApp();
-const validRegister = { email: 'x@example.com', password: 'Secret1234', name: 'Ana', role: 'organizer' };
+const validRegister = { email: 'x@example.com', password: 'Secret1234', name: 'Ana', role: 'organizer', acceptedTerms: true };
 
 describe('QA-003: autorización negativa sin sesión (AUTH-TS-02, NT-10)', () => {
   it('GET /api/v1/users/me sin cookie → 401 AUTHENTICATION_REQUIRED', async () => {
@@ -50,11 +50,13 @@ describe('QA-003: captcha obligatorio corta antes de credenciales (EC-04, NT-03)
     expect(res.headers['set-cookie']).toBeUndefined();
   });
 
-  it('login con captcha inválido → 400 CAPTCHA_INVALID, sin Set-Cookie (NT-03)', async () => {
+  it('login pre-umbral: captcha inválido se IGNORA (US-003 EC-02) → sin cookie, sin CAPTCHA_INVALID', async () => {
+    // US-003 (Decisión PO #1/#2, posterior a US-109) hace el captcha de login CONDICIONAL (N=3):
+    // antes del umbral el token no se procesa y el flujo cae en credenciales (401 con BD).
     const res = await request(app)
       .post('/api/v1/auth/login')
       .send({ email: 'a@b.com', password: 'Secret1234', captchaToken: 'invalid-token' });
-    expect(res.status).toBe(400);
+    expect(res.body?.error?.code).not.toBe('CAPTCHA_INVALID');
     expect(res.headers['set-cookie']).toBeUndefined();
   });
 
@@ -111,9 +113,9 @@ describe('QA-003: flags de cookie de sesión (SEC-03, ADR-SEC-002)', () => {
 describe('QA-003: redacción — logs no exponen secretos (SEC-07, NT-12)', () => {
   it('AuthEventLogger solo emite metadatos seguros (sin password/token/hash)', () => {
     const spy = vi.spyOn(logger, 'info').mockImplementation(() => undefined);
-    new StructuredAuthEventLogger().emit('auth.login.failed', { correlationId: 'c1', userId: 'u1', reason: 'x' });
+    new StructuredAuthEventLogger().emit('auth.login.failure', { correlationId: 'c1', userId: 'u1', reason: 'x' });
     const payload = spy.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(Object.keys(payload).sort()).toEqual(['correlationId', 'event', 'reason', 'userId']);
+    expect(Object.keys(payload).sort()).toEqual(['correlationId', 'event', 'latencyMs', 'reason', 'role', 'userId']); // US-001/US-002: +latencyMs +role (metadatos seguros)
     spy.mockRestore();
   });
 

@@ -6,6 +6,7 @@ import type { Request, Response } from 'express';
 import { success } from '../../../shared/response/index.js';
 import { issueSessionCookie, clearSessionCookie } from '../../../infrastructure/security/session-cookie.js';
 import { logSessionEvent } from '../../../infrastructure/observability/session-event-logger.js';
+import { resolvePreferredLanguage } from '../../../shared/interface/http/accept-language.js';
 import { toAuthUserResponse } from '../../../shared/dto/auth-user.response.js';
 import type {
   RegisterUserRequest,
@@ -32,17 +33,23 @@ export class IdentityAccessController {
 
   register = async (req: Request, res: Response): Promise<void> => {
     const body = req.validated?.body as RegisterUserRequest;
-    const user = await this.useCases.register.execute(
+    const { user, sessionId } = await this.useCases.register.execute(
       {
         email: body.email,
         password: body.password,
-        name: body.name,
+        // US-002 / BE-003: branching por variant — `businessName` espeja `users.name` hasta US-040.
+        name: body.role === 'vendor' ? body.businessName : body.name,
         phone: body.phone,
         role: body.role,
-        preferredLanguage: body.preferredLanguage,
+        // AC-02 (US-001): sin preferencia explícita se infiere de `Accept-Language` (fallback es-LATAM).
+        preferredLanguage:
+          body.preferredLanguage ?? resolvePreferredLanguage(req.headers['accept-language']),
       },
       { correlationId: req.correlationId },
     );
+    // AC-01 (US-001): el registro inicia sesión — cookie HTTP-only firmada; token nunca en el JSON.
+    issueSessionCookie(res, sessionId);
+    logSessionEvent('session.cookie.issued', { correlationId: req.correlationId, userId: user.id });
     res.status(201).json(success(toAuthUserResponse(user), req.correlationId ?? ''));
   };
 
@@ -50,7 +57,8 @@ export class IdentityAccessController {
     const body = req.validated?.body as LoginUserRequest;
     const { user, sessionId } = await this.useCases.login.execute(
       { email: body.email, password: body.password },
-      { correlationId: req.correlationId },
+      // US-003: la IP alimenta el contador del captcha condicional (EC-02).
+      { correlationId: req.correlationId, ip: req.ip },
     );
     // Cookie HTTP-only firmada; el token NO viaja en el JSON (SEC-03).
     issueSessionCookie(res, sessionId);

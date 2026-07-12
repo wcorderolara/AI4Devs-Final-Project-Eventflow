@@ -22,7 +22,7 @@ type Agent = ReturnType<typeof request.agent>;
 async function registerLogin(role: 'organizer' | 'vendor'): Promise<Agent> {
   const email = `us097sec_${role}_${rnd()}@eventflow.test`;
   const agent = request.agent(app);
-  await agent.post('/api/v1/auth/register').send({ email, password: 'Secret1234', name: role, role, captchaToken: CAPTCHA });
+  await agent.post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', ...(role === 'vendor' ? { businessName: 'Vendor Demo SA' } : { name: role }), role, captchaToken: CAPTCHA });
   await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
   return agent;
 }

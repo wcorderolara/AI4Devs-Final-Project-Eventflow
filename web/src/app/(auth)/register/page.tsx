@@ -1,11 +1,9 @@
-import { useTranslations } from 'next-intl';
+import { RegisterPage } from '@/features/auth';
 
-export default function RegisterPage() {
-  const t = useTranslations('navigation');
-  return (
-    <>
-      <h1 className="text-2xl font-bold">{t('placeholder.register.title')}</h1>
-      <p>{t('placeholder.register.body')}</p>
-    </>
-  );
+/**
+ * /register (US-001 / FE-001; render condicional US-002 / FE-001). `?role=vendor` renderiza el
+ * form de proveedor; default organizer. La página es dinámica (searchParams).
+ */
+export default function Register({ searchParams }: { searchParams?: { role?: string } }) {
+  return <RegisterPage roleParam={searchParams?.role} />;
 }

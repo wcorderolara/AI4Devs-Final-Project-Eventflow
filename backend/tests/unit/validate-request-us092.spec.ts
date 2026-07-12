@@ -17,6 +17,7 @@ const validBody = {
   password: 'Secret1234',
   name: 'Ana',
   role: 'organizer',
+  acceptedTerms: true,
   captchaToken: 'tok',
 } as const;
 

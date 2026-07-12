@@ -61,6 +61,14 @@ export const ErrorCodes = {
   // US-109 (PB-P0-006): captcha en auth (AC-05, VR-01/VR-02, EC-01/EC-02) → 400.
   CAPTCHA_REQUIRED: 'CAPTCHA_REQUIRED', // token ausente
   CAPTCHA_INVALID: 'CAPTCHA_INVALID', // inválido/expirado/action mismatch/score bajo/provider error
+  // US-001 (PB-P1-001, SEC-01; catálogo US-003): sesión activa en endpoint solo-anónimo → 409.
+  ALREADY_AUTHENTICATED: 'ALREADY_AUTHENTICATED',
+  // US-005 (PB-P1-003, EC-03): método HTTP no permitido en la ruta (p. ej. GET /auth/logout) → 405.
+  METHOD_NOT_ALLOWED: 'METHOD_NOT_ALLOWED',
+  // US-004 (PB-P1-004): catálogo del reset de contraseña (Decisión PO US-004).
+  TOKEN_INVALID: 'TOKEN_INVALID', // 400 — token alterado o inexistente (EC-03)
+  TOKEN_USED: 'TOKEN_USED', // 400 — token ya consumido, single-use (EC-02)
+  GONE_TOKEN_EXPIRED: 'GONE_TOKEN_EXPIRED', // 410 — token expirado, TTL 30 min (EC-01)
   // US-086 (PB-P0-014): reset surgical Demo. Concurrencia → 409; falla parcial → 500.
   SEED_RESET_IN_PROGRESS: 'SEED_RESET_IN_PROGRESS', // ya hay un reset en curso (EC-03)
   SEED_RESET_FAILED: 'SEED_RESET_FAILED', // falla durante limpieza/repoblado (EC-02)

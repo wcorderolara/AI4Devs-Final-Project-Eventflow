@@ -338,6 +338,9 @@ sequenceDiagram
 ### 9.5 Reset de contraseña
 
 - El cliente solicita reset con email. Backend siempre responde `200` con mensaje genérico, independientemente de si el email existe (`SEC-POL-AUTH-005`).
+
+> **Override formal (US-004 / PB-P1-004, DOC-001 — 2026-07-10):** el status code canónico de `/auth/password/reset-request` es **`202 Accepted`** (contrato REST Doc 16 §22.3; Decisión PO US-004 #1) — la garantía anti-enumeración (respuesta genérica uniforme) se mantiene. Asimismo, el **TTL del token de reset es `30 minutos`** (Decisión PO US-004 #4, registrada en el Product Backlog), override sobre los 15 min indicados en este documento (aplica a THR-013, SEC-POL-AUTH-006 y §11.6). No requiere ADR.
+
 - Si el email existe, backend genera token criptográficamente seguro (≥32 bytes random), persiste hash del token con expiración 15 min y `consumed_at NULL`.
 - Token enviado via "email simulado" (log estructurado o UI demo en MVP).
 - Cliente envía token + nueva contraseña a `/auth/password/reset`. Backend verifica hash del token, expiración, `consumed_at`. Marca `consumed_at=now()`. Aplica nueva contraseña (hashed).
@@ -347,6 +350,8 @@ sequenceDiagram
 
 - `POST /api/v1/auth/logout` invalida la sesión actual.
 - Estrategia recomendada: cookie firmada incluye `sid` opaco; logout marca `sid` revocado en tabla `sessions` (o lista negra in-memory para MVP). Alternativa más simple para MVP: rotación de cookie con `Max-Age=0`, aceptando ventana corta de reuso si el cliente conserva la cookie.
+
+> **Nota de implementación (US-005 / PB-P1-003, DOC-001 — 2026-07-10):** el MVP implementa la **estrategia recomendada** (tabla `sessions` con revocación server-side, entregada por US-094/US-108) **más** la rotación de cookie `Max-Age=0` al cierre. La "alternativa más simple" (solo rotación) quedó superada: no existe ventana de reuso — la cookie conservada deja de abrir sesión inmediatamente tras el logout.
 
 ### 9.7 Captcha
 
@@ -366,7 +371,7 @@ sequenceDiagram
 | `Secure` | `true` (staging/prod) | Sólo se envía sobre TLS. |
 | `SameSite` | `Lax` | Mitiga CSRF en navegación normal; permite redirect-login. |
 | `Path` | `/` | Aplicable a toda la API. |
-| `Max-Age` / expiración | 24 horas (NFR-SEC) | Equilibrio UX/seguridad para un MVP. |
+| `Max-Age` / expiración | 24 horas (NFR-SEC) — **Override formal US-003/PB-P1-003: 30 días** (`Max-Age=2592000`; Decisión PO US-003 #5 registrada en el Product Backlog; no requiere ADR — nota DOC-001 US-003, 2026-07-10) | Equilibrio UX/seguridad para un MVP. |
 | Firma | HMAC con `SESSION_SECRET` (≥32 bytes) | Detecta manipulación. |
 | Payload | `{ sub: userId, role, jti, iat, exp }` | Mínimo necesario. |
 | Almacenamiento alternativo | **Prohibido** en `localStorage` / `sessionStorage` | Estricto. |

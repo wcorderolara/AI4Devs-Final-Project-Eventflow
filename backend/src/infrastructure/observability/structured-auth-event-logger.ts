@@ -7,13 +7,21 @@ import { logger } from '../../shared/infrastructure/logger/index.js';
 export class StructuredAuthEventLogger implements AuthEventLogger {
   emit(
     event: AuthEventName,
-    data: { correlationId?: string; userId?: string; reason?: string },
+    data: {
+      correlationId?: string;
+      userId?: string;
+      reason?: string;
+      latencyMs?: number;
+      role?: string;
+    },
   ): void {
     logger.info({
       event,
       correlationId: data.correlationId,
       userId: data.userId,
       reason: data.reason,
+      latencyMs: data.latencyMs,
+      role: data.role,
     });
   }
 }

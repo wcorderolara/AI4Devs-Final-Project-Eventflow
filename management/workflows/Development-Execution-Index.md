@@ -45,3 +45,8 @@
 | P0 | PB-P0-016 | US-133 | Dockerfile multi-stage para backend | [record](development-execution/P0/PB-P0-016/US-133-execution.md) | 12 | 12 | 0 | 0 | 0 | 0 | `Done` | 2026-07-10 |
 | P0 | PB-P0-017 | US-134 | Pipeline GitHub Actions de CI (lint / typecheck / tests / build) | [record](development-execution/P0/PB-P0-017/US-134-execution.md) | 14 | 11 | 0 | 0 | 0 | 3 | `Partially Completed` | 2026-07-10 |
 | P0 | PB-P0-018 | US-139 | Migraciones Prisma ejecutadas automáticamente en CI/CD | [record](development-execution/P0/PB-P0-018/US-139-execution.md) | 12 | 9 | 0 | 0 | 0 | 3 | `Partially Completed` | 2026-07-10 |
+| P1 | PB-P1-001 | US-001 | Registrarme como organizador con captcha | [record](development-execution/P1/PB-P1-001/US-001-execution.md) | 21 | 21 | 0 | 0 | 0 | 0 | `Done` | 2026-07-10 |
+| P1 | PB-P1-002 | US-002 | Registrarme como proveedor con captcha | [record](development-execution/P1/PB-P1-002/US-002-execution.md) | 17 | 17 | 0 | 0 | 0 | 0 | `Done` | 2026-07-10 |
+| P1 | PB-P1-003 | US-003 | Iniciar sesión con email y contraseña | [record](development-execution/P1/PB-P1-003/US-003-execution.md) | 23 | 23 | 0 | 0 | 0 | 0 | `Done` | 2026-07-10 |
+| P1 | PB-P1-003 | US-005 | Cerrar sesión (logout) | [record](development-execution/P1/PB-P1-003/US-005-execution.md) | 14 | 14 | 0 | 0 | 0 | 0 | `Done` | 2026-07-10 |
+| P1 | PB-P1-004 | US-004 | Recuperar contraseña | [record](development-execution/P1/PB-P1-004/US-004-execution.md) | 23 | 23 | 0 | 0 | 0 | 0 | `Done` | 2026-07-11 |

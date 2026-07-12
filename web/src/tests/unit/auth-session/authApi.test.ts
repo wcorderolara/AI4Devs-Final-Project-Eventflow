@@ -7,11 +7,10 @@ import { server } from '@/tests/msw/server';
 describe('authApi.me', () => {
   it('mapea la sesión cuando el backend responde 200', async () => {
     server.use(
-      http.get('*/api/v1/auth/me', () =>
+      http.get('*/api/v1/users/me', () =>
         HttpResponse.json({
-          user: { id: 'u1', email: 'a@b.com', displayName: 'Ana' },
-          role: 'organizer',
-          locale: 'es-LATAM',
+          data: { id: 'u1', email: 'a@b.com', name: 'Ana', role: 'organizer', status: 'active', preferredLanguage: 'es-LATAM', phone: null, createdAt: '2026-07-10T00:00:00.000Z', updatedAt: '2026-07-10T00:00:00.000Z' },
+          meta: { correlationId: 'req_test_me' },
         }),
       ),
     );

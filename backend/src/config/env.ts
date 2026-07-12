@@ -49,7 +49,8 @@ export const configSchema = z.object({
   // SameSite por entorno (US-108 / VR-03). Default `lax` (MVP same-site). `none` exige `Secure`
   // y CORS con credentials + allowlist explícita (validado en `superRefine`). `strict` disponible.
   SESSION_COOKIE_SAMESITE: sameSiteFromEnv.default('lax'),
-  RESET_TOKEN_TTL_MINUTES: z.coerce.number().int().positive().default(15), // EC-06 TTL 15 min
+  // TTL 30 min (US-004 / Decisión PO #4 — override formal sobre los 15 min de Doc 19 §11).
+  RESET_TOKEN_TTL_MINUTES: z.coerce.number().int().positive().default(30),
   BCRYPT_SALT_ROUNDS: z.coerce.number().int().min(10).max(15).default(12), // SEC-05
 
   // AI
@@ -104,6 +105,13 @@ export const configSchema = z.object({
   AUTH_REGISTER_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(600_000), // 10 min
   AUTH_PASSWORD_RESET_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(3),
   AUTH_PASSWORD_RESET_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(3_600_000), // 1 h
+  // Rate limit del confirm de reset `/auth/password/reset` (US-004: 5/IP/10min — Doc 19 §6).
+  AUTH_PASSWORD_RESET_CONFIRM_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
+  AUTH_PASSWORD_RESET_CONFIRM_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(600_000),
+  // CAPTCHA CONDICIONAL en /auth/login (US-003 / PB-P1-003 — Decisión PO US-003 #1/#2):
+  // se exige captcha a partir de N fallos consecutivos por IP+email dentro de la ventana.
+  AUTH_LOGIN_CAPTCHA_THRESHOLD: z.coerce.number().int().positive().default(3),
+  AUTH_LOGIN_ATTEMPT_WINDOW_MS: z.coerce.number().int().positive().default(600_000), // 10 min
   // Interruptor de enforcement (US-110 / N3). Default `true` (activo en Local/CI/QA/Demo/prod). El
   // setup global de tests lo pone en `false` para no contaminar la suite; los tests de US-110 lo
   // activan explícitamente. NUNCA debe desactivarse en Demo/producción de forma silenciosa.

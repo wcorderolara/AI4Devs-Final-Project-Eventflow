@@ -11,11 +11,13 @@ import type {
   PasswordResetNotifier,
   AuthEventLogger,
   AuthEventName,
+  WelcomeEmailNotifier,
 } from '../../src/shared/auth/ports.js';
 import type { AuthUser, AuthUserWithSecret, CreateUserInput, UpdateProfileInput, ResolvedSession } from '../../src/shared/auth/types.js';
 import type { ClockPort } from '../../src/shared/domain/clock.port.js';
 import { EmailTakenError } from '../../src/shared/domain/errors/email-taken.error.js';
 import { UnauthorizedError } from '../../src/shared/domain/errors/unauthorized.error.js';
+import { TokenInvalidError } from '../../src/shared/domain/errors/password-reset.errors.js';
 import { RegisterUserUseCase } from '../../src/modules/identity-access/application/register-user.use-case.js';
 import { LoginUserUseCase } from '../../src/modules/identity-access/application/login-user.use-case.js';
 import { LogoutUserUseCase } from '../../src/modules/identity-access/application/logout-user.use-case.js';
@@ -134,6 +136,18 @@ class FakeResetTokenRepo implements PasswordResetTokenRepository {
   findValidByTokenHash(tokenHash: string): Promise<{ id: string; userId: string } | null> {
     return Promise.resolve(this.validByHash.get(tokenHash) ?? null);
   }
+  // US-004: estado completo por hash (inválido/usado/expirado). Deriva de validByHash por defecto.
+  findByTokenHash(
+    tokenHash: string,
+  ): Promise<{ id: string; userId: string; expiresAt: Date; consumedAt: Date | null } | null> {
+    const valid = this.validByHash.get(tokenHash);
+    if (!valid) return Promise.resolve(null);
+    return Promise.resolve({
+      ...valid,
+      expiresAt: new Date(FIXED_NOW.getTime() + 60_000),
+      consumedAt: null,
+    });
+  }
   consumeAndUpdatePassword(input: { tokenId: string; userId: string; passwordHash: string }): Promise<void> {
     this.consumed.push({ tokenId: input.tokenId, userId: input.userId, passwordHash: input.passwordHash });
     return Promise.resolve();
@@ -166,31 +180,51 @@ class FakeEvents implements AuthEventLogger {
   }
 }
 
-describe('RegisterUserUseCase (AC-01, EC-02)', () => {
+class FakeWelcome implements WelcomeEmailNotifier {
+  calls: { userId: string; email: string; role: 'organizer' | 'vendor' }[] = [];
+  deliver(input: { userId: string; email: string; role: 'organizer' | 'vendor' }): Promise<void> {
+    this.calls.push(input);
+    return Promise.resolve();
+  }
+}
+
+describe('RegisterUserUseCase (AC-01, EC-02; US-001 BE-001)', () => {
   let users: FakeUserRepo;
+  let sessions: FakeSessionRepo;
   let events: FakeEvents;
+  let welcome: FakeWelcome;
   let uc: RegisterUserUseCase;
   beforeEach(() => {
     users = new FakeUserRepo();
+    sessions = new FakeSessionRepo();
     events = new FakeEvents();
-    uc = new RegisterUserUseCase(users, new FakeHasher(), events);
+    welcome = new FakeWelcome();
+    uc = new RegisterUserUseCase(users, new FakeHasher(), sessions, clock, events, welcome);
   });
 
-  it('crea usuario activo organizer con password hasheado; no expone hash', async () => {
-    const user = await uc.execute({ email: 'New@X.com', password: 'Secret1234', name: 'New', role: 'organizer' });
+  it('crea usuario activo organizer con password hasheado, emite sesión y welcome; no expone hash', async () => {
+    const { user, sessionId } = await uc.execute({ email: 'New@X.com', password: 'Secret1234', name: 'New', role: 'organizer' });
     expect(user.email).toBe('new@x.com');
     expect(user.status).toBe('active');
     expect(user).not.toHaveProperty('passwordHash');
     expect(await users.findByIdWithSecret(user.id)).toMatchObject({ passwordHash: 'hashed:Secret1234' });
-    expect(events.emitted).toContain('auth.register.succeeded');
+    // US-001 AC-01: el registro inicia sesión (cookie emitida por el controller con este sid).
+    expect(sessionId).toBeDefined();
+    expect(sessions.created).toHaveLength(1);
+    expect(sessions.created[0]?.expiresAt.getTime()).toBeGreaterThan(FIXED_NOW.getTime());
+    // US-001 OBS-001: welcome simulado (template welcome.organizer) y evento de éxito.
+    expect(welcome.calls).toEqual([expect.objectContaining({ email: 'new@x.com', role: 'organizer' })]);
+    expect(events.emitted).toContain('auth.register.success');
   });
 
-  it('rechaza email duplicado con EmailTakenError (EC-02, NT-02)', async () => {
+  it('rechaza email duplicado con EmailTakenError (EC-02, NT-02) sin sesión ni welcome', async () => {
     users.seed(baseUser({ id: 'x', email: 'dup@x.com' }));
     await expect(
-      uc.execute({ email: 'DUP@x.com', password: 'Secret1234', name: 'D', role: 'vendor' }),
+      uc.execute({ email: 'DUP@x.com', password: 'Secret1234', name: 'Dup', role: 'vendor' }),
     ).rejects.toBeInstanceOf(EmailTakenError);
-    expect(events.emitted).toContain('auth.register.rejected');
+    expect(events.emitted).toContain('auth.register.failure');
+    expect(sessions.created).toHaveLength(0);
+    expect(welcome.calls).toHaveLength(0);
   });
 });
 
@@ -209,7 +243,7 @@ describe('LoginUserUseCase (AC-02, EC-03 anti-enumeración)', () => {
   it('email inexistente → UnauthorizedError genérico, sin sesión', async () => {
     await expect(uc.execute({ email: 'nope@x.com', password: 'Secret1234' })).rejects.toBeInstanceOf(UnauthorizedError);
     expect(sessions.created).toHaveLength(0);
-    expect(events.emitted).toContain('auth.login.failed');
+    expect(events.emitted).toContain('auth.login.failure');
   });
 
   it('password incorrecta → mismo UnauthorizedError', async () => {
@@ -229,7 +263,7 @@ describe('LoginUserUseCase (AC-02, EC-03 anti-enumeración)', () => {
     expect(res.user).not.toHaveProperty('passwordHash');
     expect(sessions.created).toHaveLength(1);
     expect(sessions.created[0]?.expiresAt.getTime()).toBeGreaterThan(FIXED_NOW.getTime());
-    expect(events.emitted).toContain('auth.login.succeeded');
+    expect(events.emitted).toContain('auth.login.success');
   });
 });
 
@@ -239,7 +273,7 @@ describe('LogoutUserUseCase (AC-05)', () => {
     const events = new FakeEvents();
     await new LogoutUserUseCase(sessions, clock, events).execute({ sessionId: 's-1', userId: 'u1' });
     expect(sessions.revoked).toContain('s-1');
-    expect(events.emitted).toContain('auth.logout.succeeded');
+    expect(events.emitted).toContain('auth.logout.success');
   });
 });
 
@@ -286,8 +320,8 @@ describe('ResetPasswordUseCase (AC-07, EC-06)', () => {
     uc = new ResetPasswordUseCase(tokens, gen, new FakeHasher(), clock, events);
   });
 
-  it('token inválido/expirado → UnauthorizedError genérico (N5)', async () => {
-    await expect(uc.execute({ token: 'bad', newPassword: 'Secret1234' })).rejects.toBeInstanceOf(UnauthorizedError);
+  it('token inexistente → TokenInvalidError (US-004 EC-03: catálogo dedicado reemplaza el 401 genérico)', async () => {
+    await expect(uc.execute({ token: 'bad', newPassword: 'Secret1234' })).rejects.toBeInstanceOf(TokenInvalidError);
     expect(events.emitted).toContain('auth.password_reset.failed');
   });
 

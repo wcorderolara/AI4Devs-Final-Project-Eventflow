@@ -11,6 +11,13 @@ import { AuthorizationError } from '../../domain/errors/authorization.error.js';
 import { NotFoundError } from '../../domain/errors/not-found.error.js';
 import { ConflictError } from '../../domain/errors/conflict.error.js';
 import { EmailTakenError } from '../../domain/errors/email-taken.error.js';
+import { AlreadyAuthenticatedError } from '../../domain/errors/already-authenticated.error.js';
+import { MethodNotAllowedError } from '../../domain/errors/method-not-allowed.error.js';
+import {
+  TokenInvalidError,
+  TokenUsedError,
+  TokenExpiredError,
+} from '../../domain/errors/password-reset.errors.js';
 import { CurrencyImmutableError } from '../../domain/errors/currency-immutable.error.js';
 import {
   MaxQuoteRequestsExceededError,
@@ -74,6 +81,24 @@ function mapError(err: unknown): MappedError {
   }
   if (err instanceof EmailTakenError) {
     return { status: 409, code: ErrorCodes.EMAIL_TAKEN, message: err.message };
+  }
+  if (err instanceof AlreadyAuthenticatedError) {
+    // US-001 SEC-01 (catálogo US-003): sesión activa en endpoint solo-anónimo → 409.
+    return { status: 409, code: ErrorCodes.ALREADY_AUTHENTICATED, message: err.message };
+  }
+  if (err instanceof MethodNotAllowedError) {
+    // US-005 EC-03: método HTTP no permitido en la ruta → 405.
+    return { status: 405, code: ErrorCodes.METHOD_NOT_ALLOWED, message: err.message };
+  }
+  // US-004: catálogo del reset de contraseña (EC-01..03).
+  if (err instanceof TokenExpiredError) {
+    return { status: 410, code: ErrorCodes.GONE_TOKEN_EXPIRED, message: err.message };
+  }
+  if (err instanceof TokenUsedError) {
+    return { status: 400, code: ErrorCodes.TOKEN_USED, message: err.message };
+  }
+  if (err instanceof TokenInvalidError) {
+    return { status: 400, code: ErrorCodes.TOKEN_INVALID, message: err.message };
   }
   if (err instanceof CurrencyImmutableError) {
     return { status: 409, code: ErrorCodes.CURRENCY_IMMUTABLE, message: err.message };

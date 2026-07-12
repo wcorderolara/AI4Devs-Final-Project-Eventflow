@@ -75,10 +75,20 @@ describe('US-111 QA-003: short-circuit protegido — auth antes de validación (
 });
 
 describe('US-111 QA-004: public sensitive — anti-abuse/validation antes del handler (AC-03)', () => {
-  it('POST /auth/login sin captcha → 400 CAPTCHA_REQUIRED (handler no corre, sin DB)', async () => {
-    const res = await request(app).post('/api/v1/auth/login').send({ email: 'a@b.com', password: 'x' });
+  it('POST /auth/register sin captcha → 400 CAPTCHA_REQUIRED (handler no corre, sin DB)', async () => {
+    // US-003 hizo el captcha de login CONDICIONAL (N=3); el enforcement incondicional
+    // pre-handler se verifica sobre /auth/register (misma cadena anti-abuse).
+    const res = await request(app)
+      .post('/api/v1/auth/register')
+      .send({ role: 'organizer', name: 'Ana Pérez', email: 'a@b.com', password: 'Secret1234', acceptedTerms: true });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('CAPTCHA_REQUIRED');
+  });
+
+  it('POST /auth/login con body malformado → 400 VALIDATION_ERROR antes del handler (sin DB)', async () => {
+    const res = await request(app).post('/api/v1/auth/login').send({ email: 'no-es-email', password: '' });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
   });
 });
 

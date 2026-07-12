@@ -66,6 +66,17 @@ export const createPasswordResetRequestRateLimit = (): RateLimitRequestHandler =
     keyGenerator: emailKey,
   });
 
+/** US-004 / BE-005 (Doc 19 §6): confirm del reset `/auth/password/reset` → 5/IP/10min. */
+export const createPasswordResetConfirmRateLimit = (): RateLimitRequestHandler =>
+  makeAuthLimiter({
+    policy: 'auth_password_reset_confirm',
+    keyType: 'ip',
+    windowMs: config.AUTH_PASSWORD_RESET_CONFIRM_RATE_LIMIT_WINDOW_MS,
+    max: () => config.AUTH_PASSWORD_RESET_CONFIRM_RATE_LIMIT_MAX,
+    keyGenerator: ipKey,
+  });
+
 export const loginRateLimit = createLoginRateLimit();
 export const registerRateLimit = createRegisterRateLimit();
 export const passwordResetRequestRateLimit = createPasswordResetRequestRateLimit();
+export const passwordResetConfirmRateLimit = createPasswordResetConfirmRateLimit();

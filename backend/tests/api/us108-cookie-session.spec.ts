@@ -38,7 +38,7 @@ describe.skipIf(!dbUp)('US-108 QA-002 — Set-Cookie de sesión (DB)', () => {
     const email = uniq();
     await request(app)
       .post('/api/v1/auth/register')
-      .send({ email, password: 'Secret1234', name: 'Cookie', role: 'organizer', captchaToken: CAPTCHA });
+      .send({ acceptedTerms: true, email, password: 'Secret1234', name: 'Cookie', role: 'organizer', captchaToken: CAPTCHA });
     const res = await request(app)
       .post('/api/v1/auth/login')
       .send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
@@ -59,7 +59,7 @@ describe.skipIf(!dbUp)('US-108 QA-002 — Set-Cookie de sesión (DB)', () => {
     const agent = request.agent(app);
     await agent
       .post('/api/v1/auth/register')
-      .send({ email, password: 'Secret1234', name: 'Out', role: 'organizer', captchaToken: CAPTCHA });
+      .send({ acceptedTerms: true, email, password: 'Secret1234', name: 'Out', role: 'organizer', captchaToken: CAPTCHA });
     await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
 
     const logout = await agent.post('/api/v1/auth/logout');

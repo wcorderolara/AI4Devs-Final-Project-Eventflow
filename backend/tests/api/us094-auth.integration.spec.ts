@@ -37,7 +37,7 @@ describe.skipIf(!dbUp)('US-094 QA-002 — AUTH/profile integration', () => {
     const email = uniq();
     const res = await request(app)
       .post('/api/v1/auth/register')
-      .send({ email, password: 'Secret1234', name: 'Org', role: 'organizer', captchaToken: CAPTCHA });
+      .send({ acceptedTerms: true, email, password: 'Secret1234', name: 'Org', role: 'organizer', captchaToken: CAPTCHA });
     expect(res.status).toBe(201);
     expect(res.body.data).toMatchObject({ email: email.toLowerCase(), role: 'organizer', status: 'active', name: 'Org' });
     expect(res.body.data).not.toHaveProperty('passwordHash');
@@ -47,14 +47,14 @@ describe.skipIf(!dbUp)('US-094 QA-002 — AUTH/profile integration', () => {
   it('AC-01: register vendor → 201', async () => {
     const res = await request(app)
       .post('/api/v1/auth/register')
-      .send({ email: uniq(), password: 'Secret1234', name: 'Ven', role: 'vendor', captchaToken: CAPTCHA });
+      .send({ acceptedTerms: true, email: uniq(), password: 'Secret1234', businessName: 'Ven Catering', role: 'vendor', captchaToken: CAPTCHA });
     expect(res.status).toBe(201);
     expect(res.body.data.role).toBe('vendor');
   });
 
   it('EC-02/NT-02: email duplicado → 409 EMAIL_TAKEN', async () => {
     const email = uniq();
-    const body = { email, password: 'Secret1234', name: 'Dup', role: 'organizer', captchaToken: CAPTCHA };
+    const body = { email, password: 'Secret1234', name: 'Dup', role: 'organizer', acceptedTerms: true, captchaToken: CAPTCHA };
     await request(app).post('/api/v1/auth/register').send(body);
     const res = await request(app).post('/api/v1/auth/register').send(body);
     expect(res.status).toBe(409);
@@ -65,7 +65,7 @@ describe.skipIf(!dbUp)('US-094 QA-002 — AUTH/profile integration', () => {
     const email = uniq();
     await request(app)
       .post('/api/v1/auth/register')
-      .send({ email, password: 'Secret1234', name: 'L', role: 'organizer', captchaToken: CAPTCHA });
+      .send({ acceptedTerms: true, email, password: 'Secret1234', name: 'Lu', role: 'organizer', captchaToken: CAPTCHA });
     const res = await request(app).post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
     expect(res.status).toBe(200);
     const setCookie = res.headers['set-cookie'] as unknown as string[];
@@ -84,7 +84,7 @@ describe.skipIf(!dbUp)('US-094 QA-002 — AUTH/profile integration', () => {
   it('AC-03/AC-05: /users/me con sesión → 200; logout → 204; luego /users/me → 401', async () => {
     const email = uniq();
     const agent = request.agent(app);
-    await agent.post('/api/v1/auth/register').send({ email, password: 'Secret1234', name: 'Me', role: 'organizer', captchaToken: CAPTCHA });
+    await agent.post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', name: 'Me', role: 'organizer', captchaToken: CAPTCHA });
     await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
 
     const me = await agent.get('/api/v1/users/me');
@@ -101,7 +101,7 @@ describe.skipIf(!dbUp)('US-094 QA-002 — AUTH/profile integration', () => {
   it('AC-04/NT-11: PATCH /users/me actualiza name/phone/preferredLanguage; email/role intactos', async () => {
     const email = uniq();
     const agent = request.agent(app);
-    await agent.post('/api/v1/auth/register').send({ email, password: 'Secret1234', name: 'P', role: 'organizer', captchaToken: CAPTCHA });
+    await agent.post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', name: 'Pa', role: 'organizer', captchaToken: CAPTCHA });
     await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
 
     const res = await agent.patch('/api/v1/users/me').send({ name: 'Nuevo Nombre', phone: '+502 5555', preferredLanguage: 'en' });
@@ -116,7 +116,7 @@ describe.skipIf(!dbUp)('US-094 QA-002 — AUTH/profile integration', () => {
   it('AC-04: PATCH /users/me/preferred-language actualiza idioma', async () => {
     const email = uniq();
     const agent = request.agent(app);
-    await agent.post('/api/v1/auth/register').send({ email, password: 'Secret1234', name: 'Lang', role: 'vendor', captchaToken: CAPTCHA });
+    await agent.post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', businessName: 'Lang Foods', role: 'vendor', captchaToken: CAPTCHA });
     await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
     const res = await agent.patch('/api/v1/users/me/preferred-language').send({ preferredLanguage: 'pt' });
     expect(res.status).toBe(200);
@@ -126,7 +126,7 @@ describe.skipIf(!dbUp)('US-094 QA-002 — AUTH/profile integration', () => {
   it('change-password: 204 y la nueva contraseña permite login', async () => {
     const email = uniq();
     const agent = request.agent(app);
-    await agent.post('/api/v1/auth/register').send({ email, password: 'Secret1234', name: 'CP', role: 'organizer', captchaToken: CAPTCHA });
+    await agent.post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', name: 'CP', role: 'organizer', captchaToken: CAPTCHA });
     await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
     const res = await agent.post('/api/v1/users/me/change-password').send({ currentPassword: 'Secret1234', newPassword: 'NewSecret99' });
     expect(res.status).toBe(204);
@@ -136,7 +136,7 @@ describe.skipIf(!dbUp)('US-094 QA-002 — AUTH/profile integration', () => {
 
   it('AC-06/AC-07: reset-request → 202 genérico; reset con token → 204; reuso → rechazado', async () => {
     const email = uniq();
-    await request(app).post('/api/v1/auth/register').send({ email, password: 'Secret1234', name: 'R', role: 'organizer', captchaToken: CAPTCHA });
+    await request(app).post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', name: 'Re', role: 'organizer', captchaToken: CAPTCHA });
 
     const deliverSpy = vi.spyOn(LoggingPasswordResetNotifier.prototype, 'deliver');
     const reqRes = await request(app).post('/api/v1/auth/password/reset-request').send({ email, captchaToken: CAPTCHA });
@@ -147,8 +147,10 @@ describe.skipIf(!dbUp)('US-094 QA-002 — AUTH/profile integration', () => {
     const reset = await request(app).post('/api/v1/auth/password/reset').send({ token: rawToken, newPassword: 'Reset12345' });
     expect(reset.status).toBe(204);
 
+    // US-004 EC-02: el reuso ahora responde 400 TOKEN_USED (catálogo dedicado; antes 401 genérico).
     const reuse = await request(app).post('/api/v1/auth/password/reset').send({ token: rawToken, newPassword: 'Another123' });
-    expect(reuse.status).toBe(401);
+    expect(reuse.status).toBe(400);
+    expect(reuse.body.error.code).toBe('TOKEN_USED');
 
     const login = await request(app).post('/api/v1/auth/login').send({ email, password: 'Reset12345', captchaToken: CAPTCHA });
     expect(login.status).toBe(200);

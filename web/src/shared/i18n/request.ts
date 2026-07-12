@@ -5,18 +5,22 @@ import { defaultLocale, isSupportedLocale, type Locale } from './config';
 
 // Catálogos transversales (Doc 15 §31.3). Import estático (catálogos pequeños): robusto y
 // testeable en Vitest y Next sin depender del context dinámico de webpack (Deviation D2).
+import enAuth from '../../messages/en/auth.json';
 import enCommon from '../../messages/en/common.json';
 import enErrors from '../../messages/en/errors.json';
 import enNavigation from '../../messages/en/navigation.json';
 import enValidation from '../../messages/en/validation.json';
+import esEsAuth from '../../messages/es-ES/auth.json';
 import esEsCommon from '../../messages/es-ES/common.json';
 import esEsErrors from '../../messages/es-ES/errors.json';
 import esEsNavigation from '../../messages/es-ES/navigation.json';
 import esEsValidation from '../../messages/es-ES/validation.json';
+import esLatamAuth from '../../messages/es-LATAM/auth.json';
 import esLatamCommon from '../../messages/es-LATAM/common.json';
 import esLatamErrors from '../../messages/es-LATAM/errors.json';
 import esLatamNavigation from '../../messages/es-LATAM/navigation.json';
 import esLatamValidation from '../../messages/es-LATAM/validation.json';
+import ptAuth from '../../messages/pt/auth.json';
 import ptCommon from '../../messages/pt/common.json';
 import ptErrors from '../../messages/pt/errors.json';
 import ptNavigation from '../../messages/pt/navigation.json';
@@ -30,15 +34,17 @@ const REGISTRY: Record<Locale, Messages> = {
     navigation: esLatamNavigation,
     errors: esLatamErrors,
     validation: esLatamValidation,
+    auth: esLatamAuth,
   },
   'es-ES': {
     common: esEsCommon,
     navigation: esEsNavigation,
     errors: esEsErrors,
     validation: esEsValidation,
+    auth: esEsAuth,
   },
-  pt: { common: ptCommon, navigation: ptNavigation, errors: ptErrors, validation: ptValidation },
-  en: { common: enCommon, navigation: enNavigation, errors: enErrors, validation: enValidation },
+  pt: { common: ptCommon, navigation: ptNavigation, errors: ptErrors, validation: ptValidation, auth: ptAuth },
+  en: { common: enCommon, navigation: enNavigation, errors: enErrors, validation: enValidation, auth: enAuth },
 };
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {

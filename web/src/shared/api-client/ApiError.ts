@@ -5,6 +5,8 @@ export interface ApiErrorInit {
   details?: unknown;
   correlationId?: string;
   isRetryable?: boolean;
+  /** Segundos del header `Retry-After` en 429 (US-003 / FE-002: banner de rate limit). */
+  retryAfterSeconds?: number;
 }
 
 /**
@@ -17,6 +19,7 @@ export class ApiError extends Error {
   readonly details?: unknown;
   readonly correlationId?: string;
   readonly isRetryable: boolean;
+  readonly retryAfterSeconds?: number;
 
   constructor(init: ApiErrorInit) {
     super(init.message);
@@ -26,6 +29,7 @@ export class ApiError extends Error {
     this.details = init.details;
     this.correlationId = init.correlationId;
     this.isRetryable = init.isRetryable ?? ApiError.deriveRetryable(init.status);
+    this.retryAfterSeconds = init.retryAfterSeconds;
   }
 
   /** Retryable: network/timeout (0), 408, 429 y 5xx. No retryable: 4xx restantes (401/403/404/422…). */

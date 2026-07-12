@@ -26,7 +26,7 @@ const uniqEmail = (p: string): string => `us095_${p}_${Date.now()}_${Math.floor(
 async function organizerAgent(): Promise<ReturnType<typeof request.agent>> {
   const email = uniqEmail('org');
   const agent = request.agent(app);
-  await agent.post('/api/v1/auth/register').send({ email, password: 'Secret1234', name: 'Org', role: 'organizer', captchaToken: CAPTCHA });
+  await agent.post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', name: 'Org', role: 'organizer', captchaToken: CAPTCHA });
   await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
   return agent;
 }

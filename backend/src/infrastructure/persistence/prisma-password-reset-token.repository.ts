@@ -26,6 +26,17 @@ export class PrismaPasswordResetTokenRepository implements PasswordResetTokenRep
     return token ?? null;
   }
 
+  async findByTokenHash(
+    tokenHash: string,
+  ): Promise<{ id: string; userId: string; expiresAt: Date; consumedAt: Date | null } | null> {
+    // US-004 EC-01..03: lookup sin filtro de estado para diferenciar inválido/usado/expirado.
+    const token = await this.prisma.passwordResetToken.findUnique({
+      where: { tokenHash },
+      select: { id: true, userId: true, expiresAt: true, consumedAt: true },
+    });
+    return token ?? null;
+  }
+
   async consumeAndUpdatePassword(input: {
     tokenId: string;
     userId: string;
