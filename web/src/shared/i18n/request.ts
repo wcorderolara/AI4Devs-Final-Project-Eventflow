@@ -8,22 +8,30 @@ import { defaultLocale, isSupportedLocale, type Locale } from './config';
 import enAuth from '../../messages/en/auth.json';
 import enCommon from '../../messages/en/common.json';
 import enErrors from '../../messages/en/errors.json';
+import enEvents from '../../messages/en/events.json';
 import enNavigation from '../../messages/en/navigation.json';
+import enProfile from '../../messages/en/profile.json';
 import enValidation from '../../messages/en/validation.json';
 import esEsAuth from '../../messages/es-ES/auth.json';
 import esEsCommon from '../../messages/es-ES/common.json';
 import esEsErrors from '../../messages/es-ES/errors.json';
+import esEsEvents from '../../messages/es-ES/events.json';
 import esEsNavigation from '../../messages/es-ES/navigation.json';
+import esEsProfile from '../../messages/es-ES/profile.json';
 import esEsValidation from '../../messages/es-ES/validation.json';
 import esLatamAuth from '../../messages/es-LATAM/auth.json';
 import esLatamCommon from '../../messages/es-LATAM/common.json';
 import esLatamErrors from '../../messages/es-LATAM/errors.json';
+import esLatamEvents from '../../messages/es-LATAM/events.json';
 import esLatamNavigation from '../../messages/es-LATAM/navigation.json';
+import esLatamProfile from '../../messages/es-LATAM/profile.json';
 import esLatamValidation from '../../messages/es-LATAM/validation.json';
 import ptAuth from '../../messages/pt/auth.json';
 import ptCommon from '../../messages/pt/common.json';
 import ptErrors from '../../messages/pt/errors.json';
+import ptEvents from '../../messages/pt/events.json';
 import ptNavigation from '../../messages/pt/navigation.json';
+import ptProfile from '../../messages/pt/profile.json';
 import ptValidation from '../../messages/pt/validation.json';
 
 export type Messages = Record<string, unknown>;
@@ -35,6 +43,8 @@ const REGISTRY: Record<Locale, Messages> = {
     errors: esLatamErrors,
     validation: esLatamValidation,
     auth: esLatamAuth,
+    profile: esLatamProfile,
+    events: esLatamEvents,
   },
   'es-ES': {
     common: esEsCommon,
@@ -42,9 +52,27 @@ const REGISTRY: Record<Locale, Messages> = {
     errors: esEsErrors,
     validation: esEsValidation,
     auth: esEsAuth,
+    profile: esEsProfile,
+    events: esEsEvents,
   },
-  pt: { common: ptCommon, navigation: ptNavigation, errors: ptErrors, validation: ptValidation, auth: ptAuth },
-  en: { common: enCommon, navigation: enNavigation, errors: enErrors, validation: enValidation, auth: enAuth },
+  pt: {
+    common: ptCommon,
+    navigation: ptNavigation,
+    errors: ptErrors,
+    validation: ptValidation,
+    auth: ptAuth,
+    profile: ptProfile,
+    events: ptEvents,
+  },
+  en: {
+    common: enCommon,
+    navigation: enNavigation,
+    errors: enErrors,
+    validation: enValidation,
+    auth: enAuth,
+    profile: enProfile,
+    events: enEvents,
+  },
 };
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {

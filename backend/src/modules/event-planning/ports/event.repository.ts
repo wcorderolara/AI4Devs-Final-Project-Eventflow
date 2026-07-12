@@ -20,7 +20,7 @@ export interface EventListOptions {
 
 export interface EventRepository {
   create(data: CreateEventData): Promise<EventView>;
-  /** Devuelve el evento SOLO si pertenece al owner; null si no existe o es de otro (masked 404). */
+  /** Devuelve el evento SOLO si pertenece al owner y NO está soft-deleted; null si no (masked 404). */
   findByIdForOwner(eventId: string, ownerId: string): Promise<EventView | null>;
   listByOwner(
     ownerId: string,
@@ -29,14 +29,32 @@ export interface EventRepository {
   ): Promise<{ items: EventView[]; total: number }>;
   update(eventId: string, patch: UpdateEventData): Promise<EventView>;
   transitionStatus(eventId: string, nextStatus: EventStatusValue): Promise<EventView>;
+  /** US-012: soft delete (setea `deleted_at`/`deleted_by`). Nunca hard delete (BR-EVENT-010). */
+  softDelete(eventId: string, deletedBy: string): Promise<void>;
+}
+
+export interface EventTypeOptionView {
+  code: string;
+  label: string;
+}
+
+export interface LocationOptionView {
+  id: string;
+  country: string;
+  region: string | null;
+  city: string | null;
 }
 
 export interface EventTypeRepository {
   /** Devuelve el id del EventType activo por su código, o null si no existe/está inactivo. */
   findActiveIdByCode(code: string): Promise<string | null>;
+  /** US-009: catálogo de tipos de evento activos (para el asistente de creación). */
+  findActive(): Promise<EventTypeOptionView[]>;
 }
 
 export interface LocationRepository {
   /** ¿Existe una Location activa (no soft-deleted) con ese id? */
   existsActive(id: string): Promise<boolean>;
+  /** US-009: catálogo de ubicaciones disponibles (no soft-deleted). */
+  listActive(): Promise<LocationOptionView[]>;
 }

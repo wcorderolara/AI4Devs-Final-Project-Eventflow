@@ -12,6 +12,7 @@ import type { GetEventByIdUseCase } from '../application/get-event-by-id.use-cas
 import type { UpdateEventUseCase } from '../application/update-event.use-case.js';
 import type { ActivateEventUseCase } from '../application/activate-event.use-case.js';
 import type { CancelEventUseCase } from '../application/cancel-event.use-case.js';
+import type { SoftDeleteEventUseCase } from '../application/soft-delete-event.use-case.js';
 
 export interface EventsUseCases {
   create: CreateEventUseCase;
@@ -20,6 +21,7 @@ export interface EventsUseCases {
   update: UpdateEventUseCase;
   activate: ActivateEventUseCase;
   cancel: CancelEventUseCase;
+  softDelete: SoftDeleteEventUseCase;
 }
 
 function requireUserId(req: Request): string {
@@ -82,5 +84,14 @@ export class EventsController {
       correlationId: req.correlationId,
     });
     res.status(200).json(success(toEventResponse(view), req.correlationId ?? ''));
+  };
+
+  // US-012: soft delete de borrador. 204 sin body en éxito.
+  softDelete = async (req: Request, res: Response): Promise<void> => {
+    const { eventId } = req.validated?.params as EventIdParam;
+    await this.useCases.softDelete.execute(requireUserId(req), eventId, {
+      correlationId: req.correlationId,
+    });
+    res.status(204).end();
   };
 }

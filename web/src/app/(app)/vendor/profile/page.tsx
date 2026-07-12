@@ -1,11 +1,6 @@
-import { useTranslations } from 'next-intl';
+import { ProfilePage } from '@/features/profile';
 
+// US-006 / US-007 — perfil propio del vendor. Comparte `ProfilePage` con organizer/admin.
 export default function VendorProfilePage() {
-  const t = useTranslations('navigation');
-  return (
-    <>
-      <h1 className="text-2xl font-bold">{t('placeholder.vendorProfile.title')}</h1>
-      <p className="mt-2 text-neutral-600">{t('placeholder.vendorProfile.body')}</p>
-    </>
-  );
+  return <ProfilePage />;
 }

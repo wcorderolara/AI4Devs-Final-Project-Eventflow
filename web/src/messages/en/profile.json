@@ -1,0 +1,62 @@
+{
+  "title": "My profile",
+  "subtitle": "View and update your details, language and password.",
+  "basics": {
+    "title": "Basic details",
+    "saved": "Profile updated."
+  },
+  "fields": {
+    "name": "Name",
+    "phone": "Phone",
+    "phonePlaceholder": "Optional",
+    "email": "Email",
+    "emailReadOnly": "Email cannot be changed.",
+    "role": "Role"
+  },
+  "roles": {
+    "organizer": "Organizer",
+    "vendor": "Vendor",
+    "admin": "Administrator"
+  },
+  "actions": {
+    "save": "Save changes",
+    "saving": "Saving…",
+    "retry": "Retry"
+  },
+  "language": {
+    "title": "Language",
+    "description": "The change applies immediately across the app.",
+    "label": "Preferred language",
+    "applying": "Applying the new language…"
+  },
+  "security": {
+    "title": "Security",
+    "description": "Change your password. Your other sessions will be signed out.",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "passwordHint": "At least 10 characters, with at least one letter and one number.",
+    "confirmPassword": "Confirm new password",
+    "submit": "Change password",
+    "changed": "Password updated."
+  },
+  "validation": {
+    "nameMin": "Name must be at least 2 characters.",
+    "nameMax": "Name must not exceed 80 characters.",
+    "phoneMax": "Phone must not exceed 30 characters.",
+    "currentPasswordRequired": "Enter your current password.",
+    "passwordPolicy": "At least 10 characters, with at least one letter and one number.",
+    "confirmRequired": "Confirm the new password.",
+    "passwordsMismatch": "Passwords do not match."
+  },
+  "errors": {
+    "UNEXPECTED": "An unexpected error occurred. Please try again.",
+    "LOAD_FAILED": "We couldn't load your profile.",
+    "VALIDATION_ERROR": "Please review the details you entered.",
+    "UNSUPPORTED_LANGUAGE": "The selected language is not available.",
+    "AUTHENTICATION_REQUIRED": "Your session expired. Please sign in again.",
+    "INVALID_CURRENT_PASSWORD": "The current password is incorrect.",
+    "PASSWORD_POLICY_VIOLATION": "The new password does not meet the policy.",
+    "RATE_LIMIT_EXCEEDED": "Too many attempts. Wait {seconds} seconds.",
+    "RATE_LIMIT_EXCEEDED_NO_TIME": "Too many attempts. Please try again later."
+  }
+}

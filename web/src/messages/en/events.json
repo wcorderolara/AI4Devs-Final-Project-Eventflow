@@ -1,0 +1,117 @@
+{
+  "status": {
+    "draft": "Draft",
+    "active": "Active",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "types": {
+    "wedding": "Wedding",
+    "xv": "Quinceañera",
+    "baptism": "Baptism",
+    "baby_shower": "Baby shower",
+    "birthday": "Birthday",
+    "corporate": "Corporate"
+  },
+  "fields": {
+    "type": "Event type",
+    "eventDate": "Event date",
+    "location": "Location",
+    "guests": "Guests",
+    "budget": "Estimated budget",
+    "currency": "Currency",
+    "language": "Language",
+    "name": "Event name",
+    "notes": "Notes"
+  },
+  "actions": {
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "retry": "Retry"
+  },
+  "filters": {
+    "status": "Status",
+    "type": "Type",
+    "allStatuses": "All statuses",
+    "allTypes": "All types"
+  },
+  "list": {
+    "title": "My events",
+    "create": "Create event",
+    "empty": "You don't have any events yet. Create your first one.",
+    "rowMeta": "{type} · {date} · {guests} guests",
+    "pagination": "Pagination",
+    "prev": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {totalPages}"
+  },
+  "dashboard": {
+    "back": "Back to my events",
+    "notFound": "This event does not exist or is not available.",
+    "comingSoon": "Coming soon",
+    "sections": {
+      "tasks": "Tasks",
+      "budget": "Budget",
+      "quotes": "Quotes"
+    }
+  },
+  "cancelDialog": {
+    "title": "Cancel event",
+    "description": "The event will move to cancelled status. This action cannot be undone.",
+    "confirm": "Yes, cancel",
+    "pending": "Cancelling…",
+    "dismiss": "No, go back"
+  },
+  "deleteDialog": {
+    "title": "Delete draft",
+    "description": "The draft will be removed from your list. Only draft events can be deleted.",
+    "confirm": "Delete",
+    "pending": "Deleting…",
+    "dismiss": "Cancel"
+  },
+  "create": {
+    "title": "Create event",
+    "steps": "Wizard steps",
+    "step1": "Type & date",
+    "step2": "Details",
+    "step3": "Confirmation",
+    "selectType": "Select a type",
+    "selectLocation": "Select a location",
+    "currencyLock": "The currency is locked once the event is created.",
+    "namePlaceholder": "Optional",
+    "confirmHint": "Review the details and create the event. It will be a draft.",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Create event",
+    "submitting": "Creating…"
+  },
+  "edit": {
+    "title": "Edit event",
+    "currentLocation": "Current location",
+    "currencyImmutable": "The currency cannot be changed after the event is created.",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "cancelEdit": "Discard",
+    "terminalBlocked": "Completed or cancelled events cannot be edited."
+  },
+  "validation": {
+    "typeRequired": "Select an event type.",
+    "dateFormat": "The date must be in YYYY-MM-DD format.",
+    "dateInvalid": "Enter a valid date.",
+    "budgetInvalid": "Enter a valid amount (up to 2 decimals).",
+    "guestsInvalid": "Enter a valid number of guests.",
+    "guestsMin": "There must be at least 1 guest.",
+    "guestsMax": "The number of guests is too high.",
+    "locationRequired": "Select a location."
+  },
+  "errors": {
+    "UNEXPECTED": "An unexpected error occurred. Please try again.",
+    "LIST_FAILED": "We couldn't load your events.",
+    "LOAD_FAILED": "We couldn't load the event.",
+    "VALIDATION_ERROR": "Please review the details you entered.",
+    "NOT_FOUND": "This event does not exist or is not available.",
+    "INVALID_STATE": "The action is not valid for the event's current status.",
+    "CURRENCY_IMMUTABLE": "The currency cannot be changed."
+  }
+}

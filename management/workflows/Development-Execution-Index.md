@@ -50,3 +50,11 @@
 | P1 | PB-P1-003 | US-003 | Iniciar sesión con email y contraseña | [record](development-execution/P1/PB-P1-003/US-003-execution.md) | 23 | 23 | 0 | 0 | 0 | 0 | `Done` | 2026-07-10 |
 | P1 | PB-P1-003 | US-005 | Cerrar sesión (logout) | [record](development-execution/P1/PB-P1-003/US-005-execution.md) | 14 | 14 | 0 | 0 | 0 | 0 | `Done` | 2026-07-10 |
 | P1 | PB-P1-004 | US-004 | Recuperar contraseña | [record](development-execution/P1/PB-P1-004/US-004-execution.md) | 23 | 23 | 0 | 0 | 0 | 0 | `Done` | 2026-07-11 |
+| P1 | PB-P1-005 | US-006 | Ver y editar mi perfil propio | [record](development-execution/P1/PB-P1-005/US-006-execution.md) | 17 | 11 | 0 | 1 | 2 | 0 | `Done` | 2026-07-11 |
+| P1 | PB-P1-005 | US-007 | Cambiar mi idioma preferido | [record](development-execution/P1/PB-P1-005/US-007-execution.md) | 17 | 13 | 0 | 0 | 1 | 0 | `Done` | 2026-07-11 |
+| P1 | PB-P1-006 | US-009 | Crear evento (asistente) | [record](development-execution/P1/PB-P1-006/US-009-execution.md) | 20 | 18 | 0 | 0 | 0 | 1 | `Done` | 2026-07-11 |
+| P1 | PB-P1-007 | US-010 | Editar mi evento propio | [record](development-execution/P1/PB-P1-007/US-010-execution.md) | 12 | 12 | 0 | 0 | 0 | 0 | `Done` | 2026-07-11 |
+| P1 | PB-P1-007 | US-011 | Cancelar mi evento propio | [record](development-execution/P1/PB-P1-007/US-011-execution.md) | 11 | 11 | 0 | 0 | 0 | 0 | `Done` | 2026-07-11 |
+| P1 | PB-P1-007 | US-012 | Eliminar mi evento en draft (soft delete) | [record](development-execution/P1/PB-P1-007/US-012-execution.md) | 14 | 14 | 0 | 0 | 0 | 0 | `Done` | 2026-07-11 |
+| P1 | PB-P1-008 | US-013 | Listar y filtrar mis eventos | [record](development-execution/P1/PB-P1-008/US-013-execution.md) | 13 | 13 | 0 | 0 | 0 | 0 | `Done` | 2026-07-11 |
+| P1 | PB-P1-008 | US-014 | Ver el dashboard de un evento | [record](development-execution/P1/PB-P1-008/US-014-execution.md) | 13 | 13 | 0 | 0 | 0 | 0 | `Done` | 2026-07-11 |

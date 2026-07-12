@@ -395,9 +395,14 @@ model Event {
   aiRecommendations AIRecommendation[]
   bookingIntents    BookingIntent[]
 
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-  isSeed    Boolean  @default(false) @map("is_seed")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isSeed    Boolean   @default(false) @map("is_seed")
+  // US-012 (PB-P1-007): soft delete de eventos en `draft`. `deleted_at` marca la baja lógica;
+  // `deleted_by` guarda el userId del organizador que la ejecutó (sin FK para evitar relación
+  // inversa; BR-EVENT-010: nunca hard delete). Las lecturas owner-scoped filtran `deleted_at IS NULL`.
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy String?   @map("deleted_by") @db.Uuid
 
   @@index([userId])
   @@index([eventTypeId])

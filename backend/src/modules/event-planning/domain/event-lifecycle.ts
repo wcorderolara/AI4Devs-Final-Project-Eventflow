@@ -19,3 +19,8 @@ export function canCancel(current: EventStatusValue): boolean {
 export function isMutable(current: EventStatusValue): boolean {
   return !TERMINAL_STATUSES.has(current);
 }
+
+/** US-012: soft delete SOLO desde `draft` (VR-01). Otros estados → 409 INVALID_STATE. */
+export function isDeletable(current: EventStatusValue): boolean {
+  return current === 'draft';
+}

@@ -1,7 +1,8 @@
 // Rutas de event-planning (US-095 / API-001, SEC-001/002). Doc 16 bajo `/api/v1/events`.
 // Cadena por ruta: sessionAuth (401) → organizer role guard (403) → validación Zod (400/422) →
 // handler. Ownership (masked 404) se aplica dentro de los use cases vía queries owner-scoped.
-// SOLO se registran las 6 rutas Doc 16; NO se exponen `/:id/status`, `DELETE /:id` ni `/admin/events`.
+// Se registran las 6 rutas Doc 16 + `DELETE /:eventId` (soft delete de borrador, US-012).
+// NO se exponen `/:id/status` ni `/admin/events`.
 import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
@@ -27,6 +28,7 @@ import { GetEventByIdUseCase } from '../application/get-event-by-id.use-case.js'
 import { UpdateEventUseCase } from '../application/update-event.use-case.js';
 import { ActivateEventUseCase } from '../application/activate-event.use-case.js';
 import { CancelEventUseCase } from '../application/cancel-event.use-case.js';
+import { SoftDeleteEventUseCase } from '../application/soft-delete-event.use-case.js';
 import { EventsController } from './events.controller.js';
 
 const eventRepo = new PrismaEventRepository();
@@ -41,6 +43,7 @@ const controller = new EventsController({
   update: new UpdateEventUseCase(eventRepo, eventTypeRepo, locationRepo, audit),
   activate: new ActivateEventUseCase(eventRepo, audit),
   cancel: new CancelEventUseCase(eventRepo, audit),
+  softDelete: new SoftDeleteEventUseCase(eventRepo, audit),
 });
 
 const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
@@ -85,4 +88,11 @@ eventPlanningRouter.post(
   '/:eventId/cancel',
   validateRequestMiddleware(z.object({ params: EventIdParamSchema })),
   asyncHandler(controller.cancel),
+);
+
+// US-012: soft delete de borrador (204). El estado != draft → 409; ajeno/eliminado → 404.
+eventPlanningRouter.delete(
+  '/:eventId',
+  validateRequestMiddleware(z.object({ params: EventIdParamSchema })),
+  asyncHandler(controller.softDelete),
 );

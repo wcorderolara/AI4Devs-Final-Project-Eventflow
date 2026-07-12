@@ -1,0 +1,117 @@
+{
+  "status": {
+    "draft": "Borrador",
+    "active": "Activo",
+    "completed": "Completado",
+    "cancelled": "Cancelado"
+  },
+  "types": {
+    "wedding": "Boda",
+    "xv": "XV años",
+    "baptism": "Bautizo",
+    "baby_shower": "Baby shower",
+    "birthday": "Cumpleaños",
+    "corporate": "Corporativo"
+  },
+  "fields": {
+    "type": "Tipo de evento",
+    "eventDate": "Fecha del evento",
+    "location": "Ubicación",
+    "guests": "Invitados",
+    "budget": "Presupuesto estimado",
+    "currency": "Moneda",
+    "language": "Idioma",
+    "name": "Nombre del evento",
+    "notes": "Notas"
+  },
+  "actions": {
+    "edit": "Editar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "retry": "Reintentar"
+  },
+  "filters": {
+    "status": "Estado",
+    "type": "Tipo",
+    "allStatuses": "Todos los estados",
+    "allTypes": "Todos los tipos"
+  },
+  "list": {
+    "title": "Mis eventos",
+    "create": "Crear evento",
+    "empty": "Aún no tienes eventos. Crea el primero.",
+    "rowMeta": "{type} · {date} · {guests} invitados",
+    "pagination": "Paginación",
+    "prev": "Anterior",
+    "next": "Siguiente",
+    "pageOf": "Página {page} de {totalPages}"
+  },
+  "dashboard": {
+    "back": "Volver a mis eventos",
+    "notFound": "Este evento no existe o no está disponible.",
+    "comingSoon": "Próximamente",
+    "sections": {
+      "tasks": "Tareas",
+      "budget": "Presupuesto",
+      "quotes": "Cotizaciones"
+    }
+  },
+  "cancelDialog": {
+    "title": "Cancelar evento",
+    "description": "El evento pasará a estado cancelado. Esta acción no se puede deshacer.",
+    "confirm": "Sí, cancelar",
+    "pending": "Cancelando…",
+    "dismiss": "No, volver"
+  },
+  "deleteDialog": {
+    "title": "Eliminar borrador",
+    "description": "El borrador se eliminará de tu lista. Solo se pueden eliminar eventos en borrador.",
+    "confirm": "Eliminar",
+    "pending": "Eliminando…",
+    "dismiss": "Cancelar"
+  },
+  "create": {
+    "title": "Crear evento",
+    "steps": "Pasos del asistente",
+    "step1": "Tipo y fecha",
+    "step2": "Detalles",
+    "step3": "Confirmación",
+    "selectType": "Selecciona un tipo",
+    "selectLocation": "Selecciona una ubicación",
+    "currencyLock": "La moneda queda fija tras crear el evento.",
+    "namePlaceholder": "Opcional",
+    "confirmHint": "Revisa los datos y crea el evento. Quedará en estado borrador.",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "submit": "Crear evento",
+    "submitting": "Creando…"
+  },
+  "edit": {
+    "title": "Editar evento",
+    "currentLocation": "Ubicación actual",
+    "currencyImmutable": "La moneda no se puede cambiar después de crear el evento.",
+    "save": "Guardar cambios",
+    "saving": "Guardando…",
+    "cancelEdit": "Descartar",
+    "terminalBlocked": "Los eventos completados o cancelados no se pueden editar."
+  },
+  "validation": {
+    "typeRequired": "Selecciona un tipo de evento.",
+    "dateFormat": "La fecha debe tener formato AAAA-MM-DD.",
+    "dateInvalid": "Ingresa una fecha válida.",
+    "budgetInvalid": "Ingresa un monto válido (hasta 2 decimales).",
+    "guestsInvalid": "Ingresa un número de invitados válido.",
+    "guestsMin": "Debe haber al menos 1 invitado.",
+    "guestsMax": "El número de invitados es demasiado alto.",
+    "locationRequired": "Selecciona una ubicación."
+  },
+  "errors": {
+    "UNEXPECTED": "Ocurrió un error inesperado. Intenta de nuevo.",
+    "LIST_FAILED": "No se pudieron cargar tus eventos.",
+    "LOAD_FAILED": "No se pudo cargar el evento.",
+    "VALIDATION_ERROR": "Revisa los datos ingresados.",
+    "NOT_FOUND": "Este evento no existe o no está disponible.",
+    "INVALID_STATE": "La acción no es válida para el estado actual del evento.",
+    "CURRENCY_IMMUTABLE": "La moneda no se puede modificar."
+  }
+}

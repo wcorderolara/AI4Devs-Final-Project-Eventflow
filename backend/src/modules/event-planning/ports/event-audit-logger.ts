@@ -9,7 +9,9 @@ export type EventAuditName =
   | 'event.access_denied'
   | 'event.validation_failed'
   | 'event.currency_immutable_violation'
-  | 'event.lifecycle_transition_rejected';
+  | 'event.lifecycle_transition_rejected'
+  | 'event.deleted'
+  | 'event.delete_rejected';
 
 export interface EventAuditLogger {
   emit(
