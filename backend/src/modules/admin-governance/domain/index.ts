@@ -1,3 +1,2 @@
-// Placeholder de capa (US-090). Sin lógica de feature; la implementación pertenece a la
-// feature story de este bounded context. `export {}` mantiene el módulo compilable con `tsc`.
-export {};
+// Domain barrel del módulo admin-governance (US-016).
+export * from './admin-event.types.js';

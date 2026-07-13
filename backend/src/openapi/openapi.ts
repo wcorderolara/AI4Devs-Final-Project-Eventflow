@@ -53,6 +53,10 @@ import {
   QuoteRequestIdParamSchema as AiQuoteRequestIdParamSchema,
   AiRecommendationIdParamSchema,
 } from '../modules/ai-assistance/dto/index.js';
+import {
+  AdminEventReadResponseSchema,
+  AdminEventIdOpenApiParamSchema,
+} from '../modules/admin-governance/dto/index.js';
 
 extendZodWithOpenApi(z);
 
@@ -229,6 +233,11 @@ op({ method: 'get', path: '/events/{eventId}', operationId: 'getEvent', tags: ['
 op({ method: 'patch', path: '/events/{eventId}', operationId: 'updateEvent', tags: ['Events'], summary: 'Actualizar evento', secured: true, params: EventIdParamSchema, body: UpdateEventRequestSchema, success: { status: 200, schema: envelope(EventResponseSchema) }, errors: [400, 401, 404, 409, 422] });
 op({ method: 'post', path: '/events/{eventId}/activate', operationId: 'activateEvent', tags: ['Events'], summary: 'Activar evento (draft→active)', secured: true, params: EventIdParamSchema, success: { status: 200, schema: envelope(EventResponseSchema) }, errors: [401, 404, 422] });
 op({ method: 'post', path: '/events/{eventId}/cancel', operationId: 'cancelEvent', tags: ['Events'], summary: 'Cancelar evento', secured: true, params: EventIdParamSchema, success: { status: 200, schema: envelope(EventResponseSchema) }, errors: [401, 404, 422] });
+
+// ── ADMIN GOVERNANCE — Events (US-016 / PB-P1-010) ─────────────────────────────
+op({ method: 'get', path: '/admin/events/{id}', operationId: 'adminGetEvent', tags: ['Admin'], summary: 'Ver evento (admin, read-only, auditado)', secured: true, params: AdminEventIdOpenApiParamSchema, success: { status: 200, schema: envelope(AdminEventReadResponseSchema) }, errors: [400, 401, 403, 404] });
+op({ method: 'patch', path: '/admin/events/{id}', operationId: 'adminEventPatchForbidden', tags: ['Admin'], summary: 'Bloqueado: escritura admin no permitida (AC-02)', secured: true, params: AdminEventIdOpenApiParamSchema, success: { status: 403, description: 'FORBIDDEN_WRITE' }, errors: [401, 403] });
+op({ method: 'delete', path: '/admin/events/{id}', operationId: 'adminEventDeleteForbidden', tags: ['Admin'], summary: 'Bloqueado: escritura admin no permitida (AC-02)', secured: true, params: AdminEventIdOpenApiParamSchema, success: { status: 403, description: 'FORBIDDEN_WRITE' }, errors: [401, 403] });
 
 // ── QUOTE-FLOW ──────────────────────────────────────────────────────────────────
 op({ method: 'get', path: '/events/{eventId}/quote-requests', operationId: 'listEventQuoteRequests', tags: ['QuoteRequests'], summary: 'Listar QuoteRequests del evento', secured: true, params: QfEventIdParamSchema, query: ListQuoteRequestsQuerySchema, success: { status: 200, schema: listEnvelope(QuoteRequestResponseSchema) }, errors: [401, 403, 404, 422] });

@@ -24,6 +24,7 @@ import { quoteFlowRouter } from './modules/quote-flow/interface/quote-flow.route
 import { bookingIntentRouter } from './modules/booking-intent/interface/booking-intent.routes.js';
 import { aiAssistanceRouter } from './modules/ai-assistance/interface/ai.routes.js';
 import { seedDemoRouter, isSeedDemoEnabled } from './modules/seed-demo/interface/seed-demo.routes.js';
+import { adminEventsRouter } from './modules/admin-governance/interface/admin-events.routes.js';
 
 /** Construye y configura la aplicación Express. */
 export function createApp(): Express {
@@ -71,6 +72,9 @@ export function createApp(): Express {
   if (isSeedDemoEnabled()) {
     apiV1.use('/admin/seed', seedDemoRouter);
   }
+  // US-016 (PB-P1-010): lectura admin de eventos con auditoría (`GET /admin/events/:id`).
+  // Bloquea explícitamente PATCH/DELETE/POST sobre el mismo recurso con `403 FORBIDDEN_WRITE`.
+  apiV1.use('/admin/events', adminEventsRouter);
   app.use('/api/v1', apiV1);
 
   app.use(notFoundMiddleware); // 8. penúltimo: 404 catch-all
