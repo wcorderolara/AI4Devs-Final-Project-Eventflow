@@ -1,0 +1,22 @@
+{
+  "events": {
+    "detail": {
+      "title": "Detalhe do evento",
+      "readOnlyBadge": "Modo somente leitura",
+      "owner": "Organizador",
+      "createdAt": "Criado",
+      "updatedAt": "Atualizado",
+      "backToList": "Voltar ao painel",
+      "fieldsGroupAria": "Campos do evento (somente leitura)",
+      "deletedBanner": {
+        "title": "Evento excluído",
+        "description": "Este evento foi excluído pelo organizador. É exibido em modo somente leitura para fins de auditoria."
+      },
+      "errors": {
+        "notFound": "Evento não encontrado.",
+        "forbidden": "Você não tem permissão para visualizar este evento.",
+        "generic": "Não foi possível carregar o evento. Tente novamente."
+      }
+    }
+  }
+}

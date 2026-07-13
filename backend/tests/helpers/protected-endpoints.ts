@@ -12,6 +12,7 @@ export type ControlType =
   | 'role:organizer'
   | 'role:vendor'
   | 'role:owner'
+  | 'role:admin'
   | 'ownership'
   | 'assignment';
 
@@ -74,6 +75,8 @@ export const PROTECTED_ENDPOINTS: ProtectedEndpoint[] = [
   { method: 'get', path: `/api/v1/ai-recommendations/${id}`, control: 'role:owner', module: 'ai-assistance' },
   { method: 'post', path: `/api/v1/ai-recommendations/${id}/apply`, control: 'role:owner', module: 'ai-assistance' },
   { method: 'post', path: `/api/v1/ai-recommendations/${id}/discard`, control: 'role:owner', module: 'ai-assistance' },
+  // ── admin-governance (US-016 / PB-P1-010) ──
+  { method: 'get', path: `/api/v1/admin/events/${id}`, control: 'role:admin' as const, module: 'admin-governance' },
 ];
 
 /** Rutas públicas documentadas (NO deben incluirse como protegidas; VR-06). */

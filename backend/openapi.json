@@ -248,6 +248,257 @@
   },
   "openapi": "3.0.3",
   "paths": {
+    "/api/v1/admin/events/{id}": {
+      "delete": {
+        "operationId": "adminEventDeleteForbidden",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Bloqueado: escritura admin no permitida (AC-02)",
+        "tags": [
+          "Admin"
+        ]
+      },
+      "get": {
+        "operationId": "adminGetEvent",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "autoCompleted": {
+                          "type": "boolean"
+                        },
+                        "completedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "currencyCode": {
+                          "enum": [
+                            "GTQ",
+                            "EUR",
+                            "MXN",
+                            "COP",
+                            "USD"
+                          ],
+                          "type": "string"
+                        },
+                        "deleted": {
+                          "type": "boolean"
+                        },
+                        "deletedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "estimatedBudget": {
+                          "type": "string"
+                        },
+                        "eventDate": {
+                          "type": "string"
+                        },
+                        "eventTypeCode": {
+                          "enum": [
+                            "wedding",
+                            "xv",
+                            "baptism",
+                            "baby_shower",
+                            "birthday",
+                            "corporate"
+                          ],
+                          "type": "string"
+                        },
+                        "guestsCount": {
+                          "type": "integer"
+                        },
+                        "id": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "languageCode": {
+                          "enum": [
+                            "es-LATAM",
+                            "es-ES",
+                            "pt",
+                            "en"
+                          ],
+                          "type": "string"
+                        },
+                        "locationId": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "notes": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "owner": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "displayName": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "format": "uuid",
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "displayName"
+                          ],
+                          "type": "object"
+                        },
+                        "ownerId": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": [
+                            "draft",
+                            "active",
+                            "completed",
+                            "cancelled"
+                          ],
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "ownerId",
+                        "eventTypeCode",
+                        "name",
+                        "eventDate",
+                        "guestsCount",
+                        "locationId",
+                        "estimatedBudget",
+                        "currencyCode",
+                        "languageCode",
+                        "status",
+                        "notes",
+                        "autoCompleted",
+                        "completedAt",
+                        "createdAt",
+                        "updatedAt",
+                        "deletedAt",
+                        "deleted",
+                        "owner"
+                      ],
+                      "type": "object"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Ver evento (admin, read-only, auditado)",
+        "tags": [
+          "Admin"
+        ]
+      },
+      "patch": {
+        "operationId": "adminEventPatchForbidden",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Bloqueado: escritura admin no permitida (AC-02)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
     "/api/v1/ai-recommendations/{aiRecommendationId}": {
       "get": {
         "operationId": "getAiRecommendation",

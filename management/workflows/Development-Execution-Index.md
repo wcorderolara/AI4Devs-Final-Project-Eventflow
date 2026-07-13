@@ -59,3 +59,4 @@
 | P1 | PB-P1-008 | US-013 | Listar y filtrar mis eventos | [record](development-execution/P1/PB-P1-008/US-013-execution.md) | 13 | 13 | 0 | 0 | 0 | 0 | `Done` | 2026-07-11 |
 | P1 | PB-P1-008 | US-014 | Ver el dashboard de un evento | [record](development-execution/P1/PB-P1-008/US-014-execution.md) | 13 | 13 | 0 | 0 | 0 | 0 | `Done` | 2026-07-11 |
 | P1 | PB-P1-009 | US-015 | El sistema cierra automáticamente mi evento 2 días después de la fecha | [record](development-execution/P1/PB-P1-009/US-015-execution.md) | 15 | 14 | 0 | 0 | 0 | 0 | `Done` | 2026-07-12 |
+| P1 | PB-P1-010 | US-016 | Admin ve evento del organizador en solo lectura (auditado) | [record](development-execution/P1/PB-P1-010/US-016-execution.md) | 18 | 17 | 0 | 0 | 0 | 0 | `Done` | 2026-07-13 |

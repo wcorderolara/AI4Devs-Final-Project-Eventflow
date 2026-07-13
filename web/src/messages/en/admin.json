@@ -1,0 +1,22 @@
+{
+  "events": {
+    "detail": {
+      "title": "Event details",
+      "readOnlyBadge": "Read-only mode",
+      "owner": "Organizer",
+      "createdAt": "Created",
+      "updatedAt": "Updated",
+      "backToList": "Back to admin",
+      "fieldsGroupAria": "Event fields (read-only)",
+      "deletedBanner": {
+        "title": "Event deleted",
+        "description": "This event was deleted by the organizer. It is shown in read-only mode for audit purposes."
+      },
+      "errors": {
+        "notFound": "Event not found.",
+        "forbidden": "You are not authorized to view this event.",
+        "generic": "We couldn’t load the event. Please try again."
+      }
+    }
+  }
+}
