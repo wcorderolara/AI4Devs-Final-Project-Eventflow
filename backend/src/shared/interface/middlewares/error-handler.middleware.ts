@@ -26,6 +26,7 @@ import {
 } from '../../domain/errors/quote-flow.errors.js';
 import {
   MissingInputError,
+  AiInvalidBudgetError,
   UnsupportedLanguageError,
   AiInvalidOutputError,
   InvalidStateTransitionError,
@@ -33,6 +34,33 @@ import {
   AiProviderTimeoutError,
   AIProviderNotConfiguredError,
 } from '../../domain/errors/ai.errors.js';
+import {
+  RecommendationNotPendingError,
+  RecommendationTypeNotApplicableError,
+  EditedPayloadInvalidError,
+  SideEffectFailedError,
+  OwnershipDeniedError,
+} from '../../../modules/ai-assistance/domain/errors/hitl.errors.js';
+import {
+  BulkLimitExceededError,
+  EventNotMutableError,
+} from '../../../modules/task-management/bulk-confirm/domain/errors/bulk-confirm.errors.js';
+import {
+  CategoryNotAvailableError,
+  DueDateInPastError,
+  UnsupportedMediaTypeError,
+} from '../../../modules/task-management/create/domain/errors/create-event-task.errors.js';
+import {
+  EmptyPatchError,
+  InvalidTransitionDomainError,
+} from '../../../modules/task-management/mutate/domain/errors/mutate-event-task.errors.js';
+import {
+  ItemHasCommitmentError,
+  ItemHasPendingIntentError,
+  ItemCategoryLockedError,
+  EventNotEditableError,
+  InvalidCategoryCodeError,
+} from '../../../modules/budget-management/domain/errors/budget-item.errors.js';
 import { BusinessRuleViolationError } from '../../domain/errors/business-rule-violation.error.js';
 import { RateLimitError } from '../../domain/errors/rate-limit.error.js';
 import { BadRequestError } from '../../domain/errors/bad-request.error.js';
@@ -45,9 +73,8 @@ import { ErrorCodes } from '../../domain/errors/error-codes.js';
 import type { ErrorDetail } from '../../response/types.js';
 import { logger } from '../../infrastructure/logger/index.js';
 
-/** Tipos de error de body-parser (express.json) que deben mapearse a 400. */
+/** Tipos de error de body-parser (express.json) que deben mapearse a 400 (excepto entity.too.large → 413). */
 const BODY_PARSER_ERROR_TYPES = new Set([
-  'entity.too.large',
   'entity.parse.failed',
   'encoding.unsupported',
   'request.aborted',
@@ -115,6 +142,10 @@ function mapError(err: unknown): MappedError {
   if (err instanceof MissingInputError) {
     return { status: 400, code: ErrorCodes.MISSING_INPUT, message: err.message };
   }
+  // US-019 (PB-P1-013 / EC-01): budget_estimated inválido antes del provider → 400.
+  if (err instanceof AiInvalidBudgetError) {
+    return { status: 400, code: ErrorCodes.INVALID_BUDGET, message: err.message };
+  }
   if (err instanceof UnsupportedLanguageError) {
     return { status: 422, code: ErrorCodes.UNSUPPORTED_LANGUAGE, message: err.message };
   }
@@ -123,6 +154,130 @@ function mapError(err: unknown): MappedError {
   }
   if (err instanceof InvalidStateTransitionError) {
     return { status: 422, code: ErrorCodes.INVALID_STATE_TRANSITION, message: err.message };
+  }
+  // US-025 HITL — Doc 16 §35.3.
+  if (err instanceof RecommendationNotPendingError) {
+    return { status: 409, code: ErrorCodes.RECOMMENDATION_NOT_PENDING, message: err.message };
+  }
+  if (err instanceof RecommendationTypeNotApplicableError) {
+    return { status: 422, code: ErrorCodes.RECOMMENDATION_TYPE_NOT_APPLICABLE, message: err.message };
+  }
+  if (err instanceof EditedPayloadInvalidError) {
+    return { status: 400, code: ErrorCodes.EDITED_PAYLOAD_INVALID, message: err.message };
+  }
+  if (err instanceof SideEffectFailedError) {
+    return { status: 500, code: ErrorCodes.SIDE_EFFECT_FAILED, message: 'Side effect failed' };
+  }
+  // US-031 (PB-P1-017): bulk confirm HITL. Errores globales del batch.
+  if (err instanceof BulkLimitExceededError) {
+    return {
+      status: 400,
+      code: ErrorCodes.BULK_LIMIT_EXCEEDED,
+      message: err.message,
+      details: [
+        { field: 'taskIds', message: `received=${err.received} limit=${err.limit}` },
+      ],
+    };
+  }
+  if (err instanceof EventNotMutableError) {
+    return {
+      status: 409,
+      code: ErrorCodes.EVENT_NOT_MUTABLE,
+      message: `Event is not mutable (${err.eventStatus})`,
+      details: [{ field: 'event_status', message: err.eventStatus }],
+    };
+  }
+  // US-028 (PB-P1-018): categoría no disponible (inexistente o `is_active=false`).
+  if (err instanceof CategoryNotAvailableError) {
+    return {
+      status: 400,
+      code: ErrorCodes.CATEGORY_NOT_AVAILABLE,
+      message: err.message,
+      details: [{ field: 'category_code', message: 'not_available' }],
+    };
+  }
+  if (err instanceof DueDateInPastError) {
+    return {
+      status: 400,
+      code: ErrorCodes.DUE_DATE_IN_PAST,
+      message: err.message,
+      details: [{ field: 'due_date', message: 'due_date_in_past' }],
+    };
+  }
+  if (err instanceof UnsupportedMediaTypeError) {
+    return {
+      status: 415,
+      code: ErrorCodes.UNSUPPORTED_MEDIA_TYPE,
+      message: err.message,
+    };
+  }
+  // US-029 (PB-P1-018): PATCH content sin campos editables (EC-06).
+  if (err instanceof EmptyPatchError) {
+    return {
+      status: 400,
+      code: ErrorCodes.EMPTY_PATCH,
+      message: err.message,
+    };
+  }
+  // US-036 (PB-P1-020 R1): CRUD BudgetItem — bloqueos de mutación.
+  if (err instanceof ItemHasCommitmentError) {
+    return {
+      status: 409,
+      code: ErrorCodes.ITEM_HAS_COMMITMENT,
+      message: err.message,
+      details: [{ field: 'amount_committed', message: String(err.amountCommitted) }],
+    };
+  }
+  if (err instanceof ItemHasPendingIntentError) {
+    return {
+      status: 409,
+      code: ErrorCodes.ITEM_HAS_PENDING_INTENT,
+      message: err.message,
+    };
+  }
+  if (err instanceof ItemCategoryLockedError) {
+    return {
+      status: 409,
+      code: ErrorCodes.ITEM_HAS_COMMITMENT_CATEGORY_LOCKED,
+      message: err.message,
+      details: [{ field: 'amount_committed', message: String(err.amountCommitted) }],
+    };
+  }
+  if (err instanceof EventNotEditableError) {
+    return {
+      status: 409,
+      code: ErrorCodes.EVENT_NOT_EDITABLE,
+      message: err.message,
+      details: [{ field: 'event_status', message: err.eventStatus }],
+    };
+  }
+  if (err instanceof InvalidCategoryCodeError) {
+    return {
+      status: 400,
+      code: ErrorCodes.INVALID_CATEGORY_CODE,
+      message: err.message,
+      details: [{ field: 'category_code', message: err.categoryCode }],
+    };
+  }
+  // US-029 (PB-P1-018): PATCH status contra state machine (EC-02) — 409 con detalles.
+  if (err instanceof InvalidTransitionDomainError) {
+    return {
+      status: 409,
+      code: ErrorCodes.INVALID_TRANSITION,
+      message: err.message,
+      details: [
+        { field: 'current_status', message: err.current },
+        { field: 'requested_status', message: err.requested },
+        { field: 'allowed_transitions', message: err.allowed.join(',') },
+      ],
+    };
+  }
+  if (err instanceof OwnershipDeniedError) {
+    // admin_excluded → 403 FORBIDDEN; not_owner → 404 RESOURCE_NOT_FOUND (no-revelación).
+    if (err.reason === 'admin_excluded') {
+      return { status: 403, code: ErrorCodes.FORBIDDEN, message: 'Admins cannot perform HITL actions' };
+    }
+    return { status: 404, code: ErrorCodes.RESOURCE_NOT_FOUND, message: 'Resource not found', masked: true };
   }
   if (err instanceof AiProviderUnavailableError) {
     return { status: 503, code: ErrorCodes.AI_PROVIDER_UNAVAILABLE, message: err.message };
@@ -175,9 +330,13 @@ function mapError(err: unknown): MappedError {
     // Otros errores de dominio (e.g., BadRequest-like) → 400 con su código.
     return { status: 400, code: err.code, message: err.message };
   }
-  // Errores de body-parser (express.json) → 400.
+  // Errores de body-parser (express.json).
   if (typeof err === 'object' && err !== null && 'type' in err) {
     const type = (err as { type?: unknown }).type;
+    // US-025 EC-06: entity.too.large → 413 PAYLOAD_TOO_LARGE (body>256KB en /apply scoped).
+    if (type === 'entity.too.large') {
+      return { status: 413, code: ErrorCodes.PAYLOAD_TOO_LARGE, message: 'Request payload too large' };
+    }
     if (typeof type === 'string' && BODY_PARSER_ERROR_TYPES.has(type)) {
       return { status: 400, code: ErrorCodes.BAD_REQUEST, message: 'Invalid request body' };
     }

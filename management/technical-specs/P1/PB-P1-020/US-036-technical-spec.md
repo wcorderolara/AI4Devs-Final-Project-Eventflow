@@ -19,9 +19,10 @@
 | Module / Domain                      | Budget                                                                                                         |
 | User Story Status                    | Approved with Minor Notes                                                                                     |
 | Backlog Alignment Status             | Found                                                                                                          |
-| Technical Spec Status                | Ready for Task Breakdown                                                                                       |
+| Technical Spec Status                | Ready for Task Breakdown (Revision R1 — 2026-07-14 alignment)                                                  |
 | Created Date                         | 2026-06-27                                                                                                     |
-| Last Updated                         | 2026-06-27                                                                                                     |
+| Last Updated                         | 2026-07-14                                                                                                     |
+| Revision R1                          | 2026-07-14 — Alineación con schema real (Opción A, paridad con US-035 R1). Ver §22.                             |
 
 ---
 
@@ -166,40 +167,47 @@ No aplica. `ai_generated` se preserva en backend; el cliente no puede modificarl
 
 ### Use Cases / Application Services
 
-* `CreateBudgetItemUseCase`:
+* `CreateBudgetItemUseCase` (R1):
   1. Recibe `{ eventId, currentUser, body }`.
-  2. `EventOwnershipPolicy.assertOwner(eventId, currentUser.id)`.
+  2. `EventOwnershipPolicy.assertOwner(eventId, currentUser.id)` (masked 404, patrón US-027).
   3. Lee `event` (al menos `status`); si `status ∉ {'draft','active'}` → 409 `EVENT_NOT_EDITABLE`.
-  4. Valida `body` con `createBudgetItemBodySchema` (Zod estricto: solo permite `service_category_id`, `label?`, `planned`, `paid?`).
-  5. Verifica que `service_category_id` existe y `is_active = true`.
-  6. Crea item con `committed=0`, `ai_generated=false`, `paid: body.paid ?? 0` (normalizado en response).
+  4. Valida `body` con `createBudgetItemBodySchema` (Zod estricto R1).
+  5. Si `body.category_code` presente y no `null`: valida contra whitelist `ServiceCategoryReadPort.getActiveCodes()` (patrón US-019). Si no está → 400 `INVALID_VALUE`.
+  6. **En `prisma.$transaction`:**
+     * Crea item con `amountCommitted = body.amount_committed ?? 0`.
+     * Recomputa `Budget.totalPlanned` y `Budget.totalCommitted` con `SUM(items.amount*)` y actualiza el registro `Budget` (BLK-E, compromiso R1 US-035).
   7. Emite log `budget.item.created`.
-  8. Retorna 201 con `BudgetItemDto`.
+  8. Retorna 201 con `BudgetItemDto` (shape R1: `id`, `label`, `category_code`, `amount_planned`, `amount_committed`).
 
-* `UpdateBudgetItemUseCase`:
+* `UpdateBudgetItemUseCase` (R1):
   1. Recibe `{ eventId, itemId, currentUser, body }`.
-  2. `EventOwnershipPolicy.assertOwner`.
+  2. Ownership guard.
   3. Verifica `event.status`. Si bloqueado → 409 `EVENT_NOT_EDITABLE`.
-  4. Lee `item` por `itemId`. Si `deleted_at IS NOT NULL` o `item.budget.event_id !== eventId` → 404 `ITEM_NOT_FOUND`.
-  5. Valida `body` con `updateBudgetItemBodySchema` (Zod estricto: permite `planned?`, `paid?`, `service_category_id?`, `label?`; `committed` NO declarado).
-  6. Si `body.service_category_id` está presente y difiere del actual:
-     - Verifica `item.committed === 0`. Si no → 409 `ITEM_HAS_COMMITMENT_CATEGORY_LOCKED`.
-     - Verifica que la nueva `service_category_id` existe y `is_active = true`.
-  7. Aplica update preservando `committed` y `ai_generated`.
-  8. Emite log `budget.item.updated`.
-  9. Retorna 200 con `BudgetItemDto` actualizado.
+  4. Lee `item` con `include: { budget: true }`. Si `item.budget.eventId !== eventId` → 404 `ITEM_NOT_FOUND` (anti-IDOR, SEC-04).
+  5. Valida `body` con `updateBudgetItemBodySchema` (Zod `.strict()` rechaza `amount_committed`/`paid`/`ai_generated`/`service_category_id` → 400 `INVALID_FIELD`).
+  6. Si `body.category_code` presente y difiere del actual:
+     - Valida contra whitelist activa. Si no → 400 `INVALID_VALUE`.
+     - Regla D5: verifica `item.amountCommitted === 0`. Si no → 409 `ITEM_HAS_COMMITMENT_CATEGORY_LOCKED`.
+  7. **En `prisma.$transaction`:**
+     * Update del item preservando `amountCommitted` (system-managed).
+     * Recompute `Budget.totalPlanned` si `amount_planned` cambió (BLK-E).
+  8. Emite log `budget.item.updated` con `fields_changed`.
+  9. Retorna 200 con `BudgetItemDto`.
 
-* `DeleteBudgetItemUseCase`:
+* `DeleteBudgetItemUseCase` (R1 — **hard delete**):
   1. Recibe `{ eventId, itemId, currentUser }`.
-  2. `EventOwnershipPolicy.assertOwner`.
+  2. Ownership guard.
   3. Verifica `event.status`. Si bloqueado → 409 `EVENT_NOT_EDITABLE`.
-  4. Lee `item`. Si `deleted_at IS NOT NULL` o cross-event check falla → 404 `ITEM_NOT_FOUND`.
-  5. Verifica `item.committed > 0` → 409 `ITEM_HAS_COMMITMENT`.
-  6. Verifica `item.paid > 0` → 409 `ITEM_HAS_PAID_AMOUNT`.
-  7. Verifica `BookingIntentReadPort.findPendingByEventAndCategory(eventId, item.service_category_id)`. Si retorna ≥ 1 → 409 `ITEM_HAS_PENDING_INTENT`.
-  8. Aplica `deleted_at = NOW()`, `deleted_by = currentUser.id`.
-  9. Emite log `budget.item.deleted`.
-  10. Retorna 204.
+  4. Lee `item` con `include: { budget: true }`. Cross-event check → 404 si falla.
+  5. Verifica `item.amountCommitted > 0` → 409 `ITEM_HAS_COMMITMENT`.
+  6. Si `item.categoryCode` no es `null`: resuelve `ServiceCategory.findByCode(item.categoryCode) → serviceCategoryId`. Si existe, invoca `BookingIntentReadPort.findPendingByEventAndCategory(eventId, serviceCategoryId)`. Si retorna ≥ 1 → 409 `ITEM_HAS_PENDING_INTENT`. Si `categoryCode = null` o code no matchea, se omite el check (no hay `BookingIntent` posible sin FK válida).
+  7. **En `prisma.$transaction`:**
+     * `prisma.budgetItem.delete({ where: { id } })` (hard delete; el schema no tiene `deleted_at`).
+     * Recompute totales del `Budget` padre (BLK-E).
+  8. Emite log `budget.item.deleted` con snapshot pre-delete (`label`, `category_code`, `amount_planned`, `amount_committed`) para trazabilidad de auditoría.
+  9. Retorna 204.
+
+> **R1 — Auditoría de DELETE:** el log estructurado `budget.item.deleted` captura los campos completos del item eliminado. Combinado con PostgreSQL WAL/point-in-time recovery, sustituye funcionalmente al soft delete en el MVP. `ITEM_HAS_PAID_AMOUNT` (AC-05 antiguo) queda **N/A**: la columna `paid` no existe.
 
 ### Controllers / Routes
 
@@ -208,43 +216,48 @@ No aplica. `ai_generated` se preserva en backend; el cliente no puede modificarl
 * Path params validados con Zod (`eventId`, `itemId` UUID).
 * Middleware chain: `authRequired` → `OrganizerRoleGuard` → `adminExclusionGuard` → handler.
 
-### DTOs / Schemas
+### DTOs / Schemas (R1)
+
+> **R1 (2026-07-14):** shape alineado con schema real. `paid`, `ai_generated`, `service_category_id` (FK) **eliminados del contrato MVP** (diferidos a US paralela P2). `category_code` es string libre validado contra whitelist `ServiceCategory.code WHERE is_active = true AND deleted_at IS NULL`.
 
 ```ts
-// apps/api/src/modules/budget/dto/create-budget-item.body.ts
+// backend/src/modules/budget-management/dto/create-budget-item.body.ts
 export const createBudgetItemBodySchema = z.object({
-  service_category_id: z.string().uuid(),
-  label: z.string().min(1).max(120).optional(),
-  planned: z.number().nonnegative(),
-  paid: z.number().nonnegative().optional(),
-}).strict(); // rechaza campos extras (incluido `committed`)
+  label: z.string().min(1).max(120),
+  category_code: z.string().min(1).max(64).nullable().optional(),
+  amount_planned: z.number().nonnegative(),
+  amount_committed: z.number().nonnegative().optional(), // default 0 en use case
+}).strict(); // rechaza campos extras (incluido `committed`, `paid`, `ai_generated`, `service_category_id`)
 
-// apps/api/src/modules/budget/dto/update-budget-item.body.ts
+// backend/src/modules/budget-management/dto/update-budget-item.body.ts
 export const updateBudgetItemBodySchema = z.object({
-  service_category_id: z.string().uuid().optional(),
   label: z.string().min(1).max(120).optional(),
-  planned: z.number().nonnegative().optional(),
-  paid: z.number().nonnegative().optional(),
-}).strict(); // rechaza `committed` y otros campos extras
+  category_code: z.string().min(1).max(64).nullable().optional(),
+  amount_planned: z.number().nonnegative().optional(),
+}).strict(); // rechaza `amount_committed`, `paid`, `ai_generated`, `service_category_id`
 ```
 
-Reuso de `BudgetItemDto` (US-035) en responses.
+Reuso de `BudgetItemDto` (US-035 R1) en responses.
 
-### Repository / Persistence
+### Repository / Persistence (R1)
 
-* `BudgetItemWriteRepository`:
-  * `create({ budgetId, serviceCategoryId, label, planned, paid }): Promise<BudgetItem>`.
-  * `update(itemId, partial): Promise<BudgetItem>`.
-  * `softDelete(itemId, deletedBy): Promise<void>`.
-  * Implementación con Prisma; sin transacciones explícitas (single-row updates).
-  * Si en el futuro se materializa `total_planned`/`total_committed` en `Budget`, las mutaciones se moverán a `prisma.$transaction` para mantener consistencia atómica.
+* `BudgetItemWriteRepository` (opera **dentro** de una `prisma.$transaction` provista por el use case; recibe un `TransactionClient`):
+  * `create(tx, { budgetId, label, categoryCode, amountPlanned, amountCommitted }): Promise<BudgetItem>`.
+  * `update(tx, itemId, partial): Promise<BudgetItem>`.
+  * `hardDelete(tx, itemId): Promise<void>` (R1: hard delete; el schema no declara `deletedAt` en `BudgetItem`).
+  * `recomputeBudgetTotals(tx, budgetId): Promise<void>` (SUM sobre items + UPDATE en `Budget` — BLK-E).
 
-* `BudgetItemReadRepository` (extensión leve de US-035):
-  * Asegurar que todos los selects de items y SUMs incluyen `WHERE deleted_at IS NULL`.
+* `BudgetItemReadRepository` (extensión de US-035):
+  * **R1:** no requiere filtro `deleted_at IS NULL` (columna no existe). La invalidación es implícita: los items eliminados desaparecen de la BD.
 
-* `BookingIntentReadPort` (nuevo, en `modules/budget`):
-  * `findPendingByEventAndCategory({ eventId, serviceCategoryId }): Promise<{ id: string }[]>` (retorna lista o vacío).
-  * Implementación adaptador en `modules/booking`: `BookingIntentRepository.findManyPending(...)`.
+* `ServiceCategoryReadPort` (nuevo, en `modules/budget-management`):
+  * `getActiveCodes(): Promise<Set<string>>` — retorna set de `code` con `is_active = true` y `deleted_at IS NULL`. Cacheable en el composition root si el volumen justifica.
+  * `findIdByCode(code: string): Promise<string | null>` — usado por `DeleteBudgetItemUseCase` para resolver el cross-module.
+
+* `BookingIntentReadPort` (nuevo, en `modules/budget-management`):
+  * `findPendingByEventAndCategory({ eventId, serviceCategoryId }): Promise<{ id: string }[]>`.
+  * Adapter en `modules/booking-intent` que consulta `prisma.bookingIntent.findMany({ where: { eventId, serviceCategoryId, status: 'pending' }, select: { id: true }, take: 1 })`.
+  * Índices existentes en `booking_intents`: `@@index([eventId])`, `@@index([serviceCategoryId])` (schema:616-617).
 
 ### Validation Rules
 
@@ -365,32 +378,32 @@ Snapshot OpenAPI por US-098 (Future).
 
 ## 10. Database / Prisma Design
 
-### Models Impacted
+### Models Impacted (R1 — schema real, `backend/prisma/schema.prisma:492-512`)
 
-* `BudgetItem` (existente, PB-P0-001).
-* `BookingIntent` (solo lectura).
+* `BudgetItem` (existente): `id`, `budgetId`, `label`, `categoryCode: String?` (string libre, sin FK), `amountPlanned` (`Decimal @default(0)`), `amountCommitted` (`Decimal @default(0)`), `isSeed`, `createdAt`, `updatedAt`. **No** hay `deletedAt`/`deletedBy`/`paid`/`aiGenerated`/`serviceCategoryId` (FK).
+* `Budget` (existente): `totalPlanned`/`totalCommitted` materializados; se recalculan en la misma transacción de cada mutación (BLK-E).
+* `BookingIntent` (solo lectura): `serviceCategoryId` (FK a `ServiceCategory`), `status: BookingIntentStatus @default(pending)`. Cross-module viable.
+* `ServiceCategory` (solo lectura): `code @unique`, `isActive`, `deletedAt`. Whitelist para `category_code`.
 
 ### Fields / Columns
 
-* Sin nuevos campos. `deleted_at` y `deleted_by` ya existen en PB-P0-001.
+Sin nuevos campos. R1 diferido a US paralela P2: `deletedAt`, `deletedBy`, `paid`, `aiGenerated`, `serviceCategoryId` (FK).
 
 ### Relations
 
-* Sin cambios.
+Sin cambios. `BudgetItem.budgetId → Budget.id` (Cascade). Sin FK entre `BudgetItem` y `ServiceCategory` — la validación se hace por whitelist de `code`.
 
 ### Indexes
 
-* Reuso. Si el dataset crece, considerar:
-  * Índice parcial `WHERE deleted_at IS NULL` en `budget_items` (postergable).
-  * Índice en `booking_intents (event_id, service_category_id, status)` para acelerar el cross-module check (postergable; el dataset MVP es chico).
+Reuso íntegro. `booking_intents.serviceCategoryId` y `booking_intents.eventId` ya indexados (schema:616-617). `service_categories.code` unique (schema:246). Sin nuevos índices.
 
 ### Constraints
 
-* Sin cambios. Domain model ya permite `1:N` BudgetItem→ServiceCategory sin unique constraint.
+Sin cambios. Múltiples items por categoría permitidos (D5) — sigue siendo cierto trivialmente porque `categoryCode` es `String?` sin unique constraint.
 
 ### Migrations Impact
 
-**Ninguna**.
+**Ninguna** (R1).
 
 ### Seed Impact
 
@@ -625,32 +638,39 @@ Sin notas adicionales.
 
 ### Archivos / Carpetas probablemente impactadas
 
-**Backend** (`apps/api`):
+**Backend** (`backend/`) — R1 paths reconciliados:
 
-* `src/modules/budget/dto/create-budget-item.body.ts` — **nuevo**.
-* `src/modules/budget/dto/update-budget-item.body.ts` — **nuevo**.
-* `src/modules/budget/repositories/budget-item-write.repository.ts` — **nuevo**.
-* `src/modules/budget/ports/booking-intent-read.port.ts` — **nuevo** (interface).
-* `src/modules/budget/use-cases/create-budget-item.use-case.ts` — **nuevo**.
-* `src/modules/budget/use-cases/update-budget-item.use-case.ts` — **nuevo**.
-* `src/modules/budget/use-cases/delete-budget-item.use-case.ts` — **nuevo**.
-* `src/modules/budget/controllers/budget-items-mutation.controller.ts` — **nuevo**.
-* `src/modules/budget/repositories/budget-read.repository.ts` — **extender** (filtrar `deleted_at IS NULL`).
-* `src/modules/booking/adapters/booking-intent-read.adapter.ts` — **nuevo** (implementa el port para US-036).
-* `src/shared/logging/budget-item-events.ts` — **nuevo**.
-* `src/app.routes.ts` — **registrar** las 3 rutas.
+* `src/modules/budget-management/dto/create-budget-item.body.ts` — **nuevo**.
+* `src/modules/budget-management/dto/update-budget-item.body.ts` — **nuevo**.
+* `src/modules/budget-management/infrastructure/prisma-budget-item-write.repository.ts` — **nuevo**.
+* `src/modules/budget-management/ports/booking-intent-read.port.ts` — **nuevo** (interface).
+* `src/modules/budget-management/ports/service-category-read.port.ts` — **nuevo** (interface).
+* `src/modules/booking-intent/infrastructure/prisma-booking-intent-read.adapter.ts` — **nuevo** (adapter).
+* `src/modules/service-catalog/infrastructure/prisma-service-category-read.adapter.ts` — **nuevo** (adapter).
+* `src/modules/budget-management/application/create-budget-item.use-case.ts` — **nuevo**.
+* `src/modules/budget-management/application/update-budget-item.use-case.ts` — **nuevo**.
+* `src/modules/budget-management/application/delete-budget-item.use-case.ts` — **nuevo**.
+* `src/modules/budget-management/application/budget-item-telemetry.ts` — **nuevo**.
+* `src/modules/budget-management/interface/http/create-budget-item.controller.ts` — **nuevo**.
+* `src/modules/budget-management/interface/http/update-budget-item.controller.ts` — **nuevo**.
+* `src/modules/budget-management/interface/http/delete-budget-item.controller.ts` — **nuevo**.
+* `src/modules/budget-management/interface/http/budget-item-mutation.routes.ts` — **nuevo**.
+* `src/shared/domain/errors/*` — reuso; nuevos errores tipados en el módulo (`item-has-commitment.error.ts`, `item-has-pending-intent.error.ts`, `item-has-commitment-category-locked.error.ts`, `event-not-editable.error.ts`).
+* `src/app.ts` — **registrar** el router bajo `/api/v1`.
+* `tests/unit/us036-*.spec.ts` — **nuevo**.
+* `tests/api/us036-*.spec.ts` — **nuevo**.
 
-**Frontend** (`apps/web`):
+**Frontend** (`web/`) — R1 paths reconciliados:
 
-* `components/events/budget/AddBudgetItemModal.tsx` — **nuevo**.
-* `components/events/budget/EditBudgetItemRow.tsx` — **nuevo**.
-* `components/events/budget/DeleteBudgetItemDialog.tsx` — **nuevo**.
-* `components/events/budget/BudgetItemsTable.tsx` — **extender** (botones + badges advisory).
-* `hooks/useCreateBudgetItem.ts` — **nuevo**.
-* `hooks/useUpdateBudgetItem.ts` — **nuevo**.
-* `hooks/useDeleteBudgetItem.ts` — **nuevo**.
-* `lib/api/budgetApi.ts` — **extender** con `items.{create,update,delete}`.
-* `messages/{es-LATAM,es-ES,pt,en}.json` — **añadir** claves `budget.item.*`.
+* `src/features/events/components/budget/AddBudgetItemModal.tsx` — **nuevo**.
+* `src/features/events/components/budget/EditBudgetItemRow.tsx` — **nuevo**.
+* `src/features/events/components/budget/DeleteBudgetItemDialog.tsx` — **nuevo**.
+* `src/features/events/components/budget/BudgetItemsTable.tsx` — **extender**.
+* `src/features/events/hooks/useCreateBudgetItem.ts` — **nuevo**.
+* `src/features/events/hooks/useUpdateBudgetItem.ts` — **nuevo**.
+* `src/features/events/hooks/useDeleteBudgetItem.ts` — **nuevo**.
+* `src/features/events/api/budgetApi.ts` — **extender** con `items.{create,update,delete}`.
+* `src/shared/i18n/messages/{es-LATAM,es-ES,pt,en}.json` — **añadir** claves `budget.item.*`.
 
 **Documentación**:
 
@@ -782,6 +802,37 @@ Sí, al cerrar US-036 conviene generar `management/development-tasks/P1/PB-P1-02
 
 ## 21. Final Recommendation
 
-`Ready for Task Breakdown`
+`Ready for Task Breakdown` (Revision R1)
 
-US-036 extiende el módulo `modules/budget` entregado por US-035 con tres use cases write, un repositorio write, un port para el cross-module check con `modules/booking`, y un controller con tres rutas ya catalogadas en `docs/16 §M06`. Las 5 decisiones (D1–D5) están implementadas mediante Zod estricto + verificaciones explícitas en use case. El frontend se integra naturalmente con la tabla y la query key entregadas por US-035, garantizando invalidación de cache en cada mutación. Sin migraciones, sin endpoints nuevos fuera del catálogo, sin LLMProvider. Las 3 Documentation Alignment Required son housekeeping no bloqueante. Próximo paso: `eventflow-user-story-to-development-tasks`.
+US-036 extiende el módulo `modules/budget-management` (R1) entregado por US-035 con tres use cases write, un repositorio write, dos ports (`BookingIntentReadPort`, `ServiceCategoryReadPort`), y tres controllers para `POST/PATCH/DELETE`. R1 aplica hard delete (schema real no tiene `deleted_at` en `BudgetItem`) con bloqueos por `amount_committed > 0` y `BookingIntent.pending`. Todas las mutaciones se envuelven en `prisma.$transaction` para mantener consistentes los totales denormalizados de `Budget` (BLK-E, compromiso R1 US-035). Sin migraciones, sin endpoints nuevos fuera del catálogo M06, sin LLMProvider.
+
+---
+
+## 22. Revision R1 — 2026-07-14 (Schema alignment)
+
+Durante la ejecución (execution record `management/workflows/development-execution/P1/PB-P1-020/US-036-execution.md`) se detectaron 6 hallazgos materiales entre la Tech Spec original y el schema Prisma real. Se aplica **Opción A** (paridad con R1 de US-035, sin migraciones):
+
+### Cambios normativos
+
+1. **Contrato de body reducido** — R1 elimina del contrato MVP: `paid`, `ai_generated`, `service_category_id` (FK). Nuevo shape en §7 DTOs. `paid_total` y warnings advisory `paid > *` (D4) quedan N/A.
+2. **`category_code`** — string libre (no FK) validado contra whitelist `ServiceCategory.code WHERE is_active = true AND deleted_at IS NULL` (patrón `us019-*`).
+3. **DELETE es hard delete** — el schema `BudgetItem` (`schema.prisma:492-512`) **no** declara `deletedAt`/`deletedBy`. Es una decisión intencional del ADR-DB-004 (`BudgetItem` no está en los 7 modelos con soft delete). Auditoría de DELETE se preserva vía log estructurado `budget.item.deleted` con snapshot completo del item eliminado + PostgreSQL WAL/point-in-time recovery. Bloqueos activos: `amount_committed > 0` y `BookingIntent.pending`. Bloqueo `paid > 0` (AC-05 segunda cláusula) queda N/A.
+4. **Transacción obligatoria de totales** — BLK-E: todas las mutaciones se envuelven en `prisma.$transaction` para recomputar `Budget.totalPlanned`/`totalCommitted` en la misma operación. Compromiso R1 US-035.
+5. **Módulo real** — paths reconciliados a `backend/src/modules/budget-management/**` y `web/src/features/events/**`.
+6. **Cross-module** — `DeleteBudgetItemUseCase` resuelve `categoryCode → ServiceCategory.id → BookingIntent.findMany({...pending})`. Si `categoryCode = null` o no matchea whitelist, el check se omite (no hay `BookingIntent` posible sin FK válida). Documented edge case.
+
+### Impacto en User Story y Tasks File
+
+* `AC-01`, `AC-02`, `AC-03` reescritos con el nuevo shape.
+* `AC-05` reducido a un solo bloqueo (`BookingIntent.pending`).
+* `AC-07` warnings advisory `paid > *` marcados N/A.
+* `EC-03` (DELETE con `paid > 0`), `EC-04` (soft-deleted filtrado en US-035), `EC-09` (item soft-deleted → 404) marcados N/A.
+* `VR-02` (paid ≥ 0), `VR-09` (soft-deleted → 404) marcados N/A.
+* `D2` reformulado: soft delete → hard delete; 2 bloqueos en vez de 3.
+* `D4` marcado N/A (sin `paid`).
+* `UT-06` (paid > 0), `IT-06` (paid > 0), `IT-11` (regresión soft delete en US-035) marcados N/A.
+* Deuda registrada: adición futura de `paid`, `ai_generated`, FK `service_category_id`, soft delete queda como **misma US paralela P2** ya prevista en R1 de US-035.
+
+### Aprobación
+
+Autorizado por el usuario en la sesión del 2026-07-14 tras diagnóstico del execution record y análisis de las 3 opciones. PO/BA debe reconfirmar formalmente antes de merge (paquete combinado con R1 US-035).

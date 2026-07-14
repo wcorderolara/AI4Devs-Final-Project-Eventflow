@@ -19,9 +19,10 @@
 | Feature                              | CRUD de BudgetItems                                                                                            |
 | Module / Domain                      | Budget                                                                                                         |
 | Backlog Alignment Status             | Found                                                                                                          |
-| Task Breakdown Status                | Ready for Sprint Planning                                                                                      |
+| Task Breakdown Status                | Ready for Sprint Planning (Revision R1 — 2026-07-14)                                                           |
 | Created Date                         | 2026-06-27                                                                                                     |
-| Last Updated                         | 2026-06-27                                                                                                     |
+| Last Updated                         | 2026-07-14                                                                                                     |
+| Revision R1                          | 2026-07-14 — Opción A (paridad con US-035 R1). BE-001 body reducido; BE-003 sin softDelete; BE-006 hard delete + transacción; UT-04/06, IT-06/11 N/A. Paths reconciliados a `backend/src/modules/budget-management/**` y `web/src/features/events/**`. Ver Tech Spec §22. |
 
 ---
 
@@ -120,19 +121,20 @@ US-036 va después de US-035 en el item: reusa el módulo, el repositorio read, 
 
 Definir los contratos de body para POST y PATCH con validación Zod estricta que rechaza campos no permitidos (incluido `committed`).
 
-#### Scope
+#### Scope (R1)
 
 ##### Include
 
-* Archivo `apps/api/src/modules/budget/dto/create-budget-item.body.ts`.
-* Archivo `apps/api/src/modules/budget/dto/update-budget-item.body.ts`.
+* Archivo `backend/src/modules/budget-management/dto/create-budget-item.body.ts`.
+* Archivo `backend/src/modules/budget-management/dto/update-budget-item.body.ts`.
 * Ambos schemas usan `.strict()`.
-* Campos: `service_category_id` (UUID), `label?` (string min/max), `planned` (number ≥ 0), `paid?` (number ≥ 0).
-* PATCH hace todos los campos opcionales.
+* POST: `{ label: string, category_code?: string | null, amount_planned: number ≥ 0, amount_committed?: number ≥ 0 }`.
+* PATCH: `{ label?, category_code?, amount_planned? }` (todos opcionales; `amount_committed` **excluido**).
 
-##### Exclude
+##### Exclude (R1)
 
-* No declarar `committed` ni `ai_generated`.
+* No declarar `paid`, `ai_generated`, `service_category_id` (FK), `committed`, `deleted_at`.
+* Estos campos quedan diferidos a US paralela P2 (paridad con US-035 R1).
 
 #### Acceptance Criteria Covered
 
@@ -146,7 +148,7 @@ AC-01, AC-02, AC-04, VR-01, VR-02, VR-04.
 
 ---
 
-### TASK-PB-P1-020-US-036-BE-002 — Crear `BookingIntentReadPort` y adapter en `modules/booking`
+### TASK-PB-P1-020-US-036-BE-002 — Crear `BookingIntentReadPort` + `ServiceCategoryReadPort` y adapters (R1)
 
 | Field                     | Value                                                                          |
 | ------------------------- | ------------------------------------------------------------------------------ |
@@ -166,17 +168,19 @@ AC-01, AC-02, AC-04, VR-01, VR-02, VR-04.
 
 Mantener el acoplamiento hexagonal entre `modules/budget` y `modules/booking`: definir el port (interface) en `modules/budget` e implementar el adaptador concreto en `modules/booking`.
 
-#### Scope
+#### Scope (R1)
 
 ##### Include
 
-* `apps/api/src/modules/budget/ports/booking-intent-read.port.ts` con método `findPendingByEventAndCategory({ eventId, serviceCategoryId }): Promise<{ id: string }[]>`.
-* `apps/api/src/modules/booking/adapters/booking-intent-read.adapter.ts` que implementa el port consultando `prisma.bookingIntent.findMany({ where: { event_id, service_category_id, status: 'pending' }, select: { id: true } })`.
-* Wire del adapter en el DI container.
+* `backend/src/modules/budget-management/ports/booking-intent-read.port.ts` con método `findPendingByEventAndCategory({ eventId, serviceCategoryId }): Promise<{ id: string }[]>`.
+* `backend/src/modules/booking-intent/infrastructure/prisma-booking-intent-read.adapter.ts` (implementa el port consultando `prisma.bookingIntent.findMany({ where: { eventId, serviceCategoryId, status: 'pending' }, select: { id: true }, take: 1 })`).
+* `backend/src/modules/budget-management/ports/service-category-read.port.ts` con métodos `getActiveCodes(): Promise<Set<string>>` y `findIdByCode(code: string): Promise<string | null>`.
+* `backend/src/modules/service-catalog/infrastructure/prisma-service-category-read.adapter.ts` (whitelist activo + resolución `code → id`, filtro `is_active = true AND deleted_at IS NULL`).
+* Wire en el router (composition root).
 
 ##### Exclude
 
-* No exponer otras operaciones de booking desde `modules/budget`.
+* No exponer otras operaciones desde `budget-management` hacia `booking-intent`/`service-catalog`.
 
 #### Acceptance Criteria Covered
 
@@ -210,20 +214,21 @@ AC-05.
 
 Encapsular las operaciones write sobre `budget_items` con Prisma. Extender adicionalmente `BudgetReadRepository` (US-035) con filtro `deleted_at IS NULL` si aún no estaba.
 
-#### Scope
+#### Scope (R1)
 
 ##### Include
 
-* `apps/api/src/modules/budget/repositories/budget-item-write.repository.ts`:
-  * `create({ budgetId, serviceCategoryId, label, planned, paid }): Promise<BudgetItem>`.
-  * `update(itemId, partial): Promise<BudgetItem>`.
-  * `softDelete(itemId, deletedBy): Promise<void>`.
-* Ajuste en `BudgetReadRepository` (US-035) para incluir `WHERE deleted_at IS NULL` en items y agregados.
+* `backend/src/modules/budget-management/infrastructure/prisma-budget-item-write.repository.ts`:
+  * `create(tx, { budgetId, label, categoryCode, amountPlanned, amountCommitted }): Promise<BudgetItem>`.
+  * `update(tx, itemId, partial): Promise<BudgetItem>`.
+  * `hardDelete(tx, itemId): Promise<void>` (R1: hard delete; schema `BudgetItem` no declara `deletedAt`).
+  * `recomputeBudgetTotals(tx, budgetId): Promise<void>` (SUM + UPDATE en `Budget`, BLK-E).
+* Todos los métodos reciben un `Prisma.TransactionClient` provisto por el use case.
 
-##### Exclude
+##### Exclude (R1)
 
-* No introducir transacciones explícitas (single-row updates en MVP).
-* No materializar `total_planned`/`total_committed` en `Budget`.
+* No filtro `WHERE deleted_at IS NULL` en el read repository de US-035 (columna no existe; los items eliminados desaparecen naturalmente).
+* No materialización adicional (los totales de `Budget` ya están materializados por PB-P0-001; solo se recalculan en cada mutación).
 
 #### Acceptance Criteria Covered
 

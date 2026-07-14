@@ -60,3 +60,18 @@
 | P1 | PB-P1-008 | US-014 | Ver el dashboard de un evento | [record](development-execution/P1/PB-P1-008/US-014-execution.md) | 13 | 13 | 0 | 0 | 0 | 0 | `Done` | 2026-07-11 |
 | P1 | PB-P1-009 | US-015 | El sistema cierra automáticamente mi evento 2 días después de la fecha | [record](development-execution/P1/PB-P1-009/US-015-execution.md) | 15 | 14 | 0 | 0 | 0 | 0 | `Done` | 2026-07-12 |
 | P1 | PB-P1-010 | US-016 | Admin ve evento del organizador en solo lectura (auditado) | [record](development-execution/P1/PB-P1-010/US-016-execution.md) | 18 | 17 | 0 | 0 | 0 | 0 | `Done` | 2026-07-13 |
+| P1 | PB-P1-011 | US-017 | Generar plan IA de mi evento (AI-001) | [record](development-execution/P1/PB-P1-011/US-017-execution.md) | 25 | 22 | 0 | 0 | 0 | 1 | `Done` | 2026-07-13 |
+| P1 | PB-P1-012 | US-018 | Generar checklist IA con fechas relativas (AI-002) | [record](development-execution/P1/PB-P1-012/US-018-execution.md) | 24 | 20 | 0 | 0 | 0 | 2 | `Done` | 2026-07-13 |
+| P1 | PB-P1-013 | US-019 | Sugerencia IA de distribución de presupuesto (AI-003) | [record](development-execution/P1/PB-P1-013/US-019-execution.md) | 25 | 21 | 0 | 0 | 0 | 3 | `Done` | 2026-07-13 |
+| P1 | PB-P1-014 | US-020 | Categorías IA priorizadas (AI-004) | [record](development-execution/P1/PB-P1-014/US-020-execution.md) | 24 | 20 | 0 | 0 | 0 | 3 | `Done` | 2026-07-13 |
+| P1 | PB-P1-015 | US-021 | Autocompletar brief de QuoteRequest con IA (AI-005) | [record](development-execution/P1/PB-P1-015/US-021-execution.md) | 28 | 22 | 0 | 0 | 0 | 4 | `Done` | 2026-07-13 |
+| P1 | PB-P1-016 | US-025 | Aplicar, editar o descartar una sugerencia IA (HITL transversal) | [record](development-execution/P1/PB-P1-016/US-025-execution.md) | 25 | 19 | 0 | 0 | 0 | 6 | `Done` | 2026-07-13 |
+| P1 | PB-P1-017 | US-031 | Confirmar tareas IA en bloque | [record](development-execution/P1/PB-P1-017/US-031-execution.md) | 24 | 18 | 0 | 0 | 0 | 4 | `Done` | 2026-07-13 |
+| P1 | PB-P1-018 | US-027 | Ver mi checklist del evento | [record](development-execution/P1/PB-P1-018/US-027-execution.md) | 21 | 17 | 0 | 0 | 0 | 2 | `Validation` | 2026-07-13 |
+| P1 | PB-P1-018 | US-028 | Crear tarea manual del checklist (Organizer) | [record](development-execution/P1/PB-P1-018/US-028-execution.md) | 24 | 19 | 0 | 0 | 0 | 5 | `Validation` | 2026-07-14 |
+| P1 | PB-P1-018 | US-029 | Editar, transicionar estado o eliminar mi tarea (Organizer) | [record](development-execution/P1/PB-P1-018/US-029-execution.md) | 27 | 19 | 0 | 0 | 0 | 1 | `Validation` | 2026-07-14 |
+| P1 | PB-P1-018 | US-030 | Cambiar el estado de mi tarea con un toque rápido (Organizer) | [record](development-execution/P1/PB-P1-018/US-030-execution.md) | 16 | 9 | 0 | 0 | 0 | 2 | `Validation` | 2026-07-14 |
+| P1 | PB-P1-019 | US-032 | Filtrar tareas por rango temporal (próximos 7/30 días + vencidas) | [record](development-execution/P1/PB-P1-019/US-032-execution.md) | 21 | 11 | 0 | 0 | 0 | 6 | `Validation` | 2026-07-14 |
+| P1 | PB-P1-019 | US-033 | Ver progreso (% done) en el dashboard | [record](development-execution/P1/PB-P1-019/US-033-execution.md) | 19 | 14 | 0 | 0 | 0 | 3 | `Validation` | 2026-07-14 |
+| P1 | PB-P1-020 | US-035 | Ver mi presupuesto | [record](development-execution/P1/PB-P1-020/US-035-execution.md) | 24 | 7 | 1 | 0 | 0 | 0 | `Validation` | 2026-07-14 |
+| P1 | PB-P1-020 | US-036 | Crear, editar y eliminar BudgetItem por categoría | [record](development-execution/P1/PB-P1-020/US-036-execution.md) | 25 | 8 | 1 | 0 | 0 | 0 | `Validation` | 2026-07-14 |
