@@ -1,3 +1,6 @@
-// Placeholder de capa (US-090). Sin lógica de feature; la implementación pertenece a la
-// feature story de este bounded context. `export {}` mantiene el módulo compilable con `tsc`.
-export {};
+// Barrel — Ports de budget-management (US-035 / BE-002 R1; US-036 / BE-002+003 R1).
+export * from './budget-read.repository.js';
+export * from './booking-intent-read.port.js';
+export * from './service-category-read.port.js';
+export * from './budget-item-write.repository.js';
+export * from './event-budget-context.reader.js';

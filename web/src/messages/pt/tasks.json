@@ -1,0 +1,256 @@
+{
+  "status": {
+    "quick_action": {
+      "label": {
+        "check_done": "Marcar como concluída",
+        "uncheck_done": "Desmarcar",
+        "skip": "Ignorar",
+        "resume": "Retomar"
+      },
+      "aria": {
+        "check_done": "Marcar a tarefa como concluída",
+        "uncheck_done": "Desmarcar a tarefa (voltar para em progresso)",
+        "skip": "Ignorar a tarefa",
+        "resume": "Retomar a tarefa (voltar para em progresso)"
+      },
+      "announce": {
+        "done": "Tarefa marcada como concluída.",
+        "in_progress": "Tarefa em progresso.",
+        "skipped": "Tarefa ignorada."
+      }
+    },
+    "error": {
+      "invalid_transition": "Transição não permitida.",
+      "event_not_mutable": "Este evento está bloqueado.",
+      "not_found_or_forbidden": "Não é possível concluir a ação.",
+      "transient": "Erro temporário. Tente novamente.",
+      "retry": "Tentar novamente"
+    },
+    "disabled": {
+      "event_locked": "Evento bloqueado: não é possível alterar tarefas.",
+      "mutation_pending": "Atualizando…"
+    }
+  },
+  "bulkConfirm": {
+    "sectionTitle": "Sugeridas por IA — pendentes",
+    "emptyState": "Não há tarefas de IA para confirmar. Gere uma checklist com IA ou crie tarefas manuais.",
+    "selectAllVisible": "Selecionar todas as visíveis",
+    "clearSelection": "Limpar seleção",
+    "confirmSelected": "Confirmar selecionadas ({count})",
+    "confirming": "Confirmando…",
+    "selectionCount": "{count, plural, =0 {Nenhuma selecionada} one {1 tarefa selecionada} other {# tarefas selecionadas}}",
+    "limitReached": "Máximo 50 tarefas por confirmação.",
+    "checkboxLabel": "Selecionar tarefa: {title}",
+    "resultBanner": {
+      "title": "Resultado da confirmação em lote",
+      "acceptedCount": "{count, plural, =0 {0 tarefas confirmadas} one {1 tarefa confirmada} other {# tarefas confirmadas}}",
+      "rejectedCount": "{count, plural, =0 {0 tarefas rejeitadas} one {1 tarefa rejeitada} other {# tarefas rejeitadas}}",
+      "byCodeHeading": "Detalhe por código:",
+      "codes": {
+        "TASK_NOT_FOUND": "Tarefa não encontrada",
+        "TASK_NOT_IN_EVENT": "Tarefa não pertence a este evento",
+        "TASK_NOT_AI": "Tarefa não gerada por IA",
+        "TASK_NOT_PENDING": "Tarefa já não está pendente"
+      }
+    },
+    "toast": {
+      "success": "{count, plural, =0 {0 tarefas confirmadas} one {1 tarefa confirmada} other {# tarefas confirmadas}}",
+      "partial": "{accepted} confirmadas, {rejected} rejeitadas.",
+      "error": "Falha na confirmação em lote. Tente novamente."
+    },
+    "errors": {
+      "BULK_LIMIT_EXCEEDED": "Máximo 50 tarefas por requisição.",
+      "EVENT_NOT_MUTABLE": "O evento não aceita alterações.",
+      "VALIDATION_ERROR": "Dados inválidos.",
+      "AUTHENTICATION_REQUIRED": "Sessão necessária.",
+      "FORBIDDEN": "Ação não permitida.",
+      "RESOURCE_NOT_FOUND": "Evento não encontrado."
+    }
+  },
+  "checklist": {
+    "title": "Meu checklist do evento",
+    "foundCount": "{count, plural, =0 {Sem tarefas} one {1 tarefa encontrada} other {# tarefas encontradas}}",
+    "noDueDate": "Sem data",
+    "errorLoad": "Não foi possível carregar o checklist. Tente novamente.",
+    "badgeAi": "IA",
+    "badgeOverdue": "Atrasada",
+    "badgeOverdueAria": "Tarefa atrasada",
+    "badgeTMinus7": "Próxima do vencimento",
+    "badgeTMinus7Aria": "Tarefa que vence em até 7 dias",
+    "itemAriaTaskPrefix": "Tarefa",
+    "itemAriaStatusPrefix": "estado",
+    "itemAriaAiSuffix": "gerada por IA",
+    "itemAriaDueSuffix": "vence",
+    "rangeFilter": {
+      "groupLabel": "Filtro temporal",
+      "options": {
+        "overdue": { "short": "A", "label": "Atrasadas", "tooltip": "Tarefas atrasadas" },
+        "7d": { "short": "7d", "label": "Próx. 7 dias", "tooltip": "Próximos 7 dias" },
+        "30d": { "short": "30d", "label": "Próx. 30 dias", "tooltip": "Próximos 30 dias" },
+        "all": { "short": "Todas", "label": "Todas", "tooltip": "Todas as tarefas" }
+      }
+    },
+    "progress": {
+      "label": "Progresso do checklist",
+      "card_title": "Progresso do checklist",
+      "go_to_checklist": "Ir para o checklist",
+      "tooltip": "{done} de {total} tarefas feitas. {skipped} ignoradas.",
+      "skipped_note": "{count, plural, one {# tarefa ignorada} other {# tarefas ignoradas}}",
+      "empty_cta": "Confirme ou crie suas primeiras tarefas para ver seu progresso.",
+      "event_completed_banner": "Evento concluído.",
+      "event_cancelled_banner": "Evento cancelado.",
+      "error": "Não foi possível carregar o progresso. Recarregue a página."
+    },
+    "status": {
+      "pending": "Pendente",
+      "active": "Ativa",
+      "in_progress": "Em progresso",
+      "done": "Feita",
+      "skipped": "Ignorada"
+    },
+    "filters": {
+      "legend": "Filtros",
+      "status": { "label": "Estado", "any": "Todos" },
+      "aiGenerated": { "label": "Origem", "any": "Qualquer", "true": "IA", "false": "Manual" },
+      "categoryCode": { "label": "Categoria", "placeholder": "catering, decoração…" }
+    },
+    "pagination": {
+      "label": "Paginação",
+      "prev": "Anterior",
+      "next": "Seguinte",
+      "pageOf": "Página {page} de {totalPages}"
+    },
+    "empty": {
+      "title": "Sem tarefas por enquanto",
+      "body": "Crie sua primeira tarefa ou gere um checklist com IA para começar.",
+      "ctaCreate": "Criar tarefa",
+      "ctaGenerateAi": "Gerar checklist IA",
+      "rangeFiltered": {
+        "title": "Nenhuma tarefa no intervalo selecionado",
+        "body": "Experimente \"Todas\" ou crie uma nova tarefa.",
+        "ctaClearRange": "Ver todas"
+      }
+    },
+    "banner": {
+      "readOnly": "O evento está concluído: somente leitura.",
+      "cancelled": "O evento está cancelado."
+    },
+    "actions": {
+      "create": "Criar tarefa",
+      "createDisabledTooltip": "Não é possível criar tarefas em eventos cancelados ou concluídos."
+    },
+    "create": {
+      "title": "Criar tarefa",
+      "cancel": "Cancelar",
+      "submit": "Criar",
+      "submitting": "Criando…",
+      "fields": {
+        "title": {
+          "label": "Título",
+          "errors": { "title_length": "O título deve ter entre 2 e 200 caracteres." }
+        },
+        "description": {
+          "label": "Descrição (opcional)",
+          "errors": { "description_max": "A descrição não pode ultrapassar 2000 caracteres." }
+        },
+        "dueDate": {
+          "label": "Data limite (opcional)",
+          "errors": {
+            "due_date_invalid_or_past": "A data deve ser futura e ter formato válido.",
+            "due_date_in_past": "A data já não é válida.",
+            "DUE_DATE_IN_PAST": "A data já não é válida."
+          }
+        },
+        "category": {
+          "label": "Categoria (opcional)",
+          "none": "Sem categoria",
+          "aiHint": "Sugerida pela IA",
+          "errors": { "category_not_available": "A categoria selecionada não está disponível." }
+        }
+      },
+      "errors": {
+        "eventNotMutable": "Não é possível criar tarefas enquanto o evento estiver cancelado ou concluído.",
+        "notFound": "Evento não encontrado.",
+        "forbidden": "Você não tem permissão para criar tarefas neste evento.",
+        "unauthorized": "Sua sessão expirou. Faça login novamente.",
+        "generic": "Não foi possível criar a tarefa. Tente novamente."
+      }
+    },
+    "mutate": {
+      "saved": "Tarefa atualizada",
+      "cancel": "Cancelar",
+      "fields": {
+        "title": {
+          "label": "Título",
+          "errors": { "title_length": "O título deve ter entre 2 e 200 caracteres." }
+        },
+        "description": {
+          "label": "Descrição",
+          "edit": "Editar descrição",
+          "errors": { "description_max": "A descrição não pode exceder 2000 caracteres." }
+        },
+        "dueDate": {
+          "label": "Data limite",
+          "empty": "Sem data",
+          "errors": {
+            "due_date_invalid_or_past": "A data deve ser futura e válida.",
+            "DUE_DATE_IN_PAST": "A data já não é válida."
+          }
+        },
+        "category": {
+          "label": "Categoria",
+          "none": "Sem categoria"
+        }
+      },
+      "errors": {
+        "emptyPatch": "Edite pelo menos um campo.",
+        "categoryNotAvailable": "A categoria selecionada não está disponível.",
+        "dueDateInPast": "A data deve ser futura para tarefas pendentes.",
+        "eventNotMutable": "Este evento está bloqueado (cancelado ou concluído).",
+        "notFound": "Esta tarefa já não existe.",
+        "forbidden": "Você não tem permissão para editar esta tarefa.",
+        "unauthorized": "Sua sessão expirou. Faça login novamente.",
+        "validation": "Verifique os dados inseridos.",
+        "generic": "Não foi possível salvar a tarefa. Tente novamente."
+      },
+      "status": {
+        "menuButton": "Alterar estado",
+        "terminal": "Estado final: sem transições adicionais.",
+        "unsupported": "Estado não suportado pelo fluxo canônico.",
+        "labels": {
+          "pending": "Pendente",
+          "active": "Ativa",
+          "in_progress": "Em progresso",
+          "done": "Concluída",
+          "skipped": "Ignorada"
+        },
+        "errors": {
+          "invalidTransition": "Transição não permitida a partir de {currentStatus}.",
+          "eventNotMutable": "Este evento está bloqueado (cancelado ou concluído).",
+          "notFound": "Esta tarefa já não existe.",
+          "generic": "Não foi possível alterar o estado. Tente novamente."
+        },
+        "confirm": {
+          "title": "Confirmar transição",
+          "body": "Você vai marcar a tarefa como {next}. Esta ação não pode ser revertida neste MVP.",
+          "cancel": "Cancelar",
+          "confirm": "Confirmar"
+        }
+      },
+      "delete": {
+        "title": "Excluir tarefa",
+        "body": "Esta tarefa será excluída (soft delete). Auditoria admin pode recuperá-la.",
+        "cancel": "Cancelar",
+        "confirm": "Excluir",
+        "deleting": "Excluindo…",
+        "errors": {
+          "eventNotMutable": "Este evento está bloqueado (cancelado ou concluído).",
+          "notFound": "Esta tarefa já não existe.",
+          "forbidden": "Você não tem permissão para excluir esta tarefa.",
+          "unauthorized": "Sua sessão expirou. Faça login novamente.",
+          "generic": "Não foi possível excluir a tarefa. Tente novamente."
+        }
+      }
+    }
+  }
+}

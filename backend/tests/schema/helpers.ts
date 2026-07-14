@@ -61,8 +61,10 @@ export const MVP_MODELS = [
 export const SEED_MODELS = MVP_MODELS.filter((m) => m !== 'AIPromptVersion');
 
 /**
- * Modelos con soft delete. US-099 declaró 7; US-012 (PB-P1-007) añade `Event` (soft delete de
- * borradores), por lo que ahora son 8.
+ * Modelos con soft delete. US-099 declaró 7; US-012 (PB-P1-007) añade `Event`; US-027
+ * (PB-P1-018) añade `EventTask` (migración `20260713110000_us027_event_task_list_columns_and_index`
+ * agrega `deleted_at` para soft delete lógico + auditoría vía `deletedByUserId` en US-029).
+ * Total: 9.
  */
 export const SOFT_DELETE_MODELS = [
   'Review',
@@ -73,6 +75,7 @@ export const SOFT_DELETE_MODELS = [
   'EventType',
   'Location',
   'Event',
+  'EventTask',
 ] as const;
 
 /** Enums base (AC-02). */

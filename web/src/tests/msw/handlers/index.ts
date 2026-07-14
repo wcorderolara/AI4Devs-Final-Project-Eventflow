@@ -1,8 +1,10 @@
 import { http, HttpResponse } from 'msw';
+import { aiHandlers } from './ai';
 import { authHandlers } from './auth';
 import { eventsHandlers } from './events';
 import { healthHandlers } from './health';
 import { profileHandlers } from './profile';
+import { tasksHandlers } from './tasks';
 
 // Catch-all: cualquier `/api/v1/*` sin handler dedicado → 501 visible (falla ruidosamente).
 // DEBE ir al final del array; cada feature agrega su handler ANTES de este.
@@ -22,6 +24,8 @@ const catchAllHandlers = [
 export const handlers = [
   ...profileHandlers,
   ...eventsHandlers,
+  ...tasksHandlers,
+  ...aiHandlers,
   ...authHandlers,
   ...healthHandlers,
   ...catchAllHandlers,

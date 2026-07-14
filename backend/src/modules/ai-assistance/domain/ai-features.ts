@@ -25,8 +25,22 @@ export const OUTPUT_SCHEMAS = {
     summary: z.string().min(1),
     phases: z.array(z.object({ name: z.string().min(1), tasks: z.array(z.string().min(1)) }).strict()).min(1),
   }).strict(),
+  // US-018 (PB-P1-012 / AC-04): checklist agrupable por fase T-x con `due_relative_days`.
   checklist: z.object({
-    items: z.array(z.object({ title: z.string().min(1), priority: z.enum(['low', 'medium', 'high']).optional() }).strict()).min(1),
+    tasks: z
+      .array(
+        z
+          .object({
+            title: z.string().min(1),
+            description: z.string(),
+            category: z.string().min(1),
+            due_relative_days: z.number().int().min(0),
+            phase: z.enum(['T-180', 'T-90', 'T-30', 'T-7', 'T-1']),
+            priority: z.enum(['low', 'medium', 'high']),
+          })
+          .strict(),
+      )
+      .min(1),
   }).strict(),
   budget_suggestion: z.object({
     currencyCode: z.enum(SUPPORTED_CURRENCIES),

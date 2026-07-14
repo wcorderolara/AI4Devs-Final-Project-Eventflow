@@ -1,0 +1,75 @@
+# US-028 (PB-P1-018 / API-001) — Snippet OpenAPI del endpoint de creación manual.
+# Se integrará al snapshot global de OpenAPI vía US-098 (regeneración coordinada). Mientras
+# tanto este snippet documenta el contrato canónico de US-028 para consumidores del cliente MSW.
+paths:
+  /events/{eventId}/tasks:
+    post:
+      operationId: createEventTask
+      summary: Crear una `EventTask` manual del checklist del evento
+      description: >
+        Crea una tarea manual (`ai_generated=false`, `ai_recommendation_id=null`,
+        `status='pending'`) en el checklist del evento del organizador dueño. Body Zod tolerante:
+        campos server-controlled y extras se descartan silenciosamente y se loguean en
+        `body.ignoredFields`. El endpoint NO invoca al LLMProvider.
+      tags: [tasks]
+      security:
+        - sessionCookie: []
+      parameters:
+        - in: path
+          name: eventId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string, minLength: 2, maxLength: 200 }
+                description:
+                  type: string
+                  nullable: true
+                  maxLength: 2000
+                due_date:
+                  type: string
+                  format: date-time
+                  nullable: true
+                  description: ISO-8601 con offset; debe ser ≥ now() con ±60s de tolerancia.
+                category_code:
+                  type: string
+                  nullable: true
+                  maxLength: 64
+      responses:
+        '201':
+          description: Tarea creada. `Location` apunta al recurso.
+          headers:
+            Location:
+              schema: { type: string }
+              description: /api/v1/events/{eventId}/tasks/{taskId}
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TaskListItemDto'
+                  meta:
+                    type: object
+                    required: [correlationId, timestamp]
+                    properties:
+                      correlationId: { type: string }
+                      timestamp: { type: string, format: date-time }
+        '400':
+          description: >
+            `VALIDATION_ERROR` (path/body inválido), `CATEGORY_NOT_AVAILABLE` (category_code
+            inexistente/inactiva), o `DUE_DATE_IN_PAST` (fecha en el pasado) según `details.field`.
+        '401': { description: '`AUTHENTICATION_REQUIRED` — sin sesión.' }
+        '403': { description: '`FORBIDDEN` — vendor o admin.' }
+        '404': { description: '`RESOURCE_NOT_FOUND` — evento ajeno, inexistente o soft-deleted.' }
+        '409':
+          description: '`EVENT_NOT_MUTABLE` — evento cancelled/completed.'
+        '415':
+          description: '`UNSUPPORTED_MEDIA_TYPE` — Content-Type distinto de application/json.'

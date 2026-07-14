@@ -72,6 +72,30 @@ export const ErrorCodes = {
   // US-086 (PB-P0-014): reset surgical Demo. Concurrencia → 409; falla parcial → 500.
   SEED_RESET_IN_PROGRESS: 'SEED_RESET_IN_PROGRESS', // ya hay un reset en curso (EC-03)
   SEED_RESET_FAILED: 'SEED_RESET_FAILED', // falla durante limpieza/repoblado (EC-02)
+  // US-019 (PB-P1-013, EC-01, VR-03): budget_estimated <= 0 al invocar sugerencia IA → 400.
+  INVALID_BUDGET: 'INVALID_BUDGET',
+  // US-025 (PB-P1-016): contrato HITL Accept/Edit/Discard. Doc 16 §35.3.
+  RECOMMENDATION_NOT_PENDING: 'RECOMMENDATION_NOT_PENDING', // 409 — status no `pending` (EC-01, EC-07)
+  RECOMMENDATION_TYPE_NOT_APPLICABLE: 'RECOMMENDATION_TYPE_NOT_APPLICABLE', // 422 — type sin strategy (EC-05)
+  EDITED_PAYLOAD_INVALID: 'EDITED_PAYLOAD_INVALID', // 400 — editedPayload no cumple *OutputDto (EC-03)
+  SIDE_EFFECT_FAILED: 'SIDE_EFFECT_FAILED', // 500 — strategy applyInTransaction falló (EC-04)
+  PAYLOAD_TOO_LARGE: 'PAYLOAD_TOO_LARGE', // 413 — body > 256KB (EC-06)
+  // US-031 (PB-P1-017): confirmar tareas IA en bloque (HITL bulk). Errores globales del batch.
+  BULK_LIMIT_EXCEEDED: 'BULK_LIMIT_EXCEEDED', // 400 — taskIds (post-dedup) > 50 (EC-07)
+  EVENT_NOT_MUTABLE: 'EVENT_NOT_MUTABLE', // 409 — event.status ∈ {cancelled, completed, deleted} (EC-09)
+  // US-028 (PB-P1-018): creación manual de EventTask (POST /events/:eventId/tasks).
+  DUE_DATE_IN_PAST: 'DUE_DATE_IN_PAST', // 400 — due_date < now() - 60s tolerancia (EC-04)
+  CATEGORY_NOT_AVAILABLE: 'CATEGORY_NOT_AVAILABLE', // 400 — category_code inexistente o is_active=false (EC-06)
+  UNSUPPORTED_MEDIA_TYPE: 'UNSUPPORTED_MEDIA_TYPE', // 415 — Content-Type distinto de application/json (EC-12)
+  // US-029 (PB-P1-018): PATCH/DELETE de tareas del checklist.
+  EMPTY_PATCH: 'EMPTY_PATCH', // 400 — PATCH content sin ningún campo editable (EC-06)
+  INVALID_TRANSITION: 'INVALID_TRANSITION', // 409 — PATCH status contra state machine (EC-02)
+  // US-036 (PB-P1-020 R1): CRUD BudgetItem — hard delete + bloqueos + edición categoría.
+  ITEM_HAS_COMMITMENT: 'ITEM_HAS_COMMITMENT', // 409 — DELETE bloqueado por amount_committed > 0 (AC-04)
+  ITEM_HAS_PENDING_INTENT: 'ITEM_HAS_PENDING_INTENT', // 409 — DELETE bloqueado por BookingIntent.pending (AC-05)
+  ITEM_HAS_COMMITMENT_CATEGORY_LOCKED: 'ITEM_HAS_COMMITMENT_CATEGORY_LOCKED', // 409 — PATCH cambia category_code con committed > 0 (AC-02 / D5)
+  EVENT_NOT_EDITABLE: 'EVENT_NOT_EDITABLE', // 409 — mutación bloqueada por event.status ∈ {cancelled, completed} (AC-06 / D3)
+  INVALID_CATEGORY_CODE: 'INVALID_CATEGORY_CODE', // 400 — category_code no está en whitelist activa (VR-03)
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

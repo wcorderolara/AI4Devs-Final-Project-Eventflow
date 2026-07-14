@@ -47,11 +47,14 @@ describe('QA-003: soft delete deletedAt', () => {
         /deletedAt\s+DateTime\?\s+@map\("deleted_at"\)\s+@db\.Timestamptz\(6\)/,
       );
     }
-    expect(SOFT_DELETE_MODELS).toHaveLength(8);
+    expect(SOFT_DELETE_MODELS).toHaveLength(9);
   });
 
-  it('NO declara deletedAt en modelos sin soft delete (p. ej. User, EventTask, Budget)', () => {
-    for (const model of ['User', 'EventTask', 'Budget']) {
+  it('NO declara deletedAt en modelos sin soft delete (p. ej. User, Budget)', () => {
+    // Nota (US-027 PB-P1-018): `EventTask` fue promovido a modelo con soft delete
+    // (migración `20260713110000_us027_event_task_list_columns_and_index` agrega `deleted_at`
+    // + `deletedByUserId` de auditoría en US-029). Ahora vive en `SOFT_DELETE_MODELS`.
+    for (const model of ['User', 'Budget']) {
       expect(modelBlock(model) ?? '').not.toMatch(/deletedAt/);
     }
   });
@@ -187,10 +190,16 @@ describe('QA-008: convenciones físicas y tipos PostgreSQL', () => {
   });
 
   it('toda FK usa @relation explícito con onDelete', () => {
-    const relationLines = [...schema.matchAll(/@relation\([^)]*\)/g)].map((m) => m[0]);
+    // Las @relations "inversas" (backreferences sin `fields`) no requieren onDelete: son solo
+    // el otro lado de una relación. El test se enfoca en @relation con `fields:` (FK real).
+    // `SetNull` es aceptado para FKs opcionales de auditoría (US-028/029, US-031: `createdBy`,
+    // `updatedBy`, `deletedBy`, `confirmedBy`, `aiRecommendationId`, `categoryCode`).
+    const relationLines = [...schema.matchAll(/@relation\([^)]*fields:[^)]*\)/g)].map((m) => m[0]);
     expect(relationLines.length).toBeGreaterThan(0);
     for (const line of relationLines) {
-      expect(line, `@relation sin onDelete: ${line}`).toMatch(/onDelete:\s*(Restrict|Cascade)/);
+      expect(line, `@relation sin onDelete: ${line}`).toMatch(
+        /onDelete:\s*(Restrict|Cascade|SetNull)/,
+      );
     }
   });
 

@@ -33,13 +33,16 @@ describe('Pipeline global — CORS, body limit, correlationId (US-091)', () => {
     expect(res.status).toBe(200);
   });
 
-  it('NT-08: body JSON que supera JSON_BODY_LIMIT → 400 con correlationId', async () => {
+  it('NT-08: body JSON que supera JSON_BODY_LIMIT → 413 PAYLOAD_TOO_LARGE con correlationId', async () => {
+    // US-025 (PB-P1-016 / EC-06): body > 256KB retorna 413 `PAYLOAD_TOO_LARGE` (mapping
+    // canónico); reemplaza el mapping histórico de US-091 (400 `BAD_REQUEST`).
     const huge = JSON.stringify({ data: 'x'.repeat(1_100_000) });
     const res = await request(app)
       .post('/api/v1/anything')
       .set('Content-Type', 'application/json')
       .send(huge);
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(413);
+    expect(res.body.error.code).toBe('PAYLOAD_TOO_LARGE');
     expect(res.body.error.correlationId).toBeDefined();
   });
 

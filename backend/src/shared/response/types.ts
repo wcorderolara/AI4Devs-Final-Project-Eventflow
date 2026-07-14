@@ -23,6 +23,9 @@ export interface PaginationMeta {
 export interface SuccessEnvelope<T> {
   data: T;
   pagination?: PaginationMeta;
+  // US-033 (PB-P1-019 / BE-004): agregado aditivo opcional (por ejemplo, `progress` en el
+  // checklist). `unknown` para no acoplar el envelope canónico a un tipo específico.
+  progress?: unknown;
   meta: {
     correlationId: string;
     timestamp: string;

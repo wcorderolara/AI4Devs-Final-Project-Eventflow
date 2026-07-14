@@ -1,0 +1,256 @@
+{
+  "status": {
+    "quick_action": {
+      "label": {
+        "check_done": "Mark as done",
+        "uncheck_done": "Undo done",
+        "skip": "Skip",
+        "resume": "Resume"
+      },
+      "aria": {
+        "check_done": "Mark task as done",
+        "uncheck_done": "Undo done (move back to in progress)",
+        "skip": "Skip this task",
+        "resume": "Resume this task (move back to in progress)"
+      },
+      "announce": {
+        "done": "Task marked as done.",
+        "in_progress": "Task in progress.",
+        "skipped": "Task skipped."
+      }
+    },
+    "error": {
+      "invalid_transition": "Transition not allowed.",
+      "event_not_mutable": "This event is locked.",
+      "not_found_or_forbidden": "Cannot complete the action.",
+      "transient": "Temporary error. Please retry.",
+      "retry": "Retry"
+    },
+    "disabled": {
+      "event_locked": "Event locked: tasks cannot be changed.",
+      "mutation_pending": "Updating…"
+    }
+  },
+  "bulkConfirm": {
+    "sectionTitle": "AI suggestions — pending",
+    "emptyState": "No AI tasks to confirm. Generate an AI checklist or create manual tasks.",
+    "selectAllVisible": "Select all visible",
+    "clearSelection": "Clear selection",
+    "confirmSelected": "Confirm selected ({count})",
+    "confirming": "Confirming…",
+    "selectionCount": "{count, plural, =0 {None selected} one {1 task selected} other {# tasks selected}}",
+    "limitReached": "Maximum 50 tasks per confirmation.",
+    "checkboxLabel": "Select task: {title}",
+    "resultBanner": {
+      "title": "Bulk confirmation result",
+      "acceptedCount": "{count, plural, =0 {0 tasks confirmed} one {1 task confirmed} other {# tasks confirmed}}",
+      "rejectedCount": "{count, plural, =0 {0 tasks rejected} one {1 task rejected} other {# tasks rejected}}",
+      "byCodeHeading": "Breakdown by code:",
+      "codes": {
+        "TASK_NOT_FOUND": "Task not found",
+        "TASK_NOT_IN_EVENT": "Task does not belong to this event",
+        "TASK_NOT_AI": "Task is not AI-generated",
+        "TASK_NOT_PENDING": "Task is no longer pending"
+      }
+    },
+    "toast": {
+      "success": "{count, plural, =0 {0 tasks confirmed} one {1 task confirmed} other {# tasks confirmed}}",
+      "partial": "{accepted} confirmed, {rejected} rejected.",
+      "error": "Bulk confirmation failed. Please try again."
+    },
+    "errors": {
+      "BULK_LIMIT_EXCEEDED": "Maximum 50 tasks per request.",
+      "EVENT_NOT_MUTABLE": "Event does not accept changes.",
+      "VALIDATION_ERROR": "Invalid input.",
+      "AUTHENTICATION_REQUIRED": "Sign-in required.",
+      "FORBIDDEN": "Action not allowed.",
+      "RESOURCE_NOT_FOUND": "Event not found."
+    }
+  },
+  "checklist": {
+    "title": "My event checklist",
+    "foundCount": "{count, plural, =0 {No tasks} one {1 task found} other {# tasks found}}",
+    "noDueDate": "No due date",
+    "errorLoad": "Could not load the checklist. Please try again.",
+    "badgeAi": "AI",
+    "badgeOverdue": "Overdue",
+    "badgeOverdueAria": "Overdue task",
+    "badgeTMinus7": "Due soon",
+    "badgeTMinus7Aria": "Task due within 7 days",
+    "itemAriaTaskPrefix": "Task",
+    "itemAriaStatusPrefix": "status",
+    "itemAriaAiSuffix": "AI generated",
+    "itemAriaDueSuffix": "due",
+    "rangeFilter": {
+      "groupLabel": "Time range filter",
+      "options": {
+        "overdue": { "short": "O", "label": "Overdue", "tooltip": "Overdue tasks" },
+        "7d": { "short": "7d", "label": "Next 7 days", "tooltip": "Due in the next 7 days" },
+        "30d": { "short": "30d", "label": "Next 30 days", "tooltip": "Due in the next 30 days" },
+        "all": { "short": "All", "label": "All", "tooltip": "All tasks" }
+      }
+    },
+    "progress": {
+      "label": "Checklist progress",
+      "card_title": "Checklist progress",
+      "go_to_checklist": "Go to checklist",
+      "tooltip": "{done} of {total} tasks done. {skipped} skipped.",
+      "skipped_note": "{count, plural, one {# task skipped} other {# tasks skipped}}",
+      "empty_cta": "Confirm or create your first tasks to see your progress.",
+      "event_completed_banner": "Event completed.",
+      "event_cancelled_banner": "Event cancelled.",
+      "error": "Could not load progress. Reload the page."
+    },
+    "status": {
+      "pending": "Pending",
+      "active": "Active",
+      "in_progress": "In progress",
+      "done": "Done",
+      "skipped": "Skipped"
+    },
+    "filters": {
+      "legend": "Filters",
+      "status": { "label": "Status", "any": "Any" },
+      "aiGenerated": { "label": "Origin", "any": "Any", "true": "AI", "false": "Manual" },
+      "categoryCode": { "label": "Category", "placeholder": "catering, decor…" }
+    },
+    "pagination": {
+      "label": "Pagination",
+      "prev": "Previous",
+      "next": "Next",
+      "pageOf": "Page {page} of {totalPages}"
+    },
+    "empty": {
+      "title": "No tasks yet",
+      "body": "Create your first task or generate an AI checklist to get started.",
+      "ctaCreate": "Create task",
+      "ctaGenerateAi": "Generate AI checklist",
+      "rangeFiltered": {
+        "title": "No tasks in the selected range",
+        "body": "Try \"All\" or create a new task.",
+        "ctaClearRange": "Show all"
+      }
+    },
+    "banner": {
+      "readOnly": "Event completed: read-only.",
+      "cancelled": "Event cancelled."
+    },
+    "actions": {
+      "create": "Create task",
+      "createDisabledTooltip": "Tasks cannot be created on cancelled or completed events."
+    },
+    "create": {
+      "title": "Create task",
+      "cancel": "Cancel",
+      "submit": "Create",
+      "submitting": "Creating…",
+      "fields": {
+        "title": {
+          "label": "Title",
+          "errors": { "title_length": "Title must be between 2 and 200 characters." }
+        },
+        "description": {
+          "label": "Description (optional)",
+          "errors": { "description_max": "Description cannot exceed 2000 characters." }
+        },
+        "dueDate": {
+          "label": "Due date (optional)",
+          "errors": {
+            "due_date_invalid_or_past": "Date must be in the future and in a valid format.",
+            "due_date_in_past": "Date is no longer valid.",
+            "DUE_DATE_IN_PAST": "Date is no longer valid."
+          }
+        },
+        "category": {
+          "label": "Category (optional)",
+          "none": "No category",
+          "aiHint": "AI-suggested",
+          "errors": { "category_not_available": "The selected category is not available." }
+        }
+      },
+      "errors": {
+        "eventNotMutable": "Tasks cannot be created while the event is cancelled or completed.",
+        "notFound": "Event not found.",
+        "forbidden": "You don't have permission to create tasks on this event.",
+        "unauthorized": "Your session expired. Please sign in again.",
+        "generic": "Could not create the task. Please try again."
+      }
+    },
+    "mutate": {
+      "saved": "Task updated",
+      "cancel": "Cancel",
+      "fields": {
+        "title": {
+          "label": "Title",
+          "errors": { "title_length": "Title must be between 2 and 200 characters." }
+        },
+        "description": {
+          "label": "Description",
+          "edit": "Edit description",
+          "errors": { "description_max": "Description cannot exceed 2000 characters." }
+        },
+        "dueDate": {
+          "label": "Due date",
+          "empty": "No date",
+          "errors": {
+            "due_date_invalid_or_past": "Date must be in the future and valid.",
+            "DUE_DATE_IN_PAST": "Date is no longer valid."
+          }
+        },
+        "category": {
+          "label": "Category",
+          "none": "No category"
+        }
+      },
+      "errors": {
+        "emptyPatch": "Edit at least one field.",
+        "categoryNotAvailable": "The selected category is not available.",
+        "dueDateInPast": "Date must be in the future for pending tasks.",
+        "eventNotMutable": "This event is locked (cancelled or completed).",
+        "notFound": "This task no longer exists.",
+        "forbidden": "You don't have permission to edit this task.",
+        "unauthorized": "Your session expired. Please sign in again.",
+        "validation": "Check the data you entered.",
+        "generic": "Could not save the task. Please try again."
+      },
+      "status": {
+        "menuButton": "Change status",
+        "terminal": "Final status: no further transitions.",
+        "unsupported": "Status not supported by the canonical flow.",
+        "labels": {
+          "pending": "Pending",
+          "active": "Active",
+          "in_progress": "In progress",
+          "done": "Done",
+          "skipped": "Skipped"
+        },
+        "errors": {
+          "invalidTransition": "Transition not allowed from {currentStatus}.",
+          "eventNotMutable": "This event is locked (cancelled or completed).",
+          "notFound": "This task no longer exists.",
+          "generic": "Could not change the status. Please try again."
+        },
+        "confirm": {
+          "title": "Confirm transition",
+          "body": "You are about to mark the task as {next}. This action cannot be undone in this MVP.",
+          "cancel": "Cancel",
+          "confirm": "Confirm"
+        }
+      },
+      "delete": {
+        "title": "Delete task",
+        "body": "This task will be soft-deleted. Admin audit can recover it.",
+        "cancel": "Cancel",
+        "confirm": "Delete",
+        "deleting": "Deleting…",
+        "errors": {
+          "eventNotMutable": "This event is locked (cancelled or completed).",
+          "notFound": "This task no longer exists.",
+          "forbidden": "You don't have permission to delete this task.",
+          "unauthorized": "Your session expired. Please sign in again.",
+          "generic": "Could not delete the task. Please try again."
+        }
+      }
+    }
+  }
+}
