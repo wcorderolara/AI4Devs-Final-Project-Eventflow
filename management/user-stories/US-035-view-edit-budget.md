@@ -18,7 +18,8 @@
 | Ready for Development Tasks | Yes                                       |
 | Sprint / Milestone | MVP                                                |
 | Created Date       | 2026-06-09                                         |
-| Last Updated       | 2026-06-27                                         |
+| Last Updated       | 2026-07-14                                         |
+| Revision R1        | 2026-07-14 — Alineación con schema real (Opción A). Ver §Notes. |
 
 ---
 
@@ -114,11 +115,11 @@ Referencia completa: `management/user-stories/decision-resolutions/US-035-decisi
 
 ## 🎯 Happy Path
 
-### AC-01: Vista canónica del presupuesto
+### AC-01: Vista canónica del presupuesto (R1)
 
 **Given** un organizador autenticado dueño de un evento con `Budget` y al menos un `BudgetItem`
 **When** consulta `GET /api/v1/events/:eventId/budget`
-**Then** recibe un response 200 con `summary` (totales derivados, `currency_code`, `over_committed`) y `items[]` por categoría con campos `category_name`, `planned`, `committed`, `paid`, `ai_generated`. La UI renderiza tabla + resumen, todos los montos en moneda del evento formateados con `Intl.NumberFormat({ style: 'currency', currency: summary.currency_code })`.
+**Then** recibe un response 200 con `summary` (`total_planned`, `total_committed`, `over_committed`, `currency_code`) y `items[]` con campos `id`, `label`, `category_code` (nullable), `amount_planned`, `amount_committed`. La UI renderiza tabla + resumen, todos los montos formateados con `Intl.NumberFormat(locale, { style: 'currency', currency: summary.currency_code })`.
 
 ### AC-02 (eliminada)
 
@@ -130,7 +131,7 @@ Referencia completa: `management/user-stories/decision-resolutions/US-035-decisi
 **When** el frontend renderiza la vista
 **Then** muestra un banner accesible (`role="alert"` o `aria-live="polite"`) no bloqueante en la sección de resumen con copy localizado (`budget.overcommit_warning`). El warning NO bloquea ninguna interacción (FR-BUDGET-005, AC-BUDGET-001).
 
-### AC-04: Shape canónico del response
+### AC-04: Shape canónico del response (R1)
 
 **Given** una respuesta exitosa de `GET /api/v1/events/:eventId/budget`
 **When** el cliente lee el payload
@@ -141,25 +142,22 @@ Referencia completa: `management/user-stories/decision-resolutions/US-035-decisi
   "summary": {
     "total_planned": 12500.00,
     "total_committed": 9800.00,
-    "paid_total": 4200.00,
     "over_committed": false,
     "currency_code": "USD"
   },
   "items": [
     {
       "id": "uuid",
-      "service_category_id": "uuid",
-      "category_name": "Catering",
-      "planned": 4500.00,
-      "committed": 3800.00,
-      "paid": 1500.00,
-      "ai_generated": true
+      "label": "Catering",
+      "category_code": "catering",
+      "amount_planned": 4500.00,
+      "amount_committed": 3800.00
     }
   ]
 }
 ```
 
-`paid` siempre presente (`>= 0`); cuando en BD es `NULL`, el backend lo serializa como `0`.
+`category_code` puede ser `null` (schema actual `BudgetItem.categoryCode: String?`). Los totales se leen de `Budget.totalPlanned`/`totalCommitted` (materializados por PB-P0-001). `currency_code` mirror de `Event.currency`.
 
 ### AC-05: i18n y currency formatting CLDR
 
@@ -205,11 +203,9 @@ Referencia completa: `management/user-stories/decision-resolutions/US-035-decisi
 **When** se renderiza la vista
 **Then** banner visible y no bloqueante (AC-03); todas las celdas y CTAs permanecen operativos.
 
-### EC-03: Todos los items con `paid IS NULL`
+### EC-03 (eliminada por R1)
 
-**Given** ningún item registró `paid`
-**When** se renderiza la tabla
-**Then** la columna `Paid` muestra `0` formateado por locale en cada fila; `summary.paid_total = 0`.
+> **Eliminada por R1 (2026-07-14)** — El schema real (`BudgetItem`) no expone la columna `paid`. Esta funcionalidad queda diferida a una US futura P2 que agregará `paid` + `ai_generated` + FK `service_category_id`. Ver §22 de la Tech Spec.
 
 ### EC-04: Evento `cancelled`
 
@@ -360,26 +356,23 @@ This story does not invoke AI directly.
 | ------ | ------------------------------------- | ----------------------------------------------------------------------------- |
 | GET    | `/api/v1/events/:eventId/budget`       | Vista del presupuesto: summary derivado + items por categoría + flag warning.  |
 
-#### Response shape (canónico)
+#### Response shape (canónico, R1)
 
 ```json
 {
   "summary": {
     "total_planned": 12500.00,
     "total_committed": 9800.00,
-    "paid_total": 4200.00,
     "over_committed": false,
     "currency_code": "USD"
   },
   "items": [
     {
       "id": "uuid",
-      "service_category_id": "uuid",
-      "category_name": "Catering",
-      "planned": 4500.00,
-      "committed": 3800.00,
-      "paid": 1500.00,
-      "ai_generated": false
+      "label": "Catering",
+      "category_code": "catering",
+      "amount_planned": 4500.00,
+      "amount_committed": 3800.00
     }
   ]
 }
@@ -539,7 +532,22 @@ Not applicable for this story.
 
 ## 📝 Notes
 
-* Las políticas para `paid`, alcance (solo vista), origen server-side de `over_committed`, y CTAs de Empty State están formalizadas en D1/D2/D3/D4 (`management/user-stories/decision-resolutions/US-035-decision-resolution.md`).
+### Revision R1 — 2026-07-14 (Schema alignment, Opción A)
+
+* **Motivo:** el schema Prisma real entregado por PB-P0-001 (`BudgetItem` con `label`, `categoryCode?`, `amountPlanned`, `amountCommitted` y sin `paid`, `ai_generated`, ni FK `service_category_id`) no permite cumplir el shape original del contrato.
+* **Cambios normativos:**
+  - AC-01 y AC-04 reescritos con el nuevo shape.
+  - EC-03 eliminado (no aplica sin columna `paid`).
+  - D3 (normalización `paid null → 0`) **marcada N/A** hasta que exista la columna en BD.
+  - `currency_code` mirror de `Event.currency` (enum `CurrencyCode`).
+  - Totales leídos directamente de `Budget.totalPlanned` / `Budget.totalCommitted` (materializados).
+* **Diferido a P2 (US paralela):** adición de `paid` (nullable), `ai_generated`, FK `service_category_id → ServiceCategory`, backfill y ajuste de US-036 + seed.
+* **Aprobación pendiente:** PO/BA debe reconfirmar formalmente antes de merge.
+* Ver `management/technical-specs/P1/PB-P1-020/US-035-technical-spec.md §22`.
+
+### Notas originales
+
+* Las políticas para alcance (solo vista), origen server-side de `over_committed`, y CTAs de Empty State están formalizadas en D1/D2/D4 (`management/user-stories/decision-resolutions/US-035-decision-resolution.md`). D3 aplicará cuando exista la columna `paid` (post-R1).
 * Documentation Alignment Required (no bloqueantes): actualización de `docs/16 §M06` con shape extendido (`summary`, `over_committed`, `paid_total`); nota interpretativa en `BR-BUDGET-002` referenciando D3; corrección del ID `NFR-PERF-001` en backlog (housekeeping).
 * Handoff a US-036: la UI expone deeplinks a CTAs `Editar`/`Eliminar` por fila y `Crear primera categoría` desde Empty State; el cache TanStack `['event', eventId, 'budget']` debe invalidarse desde US-036 tras cada mutación para que esta vista refleje el cambio.
 * Currency formatting CLDR vía `Intl.NumberFormat(locale, { style: 'currency', currency: summary.currency_code })`. Sin conversión automática (`BR-BUDGET-007`).

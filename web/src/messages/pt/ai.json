@@ -1,0 +1,250 @@
+{
+  "eventPlan": {
+    "title": "Plano de IA do evento",
+    "description": "Obtenha um plano sugerido para o seu evento: fases, tarefas e recomendações iniciais. É um ponto de partida — nada é aplicado até que você aceite.",
+    "back": "Voltar ao evento",
+    "emptyPrompt": "Gere um plano inicial ajustado aos dados do seu evento.",
+    "generateCta": "Gerar plano de IA",
+    "loading": "Gerando o seu plano…",
+    "loadingHint": "Isto pode levar até 60 segundos.",
+    "retry": "Tentar de novo",
+    "retryAfter": "Aguarde cerca de {seconds} segundos antes de tentar de novo.",
+    "missingData": "Complete os dados do evento (tipo, data, convidados, orçamento, moeda, cidade, idioma) antes de gerar um plano.",
+    "completeData": "Completar dados do evento",
+    "viewerHeading": "Plano sugerido",
+    "hitlNotice": "Esta sugestão está pendente da sua revisão. Não altera tarefas nem orçamento até que você aceite.",
+    "badgeSuggested": "Sugerido pela IA",
+    "badgeAria": "Conteúdo gerado por IA, pendente de revisão",
+    "badgeFallback": "Sugestão base",
+    "badgeFallbackAria": "Sugestão base gerada pelo provedor de fallback",
+    "actionsDisabledTooltip": "Disponível em uma próxima entrega",
+    "actions": {
+      "accept": "Aceitar",
+      "edit": "Editar",
+      "regenerate": "Regenerar",
+      "discard": "Descartar"
+    },
+    "errors": {
+      "AI_TIMEOUT": "A IA demorou demais para responder. Tente novamente.",
+      "AI_INVALID_OUTPUT": "A IA retornou uma resposta inesperada. Tente novamente.",
+      "AI_PROVIDER_ERROR": "O provedor de IA está indisponível no momento. Tente novamente em instantes.",
+      "RATE_LIMITED": "Você atingiu o limite de uso da IA. Tente mais tarde.",
+      "RATE_LIMIT_EXCEEDED": "Você atingiu o limite de uso da IA. Tente mais tarde.",
+      "VALIDATION": "Os dados do evento estão inválidos ou incompletos.",
+      "FORBIDDEN": "Você não pode gerar um plano para este evento.",
+      "NOT_FOUND": "O evento não foi encontrado.",
+      "CONFLICT": "O evento não é elegível para planejamento com IA no momento.",
+      "UNAUTHORIZED": "Sua sessão expirou. Faça login novamente.",
+      "UNKNOWN": "Ocorreu um problema ao gerar o plano.",
+      "EVENT_LOAD_FAILED": "Não foi possível carregar os dados do evento."
+    }
+  },
+  "checklist": {
+    "title": "Checklist de IA",
+    "description": "Gere um checklist sugerido agrupado por fase T-x para o seu evento. Nada é criado até que você confirme as tarefas selecionadas.",
+    "back": "Voltar ao evento",
+    "emptyPrompt": "Gere um checklist inicial ajustado aos dados do seu evento.",
+    "generateCta": "Gerar checklist de IA",
+    "loading": "Gerando o seu checklist…",
+    "loadingHint": "Isto pode levar até 60 segundos.",
+    "retry": "Tentar de novo",
+    "retryAfter": "Aguarde cerca de {seconds} segundos antes de tentar de novo.",
+    "missingData": "Complete os dados do evento (tipo, data, idioma) antes de gerar o checklist.",
+    "completeData": "Completar dados do evento",
+    "viewerHeading": "Checklist sugerido",
+    "viewerHint": "{total, plural, one {# tarefa sugerida} other {# tarefas sugeridas}}, agrupadas por fase T-x.",
+    "hitlNotice": "Este checklist está pendente da sua revisão. Nenhuma tarefa é criada até que você confirme.",
+    "noTasks": "Não há tarefas aplicáveis para os dias disponíveis até o evento.",
+    "dueRelative": "D-{days}",
+    "category": "Categoria: {category}",
+    "actionsDisabledTooltip": "Disponível em uma próxima entrega",
+    "actions": {
+      "confirmSelected": "Confirmar tarefas selecionadas",
+      "regenerate": "Regenerar",
+      "discard": "Descartar"
+    },
+    "phases": {
+      "T-180": "180 dias antes (T-180)",
+      "T-90": "90 dias antes (T-90)",
+      "T-30": "30 dias antes (T-30)",
+      "T-7": "7 dias antes (T-7)",
+      "T-1": "1 dia antes (T-1)"
+    },
+    "priority": {
+      "low": "Baixa",
+      "medium": "Média",
+      "high": "Alta"
+    },
+    "errors": {
+      "AI_TIMEOUT": "A IA demorou demais para responder. Tente novamente.",
+      "AI_INVALID_OUTPUT": "A IA retornou uma resposta inesperada. Tente novamente.",
+      "AI_PROVIDER_ERROR": "O provedor de IA está indisponível no momento. Tente novamente em instantes.",
+      "RATE_LIMITED": "Você atingiu o limite de uso da IA. Tente mais tarde.",
+      "RATE_LIMIT_EXCEEDED": "Você atingiu o limite de uso da IA. Tente mais tarde.",
+      "VALIDATION": "Os dados do evento estão inválidos ou incompletos.",
+      "FORBIDDEN": "Você não pode gerar um checklist para este evento.",
+      "NOT_FOUND": "O evento não foi encontrado.",
+      "CONFLICT": "O evento não é elegível para planejamento com IA no momento.",
+      "UNAUTHORIZED": "Sua sessão expirou. Faça login novamente.",
+      "UNKNOWN": "Ocorreu um problema ao gerar o checklist.",
+      "EVENT_LOAD_FAILED": "Não foi possível carregar os dados do evento."
+    }
+  },
+  "budget": {
+    "title": "Distribuição de orçamento com IA",
+    "description": "Obtenha uma sugestão percentual do orçamento por categorias canônicas. É um ponto de partida editável — nada é aplicado até que você aceite.",
+    "back": "Voltar ao evento",
+    "emptyPrompt": "Gere uma distribuição inicial ajustada aos dados do seu evento.",
+    "generateCta": "Sugerir distribuição IA",
+    "loading": "Gerando sua distribuição…",
+    "loadingHint": "Pode levar até 60 segundos.",
+    "retry": "Tentar novamente",
+    "retryAfter": "Aguarde cerca de {seconds} segundos antes de tentar novamente.",
+    "missingData": "Complete os dados do evento (tipo, data, convidados, orçamento estimado, moeda, idioma) antes de gerar a distribuição.",
+    "completeData": "Completar dados do evento",
+    "viewerHeading": "Distribuição sugerida",
+    "viewerHint": "Distribuição de {total} em {count, plural, one {# categoria} other {# categorias}}.",
+    "tableCaption": "Distribuição de orçamento sugerida pela IA. As linhas contêm categoria, porcentagem, valor e notas.",
+    "columns": {
+      "category": "Categoria",
+      "percentage": "Porcentagem",
+      "amount": "Valor",
+      "notes": "Notas"
+    },
+    "progressAriaLabel": "Barra de porcentagem para {category}",
+    "hitlNotice": "Esta distribuição está pendente da sua revisão. Os itens de orçamento não são criados até que você a aplique na próxima etapa.",
+    "actionsDisabledTooltip": "Disponível em breve",
+    "actions": {
+      "apply": "Aplicar distribuição",
+      "regenerate": "Regenerar",
+      "discard": "Descartar"
+    },
+    "errors": {
+      "AI_TIMEOUT": "A IA demorou demais para responder. Tente novamente.",
+      "AI_INVALID_OUTPUT": "A IA retornou uma resposta inesperada. Tente novamente.",
+      "AI_PROVIDER_ERROR": "O provedor de IA está indisponível no momento. Tente novamente em instantes.",
+      "RATE_LIMITED": "Você atingiu o limite de uso da IA. Tente mais tarde.",
+      "RATE_LIMIT_EXCEEDED": "Você atingiu o limite de uso da IA. Tente mais tarde.",
+      "VALIDATION": "Os dados do evento estão inválidos ou incompletos.",
+      "INVALID_BUDGET": "O orçamento estimado deve ser maior que zero para solicitar uma distribuição.",
+      "FORBIDDEN": "Você não pode gerar uma distribuição para este evento.",
+      "NOT_FOUND": "O evento não foi encontrado.",
+      "CONFLICT": "O evento não é elegível para planejamento com IA no momento.",
+      "UNAUTHORIZED": "Sua sessão expirou. Faça login novamente.",
+      "UNKNOWN": "Ocorreu um problema ao gerar a distribuição.",
+      "EVENT_LOAD_FAILED": "Não foi possível carregar os dados do evento."
+    }
+  },
+  "vendorCategories": {
+    "title": "Categorias recomendadas pela IA",
+    "description": "Receba uma lista priorizada de categorias de fornecedor para começar seu evento. Apenas sugestões — você decide qual categoria explorar.",
+    "back": "Voltar ao evento",
+    "emptyPrompt": "Gere uma lista priorizada com base nos dados do seu evento.",
+    "generateCta": "Gerar recomendações IA",
+    "loading": "Gerando recomendações…",
+    "loadingHint": "Pode levar até 60 segundos.",
+    "retry": "Tentar de novo",
+    "retryAfter": "Aguarde cerca de {seconds} segundos antes de tentar de novo.",
+    "missingData": "Complete os dados do evento (tipo, cidade, idioma) antes de gerar a lista.",
+    "completeData": "Completar dados do evento",
+    "viewerHeading": "Recomendado para você",
+    "viewerHint": "{count, plural, one {# categoria sugerida} other {# categorias sugeridas}}, ordenadas por prioridade.",
+    "hitlNotice": "Esta lista é informativa e está pendente da sua revisão. Nenhum fornecedor é contatado ou cotado até que você peça.",
+    "hideSection": "Ocultar seção",
+    "cardCta": "Ver fornecedores desta categoria →",
+    "cardAriaLabel": "{name}: {reason}. Ir ao diretório de fornecedores filtrado por esta categoria.",
+    "actions": {
+      "regenerate": "Regenerar"
+    },
+    "errors": {
+      "AI_TIMEOUT": "A IA demorou demais para responder. Tente novamente.",
+      "AI_INVALID_OUTPUT": "A IA retornou uma resposta inesperada. Tente novamente.",
+      "AI_PROVIDER_ERROR": "O provedor de IA não está disponível agora. Tente novamente em instantes.",
+      "RATE_LIMITED": "Você atingiu o limite de uso de IA. Tente mais tarde.",
+      "RATE_LIMIT_EXCEEDED": "Você atingiu o limite de uso de IA. Tente mais tarde.",
+      "VALIDATION": "Os dados do evento são inválidos ou estão incompletos.",
+      "FORBIDDEN": "Você não pode gerar recomendações para este evento.",
+      "NOT_FOUND": "O evento não foi encontrado.",
+      "CONFLICT": "O evento não é elegível para recomendações IA no momento.",
+      "UNAUTHORIZED": "Sua sessão expirou. Faça login novamente.",
+      "UNKNOWN": "Ocorreu um problema ao gerar as recomendações.",
+      "EVENT_LOAD_FAILED": "Não foi possível carregar os dados do evento."
+    }
+  },
+  "quoteBrief": {
+    "title": "Brief IA de orçamento",
+    "description": "Autocompleta o brief para uma categoria de fornecedor. Revise e edite antes de enviar a solicitação de orçamento.",
+    "back": "Voltar ao evento",
+    "categoryLabel": "Categoria-alvo do fornecedor",
+    "categoryPlaceholder": "ex.: catering",
+    "categoryHelp": "Informe o código da categoria ativa que o brief endereça.",
+    "loading": "Gerando brief com IA…",
+    "loadingHint": "Pode levar até 60 segundos.",
+    "retryAfter": "Aguarde cerca de {seconds} segundos antes de repetir.",
+    "missingData": "Complete os dados do evento (tipo, idioma) antes de gerar o brief.",
+    "completeData": "Completar dados do evento",
+    "hitlNotice": "Este brief está pendente de sua revisão. Nenhuma solicitação de orçamento é criada até você enviá-la.",
+    "regenerateConfirm": "Você tem edições manuais. Regenerar irá substituí-las. Continuar?",
+    "badge": "Sugerido pela IA",
+    "badgeAria": "Conteúdo gerado por IA, editável",
+    "fieldEditable": "Editável",
+    "multilineHelp": "Um item por linha.",
+    "sections": {
+      "brief": "Resumo executivo",
+      "requirements": "Requisitos",
+      "questions": "Perguntas a resolver",
+      "constraints": "Restrições"
+    },
+    "actions": {
+      "autocomplete": "Autocompletar com IA",
+      "regenerate": "Regenerar",
+      "discard": "Descartar",
+      "retry": "Tentar novamente",
+      "prepareSend": "Preparar para enviar",
+      "sendDisabledTooltip": "O envio final estará disponível com a criação da solicitação de orçamento (em breve)."
+    },
+    "errors": {
+      "AI_TIMEOUT": "A IA demorou demais para responder. Tente novamente.",
+      "AI_INVALID_OUTPUT": "A IA retornou uma resposta inesperada. Tente novamente.",
+      "AI_PROVIDER_ERROR": "O provedor de IA está indisponível. Tente novamente em instantes.",
+      "RATE_LIMITED": "Você atingiu o limite de uso da IA. Tente mais tarde.",
+      "RATE_LIMIT_EXCEEDED": "Você atingiu o limite de uso da IA. Tente mais tarde.",
+      "VALIDATION": "Os dados do evento são inválidos ou estão incompletos.",
+      "FORBIDDEN": "Você não pode gerar o brief para este evento.",
+      "NOT_FOUND": "O evento ou a categoria não foi encontrado.",
+      "CONFLICT": "O evento não é elegível para geração IA no momento.",
+      "UNAUTHORIZED": "Sua sessão expirou. Faça login novamente.",
+      "UNKNOWN": "Ocorreu um problema ao gerar o brief.",
+      "EVENT_LOAD_FAILED": "Não foi possível carregar os dados do evento."
+    }
+  },
+  "hitl": {
+    "actions": {
+      "apply": "Aplicar",
+      "edit": "Editar",
+      "discard": "Descartar",
+      "applyAria": "Aplicar sugestão de IA",
+      "editAria": "Editar sugestão de IA antes de aplicar",
+      "discardAria": "Descartar sugestão de IA",
+      "groupLabel": "Ações da sugestão de IA",
+      "editDialogLabel": "Editar sugestão de IA",
+      "discardDialogLabel": "Confirmar descarte",
+      "discardConfirm": "Descartar esta sugestão de IA? Não pode ser desfeito.",
+      "discardConfirmYes": "Sim, descartar",
+      "discardConfirmCancel": "Cancelar"
+    },
+    "toasts": {
+      "applied": "Sugestão aplicada",
+      "discarded": "Sugestão descartada"
+    },
+    "errors": {
+      "applyFailed": "Não foi possível aplicar a sugestão. Tente novamente.",
+      "discardFailed": "Não foi possível descartar a sugestão. Tente novamente.",
+      "notPending": "Esta sugestão não está mais pendente.",
+      "payloadInvalid": "O conteúdo editado não corresponde ao formato exigido.",
+      "typeNotApplicable": "Este tipo de sugestão ainda não pode ser aplicado.",
+      "sideEffect": "A ação não pôde ser concluída. Tente novamente.",
+      "payloadTooLarge": "O conteúdo editado é grande demais (máx. 256KB)."
+    }
+  }
+}

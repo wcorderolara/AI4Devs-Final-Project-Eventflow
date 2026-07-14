@@ -1,0 +1,277 @@
+{
+  "status": {
+    "quick_action": {
+      "label": {
+        "check_done": "Marcar como hecho",
+        "uncheck_done": "Desmarcar",
+        "skip": "Saltar",
+        "resume": "Reanudar"
+      },
+      "aria": {
+        "check_done": "Marcar la tarea como hecha",
+        "uncheck_done": "Desmarcar la tarea (volver a en progreso)",
+        "skip": "Saltar la tarea",
+        "resume": "Reanudar la tarea (volver a en progreso)"
+      },
+      "announce": {
+        "done": "Tarea marcada como hecha.",
+        "in_progress": "Tarea en progreso.",
+        "skipped": "Tarea omitida."
+      }
+    },
+    "error": {
+      "invalid_transition": "Transición no permitida.",
+      "event_not_mutable": "Este evento está bloqueado.",
+      "not_found_or_forbidden": "No se puede completar la acción.",
+      "transient": "Error temporal. Reintenta en un momento.",
+      "retry": "Reintentar"
+    },
+    "disabled": {
+      "event_locked": "Evento bloqueado: no se pueden cambiar tareas.",
+      "mutation_pending": "Actualizando…"
+    }
+  },
+  "bulkConfirm": {
+    "sectionTitle": "Sugeridas por IA — pendientes",
+    "emptyState": "No hay tareas IA por confirmar. Genera un checklist con IA o crea tareas manuales.",
+    "selectAllVisible": "Seleccionar todas las visibles",
+    "clearSelection": "Limpiar selección",
+    "confirmSelected": "Confirmar seleccionadas ({count})",
+    "confirming": "Confirmando…",
+    "selectionCount": "{count, plural, =0 {Ninguna seleccionada} one {1 tarea seleccionada} other {# tareas seleccionadas}}",
+    "limitReached": "Máximo 50 tareas por confirmación.",
+    "checkboxLabel": "Seleccionar tarea: {title}",
+    "resultBanner": {
+      "title": "Resultado de la confirmación en bloque",
+      "acceptedCount": "{count, plural, =0 {0 tareas confirmadas} one {1 tarea confirmada} other {# tareas confirmadas}}",
+      "rejectedCount": "{count, plural, =0 {0 tareas rechazadas} one {1 tarea rechazada} other {# tareas rechazadas}}",
+      "byCodeHeading": "Detalle por código:",
+      "codes": {
+        "TASK_NOT_FOUND": "Tarea no encontrada",
+        "TASK_NOT_IN_EVENT": "Tarea no pertenece a este evento",
+        "TASK_NOT_AI": "Tarea no generada por IA",
+        "TASK_NOT_PENDING": "Tarea ya no está pendiente"
+      }
+    },
+    "toast": {
+      "success": "{count, plural, =0 {0 tareas confirmadas} one {1 tarea confirmada} other {# tareas confirmadas}}",
+      "partial": "{accepted} confirmadas, {rejected} rechazadas.",
+      "error": "No se pudo confirmar en bloque. Intenta de nuevo."
+    },
+    "errors": {
+      "BULK_LIMIT_EXCEEDED": "Máximo 50 tareas por request.",
+      "EVENT_NOT_MUTABLE": "El evento no permite modificaciones.",
+      "VALIDATION_ERROR": "Datos inválidos.",
+      "AUTHENTICATION_REQUIRED": "Sesión requerida.",
+      "FORBIDDEN": "Acción no permitida.",
+      "RESOURCE_NOT_FOUND": "Evento no encontrado."
+    }
+  },
+  "checklist": {
+    "title": "Mi checklist del evento",
+    "foundCount": "{count, plural, =0 {Sin tareas} one {1 tarea encontrada} other {# tareas encontradas}}",
+    "noDueDate": "Sin fecha",
+    "errorLoad": "No se pudo cargar el checklist. Intenta de nuevo.",
+    "badgeAi": "IA",
+    "badgeOverdue": "Vencido",
+    "badgeOverdueAria": "Tarea vencida",
+    "badgeTMinus7": "Próximo a vencer",
+    "badgeTMinus7Aria": "Tarea próxima a vencer en 7 días",
+    "itemAriaTaskPrefix": "Tarea",
+    "itemAriaStatusPrefix": "estado",
+    "itemAriaAiSuffix": "generada por IA",
+    "itemAriaDueSuffix": "vence",
+    "rangeFilter": {
+      "groupLabel": "Filtro temporal",
+      "options": {
+        "overdue": { "short": "V", "label": "Vencidas", "tooltip": "Tareas vencidas" },
+        "7d": { "short": "7d", "label": "Próx. 7 días", "tooltip": "Próximas 7 días" },
+        "30d": { "short": "30d", "label": "Próx. 30 días", "tooltip": "Próximas 30 días" },
+        "all": { "short": "Todas", "label": "Todas", "tooltip": "Todas las tareas" }
+      }
+    },
+    "progress": {
+      "label": "Progreso del checklist",
+      "card_title": "Progreso del checklist",
+      "go_to_checklist": "Ir al checklist",
+      "tooltip": "{done} de {total} tareas hechas. {skipped} omitidas.",
+      "skipped_note": "{count, plural, one {# tarea omitida} other {# tareas omitidas}}",
+      "empty_cta": "Confirma o crea tus primeras tareas para ver tu progreso.",
+      "event_completed_banner": "Evento completado.",
+      "event_cancelled_banner": "Evento cancelado.",
+      "error": "No se pudo cargar el progreso. Recarga la página."
+    },
+    "status": {
+      "pending": "Pendiente",
+      "active": "Activa",
+      "in_progress": "En progreso",
+      "done": "Hecho",
+      "skipped": "Omitida"
+    },
+    "filters": {
+      "legend": "Filtros",
+      "status": {
+        "label": "Estado",
+        "any": "Todos"
+      },
+      "aiGenerated": {
+        "label": "Origen",
+        "any": "Cualquiera",
+        "true": "IA",
+        "false": "Manual"
+      },
+      "categoryCode": {
+        "label": "Categoría",
+        "placeholder": "catering, decoración…"
+      }
+    },
+    "pagination": {
+      "label": "Paginación",
+      "prev": "Anterior",
+      "next": "Siguiente",
+      "pageOf": "Página {page} de {totalPages}"
+    },
+    "empty": {
+      "title": "Sin tareas por ahora",
+      "body": "Crea tu primera tarea o genera un checklist con IA para arrancar.",
+      "ctaCreate": "Crear tarea",
+      "ctaGenerateAi": "Generar checklist IA",
+      "rangeFiltered": {
+        "title": "No hay tareas en el rango seleccionado",
+        "body": "Probá con \"Todas\" o creá una nueva tarea.",
+        "ctaClearRange": "Ver todas"
+      }
+    },
+    "banner": {
+      "readOnly": "El evento está completado: solo lectura.",
+      "cancelled": "El evento está cancelado."
+    },
+    "actions": {
+      "create": "Crear tarea",
+      "createDisabledTooltip": "No se pueden crear tareas en eventos cancelados o completados."
+    },
+    "create": {
+      "title": "Crear tarea",
+      "cancel": "Cancelar",
+      "submit": "Crear",
+      "submitting": "Creando…",
+      "fields": {
+        "title": {
+          "label": "Título",
+          "errors": {
+            "title_length": "El título debe tener entre 2 y 200 caracteres."
+          }
+        },
+        "description": {
+          "label": "Descripción (opcional)",
+          "errors": {
+            "description_max": "La descripción no puede exceder 2000 caracteres."
+          }
+        },
+        "dueDate": {
+          "label": "Fecha límite (opcional)",
+          "errors": {
+            "due_date_invalid_or_past": "La fecha debe ser futura y en formato válido.",
+            "due_date_in_past": "La fecha ya no es válida.",
+            "DUE_DATE_IN_PAST": "La fecha ya no es válida."
+          }
+        },
+        "category": {
+          "label": "Categoría (opcional)",
+          "none": "Sin categoría",
+          "aiHint": "Sugerida por IA",
+          "errors": {
+            "category_not_available": "La categoría seleccionada no está disponible."
+          }
+        }
+      },
+      "errors": {
+        "eventNotMutable": "No se pueden crear tareas mientras el evento esté cancelado o completado.",
+        "notFound": "El evento no se encontró.",
+        "forbidden": "No tienes permisos para crear tareas en este evento.",
+        "unauthorized": "Tu sesión expiró. Inicia sesión de nuevo.",
+        "generic": "No se pudo crear la tarea. Intenta de nuevo."
+      }
+    },
+    "mutate": {
+      "saved": "Tarea actualizada",
+      "cancel": "Cancelar",
+      "fields": {
+        "title": {
+          "label": "Título",
+          "errors": {
+            "title_length": "El título debe tener entre 2 y 200 caracteres."
+          }
+        },
+        "description": {
+          "label": "Descripción",
+          "edit": "Editar descripción",
+          "errors": {
+            "description_max": "La descripción no puede exceder 2000 caracteres."
+          }
+        },
+        "dueDate": {
+          "label": "Fecha límite",
+          "empty": "Sin fecha",
+          "errors": {
+            "due_date_invalid_or_past": "La fecha debe ser futura y en formato válido.",
+            "DUE_DATE_IN_PAST": "La fecha ya no es válida."
+          }
+        },
+        "category": {
+          "label": "Categoría",
+          "none": "Sin categoría"
+        }
+      },
+      "errors": {
+        "emptyPatch": "Edita al menos un campo.",
+        "categoryNotAvailable": "La categoría seleccionada no está disponible.",
+        "dueDateInPast": "La fecha debe ser futura para tareas pendientes.",
+        "eventNotMutable": "Este evento está bloqueado (cancelado o completado).",
+        "notFound": "Esta tarea ya no existe.",
+        "forbidden": "No tienes permisos para editar esta tarea.",
+        "unauthorized": "Tu sesión expiró. Inicia sesión de nuevo.",
+        "validation": "Revisa los datos ingresados.",
+        "generic": "No se pudo guardar la tarea. Intenta de nuevo."
+      },
+      "status": {
+        "menuButton": "Cambiar estado",
+        "terminal": "Estado final: no se puede transicionar.",
+        "unsupported": "Estado no soportado por el flujo canónico.",
+        "labels": {
+          "pending": "Pendiente",
+          "active": "Activa",
+          "in_progress": "En progreso",
+          "done": "Hecho",
+          "skipped": "Omitida"
+        },
+        "errors": {
+          "invalidTransition": "Transición no permitida desde {currentStatus}.",
+          "eventNotMutable": "Este evento está bloqueado (cancelado o completado).",
+          "notFound": "Esta tarea ya no existe.",
+          "generic": "No se pudo cambiar el estado. Intenta de nuevo."
+        },
+        "confirm": {
+          "title": "Confirmar transición",
+          "body": "Vas a marcar la tarea como {next}. Esta acción no se puede revertir en este MVP.",
+          "cancel": "Cancelar",
+          "confirm": "Confirmar"
+        }
+      },
+      "delete": {
+        "title": "Eliminar tarea",
+        "body": "Se eliminará esta tarea (soft delete). Podrás recuperarla desde auditoría admin.",
+        "cancel": "Cancelar",
+        "confirm": "Eliminar",
+        "deleting": "Eliminando…",
+        "errors": {
+          "eventNotMutable": "Este evento está bloqueado (cancelado o completado).",
+          "notFound": "Esta tarea ya no existe.",
+          "forbidden": "No tienes permisos para eliminar esta tarea.",
+          "unauthorized": "Tu sesión expiró. Inicia sesión de nuevo.",
+          "generic": "No se pudo eliminar la tarea. Intenta de nuevo."
+        }
+      }
+    }
+  }
+}

@@ -19,9 +19,10 @@
 | Module / Domain                      | Budget                                                                                                         |
 | User Story Status                    | Approved with Minor Notes                                                                                     |
 | Backlog Alignment Status             | Found                                                                                                          |
-| Technical Spec Status                | Ready for Task Breakdown                                                                                       |
+| Technical Spec Status                | Ready for Task Breakdown (Revision R1 — 2026-07-14 alignment)                                                  |
 | Created Date                         | 2026-06-27                                                                                                     |
-| Last Updated                         | 2026-06-27                                                                                                     |
+| Last Updated                         | 2026-07-14                                                                                                     |
+| Revision R1                          | 2026-07-14 — Alineación con schema real entregado por PB-P0-001 (Opción A). Ver §22.                            |
 
 ---
 
@@ -155,14 +156,14 @@ No aplica — esta historia no invoca IA directamente. El CTA del Empty State es
 
 ### Use Cases / Application Services
 
-* `GetBudgetUseCase`:
+* `GetBudgetUseCase` (R1):
   1. Recibe `{ eventId, currentUser }`.
   2. Invoca `EventOwnershipPolicy.assertOwner(eventId, currentUser.id)`. Si falla → propaga 404 (no-revelación).
-  3. Invoca `BudgetReadRepository.getByEventId(eventId)` → retorna `{ budget, items, sums: { total_planned, total_committed, paid_total } }`.
-  4. Si `budget` es null (caso borde: evento sin presupuesto), retorna 404 (`BR-BUDGET-001` exige 1:1; en MVP, el wizard crea `Budget` siempre).
-  5. Calcula `over_committed = sums.total_committed > sums.total_planned`.
-  6. Compone `summary` y serializa `items[]` con `paid: item.paid ?? 0`.
-  7. Emite log `budget.viewed` con campos sin PII.
+  3. Invoca `BudgetReadRepository.getByEventId(eventId)` → retorna `{ budget: { id, totalPlanned, totalCommitted }, items[], currency }` (`Event.currency` proyectado en el mismo read).
+  4. Si el repo retorna `null` (evento sin `Budget`, caso borde: viola `BR-BUDGET-001`), propaga 404.
+  5. Calcula `over_committed = Number(totalCommitted) > Number(totalPlanned)` (los campos son `Decimal` de Prisma — usar `.toNumber()` o `Number()` para comparar).
+  6. Compone `summary = { total_planned, total_committed, over_committed, currency_code: currency }` y serializa `items[]` mapeando `label`, `category_code: categoryCode ?? null`, `amount_planned`, `amount_committed`.
+  7. Emite log estructurado `budget.viewed` con campos sin PII.
 
 ### Controllers / Routes
 
@@ -174,24 +175,23 @@ No aplica — esta historia no invoca IA directamente. El CTA del Empty State es
 
 ### DTOs / Schemas
 
+> **R1 (2026-07-14):** el shape se alinea con el schema real (`Budget`, `BudgetItem`) entregado por PB-P0-001. Campos `service_category_id`, `category_name`, `paid`, `paid_total`, `ai_generated` **quedan fuera del MVP** por no existir en el modelo. Ver §22.
+
 ```ts
-// apps/api/src/modules/budget/dto/budget-summary.dto.ts
+// backend/src/modules/budget-management/dto/budget-summary.dto.ts
 export const budgetSummaryDto = z.object({
   total_planned: z.number().nonnegative(),
   total_committed: z.number().nonnegative(),
-  paid_total: z.number().nonnegative(),
   over_committed: z.boolean(),
-  currency_code: z.enum(['GTQ', 'EUR', 'MXN', 'COP', 'USD']), // BR-BUDGET-006
+  currency_code: z.enum(['GTQ', 'EUR', 'MXN', 'COP', 'USD']), // BR-BUDGET-006 (mirror de Event.currency)
 });
 
 export const budgetItemDto = z.object({
   id: z.string().uuid(),
-  service_category_id: z.string().uuid(),
-  category_name: z.string().min(1),
-  planned: z.number().nonnegative(),
-  committed: z.number().nonnegative(),
-  paid: z.number().nonnegative(), // normalizado: null → 0
-  ai_generated: z.boolean(),
+  label: z.string().min(1),
+  category_code: z.string().nullable(), // string libre; sin FK a ServiceCategory en el schema actual
+  amount_planned: z.number().nonnegative(),
+  amount_committed: z.number().nonnegative(),
 });
 
 export const getBudgetResponseDto = z.object({
@@ -203,12 +203,11 @@ export type GetBudgetResponseDto = z.infer<typeof getBudgetResponseDto>;
 
 ### Repository / Persistence
 
-* `BudgetReadRepository.getByEventId(eventId): Promise<{ budget, items, sums }>`:
-  * Query 1: localizar `budget.id` por `event_id`.
-  * Query 2 (combinable con `JOIN`): listar `budget_items` con `service_categories.name` proyectado.
-  * Query 3 (agregado SUM): `SELECT SUM(planned), SUM(committed), SUM(COALESCE(paid, 0)) FROM budget_items WHERE budget_id = $1`.
-  * Implementación recomendada: una sola transacción de lectura con `Prisma.$transaction` o `prisma.$queryRaw` para evitar round-trips innecesarios. La elección final queda a discreción de implementación siempre que cumpla `NFR-PERF-001`.
-  * Alternativa: materializar `total_planned`/`total_committed` en `budget` y actualizar en US-036. Ambas son compatibles con D1 y BR-BUDGET-003.
+* `BudgetReadRepository.getByEventId(eventId): Promise<{ budget, items, currency } | null>`:
+  * Query 1 (obligatoria): localizar `budget` por `event_id` seleccionando `id`, `totalPlanned`, `totalCommitted`; `include: { items: true }` y `event: { select: { currency: true } }`. **Los totales se leen directamente** de los campos materializados por PB-P0-001; no se ejecuta `SUM` en vivo.
+  * Query 2: implícita en el `include` de items (`select: id, label, categoryCode, amountPlanned, amountCommitted`).
+  * Se envuelve en `prisma.$transaction([...])` opcionalmente si el driver reporta latencia adicional; para reads de una sola FK unique + relación owned, PostgreSQL entrega snapshot consistency sin overhead adicional.
+  * **R1:** consistencia entre `Budget.totalPlanned/totalCommitted` y `SUM(items.amountPlanned/amountCommitted)` es responsabilidad de US-036 (mutaciones en la misma transacción). US-035 confía en los totales denormalizados como source of truth para la vista.
 
 ### Validation Rules
 
@@ -322,43 +321,45 @@ No aplica. Las mutaciones se delegan a US-036 vía deeplinks.
 
 | Method | Endpoint                                | Purpose                                                                                                            | Auth Required        | Request                                                                  | Response                                                                                                                                                  | Error Cases             |
 | ------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| GET    | `/api/v1/events/:eventId/budget`         | Vista del presupuesto: summary derivado + items por categoría + flag `over_committed` server-side.                  | Sí (cookie sesión)   | Path: `eventId` UUID. Sin body. Sin query params.                       | `200 { summary: BudgetSummaryDto, items: BudgetItemDto[] }`                                                                                                | 400, 401, 403, 404, 500 |
+| GET    | `/api/v1/events/:eventId/budget`         | Vista del presupuesto: summary derivado + items por categoría + flag `over_committed` server-side.                  | Sí (cookie sesión)   | Path: `eventId` UUID. Sin body. Sin query params.                       | `200 { summary: BudgetSummaryDto, items: BudgetItemDto[] }` (R1 shape)                                                                                       | 400, 401, 403, 404, 500 |
 
 ### Notas del contrato
 
 * No se admiten `PATCH/POST/DELETE` en `/budget`; estos viven en `/budget/items/*` (US-036).
-* La normalización `paid null → 0` es invariante del contrato; el cliente nunca recibe `null` en `paid`.
-* Documentation Alignment Required: actualizar `docs/16 §M06 Budget` con el shape `summary`. Snapshot OpenAPI por US-098 (Future).
+* **R1:** `category_code` puede ser `null` (el schema actual expone `BudgetItem.categoryCode: String?`, sin FK a `ServiceCategory`). Los clientes deben tratar `null` como "sin categoría asignada".
+* Documentation Alignment Required: actualizar `docs/16 §M06 Budget` con el shape `summary` (R1). Snapshot OpenAPI por US-098 (Future).
 
 ---
 
 ## 10. Database / Prisma Design
 
-### Models Impacted
+### Models Impacted (R1 — refleja schema real `backend/prisma/schema.prisma:476-512`)
 
-* `Budget` (existente, PB-P0-001): `id`, `event_id` (unique), `currency_code`, `total_planned?`, `total_committed?` (opcional materializado), `created_at`, `updated_at`.
-* `BudgetItem` (existente, PB-P0-001): `id`, `budget_id`, `service_category_id`, `planned`, `committed`, `paid` (nullable), `ai_generated`, `created_at`, `updated_at`.
-* `ServiceCategory` (existente): `id`, `name`, `code`, `is_active`.
+* `Budget` (existente, PB-P0-001): `id`, `eventId` (unique), `totalPlanned` (`Decimal @default(0)`), `totalCommitted` (`Decimal @default(0)`), `createdAt`, `updatedAt`, `isSeed`. **La moneda vive en `Event.currency`, no en `Budget`**.
+* `BudgetItem` (existente, PB-P0-001): `id`, `budgetId`, `label` (string), `categoryCode` (`String?` — string libre, sin FK), `amountPlanned` (`Decimal @default(0)`), `amountCommitted` (`Decimal @default(0)`), `createdAt`, `updatedAt`, `isSeed`. **No** hay campos `paid`, `ai_generated`, `service_category_id`.
+* `Event` (existente): `currency` (`CurrencyCode @default(GTQ)`) — enum `{GTQ, EUR, MXN, COP, USD}` (line 37).
+* `ServiceCategory` (existente): fuera del scope de US-035 (no hay FK a resolver).
 
 ### Fields / Columns
 
-Sin nuevas columnas. Si se opta por materialización (`total_planned`, `total_committed` en `budget`), reuso de los campos existentes definidos en `docs/6 §Budget`.
+Sin nuevas columnas. `Budget.totalPlanned` / `Budget.totalCommitted` **ya están materializados** en el schema entregado por PB-P0-001. US-035 los lee directamente.
 
 ### Relations
 
-Sin cambios. `Budget.event_id → Event.id` (unique), `BudgetItem.budget_id → Budget.id`, `BudgetItem.service_category_id → ServiceCategory.id`.
+Sin cambios. `Budget.eventId → Event.id` (unique), `BudgetItem.budgetId → Budget.id` (Cascade). Sin FK a `ServiceCategory` desde `BudgetItem`.
 
 ### Indexes
 
-* `budget.event_id` unique (PB-P0-001).
+* `budgets.event_id` unique (PB-P0-001).
 * `budget_items.budget_id` (PB-P0-001).
 * Sin índices nuevos.
 
 ### Constraints
 
-* `Budget.event_id` unique (1:1, BR-BUDGET-001).
-* `BudgetItem.planned >= 0`, `committed >= 0`, `paid >= 0 OR NULL` (PB-P0-001).
-* Enforcement de enums `currency_code` (PB-P0-001).
+* `Budget.eventId` unique (1:1, BR-BUDGET-001).
+* `Budget.totalPlanned >= 0`, `Budget.totalCommitted >= 0` (`Decimal @default(0)` + eventual CHECK).
+* `BudgetItem.amountPlanned >= 0`, `amountCommitted >= 0` (`Decimal @default(0)` + eventual CHECK C-xxx si existe).
+* Enforcement de enum `Event.currency` (PB-P0-001).
 
 ### Migrations Impact
 
@@ -572,8 +573,8 @@ Sin notas adicionales.
 
 | Risk                                                                                                              | Impact                                                                          | Mitigation                                                                                                                                                                  |
 | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Cálculo en vivo del `summary` con 3 queries separadas puede degradar P95.                                          | P95 > 1.5 s en datasets grandes.                                                | Ejecutar en una sola transacción de lectura o `$queryRaw` con SUM agregado. PERF-01 valida; si falla, considerar materialización en US-036.                                  |
-| Si se opta por materialización de `total_planned`/`total_committed` en `budget`, hay riesgo de drift cuando los items mutan.  | UI muestra summary obsoleto tras mutación.                                       | Si se materializa, las mutaciones de US-036 deben actualizar los totales dentro de la misma transacción. Mientras tanto, US-035 puede calcular en vivo (recomendado).         |
+| ~~Cálculo en vivo del `summary` con 3 queries separadas puede degradar P95.~~                                       | ~~P95 > 1.5 s en datasets grandes.~~                                            | **R1:** N/A. PB-P0-001 materializó `totalPlanned`/`totalCommitted`; US-035 los lee directamente en O(1). PERF-01 valida latencia end-to-end de la lectura.                    |
+| Drift entre `Budget.totalPlanned/totalCommitted` (materializados) y `SUM(items.amountPlanned/amountCommitted)` cuando los items mutan.  | UI muestra summary obsoleto tras mutación.                                       | **R1:** las mutaciones de US-036 **deben** actualizar los totales de `Budget` dentro de la misma transacción que muta `BudgetItem`. Handoff explícito a US-036.                |
 | Frontend recalcula `over_committed` localmente y genera drift.                                                      | UI inconsistente con backend.                                                   | D4 + VR-05 explícitos. UT-07-FE valida que el componente lee del prop sin recalcular.                                                                                       |
 | Feature flag `ai.budget-suggestion.enabled` no existe en el sistema.                                                | CTA "Sugerir IA" no se puede ocultar.                                            | Antes de implementar el Empty State, verificar el sistema de feature flags; si no existe, abrir follow-up DevOps o usar variable de entorno como fallback. No bloquea US-035. |
 | Documentation Alignment Required no se ejecuta y queda residual.                                                   | Documentación divergente.                                                       | Tareas DOC explícitas en el task breakdown (Should, no bloqueantes).                                                                                                          |
@@ -584,32 +585,35 @@ Sin notas adicionales.
 
 ### Archivos / Carpetas probablemente impactadas
 
-**Backend** (`apps/api`):
+**Backend** (`backend/`) — R1 paths reconciliados con módulo real `budget-management`:
 
-* `src/modules/budget/dto/budget-summary.dto.ts` — **nuevo**.
-* `src/modules/budget/dto/budget-item.dto.ts` — **nuevo**.
-* `src/modules/budget/dto/get-budget-response.dto.ts` — **nuevo**.
-* `src/modules/budget/repositories/budget-read.repository.ts` — **nuevo**.
-* `src/modules/budget/use-cases/get-budget.use-case.ts` — **nuevo**.
-* `src/modules/budget/controllers/get-budget.controller.ts` — **nuevo**.
-* `src/modules/budget/budget.module.ts` — **nuevo**.
-* `src/app.routes.ts` (o equivalente) — **registrar** `/api/v1/events/:eventId/budget`.
+* `src/modules/budget-management/dto/budget-summary.dto.ts` — **nuevo**.
+* `src/modules/budget-management/dto/budget-item.dto.ts` — **nuevo**.
+* `src/modules/budget-management/dto/get-budget-response.dto.ts` — **nuevo**.
+* `src/modules/budget-management/infrastructure/prisma-budget-read.repository.ts` — **nuevo**.
+* `src/modules/budget-management/application/get-budget.use-case.ts` — **nuevo**.
+* `src/modules/budget-management/interface/get-budget.controller.ts` — **nuevo**.
+* `src/modules/budget-management/interface/budget.routes.ts` — **nuevo**.
+* `src/modules/budget-management/domain/budget-view.ts` — **nuevo** (tipo de dominio de la vista).
+* `src/modules/budget-management/ports/budget-read.repository.ts` — **nuevo** (puerto).
+* `src/app.ts` — **registrar** router bajo `/api/v1`.
 * `src/shared/logging/budget-events.ts` — **nuevo** (esquema `budget.viewed`).
-* `tests/modules/budget/**` — **nuevo** (unit + integration).
+* `tests/unit/us035-*.spec.ts` — **nuevo** (unit).
+* `tests/api/us035-get-budget.spec.ts` — **nuevo** (integration).
 
-**Frontend** (`apps/web`):
+**Frontend** (`web/`) — R1 paths reconciliados:
 
-* `app/[locale]/organizer/events/[eventId]/budget/page.tsx` — **nuevo**.
-* `components/events/budget/BudgetView.tsx` — **nuevo**.
-* `components/events/budget/BudgetSummary.tsx` — **nuevo**.
-* `components/events/budget/BudgetItemsTable.tsx` — **nuevo**.
-* `components/events/budget/OvercommitWarning.tsx` — **nuevo**.
-* `components/events/budget/EmptyBudgetState.tsx` — **nuevo**.
-* `hooks/useEventBudget.ts` — **nuevo**.
-* `lib/api/budgetApi.ts` — **nuevo**.
-* `messages/{es-LATAM,es-ES,pt,en}.json` — **añadir** claves `budget.*`.
-* `tests/components/events/budget/**` — **nuevo**.
-* `e2e/budget-view.spec.ts` — **nuevo**.
+* `src/app/(app)/organizer/events/[eventId]/budget/page.tsx` — **nuevo**.
+* `src/features/events/components/budget/BudgetView.tsx` — **nuevo**.
+* `src/features/events/components/budget/BudgetSummary.tsx` — **nuevo**.
+* `src/features/events/components/budget/BudgetItemsTable.tsx` — **nuevo**.
+* `src/features/events/components/budget/OvercommitWarning.tsx` — **nuevo**.
+* `src/features/events/components/budget/EmptyBudgetState.tsx` — **nuevo**.
+* `src/features/events/hooks/useEventBudget.ts` — **nuevo**.
+* `src/features/events/api/budgetApi.ts` — **nuevo**.
+* `src/shared/i18n/messages/{es-LATAM,es-ES,pt,en}.json` (o equivalente vigente) — **añadir** claves `budget.*`.
+* `src/tests/integration/events/budget.test.tsx` — **nuevo**.
+* `src/tests/msw/handlers/budget.ts` — **nuevo**.
 
 **Documentación**:
 
@@ -745,4 +749,29 @@ Sí. Al cerrar US-035 + US-036 se recomienda generar `management/development-tas
 
 `Ready for Task Breakdown`
 
-US-035 tiene una Technical Specification implementation-ready: introduce el módulo `modules/budget` con un solo controller, un solo use case y un solo repository read-only, alineado con `docs/16 §M06` (única ruta `GET /api/v1/events/:eventId/budget`) y con `BR-BUDGET-003`/`FR-BUDGET-004`/`FR-BUDGET-005`. Las 4 decisiones (D1–D4) están formalizadas y se citan explícitamente. Las 3 Documentation Alignment Required son housekeeping no bloqueante. La fórmula de `over_committed` es testeable en unit/integration/PERF/contract, y la UI cumple A11Y AA e i18n en 4 locales con currency CLDR. Próximo paso: `eventflow-user-story-to-development-tasks` consumiendo este archivo.
+US-035 tiene una Technical Specification implementation-ready: introduce el módulo `modules/budget-management` (R1) con un solo controller, un solo use case y un solo repository read-only, alineado con `docs/16 §M06` (única ruta `GET /api/v1/events/:eventId/budget`) y con `BR-BUDGET-003`/`FR-BUDGET-004`/`FR-BUDGET-005`. Las 4 decisiones (D1–D4) están formalizadas y se citan explícitamente. Las 3 Documentation Alignment Required son housekeeping no bloqueante. La fórmula de `over_committed` es testeable en unit/integration/PERF/contract, y la UI cumple A11Y AA e i18n en 4 locales con currency CLDR.
+
+---
+
+## 22. Revision R1 — 2026-07-14 (Schema alignment)
+
+Durante la ejecución (execution record `management/workflows/development-execution/P1/PB-P1-020/US-035-execution.md`) se detectó desalineamiento material entre la Tech Spec original y el schema Prisma real entregado por PB-P0-001. Se aplica **Opción A** (actualizar Tech Spec sin migraciones):
+
+### Cambios normativos
+
+1. **Shape canónico del response** — R1 elimina del contrato: `service_category_id`, `category_name`, `paid`, `paid_total`, `ai_generated`. Nuevo shape reflejado en §7 DTOs, §9 API Contract y `AC-04` del User Story.
+2. **`currency_code`** — se mapea a `Event.currency` (enum `CurrencyCode` en `backend/prisma/schema.prisma:37`). No existe columna en `Budget`.
+3. **Totales materializados** — `Budget.totalPlanned` y `Budget.totalCommitted` son `Decimal @default(0)` en el schema real. R1 acepta esta materialización; §7 Repository lee directamente los campos; el "cálculo en vivo" queda descartado. **Handoff obligatorio a US-036:** mantener consistencia dentro de la misma transacción de mutación.
+4. **Módulo real** — `backend/src/modules/budget-management/**` (no `apps/api/src/modules/budget/**`). §18 actualizado.
+5. **Campos de items** — el schema usa `label` + `categoryCode` (nullable string libre) + `amountPlanned` + `amountCommitted`. No hay FK a `ServiceCategory`.
+
+### Impacto en User Story y Tasks File
+
+* `AC-04` re-especificado (ver US-035-view-edit-budget.md revisión R1).
+* `EC-03` marcado como N/A en MVP (no aplica sin columna `paid`).
+* `UT-02`, `UT-03`, `IT-04` retirados o reformulados en Tasks File (no aplican sin `paid`).
+* Deuda registrada: adición futura de `service_category_id` (FK) + `paid` + `ai_generated` queda como US paralela P2 (no en scope de PB-P1-020).
+
+### Aprobación
+
+Autorizado por el usuario en la sesión del 2026-07-14 tras diagnóstico del execution record. PO/BA debe reconfirmar formalmente antes de merge.

@@ -1,3 +1,7 @@
-// Placeholder de capa (US-090). Sin lógica de feature; la implementación pertenece a la
-// feature story de este bounded context. `export {}` mantiene el módulo compilable con `tsc`.
-export {};
+// Barrel — Application de budget-management (US-035 / BE-003 R1; US-036 / BE-004..006 + OBS R1).
+export * from './get-budget.use-case.js';
+export * from './get-budget-telemetry.js';
+export * from './budget-item-telemetry.js';
+export * from './create-budget-item.use-case.js';
+export * from './update-budget-item.use-case.js';
+export * from './delete-budget-item.use-case.js';

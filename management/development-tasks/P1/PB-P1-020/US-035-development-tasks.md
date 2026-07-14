@@ -19,9 +19,10 @@
 | Feature                              | Vista del presupuesto del evento                                                                                |
 | Module / Domain                      | Budget                                                                                                         |
 | Backlog Alignment Status             | Found                                                                                                          |
-| Task Breakdown Status                | Ready for Sprint Planning                                                                                      |
+| Task Breakdown Status                | Ready for Sprint Planning (Revision R1 — 2026-07-14)                                                           |
 | Created Date                         | 2026-06-27                                                                                                     |
-| Last Updated                         | 2026-06-27                                                                                                     |
+| Last Updated                         | 2026-07-14                                                                                                     |
+| Revision R1                          | 2026-07-14 — Alineación con schema real (Opción A). UT-02, UT-03, IT-04 eliminados. Paths reconciliados a `backend/` y `web/`. Ver Tech Spec §22. |
 
 ---
 
@@ -162,22 +163,23 @@ AC-07 (preparación de PERF-01).
 
 Definir el contrato canónico del response del endpoint con validación Zod.
 
-#### Scope
+#### Scope (R1)
 
 ##### Include
 
-* `apps/api/src/modules/budget/dto/budget-summary.dto.ts` (con `over_committed: boolean`, `currency_code` como enum).
-* `apps/api/src/modules/budget/dto/budget-item.dto.ts` (con `paid: number ≥ 0` siempre presente).
-* `apps/api/src/modules/budget/dto/get-budget-response.dto.ts`.
+* `backend/src/modules/budget-management/dto/budget-summary.dto.ts` (con `over_committed: boolean`, `currency_code` como enum).
+* `backend/src/modules/budget-management/dto/budget-item.dto.ts` (con `label: string`, `category_code: string|null`, `amount_planned/amount_committed: number ≥ 0`).
+* `backend/src/modules/budget-management/dto/get-budget-response.dto.ts`.
 
 ##### Exclude
 
 * No exponer ratios ni decimales con más precisión que la del dominio.
+* **R1:** no incluir `paid`, `paid_total`, `ai_generated`, `service_category_id`, `category_name` (fuera del schema actual).
 
 #### Implementation Notes
 
-* `currency_code` enum: `['GTQ', 'EUR', 'MXN', 'COP', 'USD']` (BR-BUDGET-006).
-* Mantener tipos compartidos con frontend en `packages/shared-types` si existe.
+* `currency_code` enum: `['GTQ', 'EUR', 'MXN', 'COP', 'USD']` (BR-BUDGET-006) — mirror de `Event.currency`.
+* Tipos exportados como `type GetBudgetResponseDto = z.infer<...>` para reuso frontend.
 
 #### Acceptance Criteria Covered
 
@@ -186,7 +188,7 @@ AC-04, VR-01..04.
 #### Definition of Done
 
 - [ ] 3 DTOs Zod definidos y exportados.
-- [ ] Tipos accesibles desde frontend.
+- [ ] Tipos accesibles desde frontend (via `web/` API client).
 
 ---
 
@@ -210,23 +212,25 @@ AC-04, VR-01..04.
 
 Implementar lectura del presupuesto con cálculo de agregados (`SUM`) en una sola transacción/query SQL.
 
-#### Scope
+#### Scope (R1)
 
 ##### Include
 
-* Método `getByEventId(eventId): Promise<{ budget, items, sums }>`.
-* Implementación con `prisma.$transaction([...])` o `prisma.$queryRaw` para una sola ida.
-* `JOIN` con `service_categories` para resolver `category_name`.
-* `SUM(COALESCE(paid, 0))` para `paid_total`.
+* Método `getByEventId(eventId): Promise<{ budget: { id, totalPlanned, totalCommitted }, items: BudgetItem[], currency: CurrencyCode } | null>`.
+* Implementación con `prisma.budget.findUnique({ where: { eventId }, include: { items: true, event: { select: { currency: true } } } })`.
+* Lectura directa de `Budget.totalPlanned` y `Budget.totalCommitted` (materializados por PB-P0-001).
 
 ##### Exclude
 
-* No materializar totales en BD (decisión: cálculo en vivo en esta US).
+* **R1:** no ejecutar `SUM` en vivo (los totales están denormalizados).
 * No introducir cache.
+* No `JOIN` con `service_categories` (no hay FK en `BudgetItem`).
 
 #### Implementation Notes
 
-* Si el método retorna `budget = null`, el use case devuelve 404 (degradación esperada solo si el wizard no creó el `Budget`).
+* Si el método retorna `null`, el use case devuelve 404 (degradación esperada solo si el wizard no creó el `Budget`).
+* Los campos `Decimal` de Prisma deben normalizarse a `number` en el mapper del use case (`.toNumber()`).
+* **R1:** consistencia de los totales denormalizados es responsabilidad de US-036 (transacción única).
 
 #### Acceptance Criteria Covered
 
@@ -235,7 +239,7 @@ AC-01, AC-03, AC-04, AC-07.
 #### Definition of Done
 
 - [ ] Método implementado y testeado (UT/IT en QA-001/QA-002).
-- [ ] Plan SQL confirmado por DB-001.
+- [ ] Plan SQL confirmado por DB-001 (índice unique `budgets.event_id`).
 - [ ] Sin migraciones.
 
 ---
@@ -260,25 +264,27 @@ AC-01, AC-03, AC-04, AC-07.
 
 Componer el response final: ownership check, ensamble del `summary` (incluido `over_committed`), normalización `paid null → 0`, emisión de log estructurado.
 
-#### Scope
+#### Scope (R1)
 
 ##### Include
 
-* Composición `{ summary, items[] }` consistente con `GetBudgetResponseDto`.
-* `over_committed = total_committed > total_planned`.
-* Normalización `paid ?? 0` en cada item.
-* Invocación de `EventOwnershipPolicy.assertOwner` antes del repo.
+* Composición `{ summary, items[] }` consistente con `GetBudgetResponseDto` (R1 shape).
+* `over_committed = Number(totalCommitted) > Number(totalPlanned)`.
+* Ownership check (`EventOwnershipPolicy.assertOwner` o equivalente vigente en el repo) antes del repo.
 * Emisión del log `budget.viewed` (OBS-001 define el catálogo).
 * Independencia de `event.status` (no se ramifica).
+* Mapeo de `Decimal → number` para todos los campos monetarios.
+* `currency_code = event.currency` (mirror).
 
 ##### Exclude
 
 * No invocar LLMProvider.
 * No tocar mutaciones.
+* **R1:** no aplicar normalización `paid` (columna no existe).
 
 #### Acceptance Criteria Covered
 
-AC-01, AC-03, AC-04, AC-06, EC-01..06.
+AC-01, AC-03, AC-04, AC-06, EC-01, EC-02, EC-04..06 (EC-03 eliminado por R1).
 
 #### Definition of Done
 
@@ -779,15 +785,17 @@ AC-03 (demo).
 
 Cobertura unitaria del use case y los DTOs.
 
-#### Scope
+#### Scope (R1)
 
 ##### Include
 
-* UT-01 `over_committed` boundary (igual no es exceso).
-* UT-02 normalización `paid null → 0`.
-* UT-03 `paid_total` con mix de null/no null.
-* UT-04 DTO rechaza valores negativos.
+* UT-01 `over_committed` boundary (igualdad no es exceso; `totalCommitted > totalPlanned` estricto).
+* ~~UT-02 normalización `paid null → 0`~~ — **eliminado por R1** (columna `paid` no existe).
+* ~~UT-03 `paid_total` con mix de null/no null~~ — **eliminado por R1**.
+* UT-04 DTO rechaza valores negativos (`amount_planned`, `amount_committed`).
 * UT-05 DTO rechaza `currency_code` fuera del enum.
+* UT-06 (R1) DTO acepta `category_code: null`.
+* UT-07 (R1) Mapper convierte `Decimal → number` correctamente.
 
 #### Acceptance Criteria Covered
 
@@ -795,7 +803,7 @@ AC-01, AC-03, AC-04.
 
 #### Definition of Done
 
-- [ ] 5 tests verdes.
+- [ ] 5 tests verdes (UT-01, UT-04, UT-05, UT-06, UT-07).
 
 ---
 
@@ -825,8 +833,8 @@ Cobertura integration con Supertest sobre el endpoint.
 
 * IT-01 vista completa.
 * IT-02 empty state.
-* IT-03 warning cuando `committed > total`.
-* IT-04 todos `paid IS NULL` ⇒ `paid_total = 0`.
+* IT-03 warning cuando `totalCommitted > totalPlanned`.
+* ~~IT-04 todos `paid IS NULL` ⇒ `paid_total = 0`~~ — **eliminado por R1**.
 * IT-05 evento `cancelled` ⇒ 200.
 * IT-06 evento `completed` ⇒ 200.
 * IT-07 independencia del estado en autorización.

@@ -49,6 +49,15 @@ module.exports = {
       },
     },
     {
+      // Excepción documentada: el error handler global necesita conocer los DomainError de
+      // todos los módulos para mapear a HTTP status. Imports de tipo (error classes) sin
+      // acoplar comportamiento runtime. ADR-ARCH-001 admite esta excepción explícita.
+      files: ['src/shared/interface/middlewares/error-handler.middleware.ts'],
+      rules: {
+        'boundaries/element-types': 'off',
+      },
+    },
+    {
       // US-092 / OPS-001 — Prohíbe `.passthrough()` en schemas Zod (ADR-API-003, VR-02).
       // `.passthrough()` permite que campos no declarados pasen silenciosamente al controlador,
       // un riesgo de seguridad (inyección de campos). Todos los DTOs deben usar `.strict()`.

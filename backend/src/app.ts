@@ -23,8 +23,13 @@ import {
 import { quoteFlowRouter } from './modules/quote-flow/interface/quote-flow.routes.js';
 import { bookingIntentRouter } from './modules/booking-intent/interface/booking-intent.routes.js';
 import { aiAssistanceRouter } from './modules/ai-assistance/interface/ai.routes.js';
+import { bulkConfirmRouter } from './modules/task-management/bulk-confirm/interface/http/bulk-confirm.routes.js';
+import { eventTasksListRouter } from './modules/task-management/list/interface/http/list-event-tasks.routes.js';
+import { eventTasksCreateRouter } from './modules/task-management/create/interface/http/create-event-task.routes.js';
+import { eventTasksMutateRouter } from './modules/task-management/mutate/interface/http/mutate-event-task.routes.js';
 import { seedDemoRouter, isSeedDemoEnabled } from './modules/seed-demo/interface/seed-demo.routes.js';
 import { adminEventsRouter } from './modules/admin-governance/interface/admin-events.routes.js';
+import { budgetRouter, budgetItemMutationRouter } from './modules/budget-management/interface/index.js';
 
 /** Construye y configura la aplicación Express. */
 export function createApp(): Express {
@@ -63,6 +68,30 @@ export function createApp(): Express {
   apiV1.use(quoteFlowRouter);
   // US-097: ai-assistance también a nivel `/api/v1` y ANTES de event-planning (por `/events/:id/ai/*`).
   apiV1.use(aiAssistanceRouter);
+  // US-031 (PB-P1-017): bulk confirm HITL a nivel `/api/v1` y ANTES de event-planning
+  // (por `/events/:eventId/tasks/confirm-bulk`). No invoca al LLM.
+  apiV1.use(bulkConfirmRouter);
+  // US-027 (PB-P1-018): listado paginado del checklist a nivel `/api/v1` y ANTES de
+  // event-planning (por `/events/:eventId/tasks`). Endpoint de lectura pura.
+  apiV1.use(eventTasksListRouter);
+  // US-028 (PB-P1-018): creación manual de EventTask (`POST /events/:eventId/tasks`). Se monta
+  // ANTES de `eventPlanningRouter` por el mismo motivo que US-027 — captura antes que catch-alls
+  // de `/events/*`. No invoca al LLM (BR-AI-008: `ai_generated=false` server-controlled).
+  apiV1.use(eventTasksCreateRouter);
+  // US-029 (PB-P1-018): mutaciones sobre EventTask individual (PATCH content, PATCH status,
+  // DELETE soft) bajo `/events/:eventId/tasks/:taskId(...)`. Se monta ANTES de eventPlanning
+  // por el mismo motivo que US-027/028. No invoca al LLM.
+  apiV1.use(eventTasksMutateRouter);
+  // US-035 (PB-P1-020, R1): vista del presupuesto (`GET /events/:eventId/budget`). Se monta
+  // ANTES de `eventPlanningRouter` por el mismo motivo — captura `/events/:eventId/budget`
+  // sin colisionar con catch-alls de `/events/*`. Lectura pura; no invoca mutaciones.
+  apiV1.use(budgetRouter);
+  // US-036 (PB-P1-020, R1): mutaciones sobre BudgetItem (`POST/PATCH/DELETE
+  // /events/:eventId/budget/items[/:itemId]`). Se monta ANTES de `eventPlanningRouter` por el
+  // mismo motivo. Cada mutación se envuelve en `prisma.$transaction` para recomputar totales
+  // materializados de `Budget` (BLK-E, compromiso R1 US-035). Hard delete (schema `BudgetItem`
+  // no declara `deletedAt`); auditoría vía log estructurado `budget.item.deleted`.
+  apiV1.use(budgetItemMutationRouter);
   apiV1.use('/booking-intents', bookingIntentRouter);
   apiV1.use('/events', eventPlanningRouter); // US-095 / API-001
   apiV1.use('/event-types', eventTypesRouter); // US-009 / catálogo

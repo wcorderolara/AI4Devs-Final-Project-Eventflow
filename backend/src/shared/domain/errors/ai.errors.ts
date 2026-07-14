@@ -27,6 +27,12 @@ export class AiInvalidOutputError extends AppError {
   constructor(message = 'AI provider returned invalid output', readonly meta?: AiOutputValidationErrorMeta) { super(message); }
 }
 
+// US-019 (PB-P1-013 / EC-01, VR-03): budget_estimated <= 0 al invocar sugerencia IA → 400.
+export class AiInvalidBudgetError extends AppError {
+  readonly code = ErrorCodes.INVALID_BUDGET;
+  constructor(message = 'budget_estimated must be > 0') { super(message); }
+}
+
 // US-124 (PB-P0-011 / BE-001): errores específicos de parsing/schema/retry de output IA.
 /** El output no cumple el schema Zod strict del feature (VR-02 / EC-02/EC-03). */
 export class AiInvalidOutputSchemaError extends AppError {

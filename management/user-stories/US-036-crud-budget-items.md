@@ -18,7 +18,8 @@
 | Ready for Development Tasks | Yes                                       |
 | Sprint / Milestone | MVP                                                |
 | Created Date       | 2026-06-09                                         |
-| Last Updated       | 2026-06-27                                         |
+| Last Updated       | 2026-07-14                                         |
+| Revision R1        | 2026-07-14 — Alineación con schema real (Opción A). Ver §Notes. |
 
 ---
 
@@ -117,39 +118,39 @@ Referencia completa: `management/user-stories/decision-resolutions/US-036-decisi
 
 ## 🎯 Happy Path
 
-### AC-01: Crear item
+### AC-01: Crear item (R1)
 
 **Given** un organizador autenticado dueño de un evento con `Budget` y `event.status ∈ {'draft','active'}`
-**When** envía `POST /api/v1/events/:eventId/budget/items` con body `{ service_category_id: uuid, label?: string, planned: number ≥ 0, paid?: number ≥ 0 }`
-**Then** el sistema crea el `BudgetItem` con `committed = 0`, `paid` normalizado (`null → 0` en response), `ai_generated = false`, `deleted_at = null`. Responde `201 Created` con el item creado. La query key TanStack `['event', eventId, 'budget']` queda marcada para refetch.
+**When** envía `POST /api/v1/events/:eventId/budget/items` con body `{ label: string, category_code?: string | null, amount_planned: number ≥ 0, amount_committed?: number ≥ 0 }`
+**Then** el sistema crea el `BudgetItem` con `amount_committed = body.amount_committed ?? 0`. Recomputa `Budget.totalPlanned` y `Budget.totalCommitted` en la misma transacción. Responde `201 Created` con el item creado en shape R1 (`id`, `label`, `category_code`, `amount_planned`, `amount_committed`). La query key TanStack `['event', eventId, 'budget']` queda marcada para refetch.
 
-### AC-02: Editar item
+### AC-02: Editar item (R1)
 
-**Given** un item existente (no soft-deleted) en un evento `draft`/`active`
-**When** envía `PATCH /api/v1/events/:eventId/budget/items/:itemId` con body que incluye uno o más de `{ planned?, paid?, service_category_id?, label? }`
-**Then** el sistema actualiza los campos permitidos. `ai_generated` se preserva (no editable). `committed` NO está permitido en el body — si llega, responde `400 INVALID_FIELD`. `service_category_id` solo es editable cuando `committed = 0`; si `committed > 0`, responde `409 ITEM_HAS_COMMITMENT_CATEGORY_LOCKED`. Responde `200 OK` con el item actualizado e invalida el cache de US-035.
+**Given** un item existente en un evento `draft`/`active`
+**When** envía `PATCH /api/v1/events/:eventId/budget/items/:itemId` con body que incluye uno o más de `{ label?, category_code?, amount_planned? }`
+**Then** el sistema actualiza los campos permitidos. `amount_committed` **NO** está permitido en el body — si llega (o cualquier campo extra), responde `400 INVALID_FIELD` (Zod `.strict()`). `category_code` solo es editable cuando `amount_committed = 0`; si `amount_committed > 0`, responde `409 ITEM_HAS_COMMITMENT_CATEGORY_LOCKED`. Si `category_code` no coincide con el whitelist activo, responde `400 INVALID_VALUE`. Recomputa totales del `Budget` en la misma transacción si `amount_planned` cambió. Responde `200 OK` e invalida el cache de US-035.
 
-### AC-03: Eliminar item (soft delete)
+### AC-03: Eliminar item — hard delete (R1)
 
-**Given** un item con `committed = 0`, sin `BookingIntent.pending` y con `paid = 0`
+**Given** un item con `amount_committed = 0` y sin `BookingIntent.pending` para su `category_code`
 **When** envía `DELETE /api/v1/events/:eventId/budget/items/:itemId`
-**Then** el sistema aplica `deleted_at = NOW()`, `deleted_by = currentUser.id`. Responde `204 No Content`. El item desaparece del listado de US-035 y NO contribuye a `summary.total_planned`, `summary.total_committed`, `summary.paid_total` ni `summary.over_committed`. Cache de US-035 invalidado.
+**Then** el sistema **elimina el registro** (hard delete; el schema `BudgetItem` no declara `deletedAt`/`deletedBy` — decisión ADR-DB-004). Recomputa totales del `Budget` en la misma transacción. Emite log `budget.item.deleted` con snapshot completo del item (`label`, `category_code`, `amount_planned`, `amount_committed`) para auditoría. Responde `204 No Content`. El item desaparece del listado de US-035 y de `summary.total_planned`/`total_committed`. Cache invalidado.
 
-### AC-04: Bloqueo DELETE por `committed > 0`
+### AC-04: Bloqueo DELETE por `amount_committed > 0` (R1)
 
-**Given** un item con `committed > 0`
+**Given** un item con `amount_committed > 0`
 **When** envía `DELETE`
 **Then** responde `409 ITEM_HAS_COMMITMENT` con copy localizado sugiriendo cancelar primero el BookingIntent confirmado.
 
-### AC-05: Bloqueo DELETE por `BookingIntent.pending` o `paid > 0`
+### AC-05: Bloqueo DELETE por `BookingIntent.pending` (R1)
 
-**Given** un item con `committed = 0` pero con `BookingIntent.pending` apuntando a `(event_id, service_category_id)`
+**Given** un item con `amount_committed = 0`, con `category_code` que resuelve a una `ServiceCategory` activa que tiene ≥ 1 `BookingIntent.pending` en `(event_id, service_category_id)`
 **When** envía `DELETE`
 **Then** responde `409 ITEM_HAS_PENDING_INTENT`.
 
-**Given** un item con `paid > 0`
-**When** envía `DELETE`
-**Then** responde `409 ITEM_HAS_PAID_AMOUNT`.
+> **R1:** el bloqueo por `paid > 0` (AC-05 original, segunda cláusula) queda **N/A**. La columna `paid` no existe en el schema real (`BudgetItem`); diferido a US paralela P2.
+
+> **R1 edge:** si `item.category_code = null` o no matchea ninguna `ServiceCategory.code` activa, el cross-module check se omite (no hay `BookingIntent` posible sin FK válida). El DELETE procede si los demás bloqueos no aplican.
 
 ### AC-06: Bloqueo en `cancelled` y `completed`
 
@@ -157,15 +158,17 @@ Referencia completa: `management/user-stories/decision-resolutions/US-036-decisi
 **When** se invoca cualquier POST/PATCH/DELETE sobre `/budget/items/*`
 **Then** responde `409 EVENT_NOT_EDITABLE` con detail del estado actual. La autorización ownership/rol sigue ejecutándose antes (401/403/404 mantienen su semántica habitual).
 
-### AC-07: PATCH de `service_category_id` y warnings advisory
+### AC-07: PATCH de `category_code` y warnings advisory (R1)
 
-**Given** un item con `committed = 0`
-**When** PATCH cambia `service_category_id` a una categoría activa distinta
-**Then** se actualiza correctamente; `ai_generated` se preserva.
+**Given** un item con `amount_committed = 0`
+**When** PATCH cambia `category_code` a un código activo distinto (`ServiceCategory.code WHERE is_active = true AND deleted_at IS NULL`)
+**Then** se actualiza correctamente.
 
-**Given** un item con `paid > committed` o `paid > planned`
+**Given** un item con `amount_committed > amount_planned`
 **When** se renderiza la tabla de US-035
-**Then** la UI muestra warnings advisory por fila (no bloqueantes); el backend NO rechaza la mutación que produjo el estado.
+**Then** la UI puede mostrar un badge advisory client-side (no bloqueante); el backend NO rechaza la mutación.
+
+> **R1:** los warnings advisory sobre `paid > committed` / `paid > planned` (D4 original) quedan **N/A** — la columna `paid` no existe en el schema real.
 
 ### AC-08: Invalidación de cache TanStack
 
@@ -195,13 +198,11 @@ Referencia completa: `management/user-stories/decision-resolutions/US-036-decisi
 ### EC-02: DELETE con `BookingIntent.pending`
 **Then** 409 `ITEM_HAS_PENDING_INTENT` (AC-05).
 
-### EC-03: DELETE con `paid > 0`
-**Then** 409 `ITEM_HAS_PAID_AMOUNT` (AC-05).
+### EC-03 (eliminada por R1)
+> **N/A** en R1: la columna `paid` no existe en `BudgetItem`. Diferido a US paralela P2.
 
-### EC-04: Items soft-deleted filtrados en US-035
-**Given** un item con `deleted_at IS NOT NULL`
-**When** US-035 consulta `GET /budget`
-**Then** el item NO aparece en `items[]` ni contribuye a `summary`.
+### EC-04 (eliminada por R1)
+> **N/A** en R1: sin soft delete, el hard delete de US-036 elimina el registro y desaparece automáticamente del `GET /budget` (US-035). No requiere filtro adicional.
 
 ### EC-05: Evento `cancelled`
 **Then** 409 `EVENT_NOT_EDITABLE` (AC-06).
@@ -209,7 +210,7 @@ Referencia completa: `management/user-stories/decision-resolutions/US-036-decisi
 ### EC-06: Evento `completed`
 **Then** 409 `EVENT_NOT_EDITABLE` (AC-06).
 
-### EC-07: PATCH cambia `service_category_id` con `committed > 0`
+### EC-07: PATCH cambia `category_code` con `amount_committed > 0` (R1)
 **Then** 409 `ITEM_HAS_COMMITMENT_CATEGORY_LOCKED` (AC-02).
 
 ### EC-08: Concurrencia (dos pestañas editando el mismo item)
@@ -217,8 +218,8 @@ Referencia completa: `management/user-stories/decision-resolutions/US-036-decisi
 **When** ambos envían PATCH
 **Then** se aplica "last write wins"; ambas mutaciones reciben 200. El cache de US-035 se invalida en ambas. (Locking optimista queda Out of Scope para MVP).
 
-### EC-09: Item soft-deleted accesado vía PATCH/DELETE
-**Then** 404 `ITEM_NOT_FOUND` (no-revelación; consistente con SEC-03).
+### EC-09 (eliminada por R1)
+> **N/A** en R1: sin soft delete. Un item hard-deleted retorna 404 `ITEM_NOT_FOUND` por su ausencia natural en la BD (no-revelación se preserva).
 
 ---
 
@@ -226,15 +227,15 @@ Referencia completa: `management/user-stories/decision-resolutions/US-036-decisi
 
 | ID    | Rule                                                                              | Message / Behavior                                                          |
 | ----- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| VR-01 | `planned ≥ 0`                                                                     | 400 `INVALID_VALUE` con detail "planned must be ≥ 0"                        |
-| VR-02 | `paid ≥ 0` (sin cross-constraint, D4)                                              | 400 `INVALID_VALUE` con detail "paid must be ≥ 0"                           |
-| VR-03 | `service_category_id` existente y activa (`is_active = true`)                      | 400 `INVALID_VALUE` con detail "service category not found or inactive"     |
-| VR-04 | `committed` NO editable                                                            | 400 `INVALID_FIELD` con detail "field 'committed' is not editable"          |
-| VR-05 | `service_category_id` editable solo si `committed = 0`                             | 409 `ITEM_HAS_COMMITMENT_CATEGORY_LOCKED`                                   |
+| VR-01 | `amount_planned ≥ 0` (R1)                                                          | 400 `INVALID_VALUE` con detail "amount_planned must be ≥ 0"                  |
+| VR-02 (N/A R1) | ~~`paid ≥ 0`~~                                                            | Columna no existe en R1. Diferido a US paralela P2.                          |
+| VR-03 | `category_code` (si presente) existe en whitelist activa (R1)                       | 400 `INVALID_VALUE` con detail "category_code not found or inactive"        |
+| VR-04 | `amount_committed`, `paid`, `ai_generated`, `service_category_id` NO editables (R1) | 400 `INVALID_FIELD` (Zod `.strict()`)                                        |
+| VR-05 | `category_code` editable solo si `amount_committed = 0` (R1)                        | 409 `ITEM_HAS_COMMITMENT_CATEGORY_LOCKED`                                   |
 | VR-06 | `eventId` y `itemId` UUID válidos                                                  | 400 `INVALID_PARAMS`                                                        |
 | VR-07 | `itemId` pertenece al `budget` del `eventId` (anti-IDOR)                            | 404 `ITEM_NOT_FOUND` (no-revelación)                                        |
 | VR-08 | Sin sesión válida                                                                  | 401 `UNAUTHORIZED`                                                          |
-| VR-09 | Operaciones sobre items soft-deleted (`deleted_at IS NOT NULL`)                     | 404 `ITEM_NOT_FOUND`                                                       |
+| VR-09 (N/A R1) | ~~Operaciones sobre items soft-deleted~~                                  | Sin soft delete en R1. Un item hard-deleted → 404 natural.                   |
 | VR-10 | `event.status ∈ {'draft','active'}` para POST/PATCH/DELETE                          | 409 `EVENT_NOT_EDITABLE`                                                    |
 
 ---
@@ -553,7 +554,23 @@ Not applicable for this story.
 
 ## 📝 Notes
 
+### Revision R1 — 2026-07-14 (Schema alignment, Opción A)
+
+* **Motivo:** el schema Prisma real (`BudgetItem`, `backend/prisma/schema.prisma:492-512`) no declara `deletedAt`/`deletedBy`/`paid`/`aiGenerated` ni FK `serviceCategoryId`. La decisión ADR-DB-004 excluye a `BudgetItem` de los 7 modelos con soft delete.
+* **Cambios normativos aplicados:**
+  - AC-01/02/03/04/05/07 reescritos con el shape R1 (`label`, `category_code`, `amount_planned`, `amount_committed`).
+  - EC-03, EC-04, EC-09 marcados N/A.
+  - VR-02, VR-09 marcados N/A.
+  - D2 reformulado a **hard delete** con dos bloqueos (`amount_committed > 0` y `BookingIntent.pending`); auditoría vía log estructurado `budget.item.deleted` con snapshot pre-delete.
+  - D4 marcado N/A (sin `paid`, no aplica cross-constraint).
+  - Cross-module check para `BookingIntent.pending`: `categoryCode → ServiceCategory.id → BookingIntent.findMany`.
+  - Transacción obligatoria para recomputar `Budget.totalPlanned/Committed` (compromiso R1 US-035).
+* **Diferido a US paralela P2** (misma prevista por R1 de US-035): `paid`, `ai_generated`, FK `service_category_id`, soft delete.
+* **Aprobación pendiente:** PO/BA debe reconfirmar formalmente antes de merge (paquete combinado con R1 US-035).
+
+### Notas originales
+
 * Bulk update de varios items queda Out of Scope (Future).
 * La invalidación de cache hacia US-035 cierra el handoff de PB-P1-020.
 * Documentation Alignment Required (no bloqueantes): extender `UC-BUDGET-002 §E2` con `completed`; actualizar `docs/16 §M06` y `§error format` con nuevos `error_code`; housekeeping de `NFR-PERF-001` en backlog.
-* El cross-module check de `BookingIntent.pending` debe documentarse en el Tech Spec para mantener acoplamiento controlado entre `modules/budget` y `modules/booking`.
+* El cross-module check de `BookingIntent.pending` está documentado en el Tech Spec §7 R1 para mantener acoplamiento controlado entre `budget-management` y `booking-intent`.

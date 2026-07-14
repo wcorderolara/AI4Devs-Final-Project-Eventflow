@@ -1,0 +1,93 @@
+# US-029 (PB-P1-018) — Snippet OpenAPI para las 3 mutaciones canónicas sobre EventTask.
+# Fusión en `backend/openapi.json` la coordina US-098 (owner del snapshot). Este snippet
+# refleja el contrato descrito en la Tech Spec §9 + el error handler central actualizado.
+paths:
+  /events/{eventId}/tasks/{taskId}:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/TaskId'
+    patch:
+      tags: [Tasks]
+      summary: Editar contenido de una tarea (Organizer dueño)
+      operationId: updateEventTaskContent
+      security: [{ sessionCookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                title:
+                  type: string
+                  minLength: 2
+                  maxLength: 200
+                description:
+                  type: [string, 'null']
+                  maxLength: 2000
+                due_date:
+                  type: [string, 'null']
+                  format: date-time
+                category_code:
+                  type: [string, 'null']
+                  minLength: 1
+                  maxLength: 64
+      responses:
+        '200':
+          description: TaskListItemDto actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TaskListItemEnvelope' }
+        '400':
+          description: VALIDATION_ERROR / EMPTY_PATCH / DUE_DATE_IN_PAST / CATEGORY_NOT_AVAILABLE
+        '401': { description: AUTHENTICATION_REQUIRED }
+        '403': { description: FORBIDDEN (vendor/admin) }
+        '404': { description: RESOURCE_NOT_FOUND (no-revelación) }
+        '409': { description: EVENT_NOT_MUTABLE }
+        '415': { description: UNSUPPORTED_MEDIA_TYPE }
+    delete:
+      tags: [Tasks]
+      summary: Soft delete de una tarea (Organizer dueño)
+      operationId: softDeleteEventTask
+      security: [{ sessionCookieAuth: [] }]
+      responses:
+        '204': { description: No Content }
+        '401': { description: AUTHENTICATION_REQUIRED }
+        '403': { description: FORBIDDEN }
+        '404': { description: RESOURCE_NOT_FOUND (no-revelación) }
+        '409': { description: EVENT_NOT_MUTABLE }
+  /events/{eventId}/tasks/{taskId}/status:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/TaskId'
+    patch:
+      tags: [Tasks]
+      summary: Transicionar estado (state machine canónica)
+      operationId: updateEventTaskStatus
+      security: [{ sessionCookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [pending, in_progress, done, skipped]
+      responses:
+        '200':
+          description: TaskListItemDto (o mismo DTO si es no_op idempotente same-state)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TaskListItemEnvelope' }
+        '400': { description: VALIDATION_ERROR }
+        '401': { description: AUTHENTICATION_REQUIRED }
+        '403': { description: FORBIDDEN }
+        '404': { description: RESOURCE_NOT_FOUND }
+        '409':
+          description: EVENT_NOT_MUTABLE (evento) o INVALID_TRANSITION (state machine)
+        '415': { description: UNSUPPORTED_MEDIA_TYPE }
