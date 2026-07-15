@@ -79,3 +79,4 @@
 | P1 | PB-P1-022 | US-038 | Warning con delta y badges per-item cuando committed > total | [record](development-execution/P1/PB-P1-022/US-038-execution.md) | 21 | 19 | 0 | 0 | 0 | 2 | `Done` | 2026-07-15 |
 | P1 | PB-P1-023 | US-039 | Sync atómico de `BudgetItem.committed` por BookingIntent | [record](development-execution/P1/PB-P1-023/US-039-execution.md) | 16 | 16 | 0 | 0 | 0 | 0 | `Done` | 2026-07-15 |
 | P1 | PB-P1-024 | US-040 | Crear mi VendorProfile (status=pending) | [record](development-execution/P1/PB-P1-024/US-040-execution.md) | 24 | 21 | 0 | 0 | 0 | 3 | `Done` | 2026-07-15 |
+| P1 | PB-P1-024 | US-041 | Editar y soft-delete VendorProfile (re-pending auto) | [record](development-execution/P1/PB-P1-024/US-041-execution.md) | 19 | 17 | 0 | 0 | 0 | 2 | `Done` | 2026-07-15 |

@@ -49,13 +49,60 @@
       "pendingBody": "Our team will review it shortly. You can edit it in the meantime.",
       "editCta": "Edit my profile"
     },
+    "edit": {
+      "title": "Edit my profile",
+      "subtitle": "Update your business details. Major changes require another review by our team.",
+      "loading": "Loading your profile…",
+      "links": { "createNew": "Create my profile" },
+      "fields": {
+        "businessName": { "label": "Business name" },
+        "bio": { "label": "Description", "help": "Between 50 and 1000 characters." },
+        "location": { "label": "Primary city" }
+      },
+      "buttons": {
+        "save": "Save changes",
+        "saving": "Saving…",
+        "delete": "Delete my profile"
+      },
+      "banners": {
+        "saved": "Changes saved successfully.",
+        "repending": {
+          "title": "Your profile is under review again",
+          "body": "Major changes (business name or city) require another verification by our team."
+        }
+      },
+      "confirmMajor": {
+        "title": "These changes will send your profile back to review",
+        "description": "Changing the business name or city requires another verification by our team. Continue?",
+        "cancel": "Cancel",
+        "confirm": "Continue and send"
+      },
+      "delete": {
+        "title": "Delete your vendor profile?",
+        "description": "Your profile will no longer appear in the directory. You can contact our team to reactivate it later.",
+        "cancel": "Cancel",
+        "confirm": "Yes, delete",
+        "submitting": "Deleting…"
+      },
+      "errors": {
+        "PROFILE_REJECTED": "Your profile was rejected. Resubmit it for approval from the corresponding option.",
+        "PROFILE_HIDDEN": "Your profile is hidden by an administrator. Contact us to reactivate it.",
+        "PROFILE_DELETED": "Your profile is already deleted.",
+        "PROFILE_NOT_FOUND": "You don't have a profile yet.",
+        "VALIDATION_ERROR": "Please review the information you entered.",
+        "AUTHENTICATION_REQUIRED": "Your session expired. Please sign in again.",
+        "FORBIDDEN": "Only vendors can edit this profile.",
+        "UNEXPECTED": "Something went wrong. Please try again."
+      }
+    },
     "validation": {
       "businessNameRequired": "Business name is required.",
       "businessNameLength": "Must be between 2 and 150 characters.",
       "bioLength": "Description must be between 50 and 1000 characters.",
       "locationRequired": "Please select a city.",
       "categoriesRange": "Please pick between 1 and 3 categories.",
-      "languagesRequired": "Please pick at least one language."
+      "languagesRequired": "Please pick at least one language.",
+      "noFieldsToUpdate": "Please change at least one field before saving."
     },
     "errors": {
       "PROFILE_EXISTS": "You already have a vendor profile. You can edit it from your profile page.",

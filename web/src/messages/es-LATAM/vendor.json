@@ -49,13 +49,60 @@
       "pendingBody": "Nuestro equipo lo revisará en breve. Puedes editarlo mientras tanto.",
       "editCta": "Editar mi perfil"
     },
+    "edit": {
+      "title": "Editar mi perfil",
+      "subtitle": "Actualiza tus datos comerciales. Los cambios mayores requerirán nueva revisión del equipo.",
+      "loading": "Cargando tu perfil…",
+      "links": { "createNew": "Crear mi perfil" },
+      "fields": {
+        "businessName": { "label": "Nombre comercial" },
+        "bio": { "label": "Descripción", "help": "Entre 50 y 1000 caracteres." },
+        "location": { "label": "Ciudad principal" }
+      },
+      "buttons": {
+        "save": "Guardar cambios",
+        "saving": "Guardando…",
+        "delete": "Eliminar mi perfil"
+      },
+      "banners": {
+        "saved": "Cambios guardados correctamente.",
+        "repending": {
+          "title": "Tu perfil pasó a revisión",
+          "body": "Los cambios mayores (nombre o ciudad) requieren nueva verificación del equipo."
+        }
+      },
+      "confirmMajor": {
+        "title": "Estos cambios volverán tu perfil a revisión",
+        "description": "Cambiar el nombre comercial o la ciudad requiere una nueva verificación del equipo. ¿Quieres continuar?",
+        "cancel": "Cancelar",
+        "confirm": "Continuar y enviar"
+      },
+      "delete": {
+        "title": "¿Eliminar tu perfil de proveedor?",
+        "description": "Tu perfil dejará de ser visible en el directorio. Podrás contactar al equipo para reactivarlo más adelante.",
+        "cancel": "Cancelar",
+        "confirm": "Sí, eliminar",
+        "submitting": "Eliminando…"
+      },
+      "errors": {
+        "PROFILE_REJECTED": "Tu perfil fue rechazado. Reenvíalo a revisión desde la opción correspondiente.",
+        "PROFILE_HIDDEN": "Tu perfil está oculto por un administrador. Contáctanos para reactivarlo.",
+        "PROFILE_DELETED": "Tu perfil ya fue eliminado.",
+        "PROFILE_NOT_FOUND": "Aún no tienes un perfil creado.",
+        "VALIDATION_ERROR": "Revisa los datos ingresados.",
+        "AUTHENTICATION_REQUIRED": "Tu sesión expiró. Inicia sesión nuevamente.",
+        "FORBIDDEN": "Solo los proveedores pueden editar este perfil.",
+        "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
+      }
+    },
     "validation": {
       "businessNameRequired": "El nombre comercial es obligatorio.",
       "businessNameLength": "Debe tener entre 2 y 150 caracteres.",
       "bioLength": "La descripción debe tener entre 50 y 1000 caracteres.",
       "locationRequired": "Selecciona una ciudad.",
       "categoriesRange": "Debes elegir entre 1 y 3 categorías.",
-      "languagesRequired": "Selecciona al menos un idioma."
+      "languagesRequired": "Selecciona al menos un idioma.",
+      "noFieldsToUpdate": "Debes cambiar al menos un dato antes de guardar."
     },
     "errors": {
       "PROFILE_EXISTS": "Ya tienes un perfil de proveedor. Puedes editarlo desde tu perfil.",

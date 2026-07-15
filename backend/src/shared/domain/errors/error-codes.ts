@@ -103,6 +103,12 @@ export const ErrorCodes = {
   INVALID_VALUE: 'INVALID_VALUE', // 400 — editedPayload con category no presente en payload original / vacío (EC-04/05)
   // US-040 (PB-P1-024): crear VendorProfile. El vendor ya tiene un perfil (UNIQUE user_id) → 409.
   PROFILE_EXISTS: 'PROFILE_EXISTS',
+  // US-041 (PB-P1-024): editar / soft-delete VendorProfile.
+  PROFILE_NOT_FOUND: 'PROFILE_NOT_FOUND', // 404 — currentUser sin perfil (NT-10)
+  PROFILE_REJECTED: 'PROFILE_REJECTED', // 409 — PATCH bloqueado en status=rejected (EC-03, D3)
+  PROFILE_HIDDEN: 'PROFILE_HIDDEN', // 409 — PATCH/DELETE bloqueado en status=hidden (EC-04, D3)
+  PROFILE_DELETED: 'PROFILE_DELETED', // 409 — DELETE sobre perfil ya soft-deleted (EC-05)
+  INVALID_FIELD: 'INVALID_FIELD', // 400 — body PATCH con campo prohibido (categories/slug/status → EC-01/EC-02, NT-04..06)
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

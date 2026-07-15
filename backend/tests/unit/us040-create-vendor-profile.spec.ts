@@ -37,6 +37,13 @@ function fakeRepo(overrides: Partial<VendorProfileRepository> = {}): VendorProfi
     existsForUser: vi.fn(async () => false),
     findSlugsStartingWith: vi.fn(async () => []),
     create: vi.fn(async (input) => makeView({ slug: input.slug, categoryIds: input.categoryIds })),
+    // Métodos US-041 no ejercitados por este archivo; se stubean para satisfacer el port.
+    findEditableByVendorUserId: vi.fn(async () => null),
+    findAnyByVendorUserId: vi.fn(async () => null),
+    update: vi.fn(async () => undefined),
+    updateStatus: vi.fn(async () => undefined),
+    softDelete: vi.fn(async () => undefined),
+    findByIdWithCategories: vi.fn(async () => null),
     ...overrides,
   };
 }
@@ -60,6 +67,10 @@ function fakeLogger(): VendorProfileEventLogger & { calls: unknown[] } {
     emitProfileCreated: (view, ctx) => {
       calls.push({ view, ctx });
     },
+    // Stubs de eventos US-041 (no ejercitados aquí).
+    emitProfileUpdated: () => undefined,
+    emitProfileRepending: () => undefined,
+    emitProfileSoftDeleted: () => undefined,
   };
 }
 
