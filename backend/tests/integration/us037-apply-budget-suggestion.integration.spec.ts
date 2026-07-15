@@ -47,7 +47,7 @@ function buildUseCase(): HitlApply {
 describe.skipIf(!dbUp)('US-037 QA-002 — Apply budget_suggestion (integration)', () => {
   let pendingRecId: string;
   let ownerId: string;
-  let eventId: string;
+  let _eventId: string;
 
   beforeAll(async () => {
     const rec = await prisma.aIRecommendation.findFirst({
@@ -57,7 +57,7 @@ describe.skipIf(!dbUp)('US-037 QA-002 — Apply budget_suggestion (integration)'
     if (rec) {
       pendingRecId = rec.id;
       ownerId = rec.requestedByUserId;
-      eventId = rec.eventId!;
+      _eventId = rec.eventId!;
     }
   });
 

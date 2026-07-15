@@ -19,7 +19,10 @@ const CATEGORIES = [
 const N = 12;
 const REPS = 30;
 
-function makeTx(): any {
+function makeTx(): {
+  event: { findUnique: () => Promise<{ id: string; status: string; currency: string; userId: string }> };
+  budget: { upsert: () => Promise<{ id: string }> };
+} {
   return {
     event: {
       findUnique: async () => ({

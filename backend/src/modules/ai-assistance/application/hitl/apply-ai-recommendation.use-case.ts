@@ -146,7 +146,29 @@ export class ApplyAIRecommendationUseCase {
         });
         throw err;
       }
-      // Cualquier otra falla dentro de la transacción → SideEffectFailedError (rollback ya ocurrió).
+      // US-037: errores de dominio tipados (AppError con `code`) lanzados por las strategies
+      // — p.ej. `CategoryInactiveError`, `EventNotEditableError`, `CurrencyMismatchError`,
+      // `InvalidValueError`, `PayloadInvalidError` de `budget-management` — deben propagarse
+      // sin envolver para que el error-handler central los mapee al HTTP status correcto.
+      // Rollback ya ocurrió (throw dentro de `$transaction`).
+      const isDomainError =
+        err !== null &&
+        typeof err === 'object' &&
+        'code' in err &&
+        typeof (err as { code?: unknown }).code === 'string';
+      if (isDomainError && !(err instanceof SideEffectFailedError)) {
+        this.logger.emit('ai.recommendation.apply_failed', {
+          correlationId: input.correlationId,
+          actorId: input.actor.id,
+          type: recommendation.type,
+          languageCode,
+          recommendationId: recommendation.id,
+          errorCode: (err as { code: string }).code,
+          latencyMs: Date.now() - startedAt,
+        });
+        throw err;
+      }
+      // Cualquier otra falla no tipada → SideEffectFailedError (rollback ya ocurrió).
       const wrapped =
         err instanceof SideEffectFailedError ? err : new SideEffectFailedError(recommendation.type, err);
       this.logger.emit('ai.recommendation.apply_failed', {

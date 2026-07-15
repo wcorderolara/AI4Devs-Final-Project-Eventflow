@@ -11,7 +11,6 @@ import type {
   ServiceCategoryRow,
 } from '../../src/modules/budget-management/ports/service-category-read.port.js';
 import {
-  CategoryInactiveError,
   CurrencyMismatchError,
   EventNotEditableError,
   InvalidValueError,

@@ -23,9 +23,13 @@ export function baseOutput(feature: AiFeatureType, input: Record<string, unknown
         ],
       };
     case 'budget_suggestion':
+      // US-037: `category` debe ser el `code` canónico de la whitelist activa (`catering`,
+      // `decoration`, `venue`, etc.) para que `BudgetSuggestionApplyStrategyV2` pueda
+      // resolverlas vía `ServiceCategoryReadPort.findManyByCodes` sin fallar con
+      // `PAYLOAD_INVALID: unknown categories`.
       return {
         currencyCode: typeof input.currencyCode === 'string' ? input.currencyCode : 'GTQ',
-        items: [{ category: 'Catering', estimatedAmount: '1000.00' }, { category: 'Decoración', estimatedAmount: '500.00' }],
+        items: [{ category: 'catering', estimatedAmount: '1000.00' }, { category: 'decoration', estimatedAmount: '500.00' }],
       };
     case 'vendor_categories':
       return { categories: [{ code: 'catering', reason: 'Servicio esencial' }, { code: 'photography', reason: 'Registro del evento' }] };
