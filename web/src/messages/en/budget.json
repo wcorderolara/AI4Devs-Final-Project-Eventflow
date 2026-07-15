@@ -15,7 +15,11 @@
   },
   "overcommit": {
     "title": "Budget over-committed",
-    "body": "Committed amount exceeds planned. Review your items or increase your planned amounts."
+    "body": "Committed amount exceeds planned. Review your items or increase your planned amounts.",
+    "delta_label": "Exceeded by {amount}",
+    "item_badge": "Over-committed",
+    "item_aria_label": "Category over-committed by {amount}",
+    "cta_edit_items": "Edit items"
   },
   "table": {
     "caption": "Budget items grouped by category.",

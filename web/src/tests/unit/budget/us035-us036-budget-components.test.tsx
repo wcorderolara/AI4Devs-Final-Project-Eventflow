@@ -24,8 +24,8 @@ function wrap(node: React.ReactNode): React.ReactElement {
 }
 
 const items = [
-  { id: 'i1', label: 'Venue rental', category_code: 'venue', amount_planned: 5000, amount_committed: 2000 },
-  { id: 'i2', label: 'Catering', category_code: 'catering', amount_planned: 3000, amount_committed: 1000 },
+  { id: 'i1', label: 'Venue rental', category_code: 'venue', amount_planned: 5000, amount_committed: 2000, over_committed: false, overcommitted_amount: 0 },
+  { id: 'i2', label: 'Catering', category_code: 'catering', amount_planned: 3000, amount_committed: 1000, over_committed: false, overcommitted_amount: 0 },
 ];
 
 describe('US-035 — <BudgetSummary>', () => {
@@ -33,7 +33,7 @@ describe('US-035 — <BudgetSummary>', () => {
     render(
       wrap(
         <BudgetSummary
-          summary={{ currency_code: 'USD', total_planned: 8000, total_committed: 3000, over_committed: false }}
+          summary={{ currency_code: 'USD', total_planned: 8000, total_committed: 3000, over_committed: false, overcommitted_amount: 0 }}
           locale="en"
         />,
       ),
@@ -48,7 +48,7 @@ describe('US-035 — <BudgetSummary>', () => {
     const { container } = render(
       wrap(
         <BudgetSummary
-          summary={{ currency_code: 'USD', total_planned: 100, total_committed: 50, over_committed: false }}
+          summary={{ currency_code: 'USD', total_planned: 100, total_committed: 50, over_committed: false, overcommitted_amount: 0 }}
           locale="en"
         />,
       ),

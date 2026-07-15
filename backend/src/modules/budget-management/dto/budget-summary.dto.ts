@@ -12,6 +12,9 @@ export const budgetSummaryDto = z.object({
   total_committed: z.number().nonnegative(),
   over_committed: z.boolean(),
   currency_code: z.enum(CURRENCY_CODES),
+  // US-038 (PB-P1-022 / BE-003) AC-01: monto bruto del exceso a nivel evento. Siempre presente
+  // (0 cuando no hay exceso). VR-03: garantizado ≥ 0 por construcción (Math.max(0, ...)).
+  overcommitted_amount: z.number().nonnegative(),
 });
 
 export type BudgetSummaryDto = z.infer<typeof budgetSummaryDto>;

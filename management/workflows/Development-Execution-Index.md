@@ -76,3 +76,4 @@
 | P1 | PB-P1-020 | US-035 | Ver mi presupuesto | [record](development-execution/P1/PB-P1-020/US-035-execution.md) | 24 | 20 | 0 | 0 | 0 | 0 | `Done` | 2026-07-14 |
 | P1 | PB-P1-020 | US-036 | Crear, editar y eliminar BudgetItem por categoría | [record](development-execution/P1/PB-P1-020/US-036-execution.md) | 25 | 19 | 0 | 0 | 0 | 1 | `Done` | 2026-07-14 |
 | P1 | PB-P1-021 | US-037 | Aceptar distribución IA como BudgetItems editables | [record](development-execution/P1/PB-P1-021/US-037-execution.md) | 26 | 25 | 0 | 0 | 0 | 1 | `Done` | 2026-07-14 |
+| P1 | PB-P1-022 | US-038 | Warning con delta y badges per-item cuando committed > total | [record](development-execution/P1/PB-P1-022/US-038-execution.md) | 21 | 19 | 0 | 0 | 0 | 2 | `Done` | 2026-07-15 |

@@ -1113,7 +1113,9 @@ Diferencias con el draft §26.3:
 Respuesta canónica:
 
 ```ts
-// GET /events/:eventId/budget  (US-035)
+// GET /events/:eventId/budget  (US-035, extendido por US-038)
+// US-038 (PB-P1-022) — extensión forward-compat del contrato: campos siempre presentes;
+// clientes de US-035 que ignoran los campos nuevos siguen funcionales.
 type GetBudgetResponse = {
   data: {
     summary: {
@@ -1121,6 +1123,7 @@ type GetBudgetResponse = {
       total_planned: number;
       total_committed: number;
       over_committed: boolean; // committed > planned (estricto)
+      overcommitted_amount: number; // US-038 AC-01: max(0, total_committed - total_planned)
     };
     items: Array<{
       id: string;
@@ -1128,13 +1131,19 @@ type GetBudgetResponse = {
       category_code: string | null;
       amount_planned: number;
       amount_committed: number;
+      over_committed: boolean; // US-038 AC-03/D4: (committed - planned) > tolerance
+      overcommitted_amount: number; // US-038 AC-03/VR-03: max(0, committed - planned)
     }>;
   };
   meta: { correlationId: string; timestamp: string };
 };
 
-// POST /events/:eventId/budget/items         (US-036)
-// PATCH /events/:eventId/budget/items/:itemId (US-036)
+// US-038 D3 — tolerance adaptativa: `10^(-currency.decimal_places)`. Monedas del enum MVP
+// (GTQ/EUR/MXN/COP/USD) ⇒ 0.01. Fallback defensivo `decimal_places = 2` si el código no
+// está catalogado (log `currency.decimal_places.missing`).
+
+// POST /events/:eventId/budget/items         (US-036, extendido por US-038)
+// PATCH /events/:eventId/budget/items/:itemId (US-036, extendido por US-038)
 type CreateBudgetItemBody = {
   label: string;
   category_code?: string | null;
@@ -1147,6 +1156,8 @@ type BudgetItemResponse = {
   category_code: string | null;
   amount_planned: number;
   amount_committed: number;
+  over_committed: boolean; // US-038 (BE-003) forward-compat
+  overcommitted_amount: number; // US-038 (BE-003) forward-compat
 };
 
 // DELETE /events/:eventId/budget/items/:itemId → 204

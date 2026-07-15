@@ -16,11 +16,16 @@ import { sessionRepository, clock } from '../../../../infrastructure/auth-compos
 import { GetBudgetUseCase } from '../../application/get-budget.use-case.js';
 import { GetBudgetTelemetry } from '../../application/get-budget-telemetry.js';
 import { PrismaBudgetReadRepository } from '../../infrastructure/prisma-budget-read.repository.js';
+// US-038 (PB-P1-022 / BE-002): adapter estático de `CurrencyReadPort`. Cuando la tabla
+// `Currency` con `decimal_places` exista, se sustituye por el adapter Prisma sin tocar el
+// use case ni el port.
+import { StaticCurrencyReadAdapter } from '../../infrastructure/static-currency-read.adapter.js';
 import { GetBudgetController } from './get-budget.controller.js';
 
 const repository = new PrismaBudgetReadRepository();
+const currencyReader = new StaticCurrencyReadAdapter();
 const telemetry = new GetBudgetTelemetry();
-const useCase = new GetBudgetUseCase(repository, telemetry);
+const useCase = new GetBudgetUseCase(repository, currencyReader, telemetry);
 const controller = new GetBudgetController(useCase);
 
 const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });

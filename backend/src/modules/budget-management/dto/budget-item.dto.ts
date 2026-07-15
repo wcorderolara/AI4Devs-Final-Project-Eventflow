@@ -10,6 +10,10 @@ export const budgetItemDto = z.object({
   category_code: z.string().nullable(),
   amount_planned: z.number().nonnegative(),
   amount_committed: z.number().nonnegative(),
+  // US-038 (PB-P1-022 / BE-003) AC-01/AC-03: bandera + delta per-item. Siempre presentes
+  // (false / 0 cuando no aplica). VR-03: `overcommitted_amount` ≥ 0.
+  over_committed: z.boolean(),
+  overcommitted_amount: z.number().nonnegative(),
 });
 
 export type BudgetItemDto = z.infer<typeof budgetItemDto>;

@@ -75,7 +75,12 @@ export function BudgetPage({ eventId, readOnly = false }: BudgetPageProps): Reac
       {query.data ? (
         <>
           <BudgetSummary summary={query.data.summary} locale={locale} />
-          <OvercommitWarning visible={query.data.summary.over_committed} />
+          <OvercommitWarning
+            visible={query.data.summary.over_committed}
+            summary={query.data.summary}
+            eventId={eventId}
+            locale={locale}
+          />
           {query.data.items.length === 0 ? (
             <EmptyBudgetState eventId={eventId} />
           ) : (

@@ -1,4 +1,5 @@
-// US-035 (PB-P1-020 / FE-002) — Componente resumen de presupuesto.
+// US-035 (PB-P1-020 / FE-002) + US-038 (PB-P1-022 / FE-002) — Componente resumen de presupuesto.
+// US-038 AC-01/AC-07: renderiza `overcommitted_amount` con CLDR cuando `over_committed = true`.
 import { useTranslations } from 'next-intl';
 import type { BudgetSummaryDto } from '../api/budgetApi';
 
@@ -17,6 +18,7 @@ function formatCurrency(amount: number, currencyCode: string, locale: string): s
 
 export function BudgetSummary({ summary, locale }: BudgetSummaryProps): React.JSX.Element {
   const t = useTranslations('budget.summary');
+  const tOver = useTranslations('budget.overcommit');
   const remaining = summary.total_planned - summary.total_committed;
   return (
     <section
@@ -44,6 +46,16 @@ export function BudgetSummary({ summary, locale }: BudgetSummaryProps): React.JS
           <dd className="text-lg font-medium">{summary.currency_code}</dd>
         </div>
       </dl>
+      {summary.over_committed ? (
+        <p
+          className="mt-3 text-sm font-medium text-red-700"
+          data-testid="budget-summary-overcommit-delta"
+        >
+          {tOver('delta_label', {
+            amount: formatCurrency(summary.overcommitted_amount, summary.currency_code, locale),
+          })}
+        </p>
+      ) : null}
     </section>
   );
 }
