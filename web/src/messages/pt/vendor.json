@@ -1,0 +1,74 @@
+{
+  "profile": {
+    "wizard": {
+      "title": "Crie o seu perfil de fornecedor",
+      "subtitle": "Conte-nos sobre o seu negócio para que a equipa administradora possa analisá-lo.",
+      "progress": "Etapa {current} de {total}: {stepTitle}",
+      "next": "Próximo",
+      "back": "Voltar",
+      "submit": "Enviar para revisão",
+      "cancel": "Cancelar",
+      "submitting": "Enviando…",
+      "success": {
+        "title": "O seu perfil está em revisão!",
+        "body": "Receberá uma notificação quando a equipa o aprovar."
+      }
+    },
+    "steps": {
+      "basic": {
+        "title": "Dados básicos",
+        "businessNameLabel": "Nome comercial",
+        "businessNamePlaceholder": "Ex. Acme Catering",
+        "bioLabel": "Descrição do seu negócio",
+        "bioHelp": "Entre 50 e 1000 caracteres."
+      },
+      "locationCategories": {
+        "title": "Localização e categorias",
+        "locationLabel": "Cidade principal",
+        "locationPlaceholder": "Selecione uma cidade",
+        "categoriesLabel": "Categorias de serviço (1 a 3)",
+        "categoriesHelp": "Escolha entre 1 e 3 categorias que representem o seu negócio."
+      },
+      "languages": {
+        "title": "Idiomas",
+        "label": "Idiomas atendidos",
+        "help": "Selecione ao menos um idioma no qual pode atender clientes."
+      },
+      "review": {
+        "title": "Confirmação",
+        "intro": "Verifique as informações antes de enviar para revisão.",
+        "businessName": "Nome comercial",
+        "bio": "Descrição",
+        "location": "Cidade",
+        "categories": "Categorias",
+        "languages": "Idiomas"
+      }
+    },
+    "banner": {
+      "pendingTitle": "O seu perfil está em revisão",
+      "pendingBody": "A nossa equipa vai analisá-lo em breve. Pode editá-lo enquanto isso.",
+      "editCta": "Editar o meu perfil"
+    },
+    "validation": {
+      "businessNameRequired": "O nome comercial é obrigatório.",
+      "businessNameLength": "Deve ter entre 2 e 150 caracteres.",
+      "bioLength": "A descrição deve ter entre 50 e 1000 caracteres.",
+      "locationRequired": "Selecione uma cidade.",
+      "categoriesRange": "Deve escolher entre 1 e 3 categorias.",
+      "languagesRequired": "Selecione ao menos um idioma."
+    },
+    "errors": {
+      "PROFILE_EXISTS": "Já possui um perfil de fornecedor. Pode editá-lo a partir do seu perfil.",
+      "VALIDATION_ERROR": "Verifique os dados introduzidos.",
+      "AUTHENTICATION_REQUIRED": "Precisa de iniciar sessão para criar o seu perfil.",
+      "FORBIDDEN": "Apenas fornecedores podem criar um perfil de fornecedor.",
+      "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
+    }
+  },
+  "languages": {
+    "es-LATAM": "Espanhol (América Latina)",
+    "es-ES": "Espanhol (Espanha)",
+    "pt": "Português",
+    "en": "Inglês"
+  }
+}

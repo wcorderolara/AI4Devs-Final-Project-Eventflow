@@ -16,6 +16,7 @@ import enNavigation from '../../messages/en/navigation.json';
 import enProfile from '../../messages/en/profile.json';
 import enTasks from '../../messages/en/tasks.json';
 import enValidation from '../../messages/en/validation.json';
+import enVendor from '../../messages/en/vendor.json';
 import esEsAdmin from '../../messages/es-ES/admin.json';
 import esEsAi from '../../messages/es-ES/ai.json';
 import esEsAuth from '../../messages/es-ES/auth.json';
@@ -27,6 +28,7 @@ import esEsNavigation from '../../messages/es-ES/navigation.json';
 import esEsProfile from '../../messages/es-ES/profile.json';
 import esEsTasks from '../../messages/es-ES/tasks.json';
 import esEsValidation from '../../messages/es-ES/validation.json';
+import esEsVendor from '../../messages/es-ES/vendor.json';
 import esLatamAdmin from '../../messages/es-LATAM/admin.json';
 import esLatamAi from '../../messages/es-LATAM/ai.json';
 import esLatamAuth from '../../messages/es-LATAM/auth.json';
@@ -38,6 +40,7 @@ import esLatamNavigation from '../../messages/es-LATAM/navigation.json';
 import esLatamProfile from '../../messages/es-LATAM/profile.json';
 import esLatamTasks from '../../messages/es-LATAM/tasks.json';
 import esLatamValidation from '../../messages/es-LATAM/validation.json';
+import esLatamVendor from '../../messages/es-LATAM/vendor.json';
 import ptAdmin from '../../messages/pt/admin.json';
 import ptAi from '../../messages/pt/ai.json';
 import ptAuth from '../../messages/pt/auth.json';
@@ -49,6 +52,7 @@ import ptNavigation from '../../messages/pt/navigation.json';
 import ptProfile from '../../messages/pt/profile.json';
 import ptTasks from '../../messages/pt/tasks.json';
 import ptValidation from '../../messages/pt/validation.json';
+import ptVendor from '../../messages/pt/vendor.json';
 
 export type Messages = Record<string, unknown>;
 
@@ -65,6 +69,7 @@ const REGISTRY: Record<Locale, Messages> = {
     ai: esLatamAi,
     tasks: esLatamTasks,
     budget: esLatamBudget,
+    vendor: esLatamVendor,
   },
   'es-ES': {
     common: esEsCommon,
@@ -78,6 +83,7 @@ const REGISTRY: Record<Locale, Messages> = {
     ai: esEsAi,
     tasks: esEsTasks,
     budget: esEsBudget,
+    vendor: esEsVendor,
   },
   pt: {
     common: ptCommon,
@@ -91,6 +97,7 @@ const REGISTRY: Record<Locale, Messages> = {
     ai: ptAi,
     tasks: ptTasks,
     budget: ptBudget,
+    vendor: ptVendor,
   },
   en: {
     common: enCommon,
@@ -104,6 +111,7 @@ const REGISTRY: Record<Locale, Messages> = {
     ai: enAi,
     tasks: enTasks,
     budget: enBudget,
+    vendor: enVendor,
   },
 };
 

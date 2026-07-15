@@ -101,6 +101,8 @@ export const ErrorCodes = {
   CURRENCY_MISMATCH: 'CURRENCY_MISMATCH', // 409 — recommendation.currencyCode != event.currencyCode (AC-08, defensa profunda)
   PAYLOAD_INVALID: 'PAYLOAD_INVALID', // 422 — payload del AIRecommendation corrupto (defensa profunda)
   INVALID_VALUE: 'INVALID_VALUE', // 400 — editedPayload con category no presente en payload original / vacío (EC-04/05)
+  // US-040 (PB-P1-024): crear VendorProfile. El vendor ya tiene un perfil (UNIQUE user_id) → 409.
+  PROFILE_EXISTS: 'PROFILE_EXISTS',
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

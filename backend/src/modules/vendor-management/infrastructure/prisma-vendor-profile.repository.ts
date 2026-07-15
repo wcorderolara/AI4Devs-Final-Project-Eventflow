@@ -1,0 +1,164 @@
+// Adapter Prisma — VendorProfileRepository (US-040 / BE-003).
+// Escritura transaccional: insert `vendor_profiles` + bulk insert `vendor_profile_categories`
+// dentro de `prisma.$transaction`. La UNIQUE constraint del slug se maneja con retry (P2002)
+// en el use case.
+import { Prisma, type PrismaClient } from '@prisma/client';
+import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
+import type {
+  CreateVendorProfileInput,
+  LocationReader,
+  ServiceCategoryLookup,
+  VendorProfileRepository,
+} from '../ports/vendor-profile.repository.js';
+import {
+  ProfileAlreadyExistsError,
+  SlugConflictError,
+} from '../ports/vendor-profile.repository.js';
+import type { VendorProfileStatus, VendorProfileView } from '../domain/vendor-profile.js';
+import type { SupportedLanguage } from '../../../shared/constants/languages.js';
+
+export class PrismaVendorProfileRepository implements VendorProfileRepository {
+  constructor(private readonly prisma: PrismaClient = defaultPrisma) {}
+
+  async existsForUser(userId: string): Promise<boolean> {
+    const found = await this.prisma.vendorProfile.findFirst({
+      where: { userId, deletedAt: null },
+      select: { id: true },
+    });
+    return found !== null;
+  }
+
+  async findSlugsStartingWith(base: string): Promise<string[]> {
+    const escaped = base.replace(/[\\%_]/g, (m) => `\\${m}`);
+    const rows = await this.prisma.vendorProfile.findMany({
+      where: {
+        OR: [{ slug: base }, { slug: { startsWith: `${escaped}-` } }],
+      },
+      select: { slug: true },
+    });
+    return rows.map((r) => r.slug).filter((s): s is string => typeof s === 'string');
+  }
+
+  async create(input: CreateVendorProfileInput): Promise<VendorProfileView> {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const created = await tx.vendorProfile.create({
+          data: {
+            userId: input.vendorUserId,
+            businessName: input.businessName,
+            bio: input.bio,
+            locationId: input.locationId,
+            languagesSupported: input.languagesSupported,
+            slug: input.slug,
+            status: 'pending',
+            categoryChangeCount: 0,
+          },
+          select: {
+            id: true,
+            userId: true,
+            businessName: true,
+            bio: true,
+            locationId: true,
+            languagesSupported: true,
+            slug: true,
+            status: true,
+            createdAt: true,
+          },
+        });
+
+        await tx.vendorProfileCategory.createMany({
+          data: input.categoryIds.map((serviceCategoryId) => ({
+            vendorProfileId: created.id,
+            serviceCategoryId,
+          })),
+        });
+
+        const categories = await tx.serviceCategory.findMany({
+          where: { id: { in: input.categoryIds } },
+          select: { id: true, label: true },
+        });
+
+        return toView({
+          ...created,
+          categories: categories.map((c) => ({ id: c.id, name: c.label })),
+        });
+      });
+    } catch (err) {
+      if (isPrismaKnown(err) && err.code === 'P2002') {
+        const target = Array.isArray(err.meta?.target) ? (err.meta?.target as string[]) : [];
+        if (target.includes('slug') || target.includes('vendor_profiles_slug_key')) {
+          throw new SlugConflictError(input.slug);
+        }
+        if (target.includes('user_id') || target.includes('vendor_profiles_user_id_key')) {
+          throw new ProfileAlreadyExistsError();
+        }
+      }
+      throw err;
+    }
+  }
+}
+
+export class PrismaLocationReader implements LocationReader {
+  constructor(private readonly prisma: PrismaClient = defaultPrisma) {}
+
+  async existsActive(id: string): Promise<boolean> {
+    // Nota: el modelo `Location` no expone `isActive` en el schema (Doc 6 / catálogo curado
+    // por admin). Se interpreta "activa" como "presente y no soft-deleted".
+    const row = await this.prisma.location.findFirst({
+      where: { id, deletedAt: null },
+      select: { id: true },
+    });
+    return row !== null;
+  }
+}
+
+export class PrismaServiceCategoryLookup implements ServiceCategoryLookup {
+  constructor(private readonly prisma: PrismaClient = defaultPrisma) {}
+
+  async findActiveIds(ids: readonly string[]): Promise<{ id: string; name: string }[]> {
+    if (ids.length === 0) return [];
+    const rows = await this.prisma.serviceCategory.findMany({
+      where: { id: { in: [...ids] }, isActive: true, deletedAt: null },
+      select: { id: true, label: true },
+    });
+    return rows.map((r) => ({ id: r.id, name: r.label }));
+  }
+}
+
+interface RawVendorRow {
+  id: string;
+  userId: string;
+  businessName: string;
+  bio: string | null;
+  locationId: string | null;
+  languagesSupported: string[];
+  slug: string | null;
+  status: string;
+  createdAt: Date;
+  categories: { id: string; name: string }[];
+}
+
+function toView(row: RawVendorRow): VendorProfileView {
+  // Los invariantes de "creación US-040" garantizan que estos campos no son nulos aquí.
+  if (row.bio === null || row.locationId === null || row.slug === null) {
+    throw new Error('VendorProfile row missing required fields after US-040 creation');
+  }
+  return {
+    id: row.id,
+    vendorUserId: row.userId,
+    businessName: row.businessName,
+    bio: row.bio,
+    locationId: row.locationId,
+    languagesSupported: row.languagesSupported as VendorProfileView['languagesSupported'],
+    categories: row.categories,
+    slug: row.slug,
+    status: row.status as VendorProfileStatus,
+    createdAt: row.createdAt,
+  };
+}
+
+function isPrismaKnown(err: unknown): err is Prisma.PrismaClientKnownRequestError {
+  return err instanceof Prisma.PrismaClientKnownRequestError;
+}
+
+export type { SupportedLanguage };
