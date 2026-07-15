@@ -119,6 +119,11 @@ export const configSchema = z.object({
   JSON_BODY_LIMIT: z.string().default('1mb'),
   FILE_SIZE_LIMIT: z.coerce.number().default(5242880),
 
+  // FILE STORAGE (US-043 / PB-P1-026): abstracción `FileStoragePort` con adapter local por MVP.
+  // `local` escribe en `FILE_STORAGE_PATH`. Adapters `s3`/`gcs` quedan como futuro (ADR pendiente).
+  FILE_STORAGE_DRIVER: z.enum(['local']).default('local'),
+  FILE_STORAGE_PATH: z.string().min(1).default('./storage/uploads'),
+
   // LOGGING
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 

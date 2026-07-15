@@ -1203,6 +1203,7 @@ Gestionar el perfil del proveedor, aprobación admin, directorio público.
 | PATCH | `/vendors/me` | Sí | vendor | Actualiza perfil (sin `categories` — ver `POST /vendors/me/categories`). | 200 | 401, 403, 409 `PROFILE_REJECTED`/`PROFILE_HIDDEN`, 400 `VALIDATION_ERROR` |
 | DELETE | `/vendors/me` | Sí | vendor | Soft delete del perfil propio. | 204 | 401, 403, 409 `PROFILE_HIDDEN`/`PROFILE_DELETED` |
 | POST | `/vendors/me/categories` | Sí | vendor | Cambia el set de categorías (tope acumulado 5). | 200 | 400 `INVALID_CATEGORIES`/`INVALID_CATEGORY`, 401, 403, 404 `PROFILE_NOT_FOUND`, 409 `CATEGORY_CHANGE_LIMIT`/`PROFILE_HIDDEN` |
+| POST | `/vendors/me/portfolio/works/:workLabel/images` | Sí | vendor | Sube una imagen al `work_label` del portafolio (US-043). | 201 | 400 `INVALID_MIME`/`INVALID_WORK_LABEL`/`INVALID_IMAGE`, 401, 403, 404 `PROFILE_NOT_FOUND`, 409 `IMAGE_LIMIT_REACHED`/`WORK_LABEL_LIMIT_REACHED`/`PROFILE_HIDDEN`, 413 `FILE_TOO_LARGE` |
 | POST | `/vendors/me/submit-approval` | Sí | vendor | Envía perfil a admin. | 200 | 401, 403, 422 |
 | GET | `/vendors/:vendorProfileId` | No (público si approved) | anonymous, organizer, admin | Detalle público. | 200 | 404 |
 | GET | `/api/v1/public/vendors` | No | anonymous | Directorio público. | 200 | — |
@@ -1283,6 +1284,41 @@ type CreateVendorProfileRequestDto = {
 // Adicionalmente `GET /vendors/me` incluye a partir de US-042 los campos opcionales
 // `category_change_count`, `requires_admin_review` y `last_category_change_at` — el editor
 // de categorías los usa para hidratar el contador antes de la primera mutación de la sesión.
+
+// US-043 (PB-P1-026): upload de imágenes al portafolio del vendor.
+// - `POST /vendors/me/portfolio/works/:workLabel/images`:
+//     Content-Type: `multipart/form-data` con un único campo `file`.
+//     Path param `:workLabel` — matchea `^[a-zA-Z0-9\-_ ]{1,80}$` (D5). Se compara entre
+//     grupos por `LOWER(work_label)`; la persistencia preserva el display original.
+//     Middleware multer memoryStorage con `fileSize=FILE_SIZE_LIMIT` (5 MB por defecto — D2).
+//     Pipeline server-side (Tech Spec US-043 §7):
+//       1) Allowlist MIME por header + magic-bytes (`image/jpeg|png|webp`, D3 / SEC-02).
+//       2) Resolve `vendor_profile` activo por sesión; null/deleted → 404 `PROFILE_NOT_FOUND`;
+//          `status='hidden'` → 409 `PROFILE_HIDDEN` (D3).
+//       3) `COUNT(*) < 10` para `(owner_id, LOWER(work_label), status='active')` — VR-03/C-022.
+//       4) Si el label es nuevo, `COUNT(DISTINCT LOWER(work_label)) < 20` — VR-04/D6.
+//       5) Resize con `sharp` (long-edge ≤ 2048 px, JPEG quality 80, aspect ratio preservado — D4).
+//       6) `FileStoragePort.save` escribe `<yyyy>/<mm>/<uuid>.jpg` fuera del web root (SEC-03/06).
+//       7) `attachments.create(...)` con `uploaded_by=currentUser.id`; falla ⇒ eliminar binario
+//          (compensación §17 R3) y re-throw.
+//     Response 201:
+//       `{ id, owner_type: 'vendor_work', owner_id, work_label, mime: 'image/jpeg',
+//          size_bytes, storage_url, status: 'active', created_at, dimensions: { width, height } }`.
+//       `storage_url` es RELATIVO al `FILE_STORAGE_PATH` — no expuesto como URL descargable
+//       directa; una US futura entrega el endpoint autenticado de descarga (SEC-03).
+//     Errores:
+//       - 400 `INVALID_MIME` — allowlist / magic-bytes (EC-01, NT-07).
+//       - 400 `INVALID_IMAGE` — `sharp` no puede decodificar el binario.
+//       - 400 `INVALID_WORK_LABEL` — path param fuera del regex (EC-05).
+//       - 401 sesión ausente; 403 rol distinto de vendor (AUTH-TS-06/07 / SEC-01).
+//       - 404 `PROFILE_NOT_FOUND` — vendor sin perfil activo o soft-deleted (EC-04).
+//       - 409 `IMAGE_LIMIT_REACHED` — 10 activos en el grupo (AC-02).
+//       - 409 `WORK_LABEL_LIMIT_REACHED` — 20 work_labels activos distintos (EC-06).
+//       - 409 `PROFILE_HIDDEN` — `status='hidden'` (EC-03).
+//       - 413 `FILE_TOO_LARGE` — `size_bytes > FILE_SIZE_LIMIT` (EC-02).
+//     Observability: log `vendor.portfolio.uploaded` (info) con `vendor_profile_id`, `work_label`,
+//     `attachment_id`, `mime='image/jpeg'`, `size_bytes`, `dimensions`, `correlation_id`; error
+//     4xx/5xx → `vendor.portfolio.upload_failed` (warn) con `phase` y `code`.
 
 type UpdateVendorProfileRequestDto = Partial<CreateVendorProfileRequestDto> & {
   availabilitySummary?: string;

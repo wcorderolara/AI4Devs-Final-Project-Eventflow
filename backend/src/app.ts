@@ -34,6 +34,7 @@ import {
   vendorProfileRouter,
   serviceCategoriesRouter,
 } from './modules/vendor-management/interface/index.js';
+import { portfolioRouter } from './modules/attachments/interface/index.js';
 
 /** Construye y configura la aplicación Express. */
 export function createApp(): Express {
@@ -101,6 +102,12 @@ export function createApp(): Express {
   // `POST /api/v1/vendors/me` (Doc 16 §M07). Solo rol `vendor` (organizer/admin → 403; sin
   // sesión → 401). El endpoint público del directorio de vendors vive en US futura.
   apiV1.use('/vendors', vendorProfileRouter);
+  // US-043 (PB-P1-026): upload de imágenes del portafolio del vendor. Contrato
+  // `POST /api/v1/vendors/me/portfolio/works/:workLabel/images` (Doc 16 §M07). Sólo rol
+  // `vendor` (organizer/admin → 403; sin sesión → 401). Se monta DESPUÉS de
+  // `vendorProfileRouter` porque comparte el prefijo `/vendors/me` — Express recorre routers en
+  // orden y este es específico al sub-path `/me/portfolio`.
+  apiV1.use('/vendors/me/portfolio', portfolioRouter);
   // US-040 (EMERGENT): catálogo de ServiceCategory activas, requerido por el wizard vendor
   // (FE-004). Curado por admin (BR-SERVICE-003); solo requiere sesión válida.
   apiV1.use('/service-categories', serviceCategoriesRouter);

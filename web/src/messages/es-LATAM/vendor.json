@@ -118,6 +118,41 @@
     "pt": "Portugués",
     "en": "Inglés"
   },
+  "portfolio": {
+    "title": "Mi portafolio",
+    "subtitle": "Sube hasta 10 imágenes por trabajo para mostrar lo que ofreces.",
+    "empty": "Aún no has subido imágenes de tus trabajos.",
+    "workLabel": {
+      "label": "Nombre del trabajo",
+      "placeholder": "ej. boda-lopez-2024"
+    },
+    "dropzone": {
+      "placeholder": "Arrastra una imagen aquí o presiona Enter para elegir una",
+      "helper": "JPG, PNG o WebP. Máximo 5 MB. El lado más largo se ajusta a 2048 px."
+    },
+    "actions": {
+      "upload": "Subir imagen",
+      "uploading": "Subiendo…"
+    },
+    "grid": {
+      "label": "Portafolio agrupado por trabajo",
+      "counter": "{current} de {max} imágenes",
+      "imageAria": "Imagen {width}×{height}"
+    },
+    "errors": {
+      "INVALID_MIME": "Ese tipo de archivo no está permitido. Usa JPG, PNG o WebP.",
+      "INVALID_IMAGE": "No pudimos procesar esa imagen. Prueba con otra.",
+      "INVALID_WORK_LABEL": "El nombre del trabajo solo acepta letras, dígitos, espacios, guiones y guiones bajos (1–80 caracteres).",
+      "FILE_TOO_LARGE": "El archivo supera el límite de 5 MB.",
+      "IMAGE_LIMIT_REACHED": "Este trabajo ya tiene el máximo de 10 imágenes.",
+      "WORK_LABEL_LIMIT_REACHED": "Alcanzaste el máximo de 20 trabajos. Elimina uno existente para agregar otro.",
+      "PROFILE_HIDDEN": "Tu perfil está oculto por un administrador. Contáctanos para reactivarlo.",
+      "PROFILE_NOT_FOUND": "Aún no tienes un perfil de proveedor.",
+      "AUTHENTICATION_REQUIRED": "Tu sesión expiró. Inicia sesión de nuevo.",
+      "FORBIDDEN": "Solo los proveedores pueden subir imágenes al portafolio.",
+      "UNEXPECTED": "Algo salió mal. Intenta de nuevo."
+    }
+  },
   "categories": {
     "change": {
       "title": "Cambiar mis categorías de servicio",

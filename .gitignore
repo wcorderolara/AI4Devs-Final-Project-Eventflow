@@ -1,1 +1,6 @@
 #/.agents
+
+# US-043 (PB-P1-026): storage local del portafolio del vendor. Los binarios generados en runtime
+# nunca se commitean; sólo el `.gitkeep` que preserva la carpeta base.
+storage/uploads/*
+!storage/uploads/.gitkeep

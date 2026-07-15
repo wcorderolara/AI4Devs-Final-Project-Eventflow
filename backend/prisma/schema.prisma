@@ -394,6 +394,10 @@ model Attachment {
   workLabel String?          @map("work_label")
   // US-102: soporte para chk_attachments_size_bytes_nonneg (Doc 18 §19.1; >= 0). NULL permitido.
   sizeBytes Int?             @map("size_bytes")
+  // US-043 (PB-P1-026): actor que subió el binario. Referencia lógica a `users(id)`; sin FK
+  // formal para preservar el patrón polimórfico (Doc 18 §19) y no bloquear soft-deletes.
+  // NULL permitido para retro-compat con seeds anteriores.
+  uploadedBy String?         @map("uploaded_by") @db.Uuid
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)

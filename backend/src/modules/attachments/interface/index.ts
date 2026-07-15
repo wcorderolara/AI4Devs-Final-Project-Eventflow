@@ -1,3 +1,2 @@
-// Placeholder de capa (US-090). Sin lógica de feature; la implementación pertenece a la
-// feature story de este bounded context. `export {}` mantiene el módulo compilable con `tsc`.
-export {};
+// Barrel — capa interface del bounded context `attachments` (US-043 / PB-P1-026).
+export { portfolioRouter } from './portfolio.routes.js';

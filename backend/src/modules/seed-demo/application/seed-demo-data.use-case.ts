@@ -135,6 +135,13 @@ export class SeedDemoDataUseCase {
         TX_OPTS,
       ),
     );
+    // US-043 SEED-001: extiende el seed con los escenarios demo del portafolio del vendor.
+    // Vendor A: 9 imágenes en `boda-pareja-2024` (demo del 10º upload). Vendor B: 10 imágenes en
+    // `xv-anos-2024` (demo del bloqueo del 11º). Vendor C: `status='hidden'` (AUTH-TS-04).
+    // Idempotente: usa `isSeed=true` y `findFirst` como guard.
+    await run('vendor-portfolios', (c) =>
+      this.prisma.$transaction((tx) => this.seedVendorPortfolios(tx, c, vendors), TX_OPTS),
+    );
     const events = await run('events', (c) =>
       this.prisma.$transaction(
         (tx) => this.seedEvents(tx, c, identities.organizers, catalogs.eventTypes, catalogs.locations),
@@ -361,6 +368,75 @@ export class SeedDemoDataUseCase {
       vendors.push({ id: profile.id, userId: user.id });
     }
     return vendors;
+  }
+
+  /**
+   * US-043 SEED-001 — Escenarios demo del portafolio del vendor.
+   * - `vendors[0]`: 9 imágenes activas en `boda-pareja-2024` (demo del 10º upload permitido).
+   * - `vendors[1]` (si existe): 10 imágenes activas en `xv-anos-2024` (demo del 11º bloqueado).
+   * - Marca `vendors[2]` (si existe) como `status='hidden'` para AUTH-TS-04. Se mantiene
+   *   `deletedAt=null` para diferenciar del soft-deleted (US-041).
+   *
+   * Idempotente: cada attachment se crea sólo si no existe otro `isSeed=true` con el mismo
+   * `(ownerId, workLabel)` — el `count` alinea la re-ejecución sin duplicar binarios lógicos.
+   */
+  private async seedVendorPortfolios(
+    tx: Tx,
+    counts: DomainCounts,
+    vendors: { id: string; userId: string }[],
+  ): Promise<void> {
+    if (vendors.length === 0) return;
+
+    const scenarios: { vendorIndex: number; workLabel: string; count: number }[] = [
+      { vendorIndex: 0, workLabel: 'boda-pareja-2024', count: 9 },
+    ];
+    if (vendors.length > 1) {
+      scenarios.push({ vendorIndex: 1, workLabel: 'xv-anos-2024', count: 10 });
+    }
+
+    for (const scenario of scenarios) {
+      const vendor = vendors[scenario.vendorIndex]!;
+      const existing = await tx.attachment.count({
+        where: {
+          ownerType: 'vendor_work',
+          ownerId: vendor.id,
+          workLabel: scenario.workLabel,
+          status: 'active',
+          isSeed: true,
+        },
+      });
+      const missing = scenario.count - existing;
+      for (let i = 0; i < missing; i += 1) {
+        await ensure(
+          () => Promise.resolve(null),
+          () =>
+            tx.attachment.create({
+              data: {
+                ownerType: 'vendor_work',
+                ownerId: vendor.id,
+                status: 'active',
+                url: `seed/${vendor.id}/${scenario.workLabel}-${existing + i + 1}.jpg`,
+                fileName: `${scenario.workLabel}-${existing + i + 1}.jpg`,
+                mimeType: 'image/jpeg',
+                workLabel: scenario.workLabel,
+                sizeBytes: 200_000 + (i * 1_000),
+                uploadedBy: vendor.userId,
+                isSeed: true,
+              },
+            }),
+          counts,
+        );
+      }
+    }
+
+    // Escenario `hidden` — sólo si hay ≥3 vendors demo.
+    if (vendors.length > 2) {
+      const hiddenVendor = vendors[2]!;
+      await tx.vendorProfile.update({
+        where: { id: hiddenVendor.id },
+        data: { status: 'hidden' },
+      });
+    }
   }
 
   private async seedEvents(
