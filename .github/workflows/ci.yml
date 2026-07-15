@@ -117,8 +117,9 @@ jobs:
         run: npm run db:migrate:diff
 
   # OPS-002 (AC-03, AC-05, VR-02, EC-02) — Smoke deploy contra DB ephemeral + verificación
-  # de 21 tablas (19 US-099 + sessions y password_reset_tokens de US-094/PB-P0-004) + 14 enums
-  # canónicos vía information_schema/pg_type + idempotency.
+  # de 22 tablas (19 US-099 + sessions y password_reset_tokens de US-094/PB-P0-004
+  # + vendor_profile_categories de US-040/PB-P1-024) + 14 enums canónicos vía
+  # information_schema/pg_type + idempotency.
   prisma-migrate-smoke:
     runs-on: ubuntu-latest
     services:
@@ -148,11 +149,11 @@ jobs:
       - run: npm ci
       - name: migrate deploy (primera aplicación)
         run: npm run db:migrate:deploy
-      - name: Verificar 21 tablas físicas (19 US-099 + sessions y password_reset_tokens US-094)
+      - name: Verificar 22 tablas físicas (19 US-099 + sessions y password_reset_tokens US-094 + vendor_profile_categories US-040)
         run: |
           COUNT=$(psql -h localhost -U eventflow -d eventflow -tA -c "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name <> '_prisma_migrations';")
           echo "Tablas físicas: $COUNT"
-          test "$COUNT" -eq 21
+          test "$COUNT" -eq 22
       - name: Verificar los 14 enums canónicos
         run: |
           for e in UserRole CurrencyCode LanguageCode LLMProvider EventStatus QuoteRequestStatus QuoteStatus BookingIntentStatus ReviewStatus NotificationStatus AttachmentStatus VendorProfileStatus VendorServiceStatus AIRecommendationStatus; do
