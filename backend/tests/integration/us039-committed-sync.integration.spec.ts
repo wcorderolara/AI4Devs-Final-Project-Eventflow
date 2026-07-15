@@ -11,7 +11,7 @@
 //   IT-06 — currency mismatch: rollback total del `$transaction` externo.
 //   IT-08 — confirm + cancel + nuevo confirm (misma categoría) equilibra `committed`.
 //   CC-01 — Dos `applyOnConfirm` concurrentes sobre el mismo intent: uno gana, otro skip.
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { PrismaClient, type Prisma } from '@prisma/client';
 import { UpdateCommittedFromBookingIntentUseCase } from '../../src/modules/budget-management/application/update-committed-from-booking-intent.use-case.js';
 import { PrismaBookingIntentRepository } from '../../src/modules/booking-intent/infrastructure/prisma-booking-intent.repository.js';
@@ -73,9 +73,23 @@ async function makeFixture(opts: {
   const category = opts.category ?? 'catering';
 
   return prisma.$transaction(async (tx) => {
-    const eventType = await tx.eventType.findFirstOrThrow({ where: { code: 'wedding' } });
-    const catering = await tx.serviceCategory.findFirstOrThrow({ where: { code: 'catering' } });
-    const venue = await tx.serviceCategory.findFirstOrThrow({ where: { code: 'venue' } });
+    // Los catálogos son fixed-list; en entornos sin seed (p. ej. CI migrate-smoke sobre BD limpia)
+    // los sembramos vía upsert idempotente. Cuando el seed sí corrió, `upsert` es no-op.
+    const eventType = await tx.eventType.upsert({
+      where: { code: 'wedding' },
+      create: { code: 'wedding', label: 'Wedding' },
+      update: {},
+    });
+    const catering = await tx.serviceCategory.upsert({
+      where: { code: 'catering' },
+      create: { code: 'catering', label: 'Catering' },
+      update: {},
+    });
+    const venue = await tx.serviceCategory.upsert({
+      where: { code: 'venue' },
+      create: { code: 'venue', label: 'Venue' },
+      update: {},
+    });
     const targetCategory = category === 'catering' ? catering : venue;
 
     // Usuarios organizer + vendor mínimos.
