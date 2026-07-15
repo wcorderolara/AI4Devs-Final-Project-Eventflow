@@ -698,14 +698,20 @@ export class SeedDemoDataUseCase {
       //  2. Al menos un BudgetItem con `aiRecommendationId` de la recomendación previa
       //     `accepted` de budget_suggestion, para demoar el reemplazo D2.
       // US-087 default plan: events[0..2]=completed, events[3..7]=active, events[8..9]=draft.
-      const editableStatuses = new Set(['draft', 'active']);
+      // El seed genera events con currency alternado por índice (GTQ pares, USD impares).
+      // El mock provider genera `budget_suggestion.currencyCode='GTQ'` por default (sin
+      // `input.currencyCode`), por lo que necesitamos un evento editable **y** con
+      // currency='GTQ' para evitar `CurrencyMismatchError` en el apply (AC-08 defensa profunda).
       const editableEvents = await tx.event.findMany({
-        where: { id: { in: events.map((e) => e.id) }, status: { in: ['draft', 'active'] } },
+        where: {
+          id: { in: events.map((e) => e.id) },
+          status: { in: ['draft', 'active'] },
+          currency: 'GTQ',
+        },
         select: { id: true },
-        take: 2,
+        take: 1,
       });
-      const pendingBudgetEventTarget = editableEvents[0] ?? events[3] ?? events[0]!;
-      void editableStatuses;
+      const pendingBudgetEventTarget = editableEvents[0] ?? events[0]!;
       const pendingBudgetGen = generated.find((g) => g.feature === 'budget_suggestion');
       if (pendingBudgetGen) {
         await ensure(
