@@ -1,8 +1,11 @@
-// API client — vendor-profile (US-040 / FE-001; US-041 / FE-001). Sigue patrón `featureApi →
-// mapper → modelo` (Doc 15 §24) sobre `shared/api-client/httpClient`. La cookie de sesión viaja
-// automáticamente.
+// API client — vendor-profile (US-040 / FE-001; US-041 / FE-001; US-042 / FE-003).
+// Sigue patrón `featureApi → mapper → modelo` (Doc 15 §24) sobre `shared/api-client/httpClient`.
+// La cookie de sesión viaja automáticamente.
 import { httpDelete, httpGet, httpPatch, httpPost } from '@/shared/api-client';
 import type {
+  ChangeVendorCategoriesEnvelopeDTO,
+  ChangeVendorCategoriesRequestDTO,
+  ChangeVendorCategoriesResultDTO,
   CreateVendorProfileRequestDTO,
   ServiceCategoriesEnvelopeDTO,
   ServiceCategoryOption,
@@ -47,5 +50,20 @@ export const vendorProfileApi = {
   /** US-041 / AC-05: soft delete. Sin body, response 204. */
   async softDelete(): Promise<void> {
     await httpDelete<void>('/vendors/me');
+  },
+
+  /**
+   * US-042 / AC-01..04 · D1..D6: cambia el set de categorías del vendor autenticado.
+   * Response `{ profile, repending, noop, category_change_count, requires_admin_review,
+   * status, last_category_change_at }`.
+   */
+  async changeCategories(
+    input: ChangeVendorCategoriesRequestDTO,
+  ): Promise<ChangeVendorCategoriesResultDTO> {
+    const dto = await httpPost<
+      ChangeVendorCategoriesEnvelopeDTO,
+      ChangeVendorCategoriesRequestDTO
+    >('/vendors/me/categories', { body: input });
+    return dto.data;
   },
 };

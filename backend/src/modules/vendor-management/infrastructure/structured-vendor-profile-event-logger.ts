@@ -2,10 +2,16 @@
 import { logger } from '../../../shared/infrastructure/logger/index.js';
 import type { VendorProfileView } from '../domain/vendor-profile.js';
 import {
+  buildVendorCategoryChangedPayload,
+  buildVendorCategoryLimitReachedPayload,
+  buildVendorCategoryNoopPayload,
   buildVendorProfileCreatedPayload,
   buildVendorProfileRependingPayload,
   buildVendorProfileSoftDeletedPayload,
   buildVendorProfileUpdatedPayload,
+  type VendorCategoryChangedContext,
+  type VendorCategoryLimitReachedContext,
+  type VendorCategoryNoopContext,
   type VendorProfileEventLogger,
   type VendorProfileRependingContext,
   type VendorProfileSoftDeletedContext,
@@ -33,5 +39,17 @@ export class StructuredVendorProfileEventLogger implements VendorProfileEventLog
     ctx: VendorProfileSoftDeletedContext,
   ): void {
     logger.info(buildVendorProfileSoftDeletedPayload(ids, ctx));
+  }
+
+  emitCategoryChanged(ctx: VendorCategoryChangedContext): void {
+    logger.info(buildVendorCategoryChangedPayload(ctx));
+  }
+
+  emitCategoryNoop(ctx: VendorCategoryNoopContext): void {
+    logger.debug(buildVendorCategoryNoopPayload(ctx));
+  }
+
+  emitCategoryLimitReached(ctx: VendorCategoryLimitReachedContext): void {
+    logger.warn(buildVendorCategoryLimitReachedPayload(ctx));
   }
 }

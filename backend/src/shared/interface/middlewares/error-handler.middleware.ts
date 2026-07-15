@@ -73,6 +73,9 @@ import {
   VendorProfileRejectedError,
   VendorProfileHiddenError,
   VendorProfileAlreadyDeletedError,
+  CategoryChangeLimitError,
+  InvalidCategoriesError,
+  InvalidCategoryError,
 } from '../../../modules/vendor-management/domain/vendor-profile.errors.js';
 import { BusinessRuleViolationError } from '../../domain/errors/business-rule-violation.error.js';
 import { RateLimitError } from '../../domain/errors/rate-limit.error.js';
@@ -365,6 +368,21 @@ function mapError(err: unknown): MappedError {
   }
   if (err instanceof VendorProfileAlreadyDeletedError) {
     return { status: 409, code: ErrorCodes.PROFILE_DELETED, message: err.message };
+  }
+  // US-042 (PB-P1-025): cambiar categorías del vendor.
+  if (err instanceof CategoryChangeLimitError) {
+    return { status: 409, code: ErrorCodes.CATEGORY_CHANGE_LIMIT, message: err.message };
+  }
+  if (err instanceof InvalidCategoriesError) {
+    return { status: 400, code: ErrorCodes.INVALID_CATEGORIES, message: err.message };
+  }
+  if (err instanceof InvalidCategoryError) {
+    return {
+      status: 400,
+      code: ErrorCodes.INVALID_CATEGORY,
+      message: err.message,
+      details: err.unknownOrInactive.map((id) => ({ field: 'service_category_ids', message: id })),
+    };
   }
   if (err instanceof ConflictError) {
     return { status: 409, code: ErrorCodes.CONFLICT, message: err.message };

@@ -117,5 +117,53 @@
     "es-ES": "Espanhol (Espanha)",
     "pt": "Português",
     "en": "Inglês"
+  },
+  "categories": {
+    "change": {
+      "title": "Alterar as minhas categorias de serviço",
+      "subtitle": "Escolha entre 1 e 5 categorias. Cada alteração aceite dispara uma nova revisão da equipa.",
+      "loading": "A carregar as suas categorias…",
+      "links": { "createNew": "Criar o meu perfil" },
+      "counter": {
+        "remaining": "Alterações de categorias restantes: {remaining} de {max}.",
+        "reached": "Já atingiu o máximo de 5 alterações de categorias."
+      },
+      "fields": {
+        "categories": {
+          "label": "Categorias de serviço",
+          "help": "Entre 1 e 5 categorias. Adicionar ou remover qualquer uma conta como uma alteração.",
+          "maxHelp": "Pode selecionar até {max} categorias."
+        }
+      },
+      "buttons": {
+        "submit": "Solicitar alteração",
+        "submitting": "A enviar…"
+      },
+      "banners": {
+        "saved": "As suas categorias foram atualizadas.",
+        "noop": "O conjunto enviado corresponde às suas categorias atuais — nada mudou.",
+        "repending": {
+          "title": "O seu perfil voltou a estar em revisão",
+          "body": "As alterações de categorias exigem uma nova verificação antes de o perfil voltar a ser público."
+        }
+      },
+      "confirm": {
+        "title": "Estas alterações enviarão o seu perfil para revisão",
+        "description": "Qualquer alteração nas categorias exige uma nova verificação da equipa. Continuar?",
+        "cancel": "Cancelar",
+        "confirm": "Continuar e enviar"
+      },
+      "errors": {
+        "CATEGORY_CHANGE_LIMIT": "Atingiu o máximo de 5 alterações de categorias. Contacte o suporte se precisar de voltar a alterar.",
+        "INVALID_CATEGORIES": "Selecione entre 1 e 5 categorias únicas.",
+        "INVALID_CATEGORY": "Alguma das categorias já não está disponível. Atualize a página e tente novamente.",
+        "PROFILE_HIDDEN": "Um administrador ocultou o seu perfil. Contacte-nos para o reativar.",
+        "PROFILE_NOT_FOUND": "Ainda não tem um perfil.",
+        "VALIDATION_ERROR": "Reveja os dados introduzidos.",
+        "AUTHENTICATION_REQUIRED": "A sua sessão expirou. Inicie sessão novamente.",
+        "FORBIDDEN": "Apenas fornecedores podem alterar estas categorias.",
+        "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
+      }
+    }
   }
 }

@@ -42,3 +42,32 @@ export class VendorProfileAlreadyDeletedError extends AppError {
     super(message);
   }
 }
+
+/** US-042 AC-02 / D1: category_change_count >= 5 al intentar mutar el set → 409. */
+export class CategoryChangeLimitError extends AppError {
+  readonly code = ErrorCodes.CATEGORY_CHANGE_LIMIT;
+  constructor(message = 'Category change limit reached (max 5 changes)') {
+    super(message);
+  }
+}
+
+/** US-042 EC-04: cardinalidad inválida (0, >5, duplicados post-normalización) → 400. */
+export class InvalidCategoriesError extends AppError {
+  readonly code = ErrorCodes.INVALID_CATEGORIES;
+  constructor(message = 'service_category_ids must contain between 1 and 5 distinct UUIDs') {
+    super(message);
+  }
+}
+
+/**
+ * US-042 EC-05: al menos una categoría no existe o está inactiva → 400. Incluye
+ * `details.unknown_or_inactive[]` con los ids problemáticos.
+ */
+export class InvalidCategoryError extends AppError {
+  readonly code = ErrorCodes.INVALID_CATEGORY;
+  readonly unknownOrInactive: readonly string[];
+  constructor(unknownOrInactive: readonly string[], message = 'One or more categories are unknown or inactive') {
+    super(message);
+    this.unknownOrInactive = unknownOrInactive;
+  }
+}

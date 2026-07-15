@@ -117,5 +117,53 @@
     "es-ES": "Spanish (Spain)",
     "pt": "Portuguese",
     "en": "English"
+  },
+  "categories": {
+    "change": {
+      "title": "Change my service categories",
+      "subtitle": "Pick between 1 and 5 categories. Each accepted change requires another admin review.",
+      "loading": "Loading your categories…",
+      "links": { "createNew": "Create my profile" },
+      "counter": {
+        "remaining": "Category changes remaining: {remaining} of {max}.",
+        "reached": "You have reached the maximum of 5 category changes."
+      },
+      "fields": {
+        "categories": {
+          "label": "Service categories",
+          "help": "Between 1 and 5 categories. Adding or removing any of them counts as one change.",
+          "maxHelp": "You can select up to {max} categories."
+        }
+      },
+      "buttons": {
+        "submit": "Request change",
+        "submitting": "Sending…"
+      },
+      "banners": {
+        "saved": "Your categories have been updated.",
+        "noop": "The set you sent matches your current categories — nothing changed.",
+        "repending": {
+          "title": "Your profile is under review again",
+          "body": "Category changes require another verification by our team before your profile is public again."
+        }
+      },
+      "confirm": {
+        "title": "These changes will send your profile back to review",
+        "description": "Any change to your service categories requires another verification by our team. Continue?",
+        "cancel": "Cancel",
+        "confirm": "Continue and send"
+      },
+      "errors": {
+        "CATEGORY_CHANGE_LIMIT": "You have reached the maximum of 5 category changes. Contact support if you need to change again.",
+        "INVALID_CATEGORIES": "Please select between 1 and 5 unique categories.",
+        "INVALID_CATEGORY": "One or more categories are no longer available. Please refresh and try again.",
+        "PROFILE_HIDDEN": "Your profile is hidden by an administrator. Contact us to reactivate it.",
+        "PROFILE_NOT_FOUND": "You don't have a profile yet.",
+        "VALIDATION_ERROR": "Please review the information you entered.",
+        "AUTHENTICATION_REQUIRED": "Your session expired. Please sign in again.",
+        "FORBIDDEN": "Only vendors can change these categories.",
+        "UNEXPECTED": "Something went wrong. Please try again."
+      }
+    }
   }
 }

@@ -1200,7 +1200,9 @@ Gestionar el perfil del proveedor, aprobación admin, directorio público.
 | --- | --- | --- | --- | --- | --- | --- |
 | GET | `/vendors/me` | Sí | vendor | Obtiene perfil propio. | 200 | 401, 403, 404 |
 | POST | `/vendors/me` | Sí | vendor | Crea perfil (primera vez). | 201 | 401, 403, 409, 422 |
-| PATCH | `/vendors/me` | Sí | vendor | Actualiza perfil. | 200 | 401, 403, 409 (MAX_CATEGORY_CHANGES_EXCEEDED), 422 |
+| PATCH | `/vendors/me` | Sí | vendor | Actualiza perfil (sin `categories` — ver `POST /vendors/me/categories`). | 200 | 401, 403, 409 `PROFILE_REJECTED`/`PROFILE_HIDDEN`, 400 `VALIDATION_ERROR` |
+| DELETE | `/vendors/me` | Sí | vendor | Soft delete del perfil propio. | 204 | 401, 403, 409 `PROFILE_HIDDEN`/`PROFILE_DELETED` |
+| POST | `/vendors/me/categories` | Sí | vendor | Cambia el set de categorías (tope acumulado 5). | 200 | 400 `INVALID_CATEGORIES`/`INVALID_CATEGORY`, 401, 403, 404 `PROFILE_NOT_FOUND`, 409 `CATEGORY_CHANGE_LIMIT`/`PROFILE_HIDDEN` |
 | POST | `/vendors/me/submit-approval` | Sí | vendor | Envía perfil a admin. | 200 | 401, 403, 422 |
 | GET | `/vendors/:vendorProfileId` | No (público si approved) | anonymous, organizer, admin | Detalle público. | 200 | 404 |
 | GET | `/api/v1/public/vendors` | No | anonymous | Directorio público. | 200 | — |
@@ -1248,6 +1250,39 @@ type CreateVendorProfileRequestDto = {
 //   - 409 `PROFILE_REJECTED`    — PATCH bloqueado en `status='rejected'`.
 //   - 409 `PROFILE_HIDDEN`      — PATCH/DELETE bloqueado en `status='hidden'`.
 //   - 409 `PROFILE_DELETED`     — DELETE sobre perfil ya soft-deleted.
+//
+// US-042 (PB-P1-025): cambio del set de categorías del vendor.
+// - `POST /vendors/me/categories`:
+//     Body: `{ service_category_ids: string[] }` — Zod `.strict()`, 1..5 UUIDs distintos.
+//     Response 200:
+//       `{ profile: VendorProfileResponseDto,
+//          repending: boolean,          // true si transicionó approved|rejected → pending
+//          noop: boolean,               // true si el set coincide con el actual (sin side-effects)
+//          category_change_count: number, // contador tras la mutación (o el actual si noop)
+//          requires_admin_review: boolean, // true tras cualquier mutación aplicada
+//          status: 'pending'|'approved'|'rejected'|'hidden',
+//          last_category_change_at: string | null }`.
+//     Semántica del use case (D1..D6):
+//       * D1: `category_change_count >= 5` → 409 `CATEGORY_CHANGE_LIMIT` (código canónico —
+//         reemplaza los mencionados 422 / 400 / `MAX_CATEGORY_CHANGES_EXCEEDED` de versiones
+//         previas).
+//       * D2: toda mutación aplicada (no noop) marca `requires_admin_review=true` e inserta
+//         `AdminAction(action='vendor_category_change', target_entity='VendorProfile',
+//         actor_user_id=currentUser.id, actor_role='vendor', correlation_id)` dentro de la
+//         misma `prisma.$transaction`.
+//       * D3: si `status ∈ {approved, rejected}` la mutación transiciona a `pending` en la
+//         misma transacción (`repending=true`).
+//       * D4: `status='hidden'` → 409 `PROFILE_HIDDEN`; soft-deleted → 404 `PROFILE_NOT_FOUND`.
+//       * D5: comparación por `Set` (orden y duplicados normalizados). `noop=true` no cuenta
+//         cambios, no persiste AdminAction ni cambia `last_category_change_at`.
+//       * D6: cardinalidad 1..5; cualquier categoría inexistente/inactiva → 400
+//         `INVALID_CATEGORY` con `details: [{ field: 'service_category_ids', message: <uuid> }]`.
+//     Errores de forma: cardinalidad fuera de 1..5, duplicados o UUID inválido → 400
+//     `VALIDATION_ERROR` (rechazado por Zod antes de invocar el use case).
+//
+// Adicionalmente `GET /vendors/me` incluye a partir de US-042 los campos opcionales
+// `category_change_count`, `requires_admin_review` y `last_category_change_at` — el editor
+// de categorías los usa para hidratar el contador antes de la primera mutación de la sesión.
 
 type UpdateVendorProfileRequestDto = Partial<CreateVendorProfileRequestDto> & {
   availabilitySummary?: string;
@@ -1278,8 +1313,8 @@ type VendorProfileResponseDto = {
 ### 27.5 Reglas enforced
 
 - **BR-VENDOR-001**: solo `approved` aparece en directorio público.
-- **BR-VENDOR-004**: máximo **5 cambios acumulados** de categorías. Excedido → `409 MAX_CATEGORY_CHANGES_EXCEEDED`.
-- Cambios sustantivos disparan `requiresAdminReview=true`.
+- **BR-VENDOR-004**: máximo **5 cambios acumulados** de categorías, enforced por `POST /vendors/me/categories` (US-042 D1). Excedido → `409 CATEGORY_CHANGE_LIMIT` (código canónico; deprecado `MAX_CATEGORY_CHANGES_EXCEEDED` mencionado en versiones previas).
+- **Toda mutación aplicada** de categorías (US-042 D2) marca `requiresAdminReview=true` y persiste `AdminAction(action='vendor_category_change')`; `noop` (mismo set) no cuenta.
 - Vendors no pueden auto-aprobarse.
 
 ---

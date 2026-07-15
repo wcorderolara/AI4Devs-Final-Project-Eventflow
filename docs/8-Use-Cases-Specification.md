@@ -2715,7 +2715,7 @@ El proveedor edita su perfil.
 
 #### Flujos de excepción
 - E1: Intento de editar perfil ajeno → 403.
-- E2: **Excede el límite de 5 cambios de categoría** → 422 con mensaje claro (decisión PO 8.1 #3).
+- E2: **Excede el límite de 5 cambios de categoría** → 409 `CATEGORY_CHANGE_LIMIT` (US-042 D1, resolución oficial del catálogo de errores; deprecados 422 y 400 mencionados en versiones previas).
 - E3: Excede el **límite de 10 imágenes por trabajo en portafolio** al editar → 422 (ver UC-VENDOR-005, decisión PO 8.1 #2).
 
 #### Postcondiciones

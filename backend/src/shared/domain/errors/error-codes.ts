@@ -109,6 +109,10 @@ export const ErrorCodes = {
   PROFILE_HIDDEN: 'PROFILE_HIDDEN', // 409 — PATCH/DELETE bloqueado en status=hidden (EC-04, D3)
   PROFILE_DELETED: 'PROFILE_DELETED', // 409 — DELETE sobre perfil ya soft-deleted (EC-05)
   INVALID_FIELD: 'INVALID_FIELD', // 400 — body PATCH con campo prohibido (categories/slug/status → EC-01/EC-02, NT-04..06)
+  // US-042 (PB-P1-025): cambiar categorías del vendor.
+  CATEGORY_CHANGE_LIMIT: 'CATEGORY_CHANGE_LIMIT', // 409 — category_change_count >= 5 (AC-02 / D1)
+  INVALID_CATEGORIES: 'INVALID_CATEGORIES', // 400 — cardinalidad fuera de 1..5 o duplicados (EC-04)
+  INVALID_CATEGORY: 'INVALID_CATEGORY', // 400 — categoría inexistente o inactiva (EC-05); include details.unknown_or_inactive[]
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

@@ -44,6 +44,14 @@ function fakeRepo(overrides: Partial<VendorProfileRepository> = {}): VendorProfi
     updateStatus: vi.fn(async () => undefined),
     softDelete: vi.fn(async () => undefined),
     findByIdWithCategories: vi.fn(async () => null),
+    // Métodos US-042 no ejercitados aquí; stubs para satisfacer el port.
+    findActiveWithCategoriesByVendorUserId: vi.fn(async () => null),
+    lockAndRereadForCategoryChange: vi.fn(async () => null),
+    replaceCategoriesAndAdvanceCounter: vi.fn(async () => ({
+      categoryChangeCount: 0,
+      requiresAdminReview: false,
+      lastCategoryChangeAt: NOW,
+    })),
     ...overrides,
   };
 }
@@ -56,6 +64,10 @@ function fakeCategoryLookup(activeIds: string[]): ServiceCategoryLookup {
   return {
     findActiveIds: vi.fn(async () =>
       activeIds.map((id) => ({ id, name: `cat-${id.slice(-4)}` })),
+    ),
+    // US-042: no ejercitado por este archivo; devuelve el set marcado como activo.
+    findByIds: vi.fn(async (ids: readonly string[]) =>
+      ids.map((id) => ({ id, isActive: activeIds.includes(id) })),
     ),
   };
 }
@@ -71,6 +83,10 @@ function fakeLogger(): VendorProfileEventLogger & { calls: unknown[] } {
     emitProfileUpdated: () => undefined,
     emitProfileRepending: () => undefined,
     emitProfileSoftDeleted: () => undefined,
+    // Stubs de eventos US-042 (no ejercitados aquí).
+    emitCategoryChanged: () => undefined,
+    emitCategoryNoop: () => undefined,
+    emitCategoryLimitReached: () => undefined,
   };
 }
 
