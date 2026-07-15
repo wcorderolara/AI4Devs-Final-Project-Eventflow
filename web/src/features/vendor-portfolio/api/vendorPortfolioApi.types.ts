@@ -51,3 +51,10 @@ export function toPortfolioImageView(dto: UploadPortfolioImageResponseDTO): Port
     dimensions: dto.dimensions,
   };
 }
+
+// US-048 (PB-P1-026 / FE-002): soft delete del attachment. Response 204 (sin body). Body de
+// request opcional con `deletion_reason` (1..500 chars enforced en backend).
+export interface DeletePortfolioImageInput {
+  imageId: string;
+  deletionReason?: string;
+}

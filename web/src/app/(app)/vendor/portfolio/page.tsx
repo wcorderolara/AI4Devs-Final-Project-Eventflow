@@ -24,7 +24,10 @@ export default function VendorPortfolioPage(): JSX.Element {
       <PortfolioUploader
         onUploaded={(view) => setImages((prev) => [...prev, view])}
       />
-      <WorkGrid images={images} />
+      <WorkGrid
+        images={images}
+        onImageDeleted={(imageId) => setImages((prev) => prev.filter((img) => img.id !== imageId))}
+      />
     </section>
   );
 }

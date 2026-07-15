@@ -4,9 +4,10 @@
 // (credentials incluidos, correlationId auto-generado, Accept-Language). No se declara
 // `Content-Type` manualmente: el navegador lo agrega con el boundary correcto cuando el body
 // es `FormData`.
-import { ApiError, CORRELATION_ID_HEADER, attachCorrelationId, parseErrorEnvelope } from '@/shared/api-client';
+import { ApiError, CORRELATION_ID_HEADER, attachCorrelationId, httpDelete, parseErrorEnvelope } from '@/shared/api-client';
 import { attachLocaleHeader } from '@/shared/i18n';
 import type {
+  DeletePortfolioImageInput,
   PortfolioImageView,
   UploadPortfolioImageEnvelopeDTO,
   UploadPortfolioImageInput,
@@ -89,5 +90,18 @@ export const vendorPortfolioApi = {
 
     const envelope = (await response.json()) as UploadPortfolioImageEnvelopeDTO;
     return toPortfolioImageView(envelope.data);
+  },
+
+  /**
+   * US-048 / AC-01: soft delete del attachment del vendor autenticado. Response 204 (sin body).
+   * `deletion_reason` opcional; el backend responde `404 ATTACHMENT_NOT_FOUND` uniforme para
+   * ajeno / inexistente / ya-borrado (D4).
+   */
+  async deletePortfolioImage(input: DeletePortfolioImageInput): Promise<void> {
+    const body =
+      input.deletionReason !== undefined && input.deletionReason.trim().length > 0
+        ? { deletion_reason: input.deletionReason.trim() }
+        : undefined;
+    await httpDelete<void>(`/vendors/me/portfolio/images/${input.imageId}`, { body });
   },
 };

@@ -6,6 +6,7 @@
 
 export const VENDOR_PORTFOLIO_UPLOADED_EVENT = 'vendor.portfolio.uploaded';
 export const VENDOR_PORTFOLIO_UPLOAD_FAILED_EVENT = 'vendor.portfolio.upload_failed';
+export const VENDOR_PORTFOLIO_DELETED_EVENT = 'vendor.portfolio.deleted';
 
 export type UploadFailedPhase = 'validation' | 'pipeline' | 'storage' | 'db' | 'unknown';
 
@@ -87,7 +88,43 @@ export function buildPortfolioUploadFailedPayload(
   };
 }
 
+export interface PortfolioDeletedContext {
+  correlationId?: string;
+  vendorProfileId: string;
+  vendorUserId: string;
+  attachmentId: string;
+  workLabel: string;
+  /** Truncado a 500 chars por Zod aguas arriba; nulo cuando el vendor no envió body. */
+  deletionReason: string | null;
+  durationMs?: number;
+}
+
+export interface PortfolioDeletedPayload {
+  event: typeof VENDOR_PORTFOLIO_DELETED_EVENT;
+  correlationId?: string;
+  vendorProfileId: string;
+  vendorUserId: string;
+  attachmentId: string;
+  workLabel: string;
+  deletionReason: string | null;
+  durationMs?: number;
+}
+
+export function buildPortfolioDeletedPayload(ctx: PortfolioDeletedContext): PortfolioDeletedPayload {
+  return {
+    event: VENDOR_PORTFOLIO_DELETED_EVENT,
+    correlationId: ctx.correlationId,
+    vendorProfileId: ctx.vendorProfileId,
+    vendorUserId: ctx.vendorUserId,
+    attachmentId: ctx.attachmentId,
+    workLabel: ctx.workLabel,
+    deletionReason: ctx.deletionReason,
+    durationMs: ctx.durationMs,
+  };
+}
+
 export interface PortfolioEventLogger {
   emitUploaded(ctx: PortfolioUploadedContext): void;
   emitUploadFailed(ctx: PortfolioUploadFailedContext): void;
+  emitDeleted(ctx: PortfolioDeletedContext): void;
 }

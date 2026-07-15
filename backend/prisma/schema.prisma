@@ -398,6 +398,11 @@ model Attachment {
   // formal para preservar el patrón polimórfico (Doc 18 §19) y no bloquear soft-deletes.
   // NULL permitido para retro-compat con seeds anteriores.
   uploadedBy String?         @map("uploaded_by") @db.Uuid
+  // US-048 (PB-P1-026): auditoría del soft delete vendor-driven. `deletedBy` referencia
+  // lógica a `users(id)` (sin FK por patrón polimórfico). `deletionReason` opcional
+  // 1..500 chars enforced en Zod (D2). Ambos NULL en attachments todavía activos.
+  deletedBy      String? @map("deleted_by") @db.Uuid
+  deletionReason String? @map("deletion_reason")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)

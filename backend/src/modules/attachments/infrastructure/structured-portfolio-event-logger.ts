@@ -1,8 +1,10 @@
 // Adapter estructurado del PortfolioEventLogger (US-043 / PB-P1-026 / BE-008).
 import { logger } from '../../../shared/infrastructure/logger/index.js';
 import {
+  buildPortfolioDeletedPayload,
   buildPortfolioUploadFailedPayload,
   buildPortfolioUploadedPayload,
+  type PortfolioDeletedContext,
   type PortfolioEventLogger,
   type PortfolioUploadFailedContext,
   type PortfolioUploadedContext,
@@ -15,5 +17,9 @@ export class StructuredPortfolioEventLogger implements PortfolioEventLogger {
 
   emitUploadFailed(ctx: PortfolioUploadFailedContext): void {
     logger.warn(buildPortfolioUploadFailedPayload(ctx));
+  }
+
+  emitDeleted(ctx: PortfolioDeletedContext): void {
+    logger.info(buildPortfolioDeletedPayload(ctx));
   }
 }
