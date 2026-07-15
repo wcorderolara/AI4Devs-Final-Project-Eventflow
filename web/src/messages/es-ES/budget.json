@@ -1,0 +1,67 @@
+{
+  "page": {
+    "back": "Volver al evento",
+    "title": "Presupuesto",
+    "addItemCta": "Añadir partida",
+    "loadError": "No se pudo cargar el presupuesto."
+  },
+  "summary": {
+    "regionLabel": "Resumen del presupuesto",
+    "title": "Resumen",
+    "planned": "Planificado",
+    "committed": "Comprometido",
+    "remaining": "Restante",
+    "currency": "Moneda"
+  },
+  "overcommit": {
+    "title": "Presupuesto sobre-comprometido",
+    "body": "El importe comprometido supera el planificado. Revisa tus partidas o aumenta los importes planificados."
+  },
+  "table": {
+    "caption": "Partidas del presupuesto agrupadas por categoría.",
+    "col": {
+      "label": "Partida",
+      "category": "Categoría",
+      "planned": "Planificado",
+      "committed": "Comprometido",
+      "actions": "Acciones"
+    },
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "editAria": "Editar {label}",
+    "deleteAria": "Eliminar {label}"
+  },
+  "empty": {
+    "body": "Aún no hay partidas de presupuesto. Puedes empezar con una sugerencia IA o añadir partidas manualmente.",
+    "cta": {
+      "ai": "Sugerir con IA",
+      "manual": "Añadir manualmente"
+    }
+  },
+  "addItem": {
+    "title": "Añadir partida al presupuesto",
+    "description": "Introduce una etiqueta, una categoría opcional y el importe planificado.",
+    "field": {
+      "label": "Etiqueta",
+      "labelRequired": "La etiqueta es obligatoria.",
+      "category": "Código de categoría (opcional)",
+      "categoryPlaceholder": "por ejemplo, venue",
+      "amount": "Importe planificado",
+      "amountInvalid": "El importe debe ser un número no negativo."
+    },
+    "cta": {
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "saving": "Guardando…"
+    }
+  },
+  "deleteItem": {
+    "title": "¿Eliminar partida del presupuesto?",
+    "body": "Esto eliminará «{label}» de forma permanente. La acción no se puede deshacer.",
+    "cta": {
+      "cancel": "Cancelar",
+      "delete": "Eliminar",
+      "deleting": "Eliminando…"
+    }
+  }
+}

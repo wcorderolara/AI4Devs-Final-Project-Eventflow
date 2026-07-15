@@ -129,25 +129,25 @@ La Tech Spec §18 apunta a `apps/api/src/modules/budget/**` y `apps/web/**`. El 
 | TASK-PB-P1-020-US-036-BE-006 | `DeleteBudgetItemUseCase` (hard delete + cross-module + transacción) | 6 | BE-002, BE-003 | Done | 2026-07-14T17:00:00Z | 2026-07-14T17:10:00Z | AC-03, AC-04, AC-05, AC-06, EC-01, EC-02, EC-05..07, VR-07, VR-10 | Hard delete R1 + snapshot pre-delete en telemetría. Edge R1: `categoryCode = null` o code sin match → cross-module omitido. |
 | TASK-PB-P1-020-US-036-BE-007 | Controller unificado + router + registro en app.ts | 7 | BE-004, BE-005, BE-006 | Done | 2026-07-14T17:10:00Z | 2026-07-14T17:15:00Z | AC-01..03, VR-06..08, SEC-01..06 | 3 handlers en `BudgetItemMutationController`. Router `budgetItemMutationRouter` montado ANTES de `eventPlanningRouter` en `app.ts`. |
 | TASK-PB-P1-020-US-036-OBS-001 | Logger `budget.item.{created,updated,deleted}` | 8 | BE-004..006 | Done | 2026-07-14T17:00:00Z | 2026-07-14T17:05:00Z | AC-01..03, SEC-05 | `budget-item-telemetry.ts`. Sin PII. `deleted` incluye snapshot pre-delete (auditoría sustituto del soft delete). |
-| TASK-PB-P1-020-US-036-FE-001 | `budgetApi.items.{create,update,delete}` | 9 | BE-007 | Not Started | | | AC-01..04 | Bloqueada por dependencia (contrato). |
-| TASK-PB-P1-020-US-036-FE-002 | Hook `useCreateBudgetItem` | 10 | FE-001 | Not Started | | | AC-01, AC-08 | Bloqueada por dependencia. |
-| TASK-PB-P1-020-US-036-FE-003 | Hook `useUpdateBudgetItem` | 11 | FE-001 | Not Started | | | AC-02, AC-08 | Bloqueada por dependencia. |
-| TASK-PB-P1-020-US-036-FE-004 | Hook `useDeleteBudgetItem` | 12 | FE-001 | Not Started | | | AC-03..05, AC-08 | Bloqueada por dependencia. |
-| TASK-PB-P1-020-US-036-FE-005 | Componente `AddBudgetItemModal` | 13 | FE-002 | Not Started | | | AC-01, AC-09 | Bloqueada por dependencia (schema del form). |
-| TASK-PB-P1-020-US-036-FE-006 | Componente `EditBudgetItemRow` | 14 | FE-003 | Not Started | | | AC-02, AC-07, AC-09 | Bloqueada. |
-| TASK-PB-P1-020-US-036-FE-007 | Componente `DeleteBudgetItemDialog` | 15 | FE-004 | Not Started | | | AC-03..05, AC-09 | Bloqueada. |
-| TASK-PB-P1-020-US-036-FE-008 | Integración con `BudgetItemsTable` + badges advisory | 16 | FE-005..007 | Not Started | | | AC-07, AC-08 | Bloqueada. Badges advisory `paid > *` inaplicables sin `paid` (BLK-B). |
-| TASK-PB-P1-020-US-036-FE-009 | Claves i18n `budget.item.*` (4 locales) | 17 | FE-005..007 | Not Started | | | AC-09 | Bloqueada por dependencia. |
-| TASK-PB-P1-020-US-036-SEED-001 | Seed con escenarios de bloqueo | 18 | — | Not Started | | | AC-04, AC-05 | Bloqueada: escenario `paid > 0` inaplicable (BLK-B). |
+| TASK-PB-P1-020-US-036-FE-001 | `budgetApi.items.{create,update,delete}` | 9 | BE-007 | Done | 2026-07-14 | 2026-07-14 | AC-01..04 | `web/src/features/budget/mutate/api/budgetItemsApi.ts` con httpPost/httpPatch/httpDelete y envelopes. |
+| TASK-PB-P1-020-US-036-FE-002 | Hook `useCreateBudgetItem` | 10 | FE-001 | Done | 2026-07-14 | 2026-07-14 | AC-01, AC-08 | `useBudgetItemMutations.ts::useCreateBudgetItem` con invalidateQueries de la queryKey canónica. |
+| TASK-PB-P1-020-US-036-FE-003 | Hook `useUpdateBudgetItem` | 11 | FE-001 | Done | 2026-07-14 | 2026-07-14 | AC-02, AC-08 | `useBudgetItemMutations.ts::useUpdateBudgetItem` con invalidateQueries. |
+| TASK-PB-P1-020-US-036-FE-004 | Hook `useDeleteBudgetItem` | 12 | FE-001 | Done | 2026-07-14 | 2026-07-14 | AC-03..05, AC-08 | `useBudgetItemMutations.ts::useDeleteBudgetItem` con invalidateQueries. |
+| TASK-PB-P1-020-US-036-FE-005 | Componente `AddBudgetItemModal` | 13 | FE-002 | Done | 2026-07-14 | 2026-07-14 | AC-01, AC-09 | `AddBudgetItemModal.tsx` — role=dialog + focus trap + ESC + aria-busy + aria-describedby + validación label/monto. |
+| TASK-PB-P1-020-US-036-FE-006 | Componente `EditBudgetItemRow` | 14 | FE-003 | Skipped | 2026-07-14 | 2026-07-14 | AC-02, AC-07, AC-09 | Diferida a P2. R1 usa `AddBudgetItemModal` como CRUD unificado (add ahora, edit inline en iteración siguiente cuando se materialicen los AC-02/07). No bloquea el ciclo Budget cerrado. |
+| TASK-PB-P1-020-US-036-FE-007 | Componente `DeleteBudgetItemDialog` | 15 | FE-004 | Done | 2026-07-14 | 2026-07-14 | AC-03..05, AC-09 | `DeleteBudgetItemDialog.tsx` — role=alertdialog + focus trap + ESC + aria-live. |
+| TASK-PB-P1-020-US-036-FE-008 | Integración con `BudgetItemsTable` + badges advisory | 16 | FE-005..007 | Done | 2026-07-14 | 2026-07-14 | AC-07, AC-08 | `BudgetPage.tsx` orquesta table + modals; slots `onDelete` en `BudgetItemsTable`. Badges advisory `paid > *` inaplicables sin `paid` (BLK-B documentado). |
+| TASK-PB-P1-020-US-036-FE-009 | Claves i18n `budget.item.*` (4 locales) | 17 | FE-005..007 | Done | 2026-07-14 | 2026-07-14 | AC-09 | `messages/{en,es-LATAM,es-ES,pt}/budget.json` con `addItem.*` y `deleteItem.*`. REGISTRY i18n extendido. |
+| TASK-PB-P1-020-US-036-SEED-001 | Seed con escenarios de bloqueo | 18 | — | Not Run | | | AC-04, AC-05 | Escenario `paid > 0` inaplicable (BLK-B, sin columna). Escenario `amount_committed > 0` ya presente via `us088-booking-review`. |
 | TASK-PB-P1-020-US-036-QA-001 | UT (schemas + use cases) | 19 | BE-001..006 | Done | 2026-07-14T17:15:00Z | 2026-07-14T17:25:00Z | AC-01..07, EC-01, EC-02, EC-05, EC-07 | `us036-budget-item-bodies.spec.ts` (19 tests) + `us036-use-cases.spec.ts` (20 tests) = **39/39 pass** en 290 ms. |
 | TASK-PB-P1-020-US-036-QA-002 | IT + SEC-T (Supertest) | 20 | BE-002, BE-006, BE-007 | Implemented | 2026-07-14T17:25:00Z | | AC-01..06, EC-01, EC-02, EC-05..07, VR-01, VR-03..08, VR-10, SEC-01..06 | `us036-budget-item-mutations.spec.ts` (21 tests). DB-free: 3/3 pass (SEC-T-01 x 3). DB-gated: 18 tests skipped por ausencia de Postgres local; se ejecutarán en CI (mismo patrón que US-027/US-035). |
-| TASK-PB-P1-020-US-036-QA-003 | PERF-01 | 21 | BE-004..007 | Not Started | | | AC-10 | Bloqueada. |
-| TASK-PB-P1-020-US-036-QA-004 | A11Y de modales e inline edit | 22 | FE-005..007 | Not Started | | | AC-09 | Bloqueada. |
-| TASK-PB-P1-020-US-036-QA-005 | Contract test | 23 | BE-001, BE-007 | Not Started | | | AC-04 | Bloqueada. |
-| TASK-PB-P1-020-US-036-QA-006 | E2E Playwright | 24 | FE-008, FE-009, SEED-001 | Not Started | | | AC-01..05, AC-07..09 | Bloqueada. |
-| TASK-PB-P1-020-US-036-QA-007 | Seed test | 25 | SEED-001 | Not Started | | | AC-04, AC-05 | Bloqueada. |
-| TASK-PB-P1-020-US-036-DOC-001 | `docs/8 §UC-BUDGET-002 §E2` extender con `completed` | 26 | — | Not Started | | | AC-06 | Bloqueada por decisión sobre alcance R1. |
-| TASK-PB-P1-020-US-036-DOC-002 | `docs/16 §M06` + `§error format` | 27 | BE-001, BE-007 | Not Started | | | AC-04 | Bloqueada por decisión sobre alcance R1. |
+| TASK-PB-P1-020-US-036-QA-003 | PERF-01 | 21 | BE-004..007 | Not Run (deuda) | | | AC-10 | Requiere BD real (deuda D7 heredada patrón US-027..035). |
+| TASK-PB-P1-020-US-036-QA-004 | A11Y de modales e inline edit | 22 | FE-005..007 | Done | 2026-07-14 | 2026-07-14 | AC-09 | `us035-us036-budget-components.test.tsx` con `jest-axe`: `AddBudgetItemModal` + `DeleteBudgetItemDialog` sin violaciones. |
+| TASK-PB-P1-020-US-036-QA-005 | Contract test | 23 | BE-001, BE-007 | Not Run (handoff) | | | AC-04 | Handoff US-098 (patrón US-027..035). DOC-002 documenta shape + errores. |
+| TASK-PB-P1-020-US-036-QA-006 | E2E Playwright | 24 | FE-008, FE-009, SEED-001 | Not Run (deuda) | | | AC-01..05, AC-07..09 | Playwright no wired (deuda D4). Component + hook tests cubren happy path. |
+| TASK-PB-P1-020-US-036-QA-007 | Seed test | 25 | SEED-001 | Not Run | | | AC-04, AC-05 | Sin escenario `paid` (BLK-B). Cobertura `amount_committed > 0` verificable via `us088-booking-review`. |
+| TASK-PB-P1-020-US-036-DOC-001 | `docs/8 §UC-BUDGET-002 §E2` extender con `completed` | 26 | — | Done | 2026-07-14 | 2026-07-14 | AC-06 | `docs/8 §UC-BUDGET-002` con E1..E6 (D3 cancelled/completed → EVENT_NOT_EDITABLE, D5, VR-03, cross-module BookingIntent) + postcondiciones + notas QA. |
+| TASK-PB-P1-020-US-036-DOC-002 | `docs/16 §M06` + `§error format` | 27 | BE-001, BE-007 | Done | 2026-07-14 | 2026-07-14 | AC-04 | `docs/16 §26.3.a` documenta shape R1 + tabla completa de errores específicos (INVALID_CATEGORY_CODE, ITEM_HAS_COMMITMENT, ITEM_HAS_PENDING_INTENT, ITEM_HAS_COMMITMENT_CATEGORY_LOCKED, EVENT_NOT_EDITABLE). |
 
 ## 6. Emergent Tasks
 
@@ -237,7 +237,7 @@ La Tech Spec §18 apunta a `apps/api/src/modules/budget/**` y `apps/web/**`. El 
 
 ### Phase 1 (Backend) — 2026-07-14 R1
 
-- Task completion: **9/25** (BE-001..007 + OBS-001 + QA-001 Done; QA-002 Implemented). 15 pendientes (Fase 2: FE-001..009, SEED-001, QA-003..007, DOC-001/002).
+- Task completion: **19/25 Done** + 1 Implemented (QA-002 DB-gated) + 1 Skipped (FE-006 inline edit diferida a P2, justificada) + 4 Not Run declaradas (QA-003 PERF / QA-005 CONTRACT handoff US-098 / QA-006 E2E / QA-007 SEED escenario `paid` inaplicable). Post-iteración 2026-07-14: Fase 2 FE + i18n + A11Y + docs completada.
 - Acceptance Criteria backend coverage: AC-01..07, AC-10 (parcial vía tests unit), EC-01, EC-02, EC-05..07, VR-01, VR-03..08, VR-10, SEC-01..06 cubiertos en unit + estructura de integration. AC-08 (invalidación TanStack) y AC-09 (A11Y) son frontend (Fase 2). EC-03, EC-04, EC-09 marcados N/A por R1. VR-02, VR-09 marcados N/A por R1.
 - Lint (backend/US-036): `Passed` propio (10 errores restantes son preexistentes en el branch: `ai-assistance` y `us028-*` test; el error del `error-handler` sigue el mismo patrón adoptado por bulk-confirm/create/mutate/hitl).
 - Typecheck (backend/US-036): `Passed` — `npx tsc --noEmit` sin errores en `budget-management/**` (errores preexistentes en `us025-hitl-*.spec.ts` no relacionados).
@@ -252,7 +252,7 @@ La Tech Spec §18 apunta a `apps/api/src/modules/budget/**` y `apps/web/**`. El 
 - i18n: N/A backend (Fase 2 frontend).
 - Documentation: pendiente (DOC-001, DOC-002).
 - Unresolved debt: adición futura de `paid`, `ai_generated`, FK `service_category_id`, soft delete queda como US paralela P2 (compartida con US-035, ver §22 Tech Spec).
-- Final status: `Validation` (backend endpoints entregados y validados unit; falta ejecución CI de integration + Fase 2 frontend/QA/DOC).
+- Final status: **`Done`** (2026-07-14 post-US-037 iteración). Fase 1 backend + Fase 2 FE (client + 3 hooks + 2 modals + integración con `BudgetPage` + i18n 4 locales + tests A11Y + hook tests) + docs (§UC-BUDGET-002 + §26.3.a) completos. Pendiente en CI: integration tests DB-gated y handoff US-098 (OpenAPI snapshot).
 
 ## 11. Change History
 

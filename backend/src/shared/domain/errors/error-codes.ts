@@ -96,6 +96,11 @@ export const ErrorCodes = {
   ITEM_HAS_COMMITMENT_CATEGORY_LOCKED: 'ITEM_HAS_COMMITMENT_CATEGORY_LOCKED', // 409 — PATCH cambia category_code con committed > 0 (AC-02 / D5)
   EVENT_NOT_EDITABLE: 'EVENT_NOT_EDITABLE', // 409 — mutación bloqueada por event.status ∈ {cancelled, completed} (AC-06 / D3)
   INVALID_CATEGORY_CODE: 'INVALID_CATEGORY_CODE', // 400 — category_code no está en whitelist activa (VR-03)
+  // US-037 (PB-P1-021): aplicar sugerencia IA de presupuesto (HITL).
+  CATEGORY_INACTIVE: 'CATEGORY_INACTIVE', // 409 — alguna categoría referenciada tiene is_active=false (AC-05 / D6)
+  CURRENCY_MISMATCH: 'CURRENCY_MISMATCH', // 409 — recommendation.currencyCode != event.currencyCode (AC-08, defensa profunda)
+  PAYLOAD_INVALID: 'PAYLOAD_INVALID', // 422 — payload del AIRecommendation corrupto (defensa profunda)
+  INVALID_VALUE: 'INVALID_VALUE', // 400 — editedPayload con category no presente en payload original / vacío (EC-04/05)
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

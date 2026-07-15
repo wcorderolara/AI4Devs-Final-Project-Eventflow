@@ -140,7 +140,7 @@ _Ninguno._ Se preserva el working tree preexistente; los cambios de US-030 solo 
 
 ## 10. Final Validation
 
-- Task completion: **9 Done / 5 Not Run (deuda D3/D4) / 2 Skipped (DOC-001/002) / 0 In Progress / 0 Blocked / 0 Rework Required** — 16 base activas. Contando strictly: 9 Done + 5 Not Run + 2 Skipped = 16.
+- Task completion: **13 Done / 1 Not Run (QA-007 E2E Playwright, deuda D4 heredada) / 2 Skipped (DOC-001/002 no bloqueantes) / 0 Blocked / 0 Rework Required** — 16 base activas. QA-002/003/004/006 ejecutadas en post-iteración (2026-07-14) via `tests/unit/tasks/us030-quick-toggle-component.test.tsx`.
 - Acceptance Criteria coverage:
   - **AC-01** (marcar como hecho desde `pending`) — cubierto por `computeQuickActions` + `useQuickActionStatusMutation` + `TaskStatusQuickToggle` + unit tests.
   - **AC-02** (saltar desde `in_progress`) — cubierto por matriz + componente; unit tests validan la fila.
@@ -156,14 +156,14 @@ _Ninguno._ Se preserva el working tree preexistente; los cambios de US-030 solo 
 - Seed: **Not Applicable**.
 - Authorization: **Not Applicable en cliente** (backend US-029 la enforce).
 - Security: **Passed** (no-revelación 403/404 con misma i18nKey verificado por test; telemetría con `assertNoPii` que falla loud en dev si aparece `title`/`description`/etc.).
-- Accessibility: **Not Run (jest-axe)** — implementación cumple ARIA por lectura de código (deuda D3 heredada).
+- Accessibility: **Passed** — `tests/unit/tasks/us030-quick-toggle-component.test.tsx` con `jest-axe`: `TaskStatusQuickToggle` (pending + done) sin violaciones. Deuda D3 cerrada.
 - i18n: **Passed** (18 claves en 4 locales validadas por `us030-quick-action-i18n.test.ts`).
 - Documentation: **Passed** (execution record completo; índice global actualizado; JSDoc del wrapper documenta el patrón snapshot/rollback).
 - Unresolved debt:
   - D3: jest-axe + RTL component tests (heredada US-027/028/029)
   - D4: Playwright E2E + medición latencia (heredada US-027/028/029)
   - D5: formalización en `/docs/15` (no bloqueante)
-- Final status: **Validation** — implementación completa y tests unitarios verdes; QA-002/003/004/006/007 requieren infraestructura (jest-axe, RTL, Playwright) no disponible en el pipeline FE. Se marca como `Validation` en lugar de `Done` para reflejar honestamente el gate pendiente — patrón consistente con US-027/028/029.
+- Final status: **`Done`** (2026-07-14 post-US-037 iteración). Implementación + unit + component + A11Y (jest-axe) verdes. Solo QA-007 E2E Playwright pendiente (deuda D4 heredada, sin Playwright en pipeline FE).
 
 ## 11. Change History
 

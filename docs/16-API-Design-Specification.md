@@ -1005,6 +1005,43 @@ type EventTaskResponseDto = {
 - **BR-TASK-004**: transiciones válidas.
 - Solo el owner del evento gestiona sus tasks.
 
+### 25.5 Agregados aditivos del list endpoint (US-032, US-033)
+
+`GET /events/:eventId/tasks` acepta query params aditivos y expone campos aditivos en el response
+sin romper compatibilidad con consumidores previos.
+
+**Query params (US-032)**:
+
+| Param | Enum | Default | Semántica |
+| --- | --- | --- | --- |
+| `range` | `all` \| `today` \| `week` \| `overdue` \| `t_minus_7` \| `t_minus_30` | `all` | Filtro temporal server-side (comparación por midnight UTC). Valores fuera del enum se descartan silenciosamente y se registran en `tasks.list.requested.range_dropped` (US-032 tolerancia). |
+
+**Campos aditivos en items (US-032)**:
+
+- `overdue: boolean` — `due_date < today` **AND** `status != done`.
+- `is_t_minus_7: boolean` — `due_date <= today + 7 days` **AND** `status != done`.
+
+**Campo aditivo en el envelope (US-033)**:
+
+```ts
+type TaskProgressDto = {
+  percentage: number;      // int [0, 100]; ROUND server-side
+  done: number;            // count(status='done')
+  total_countable: number; // count(status IN ('pending','active','in_progress','done'))
+  skipped: number;         // count(status='skipped')
+};
+
+type ListEventTasksResponse = {
+  data: TaskListItem[];
+  pagination: { page, pageSize, total, totalPages };
+  progress: TaskProgressDto;  // US-033: independiente de range/page/pageSize
+  meta: { correlationId, timestamp };
+};
+```
+
+Predicado `total_countable`: excluye explícitamente `skipped` (formalizado en `docs/4 §BR-TASK-009`).
+`percentage = 0` cuando `total_countable = 0` (empty state).
+
 ---
 
 ## 26. Budget API
@@ -1024,6 +1061,10 @@ Gestionar el presupuesto y sus ítems de un evento.
 | DELETE | `/events/:eventId/budget/items/:itemId` | Sí | organizer | Elimina item. | 204 | 401, 403, 404 |
 
 ### 26.3 DTOs
+
+> **US-035/US-036/US-037 Documentation Alignment (2026-07-14)**: el shape efectivo de MVP R1 se
+> simplificó respecto al draft original. `paid` y `serviceCategoryId` (FK) NO existen en R1;
+> `aiGenerated` se deriva implícitamente de `aiRecommendationId != null` (US-037). Ver §26.3.a.
 
 ```ts
 type CreateBudgetItemRequestDto = {
@@ -1057,6 +1098,69 @@ type BudgetItemResponseDto = {
   aiRecommendationId: string | null;
 };
 ```
+
+#### 26.3.a Shape MVP R1 efectivo (US-035/US-036/US-037)
+
+Diferencias con el draft §26.3:
+
+- `BudgetItem` NO declara `paid` (BR-BUDGET-002 se aplica sin la columna; US-035 D3 diferida).
+- `BudgetItem` NO declara FK `service_category_id`; `category_code` es string libre validado por
+  whitelist activa (`ServiceCategory.code WHERE is_active=true AND deleted_at IS NULL`).
+- `BudgetItem` NO declara `ai_generated` — se deriva vía `aiRecommendationId IS NOT NULL`
+  (US-037 SEED-001 y política D2).
+- Hard delete conservado (ADR-DB-004); no hay `deleted_at`.
+
+Respuesta canónica:
+
+```ts
+// GET /events/:eventId/budget  (US-035)
+type GetBudgetResponse = {
+  data: {
+    summary: {
+      currency_code: string;
+      total_planned: number;
+      total_committed: number;
+      over_committed: boolean; // committed > planned (estricto)
+    };
+    items: Array<{
+      id: string;
+      label: string;
+      category_code: string | null;
+      amount_planned: number;
+      amount_committed: number;
+    }>;
+  };
+  meta: { correlationId: string; timestamp: string };
+};
+
+// POST /events/:eventId/budget/items         (US-036)
+// PATCH /events/:eventId/budget/items/:itemId (US-036)
+type CreateBudgetItemBody = {
+  label: string;
+  category_code?: string | null;
+  amount_planned: number;
+};
+type UpdateBudgetItemBody = Partial<CreateBudgetItemBody>;
+type BudgetItemResponse = {
+  id: string;
+  label: string;
+  category_code: string | null;
+  amount_planned: number;
+  amount_committed: number;
+};
+
+// DELETE /events/:eventId/budget/items/:itemId → 204
+```
+
+**Errores específicos (US-036)**:
+
+| Error code | Status | Origen |
+| --- | --- | --- |
+| `INVALID_CATEGORY_CODE` | 400 | `category_code` fuera de la whitelist activa (VR-03) |
+| `ITEM_HAS_COMMITMENT` | 409 | DELETE bloqueado por `amount_committed > 0` (AC-04) |
+| `ITEM_HAS_PENDING_INTENT` | 409 | DELETE bloqueado por `BookingIntent.pending` (AC-05) |
+| `ITEM_HAS_COMMITMENT_CATEGORY_LOCKED` | 409 | PATCH cambia `category_code` con `committed > 0` (AC-02) |
+| `EVENT_NOT_EDITABLE` | 409 | mutación en evento `cancelled`/`completed` (D3) |
 
 ### 26.4 Reglas enforced
 
@@ -1529,8 +1633,33 @@ Endpoints de generación asistida por LLM. **Todas las salidas requieren confirm
 | POST | `/vendors/me/ai/bio` | Sí | vendor | AI-007: bio. | 200 | 401, 403, 422, 503 |
 | POST | `/events/:eventId/ai/task-prioritization` | Sí | organizer | AI-008: prioridades. | 200 | 401, 403, 404, 422, 503 |
 | GET | `/ai-recommendations/:aiRecommendationId` | Sí | organizer/vendor (own) | Obtiene recomendación. | 200 | 401, 403, 404 |
-| POST | `/ai-recommendations/:aiRecommendationId/apply` | Sí | organizer/vendor (own) | Aplica (acepta). | 200 | 401, 403, 404, 422 |
+| POST | `/ai-recommendations/:aiRecommendationId/apply` | Sí | organizer/vendor (own) | Aplica (acepta). | 200 | 400, 401, 403, 404, 409, 422 |
 | POST | `/ai-recommendations/:aiRecommendationId/discard` | Sí | organizer/vendor (own) | Descarta. | 204 | 401, 403, 404 |
+
+#### 35.3.a Catálogo de errores del `/apply` por type (US-037 y siguientes)
+
+El error handler central mapea cada `error_code` a un HTTP status estable. Códigos comunes a **todos** los types:
+
+| Error code | Status | Origen |
+| --- | --- | --- |
+| `AUTHENTICATION_REQUIRED` | 401 | sesión ausente/expirada |
+| `FORBIDDEN` | 403 | rol admin (excluido del HITL) |
+| `RESOURCE_NOT_FOUND` | 404 | recomendación ajena/inexistente (no-revelación) |
+| `RECOMMENDATION_NOT_PENDING` | 409 | status != 'pending' (US-025 EC-01/07) |
+| `EDITED_PAYLOAD_INVALID` | 400 | `editedPayload` no cumple `OUTPUT_SCHEMAS.<type>` (US-025 EC-03) |
+| `SIDE_EFFECT_FAILED` | 500 | fallo en la strategy → rollback (US-025 EC-04) |
+
+Códigos **específicos por type** aplicables cuando `type === 'budget_suggestion'` (US-037 D5/D6/AC-08):
+
+| Error code | Status | Origen | Details |
+| --- | --- | --- | --- |
+| `EVENT_NOT_EDITABLE` | 409 | evento en `cancelled`/`completed` (D5) | `event_status` |
+| `CATEGORY_INACTIVE` | 409 | alguna `service_category` referenciada tiene `is_active=false` (D6) | `inactive_categories[]` con `<code>:<name>` |
+| `CURRENCY_MISMATCH` | 409 | `recommendation.output.currencyCode != event.currency` (AC-08 defensa profunda) | `recommendation_currency`, `event_currency` |
+| `INVALID_VALUE` | 400 | `editedPayload.items[].category` no está en el payload original, o lista vacía (VR-03/VR-05) | `editedPayload` |
+| `PAYLOAD_INVALID` | 422 | `AIRecommendation.output` corrupto/no compatible con `OUTPUT_SCHEMAS.budget_suggestion` (defensa profunda) | `output_payload` |
+
+Body del `/apply`: `{ editedPayload?: unknown, editedOutput?: unknown }` — `editedOutput` es alias legacy (US-097 borrador); el controller normaliza a `editedPayload`. Snapshot OpenAPI regenerado por US-098.
 
 ### 35.4 DTOs base
 

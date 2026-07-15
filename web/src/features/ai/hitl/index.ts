@@ -6,3 +6,28 @@ export { useApplyAIRecommendation } from './hooks/useApplyAIRecommendation';
 export { useDiscardAIRecommendation } from './hooks/useDiscardAIRecommendation';
 export { HITLActions } from './components/HITLActions';
 export type { HITLEditorProps } from './components/HITLActions';
+// US-037 (PB-P1-021) — Budget-apply HITL: hook wrapper + 3 dialogs + container orquestador.
+export {
+  useApplyBudgetSuggestion,
+  classifyBudgetApplyError,
+  extractInactiveCategories,
+} from './hooks/useApplyBudgetSuggestion';
+export type {
+  EditedBudgetItem,
+  EditedBudgetPayload,
+  BudgetApplyErrorKind,
+  InactiveCategoryDetail,
+} from './hooks/useApplyBudgetSuggestion';
+export {
+  ApplyAIBudgetDialog,
+  ReplaceConfirmationDialog,
+  CategoryInactiveErrorDialog,
+  BudgetApplyContainer,
+} from './components/budget';
+export type {
+  BudgetItemPreview,
+  ApplyAIBudgetDialogProps,
+  ReplaceConfirmationDialogProps,
+  CategoryInactiveErrorDialogProps,
+  BudgetApplyContainerProps,
+} from './components/budget';

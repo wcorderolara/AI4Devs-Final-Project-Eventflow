@@ -10,5 +10,12 @@ export type QuoteRequestIdParam = z.infer<typeof QuoteRequestIdParamSchema>;
 export const AiRecommendationIdParamSchema = z.object({ aiRecommendationId: z.string().uuid() }).strict();
 export type AiRecommendationIdParam = z.infer<typeof AiRecommendationIdParamSchema>;
 
-export const ApplyAiRecommendationSchema = z.object({ editedOutput: z.record(z.unknown()).optional() }).strict();
+// US-037 (PB-P1-021 / BE-001): body real del /apply. Acepta `editedPayload` (nombre HITL canónico)
+// y `editedOutput` como alias legacy (US-097 borrador). El controller normaliza a `editedPayload`.
+export const ApplyAiRecommendationSchema = z
+  .object({
+    editedPayload: z.record(z.unknown()).optional(),
+    editedOutput: z.record(z.unknown()).optional(),
+  })
+  .strict();
 export type ApplyAiRecommendation = z.infer<typeof ApplyAiRecommendationSchema>;

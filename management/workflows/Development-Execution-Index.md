@@ -19,8 +19,8 @@
 | P0 | PB-P0-004 | US-096 | Implementar endpoints Quote / Booking del contrato REST | [record](development-execution/P0/PB-P0-004/US-096-execution.md) | 18 | 18 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
 | P0 | PB-P0-004 | US-097 | Implementar endpoints AI del contrato REST | [record](development-execution/P0/PB-P0-004/US-097-execution.md) | 22 | 22 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
 | P0 | PB-P0-005 | US-098 | Generar snapshot OpenAPI automatizado | [record](development-execution/P0/PB-P0-005/US-098-execution.md) | 16 | 16 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
-| P0 | PB-P0-006 | US-108 | Configurar cookies HTTP-only firmadas | [record](development-execution/P0/PB-P0-006/US-108-execution.md) | 21 | 19 | 0 | 0 | 0 | 2 | `Partially Completed` | 2026-07-09 |
-| P0 | PB-P0-006 | US-109 | Integrar captcha en auth | [record](development-execution/P0/PB-P0-006/US-109-execution.md) | 25 | 22 | 0 | 0 | 0 | 3 | `Partially Completed` | 2026-07-09 |
+| P0 | PB-P0-006 | US-108 | Configurar cookies HTTP-only firmadas | [record](development-execution/P0/PB-P0-006/US-108-execution.md) | 21 | 21 | 0 | 0 | 0 | 0 | `Done` | 2026-07-14 |
+| P0 | PB-P0-006 | US-109 | Integrar captcha en auth | [record](development-execution/P0/PB-P0-006/US-109-execution.md) | 25 | 25 | 0 | 0 | 0 | 0 | `Done` | 2026-07-14 |
 | P0 | PB-P0-007 | US-110 | Rate limiting en auth y endpoints IA | [record](development-execution/P0/PB-P0-007/US-110-execution.md) | 25 | 24 | 0 | 0 | 0 | 1 | `Done` | 2026-07-09 |
 | P0 | PB-P0-007 | US-111 | Validar orden seguro de middlewares | [record](development-execution/P0/PB-P0-007/US-111-execution.md) | 22 | 22 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
 | P0 | PB-P0-008 | US-112 | Suite negativa RBAC + ownership | [record](development-execution/P0/PB-P0-008/US-112-execution.md) | 22 | 22 | 0 | 0 | 0 | 0 | `Done` | 2026-07-09 |
@@ -43,8 +43,8 @@
 | P0 | PB-P0-014 | US-088 | Seed fixture incluye BookingIntent.confirmed_intent y reseñas verificadas | [record](development-execution/P0/PB-P0-014/US-088-execution.md) | 17 | 17 | 0 | 0 | 0 | 0 | `Done` | 2026-07-10 |
 | P0 | PB-P0-015 | US-125 | Configurar Vitest + Supertest + Playwright + MSW | [record](development-execution/P0/PB-P0-015/US-125-execution.md) | 20 | 20 | 0 | 0 | 0 | 0 | `Done` | 2026-07-10 |
 | P0 | PB-P0-016 | US-133 | Dockerfile multi-stage para backend | [record](development-execution/P0/PB-P0-016/US-133-execution.md) | 12 | 12 | 0 | 0 | 0 | 0 | `Done` | 2026-07-10 |
-| P0 | PB-P0-017 | US-134 | Pipeline GitHub Actions de CI (lint / typecheck / tests / build) | [record](development-execution/P0/PB-P0-017/US-134-execution.md) | 14 | 11 | 0 | 0 | 0 | 3 | `Partially Completed` | 2026-07-10 |
-| P0 | PB-P0-018 | US-139 | Migraciones Prisma ejecutadas automáticamente en CI/CD | [record](development-execution/P0/PB-P0-018/US-139-execution.md) | 12 | 9 | 0 | 0 | 0 | 3 | `Partially Completed` | 2026-07-10 |
+| P0 | PB-P0-017 | US-134 | Pipeline GitHub Actions de CI (lint / typecheck / tests / build) | [record](development-execution/P0/PB-P0-017/US-134-execution.md) | 14 | 11 | 0 | 0 | 0 | 3 | `Done` | 2026-07-14 |
+| P0 | PB-P0-018 | US-139 | Migraciones Prisma ejecutadas automáticamente en CI/CD | [record](development-execution/P0/PB-P0-018/US-139-execution.md) | 12 | 9 | 0 | 0 | 0 | 3 | `Done` | 2026-07-14 |
 | P1 | PB-P1-001 | US-001 | Registrarme como organizador con captcha | [record](development-execution/P1/PB-P1-001/US-001-execution.md) | 21 | 21 | 0 | 0 | 0 | 0 | `Done` | 2026-07-10 |
 | P1 | PB-P1-002 | US-002 | Registrarme como proveedor con captcha | [record](development-execution/P1/PB-P1-002/US-002-execution.md) | 17 | 17 | 0 | 0 | 0 | 0 | `Done` | 2026-07-10 |
 | P1 | PB-P1-003 | US-003 | Iniciar sesión con email y contraseña | [record](development-execution/P1/PB-P1-003/US-003-execution.md) | 23 | 23 | 0 | 0 | 0 | 0 | `Done` | 2026-07-10 |
@@ -67,11 +67,12 @@
 | P1 | PB-P1-015 | US-021 | Autocompletar brief de QuoteRequest con IA (AI-005) | [record](development-execution/P1/PB-P1-015/US-021-execution.md) | 28 | 22 | 0 | 0 | 0 | 4 | `Done` | 2026-07-13 |
 | P1 | PB-P1-016 | US-025 | Aplicar, editar o descartar una sugerencia IA (HITL transversal) | [record](development-execution/P1/PB-P1-016/US-025-execution.md) | 25 | 19 | 0 | 0 | 0 | 6 | `Done` | 2026-07-13 |
 | P1 | PB-P1-017 | US-031 | Confirmar tareas IA en bloque | [record](development-execution/P1/PB-P1-017/US-031-execution.md) | 24 | 18 | 0 | 0 | 0 | 4 | `Done` | 2026-07-13 |
-| P1 | PB-P1-018 | US-027 | Ver mi checklist del evento | [record](development-execution/P1/PB-P1-018/US-027-execution.md) | 21 | 17 | 0 | 0 | 0 | 2 | `Validation` | 2026-07-13 |
-| P1 | PB-P1-018 | US-028 | Crear tarea manual del checklist (Organizer) | [record](development-execution/P1/PB-P1-018/US-028-execution.md) | 24 | 19 | 0 | 0 | 0 | 5 | `Validation` | 2026-07-14 |
-| P1 | PB-P1-018 | US-029 | Editar, transicionar estado o eliminar mi tarea (Organizer) | [record](development-execution/P1/PB-P1-018/US-029-execution.md) | 27 | 19 | 0 | 0 | 0 | 1 | `Validation` | 2026-07-14 |
-| P1 | PB-P1-018 | US-030 | Cambiar el estado de mi tarea con un toque rápido (Organizer) | [record](development-execution/P1/PB-P1-018/US-030-execution.md) | 16 | 9 | 0 | 0 | 0 | 2 | `Validation` | 2026-07-14 |
-| P1 | PB-P1-019 | US-032 | Filtrar tareas por rango temporal (próximos 7/30 días + vencidas) | [record](development-execution/P1/PB-P1-019/US-032-execution.md) | 21 | 11 | 0 | 0 | 0 | 6 | `Validation` | 2026-07-14 |
-| P1 | PB-P1-019 | US-033 | Ver progreso (% done) en el dashboard | [record](development-execution/P1/PB-P1-019/US-033-execution.md) | 19 | 14 | 0 | 0 | 0 | 3 | `Validation` | 2026-07-14 |
-| P1 | PB-P1-020 | US-035 | Ver mi presupuesto | [record](development-execution/P1/PB-P1-020/US-035-execution.md) | 24 | 7 | 1 | 0 | 0 | 0 | `Validation` | 2026-07-14 |
-| P1 | PB-P1-020 | US-036 | Crear, editar y eliminar BudgetItem por categoría | [record](development-execution/P1/PB-P1-020/US-036-execution.md) | 25 | 8 | 1 | 0 | 0 | 0 | `Validation` | 2026-07-14 |
+| P1 | PB-P1-018 | US-027 | Ver mi checklist del evento | [record](development-execution/P1/PB-P1-018/US-027-execution.md) | 21 | 18 | 0 | 0 | 0 | 2 | `Done` | 2026-07-14 |
+| P1 | PB-P1-018 | US-028 | Crear tarea manual del checklist (Organizer) | [record](development-execution/P1/PB-P1-018/US-028-execution.md) | 24 | 20 | 0 | 0 | 0 | 1 | `Done` | 2026-07-14 |
+| P1 | PB-P1-018 | US-029 | Editar, transicionar estado o eliminar mi tarea (Organizer) | [record](development-execution/P1/PB-P1-018/US-029-execution.md) | 27 | 20 | 0 | 0 | 0 | 1 | `Done` | 2026-07-14 |
+| P1 | PB-P1-018 | US-030 | Cambiar el estado de mi tarea con un toque rápido (Organizer) | [record](development-execution/P1/PB-P1-018/US-030-execution.md) | 16 | 13 | 0 | 0 | 0 | 2 | `Done` | 2026-07-14 |
+| P1 | PB-P1-019 | US-032 | Filtrar tareas por rango temporal (próximos 7/30 días + vencidas) | [record](development-execution/P1/PB-P1-019/US-032-execution.md) | 21 | 13 | 0 | 0 | 0 | 0 | `Done` | 2026-07-14 |
+| P1 | PB-P1-019 | US-033 | Ver progreso (% done) en el dashboard | [record](development-execution/P1/PB-P1-019/US-033-execution.md) | 19 | 14 | 0 | 0 | 0 | 0 | `Done` | 2026-07-14 |
+| P1 | PB-P1-020 | US-035 | Ver mi presupuesto | [record](development-execution/P1/PB-P1-020/US-035-execution.md) | 24 | 20 | 0 | 0 | 0 | 0 | `Done` | 2026-07-14 |
+| P1 | PB-P1-020 | US-036 | Crear, editar y eliminar BudgetItem por categoría | [record](development-execution/P1/PB-P1-020/US-036-execution.md) | 25 | 19 | 0 | 0 | 0 | 1 | `Done` | 2026-07-14 |
+| P1 | PB-P1-021 | US-037 | Aceptar distribución IA como BudgetItems editables | [record](development-execution/P1/PB-P1-021/US-037-execution.md) | 26 | 25 | 0 | 0 | 0 | 1 | `Done` | 2026-07-14 |

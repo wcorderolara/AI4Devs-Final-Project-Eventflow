@@ -55,6 +55,8 @@ function mkCategoryReader(
     getActiveCodes: async () => new Set(activeCodes),
     findIdByCode: async (code) =>
       codeToId[code] !== undefined ? codeToId[code] : activeCodes.includes(code) ? `sc-${code}` : null,
+    findManyByCodes: async (codes) =>
+      codes.map((code) => ({ code, name: code, isActive: activeCodes.includes(code) })),
   };
 }
 
@@ -86,6 +88,9 @@ function mkWriteRepo(overrides: Partial<BudgetItemWriteRepository> = {}): Budget
       }) as BudgetItemRow,
     hardDelete: async () => undefined,
     recomputeBudgetTotals: async () => undefined,
+    findReplaceableAiItems: async () => [],
+    hardDeleteMany: async () => undefined,
+    createManyForRecommendation: async () => [],
     ...overrides,
   };
 }

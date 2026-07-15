@@ -1,0 +1,67 @@
+{
+  "page": {
+    "back": "Back to event",
+    "title": "Budget",
+    "addItemCta": "Add item",
+    "loadError": "Could not load the budget."
+  },
+  "summary": {
+    "regionLabel": "Budget summary",
+    "title": "Summary",
+    "planned": "Planned",
+    "committed": "Committed",
+    "remaining": "Remaining",
+    "currency": "Currency"
+  },
+  "overcommit": {
+    "title": "Budget over-committed",
+    "body": "Committed amount exceeds planned. Review your items or increase your planned amounts."
+  },
+  "table": {
+    "caption": "Budget items grouped by category.",
+    "col": {
+      "label": "Item",
+      "category": "Category",
+      "planned": "Planned",
+      "committed": "Committed",
+      "actions": "Actions"
+    },
+    "edit": "Edit",
+    "delete": "Delete",
+    "editAria": "Edit {label}",
+    "deleteAria": "Delete {label}"
+  },
+  "empty": {
+    "body": "No budget items yet. You can start with an AI suggestion or add items manually.",
+    "cta": {
+      "ai": "Suggest with AI",
+      "manual": "Add manually"
+    }
+  },
+  "addItem": {
+    "title": "Add budget item",
+    "description": "Enter a label, an optional category and the planned amount.",
+    "field": {
+      "label": "Label",
+      "labelRequired": "Label is required.",
+      "category": "Category code (optional)",
+      "categoryPlaceholder": "e.g. venue",
+      "amount": "Planned amount",
+      "amountInvalid": "Amount must be a non-negative number."
+    },
+    "cta": {
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…"
+    }
+  },
+  "deleteItem": {
+    "title": "Delete budget item?",
+    "body": "This will permanently delete “{label}”. This action cannot be undone.",
+    "cta": {
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "deleting": "Deleting…"
+    }
+  }
+}

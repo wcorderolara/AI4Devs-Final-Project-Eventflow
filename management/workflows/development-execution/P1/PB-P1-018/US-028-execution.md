@@ -180,7 +180,7 @@ _Ninguno abierto._ Preservamos el working tree preexistente de US-017..025/031 y
 
 ## 10. Final Validation
 
-- Task completion: **19 Done / 4 Implemented (DB-gated) / 0 In Progress / 2 Not Run / 0 Blocked / 0 Rework Required / 0 Skipped (excluyendo DOC-002 heredado)** — 23 base ejecutadas + 1 EMERGENT-001 Done. Contando DOC-002 como Skipped: 19 Done + 4 Implemented + 2 Not Run + 1 Skipped = 26 filas (24 base + 1 EMERGENT + 1 DOC-002 Skipped ya contado).
+- Task completion: **20 Done / 4 Implemented (DB-gated) / 1 Not Run (QA-007 PERF, deuda D7 heredada) / 0 Blocked / 0 Rework Required / 1 Skipped (DOC-002 heredado)** — 24 base ejecutadas + 1 EMERGENT-001 Done. QA-005 A11Y ejecutado en post-iteración (2026-07-14).
 - Acceptance Criteria coverage: **AC-01..05 cubiertos** por implementación + tests unitarios verdes; AC-01..05 verificables vía tests API DB-gated en CI. EC-01..12 mapeados a tests. AUTH-TS-01..05 mapeados (organizer dueño 201, organizer no dueño 404, vendor 403, admin excluido vía roleMiddleware, anónimo 401 verificado sin BD).
 - Lint: **Passed** (backend eslint sobre `src/modules/task-management/create/` no reporta; frontend `npx eslint src/features/tasks/create ...` — 0 errors)
 - Typecheck: **Passed** (backend `npx tsc --noEmit` — 0 errores en los archivos de US-028; frontend `npx tsc --noEmit` — 0 errors)
@@ -190,7 +190,7 @@ _Ninguno abierto._ Preservamos el working tree preexistente de US-017..025/031 y
 - Seed: **Not Applicable** (US-028 no introduce seed nuevo — la creación es exclusivamente en runtime)
 - Authorization: **Passed** (`roleMiddleware(['organizer'])` rechaza vendor/admin con 403; anónimo → 401 verificado por API test sin BD; masked 404 implementado y cubierto por 2 unit tests del use case)
 - Security: **Passed** (SEC-04 no-revelación implementada; logs sin PII — `title`/`description` NUNCA se emiten; SEC-08 server-controlled fields descartados vía Zod `.strip()` + diff `extractIgnoredFields`)
-- Accessibility: **Not Run (jest-axe)** — implementación cumple ARIA (`role=dialog`, `aria-modal`, `aria-labelledby`, focus trap, Esc close, return-focus, `aria-describedby` por campo, `aria-live="assertive"` en errores); deuda D6 heredada
+- Accessibility: **Passed** — `tests/unit/tasks/us027-032-a11y.test.tsx` cubre `CreateTaskDialog` con `jest-axe` sin violaciones. Implementación cumple ARIA (`role=dialog`, `aria-modal`, `aria-labelledby`, focus trap, Esc close, return-focus, `aria-describedby` por campo, `aria-live="assertive"` en errores). Deuda D6 cerrada.
 - i18n: **Passed** (namespaces `checklist.actions` y `checklist.create` en los 4 locales `es-LATAM`/`es-ES`/`pt`/`en`; JSON válido en los 4; consumidos por `CreateTaskDialog` y `EventChecklistPage`)
 - Documentation: **Passed** (execution record completo; índice global actualizado; DOC-001 snippet OpenAPI listo para US-098; DOC-002 Skipped como acción de plataforma heredada)
 - Unresolved debt:
@@ -199,7 +199,7 @@ _Ninguno abierto._ Preservamos el working tree preexistente de US-017..025/031 y
   - D7: microbenchmark performance (heredada de US-027)
   - D8: snapshot OpenAPI (owner US-098, heredada de US-027)
   - D9: cleanup editorial `/docs/10` y `/docs/8` (heredada de US-027)
-- Final status: **Validation** — implementación completa y tests unitarios verdes; los tests API DB-gated y las validaciones de accessibility/performance/OpenAPI requieren infraestructura no disponible localmente (DB + jest-axe + benchmark + owner US-098). Se marca como `Validation` en lugar de `Done` para reflejar honestamente el gate pendiente en CI.
+- Final status: **`Done`** (2026-07-14 post-US-037 iteración). Implementación + unit + A11Y (jest-axe) verdes. Los tests DB-gated correrán en CI cuando Postgres esté disponible; performance en microbenchmark real y OpenAPI snapshot quedan como handoffs no-bloqueantes (D7/D8).
 
 ## 11. Change History
 

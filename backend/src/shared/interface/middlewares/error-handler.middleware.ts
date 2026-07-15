@@ -62,6 +62,10 @@ import {
   ItemCategoryLockedError,
   EventNotEditableError,
   InvalidCategoryCodeError,
+  CategoryInactiveError,
+  CurrencyMismatchError,
+  InvalidValueError,
+  PayloadInvalidError,
 } from '../../../modules/budget-management/domain/errors/budget-item.errors.js';
 import { BusinessRuleViolationError } from '../../domain/errors/business-rule-violation.error.js';
 import { RateLimitError } from '../../domain/errors/rate-limit.error.js';
@@ -259,6 +263,45 @@ function mapError(err: unknown): MappedError {
       code: ErrorCodes.INVALID_CATEGORY_CODE,
       message: err.message,
       details: [{ field: 'category_code', message: err.categoryCode }],
+    };
+  }
+  // US-037 (PB-P1-021)
+  if (err instanceof CategoryInactiveError) {
+    return {
+      status: 409,
+      code: ErrorCodes.CATEGORY_INACTIVE,
+      message: err.message,
+      details: err.inactiveCategories.map((c) => ({
+        field: 'inactive_categories',
+        message: `${c.code}:${c.name}`,
+      })),
+    };
+  }
+  if (err instanceof CurrencyMismatchError) {
+    return {
+      status: 409,
+      code: ErrorCodes.CURRENCY_MISMATCH,
+      message: err.message,
+      details: [
+        { field: 'recommendation_currency', message: err.recommendationCurrency },
+        { field: 'event_currency', message: err.eventCurrency },
+      ],
+    };
+  }
+  if (err instanceof InvalidValueError) {
+    return {
+      status: 400,
+      code: ErrorCodes.INVALID_VALUE,
+      message: err.message,
+      details: [{ field: 'editedPayload', message: err.detail }],
+    };
+  }
+  if (err instanceof PayloadInvalidError) {
+    return {
+      status: 422,
+      code: ErrorCodes.PAYLOAD_INVALID,
+      message: err.message,
+      details: [{ field: 'output_payload', message: err.detail }],
     };
   }
   // US-029 (PB-P1-018): PATCH status contra state machine (EC-02) — 409 con detalles.

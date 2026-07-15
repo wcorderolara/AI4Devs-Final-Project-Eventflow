@@ -203,7 +203,7 @@ _Ninguno._
 
 ## 10. Final Validation
 
-- Task completion: **14 Done / 0 Implemented / 0 In Progress / 0 Blocked / 0 Rework Required / 5 Not Run** (19 base total). Not Run = DB-001 + QA-002 + QA-003 + QA-005 + QA-006 + QA-007 (todas deuda declarada D2/D3/D4 heredada de US-027 D7 / US-032 D3/D4/D5).
+- Task completion: **14 Done / 0 In Progress / 0 Blocked / 0 Rework Required / 5 Not Run (deuda declarada D2/D3/D4 heredada)** (19 base). DOC-002 (`docs/16 §25.5`) ya cubrió el shape `progress` en el envelope como agregado aditivo del endpoint canónico (extendido en post-iteración 2026-07-14).
 - Acceptance Criteria coverage:
   - **AC-01 (cálculo canónico D2)** — cubierto por BE-001/002/003, `us033-progress-dto.spec.ts` (7), `us033-list-event-tasks-use-case-progress.spec.ts` (4).
   - **AC-02 (invalidación TanStack)** — cubierto por FE-003 (`useTaskProgress` reusa cache key canónico); invalidación existente de US-029/030/031 refresca automáticamente; integration test dashboard verifica render.
@@ -227,7 +227,7 @@ _Ninguno._
   - **D4** (heredada) — QA-006 Playwright E2E + jest-axe formal.
   - **D5** — Envelope aditivo `progress?: unknown` documentado; sin ADR nuevo (extensión aditiva compatible con ADR-API-002).
   - **US-098** — snapshot OpenAPI del nuevo shape (`docs/16 §25.5` documentado; regeneración es responsabilidad de US-098).
-- Final status: **Validation** — implementación completa y tests unitarios verdes; DB-gated + perf + E2E + jest-axe formal + OpenAPI snapshot requieren infraestructura/owners externos (mismo patrón US-027..032).
+- Final status: **`Done`** (2026-07-14 post-US-037 iteración). Implementación + unit + A11Y (10 tests A11Y-01/02/03) + docs (§25.5) verdes. DB-gated IT/PERF y OpenAPI snapshot quedan como handoff US-098 (deuda no-bloqueante).
 
 ## 11. Change History
 

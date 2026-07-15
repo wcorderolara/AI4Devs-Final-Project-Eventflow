@@ -689,6 +689,92 @@ export class SeedDemoDataUseCase {
           counts,
         );
       }
+
+      // ── US-037 SEED-001 ────────────────────────────────────────────────
+      // Garantiza:
+      //  1. Al menos un AIRecommendation { type='budget_suggestion', status='pending' } sobre
+      //     un evento distinto (el segundo) para demoar el flujo HITL de US-037.
+      //  2. Al menos un BudgetItem con `aiRecommendationId` de la recomendación previa
+      //     `accepted` de budget_suggestion, para demoar el reemplazo D2.
+      const pendingBudgetEventTarget = events[1] ?? events[0]!;
+      const pendingBudgetGen = generated.find((g) => g.feature === 'budget_suggestion');
+      if (pendingBudgetGen) {
+        await ensure(
+          () =>
+            tx.aIRecommendation.findFirst({
+              where: {
+                kind: 'budget_suggestion',
+                status: 'pending',
+                eventId: pendingBudgetEventTarget.id,
+                isSeed: true,
+              },
+            }),
+          () =>
+            tx.aIRecommendation.create({
+              data: {
+                kind: 'budget_suggestion',
+                aiPromptVersionId: promptVersion.id,
+                requestedByUserId: organizer.id,
+                eventId: pendingBudgetEventTarget.id,
+                vendorProfileId: null,
+                quoteRequestId: null,
+                inputPayload: seedInputForFeature('budget_suggestion') as Prisma.InputJsonValue,
+                outputPayload: (pendingBudgetGen.result.output ?? {}) as Prisma.InputJsonValue,
+                aiMeta: {
+                  provider: 'mock',
+                  promptVersion: pendingBudgetGen.result.promptVersion,
+                  latencyMs: pendingBudgetGen.result.latencyMs,
+                  fallbackUsed: pendingBudgetGen.result.fallbackUsed,
+                  languageCode: 'es-LATAM',
+                } as Prisma.InputJsonValue,
+                status: 'pending',
+                isSeed: true,
+              },
+            }),
+          counts,
+        );
+      }
+
+      // Ítems previos AI en el evento principal para demoar D2 (reemplazo). Enlazan a la
+      // recomendación `accepted` del primer evento (creada en el loop de arriba).
+      const acceptedRec = await tx.aIRecommendation.findFirst({
+        where: { kind: 'budget_suggestion', status: 'accepted', eventId: event.id, isSeed: true },
+        select: { id: true },
+      });
+      const budgetOfMainEvent = await tx.budget.findUnique({
+        where: { eventId: event.id },
+        select: { id: true },
+      });
+      if (acceptedRec && budgetOfMainEvent) {
+        const existingAi = await tx.budgetItem.findFirst({
+          where: { budgetId: budgetOfMainEvent.id, aiRecommendationId: acceptedRec.id, isSeed: true },
+          select: { id: true },
+        });
+        if (!existingAi) {
+          await tx.budgetItem.createMany({
+            data: [
+              {
+                budgetId: budgetOfMainEvent.id,
+                label: 'Salón (IA previo)',
+                categoryCode: 'venue',
+                amountPlanned: 3500,
+                amountCommitted: 0,
+                aiRecommendationId: acceptedRec.id,
+                isSeed: true,
+              },
+              {
+                budgetId: budgetOfMainEvent.id,
+                label: 'Catering (IA previo)',
+                categoryCode: 'catering',
+                amountPlanned: 2500,
+                amountCommitted: 0,
+                aiRecommendationId: acceptedRec.id,
+                isSeed: true,
+              },
+            ],
+          });
+        }
+      }
     }, TX_OPTS);
     return {};
   }
