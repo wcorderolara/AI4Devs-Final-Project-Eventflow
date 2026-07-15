@@ -91,6 +91,5 @@ export const STATUS_ENUMS = [
   'NotificationStatus',
   'AttachmentStatus',
   'VendorProfileStatus',
-  'VendorServiceStatus',
   'AIRecommendationStatus',
 ] as const;

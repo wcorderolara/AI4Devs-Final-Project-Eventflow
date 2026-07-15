@@ -33,6 +33,7 @@ import { budgetRouter, budgetItemMutationRouter } from './modules/budget-managem
 import {
   vendorProfileRouter,
   serviceCategoriesRouter,
+  vendorServiceRouter,
 } from './modules/vendor-management/interface/index.js';
 import { portfolioRouter } from './modules/attachments/interface/index.js';
 
@@ -101,6 +102,11 @@ export function createApp(): Express {
   // US-040 (PB-P1-024): creación del VendorProfile por el propio vendor. Contrato
   // `POST /api/v1/vendors/me` (Doc 16 §M07). Solo rol `vendor` (organizer/admin → 403; sin
   // sesión → 401). El endpoint público del directorio de vendors vive en US futura.
+  // US-044 (PB-P1-027): CRUD del catálogo `VendorService` del vendor. Contrato
+  // `GET/POST/PATCH/DELETE /api/v1/vendors/me/services[/:id]` (Doc 16 §M07). Sólo rol `vendor`
+  // (organizer/admin → 403; sin sesión → 401). Se monta ANTES de `/vendors` (vendorProfileRouter
+  // captura `/vendors/me`) para que `/vendors/me/services*` tenga match específico primero.
+  apiV1.use('/vendors/me/services', vendorServiceRouter);
   apiV1.use('/vendors', vendorProfileRouter);
   // US-043 (PB-P1-026): upload de imágenes del portafolio del vendor. Contrato
   // `POST /api/v1/vendors/me/portfolio/works/:workLabel/images` (Doc 16 §M07). Sólo rol

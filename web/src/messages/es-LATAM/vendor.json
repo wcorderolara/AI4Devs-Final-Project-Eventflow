@@ -227,5 +227,73 @@
         "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
       }
     }
+  },
+  "services": {
+    "title": "Mis paquetes y servicios",
+    "subtitle": "Administra tu catálogo. Los paquetes activos aparecen en tu perfil público cuando tu perfil esté aprobado.",
+    "empty": "Aún no tienes paquetes. Crea el primero para que aparezca en tu perfil público cuando seas aprobado.",
+    "counter": {
+      "value": "{active} de {max} paquetes activos"
+    },
+    "status": {
+      "active": "Activo",
+      "inactive": "Inactivo"
+    },
+    "table": {
+      "caption": "Listado de paquetes del proveedor",
+      "loading": "Cargando tus paquetes…",
+      "error": "No pudimos cargar tus paquetes. Intenta recargar.",
+      "headers": {
+        "packageName": "Paquete",
+        "basePrice": "Precio base",
+        "currency": "Moneda",
+        "status": "Estado",
+        "actions": "Acciones"
+      }
+    },
+    "actions": {
+      "create": "Agregar paquete",
+      "deactivate": "Desactivar",
+      "deactivateAria": "Desactivar el paquete {name}",
+      "reactivate": "Reactivar",
+      "reactivating": "Reactivando…",
+      "reactivateAria": "Reactivar el paquete {name}"
+    },
+    "create": {
+      "title": "Nuevo paquete",
+      "subtitle": "Completa los datos del paquete. El precio es referencial; la cotización final va en cada solicitud.",
+      "cancel": "Cancelar",
+      "submit": "Crear paquete",
+      "submitting": "Creando…",
+      "fields": {
+        "packageName": { "label": "Nombre del paquete" },
+        "description": { "label": "Descripción" },
+        "basePrice": { "label": "Precio base" },
+        "currency": { "label": "Moneda" },
+        "category": { "label": "Categoría" }
+      }
+    },
+    "deactivate": {
+      "title": "Desactivar «{name}»",
+      "body": "El paquete dejará de mostrarse en tu perfil público hasta que lo reactives. Podés reactivarlo cuando quieras.",
+      "cancel": "Cancelar",
+      "confirm": "Desactivar",
+      "submitting": "Desactivando…"
+    },
+    "errors": {
+      "INVALID_PACKAGE_NAME": "El nombre debe tener entre 2 y 150 caracteres.",
+      "INVALID_PRICE": "El precio debe ser un decimal mayor o igual a 0 con hasta 2 decimales.",
+      "INVALID_CURRENCY": "La moneda seleccionada no es válida.",
+      "INVALID_DESCRIPTION": "La descripción debe tener entre 10 y 2000 caracteres.",
+      "INVALID_CATEGORY": "La categoría ya no está disponible. Recarga y vuelve a intentar.",
+      "SERVICE_LIMIT_REACHED": "Alcanzaste el máximo de 50 paquetes activos. Desactiva alguno para agregar otro.",
+      "SERVICE_NOT_FOUND": "No encontramos ese paquete. Puede que ya haya sido eliminado.",
+      "PROFILE_HIDDEN": "Tu perfil está oculto por un administrador. Contáctanos para reactivarlo.",
+      "PROFILE_NOT_FOUND": "Aún no tienes un perfil de proveedor.",
+      "AUTHENTICATION_REQUIRED": "Tu sesión expiró. Inicia sesión de nuevo.",
+      "FORBIDDEN": "Solo los proveedores pueden administrar el catálogo.",
+      "VALIDATION_ERROR": "Revisa los datos ingresados.",
+      "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
+    }
   }
 }

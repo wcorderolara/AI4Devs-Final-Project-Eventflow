@@ -1395,11 +1395,11 @@ Gestionar servicios/paquetes ofrecidos por un vendor.
 
 | Método | Path | Auth | Roles | Propósito | Success | Errores |
 | --- | --- | --- | --- | --- | --- | --- |
-| GET | `/vendors/me/services` | Sí | vendor | Lista servicios propios. | 200 | 401, 403 |
-| POST | `/vendors/me/services` | Sí | vendor | Crea servicio. | 201 | 401, 403, 422 |
-| PATCH | `/vendors/me/services/:serviceId` | Sí | vendor | Actualiza servicio. | 200 | 401, 403, 404, 422 |
-| DELETE | `/vendors/me/services/:serviceId` | Sí | vendor | Desactiva servicio (soft). | 204 | 401, 403, 404 |
-| GET | `/vendors/:vendorProfileId/services` | Mixto | anonymous (si approved), organizer, admin | Lista pública. | 200 | 404 |
+| GET | `/vendors/me/services` | Sí | vendor | Lista servicios propios (activos + inactivos, `created_at desc`, US-044 D3). | 200 | 401, 403, 404 `PROFILE_NOT_FOUND`, 409 `PROFILE_HIDDEN` |
+| POST | `/vendors/me/services` | Sí | vendor | Crea servicio (US-044 AC-01a). Body `{ package_name, description, base_price, currency_code, service_category_id }`. Máx 50 activos (D5). | 201 | 400 `INVALID_PACKAGE_NAME`/`INVALID_PRICE`/`INVALID_CURRENCY`/`INVALID_DESCRIPTION`/`INVALID_CATEGORY`, 401, 403, 404, 409 `PROFILE_HIDDEN`/`SERVICE_LIMIT_REACHED` |
+| PATCH | `/vendors/me/services/:serviceId` | Sí | vendor | Actualiza servicio (US-044 AC-01b). Cualquier subset opcional; `is_active=true` reactiva (recheck del tope). | 200 | 400 `INVALID_*`, 401, 403, 404 `SERVICE_NOT_FOUND`/`PROFILE_NOT_FOUND`, 409 `PROFILE_HIDDEN`/`SERVICE_LIMIT_REACHED` |
+| DELETE | `/vendors/me/services/:serviceId` | Sí | vendor | Soft delete via `is_active=false` (US-044 AC-01c, D2). Idempotente EC-09 (204 aunque ya esté inactivo). | 204 | 401, 403, 404 `SERVICE_NOT_FOUND`/`PROFILE_NOT_FOUND`, 409 `PROFILE_HIDDEN` |
+| GET | `/vendors/:vendorProfileId/services` | Mixto | anonymous (si approved), organizer, admin | Lista pública (US-045/US-047). | 200 | 404 |
 
 ### 28.3 DTOs
 

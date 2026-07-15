@@ -100,6 +100,5 @@ export const CANONICAL_ENUMS = [
   'NotificationStatus',
   'AttachmentStatus',
   'VendorProfileStatus',
-  'VendorServiceStatus',
   'AIRecommendationStatus',
 ] as const;

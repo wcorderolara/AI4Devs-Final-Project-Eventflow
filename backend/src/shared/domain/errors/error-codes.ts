@@ -124,6 +124,13 @@ export const ErrorCodes = {
   ATTACHMENT_NOT_FOUND: 'ATTACHMENT_NOT_FOUND', // 404 — attachment inexistente, ajeno o ya soft-deleted (D4: uniforme).
   INVALID_DELETION_REASON: 'INVALID_DELETION_REASON', // 400 — body con `deletion_reason` fuera de 1..500 chars (EC-05).
   INVALID_UUID: 'INVALID_UUID', // 400 — path param no es UUID válido (VR-01).
+  // US-044 (PB-P1-027): CRUD `VendorService` (paquetes) del vendor.
+  INVALID_PACKAGE_NAME: 'INVALID_PACKAGE_NAME', // 400 — `package_name` fuera de [2..150] (VR-01, EC-05).
+  INVALID_PRICE: 'INVALID_PRICE', // 400 — `base_price` negativo o fuera de numeric(14,2) (VR-02, EC-01).
+  INVALID_CURRENCY: 'INVALID_CURRENCY', // 400 — `currency_code` fuera del enum (VR-04, EC-03).
+  INVALID_DESCRIPTION: 'INVALID_DESCRIPTION', // 400 — `description` fuera de [10..2000] (VR-06, EC-05).
+  SERVICE_LIMIT_REACHED: 'SERVICE_LIMIT_REACHED', // 409 — 50 servicios activos por vendor (VR-05, EC-04).
+  SERVICE_NOT_FOUND: 'SERVICE_NOT_FOUND', // 404 — servicio ajeno o inexistente (SEC-04, EC-08).
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
