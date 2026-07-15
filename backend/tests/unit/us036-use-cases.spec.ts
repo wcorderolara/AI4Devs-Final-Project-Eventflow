@@ -91,6 +91,11 @@ function mkWriteRepo(overrides: Partial<BudgetItemWriteRepository> = {}): Budget
     findReplaceableAiItems: async () => [],
     hardDeleteMany: async () => undefined,
     createManyForRecommendation: async () => [],
+    // US-039: métodos añadidos al port; los tests de US-036 no los ejercitan.
+    findByBudgetAndCategoryCode: async () => null,
+    incrementCommittedBy: async () => ({}) as BudgetItemRow,
+    decrementCommittedBy: async () => ({}) as BudgetItemRow,
+    lockBudgetForSync: async () => undefined,
     ...overrides,
   };
 }

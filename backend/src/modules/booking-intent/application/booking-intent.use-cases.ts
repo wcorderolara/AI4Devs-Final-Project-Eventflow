@@ -1,5 +1,12 @@
 // Use cases de BookingIntent (US-096 / BE-007). AC-10/11/12. Flujo simulado (sin pagos/contratos).
+// US-039 (PB-P1-023): Confirm/Cancel envuelven la escritura + el sync `BudgetItem.committed` en
+// una `prisma.$transaction` compartida cuando se inyecta `budgetSync` y `transactionRunner`.
+import type { Prisma } from '@prisma/client';
 import type { BookingIntentRepository, QuoteContextReader } from '../ports/booking-intent.repository.js';
+import type {
+  BudgetCommittedSyncPort,
+} from '../ports/budget-committed-sync.port.js';
+import { NoopBudgetCommittedSync } from '../ports/budget-committed-sync.port.js';
 import type { EventAccessReader, VendorProfileReader } from '../../../shared/access/readers.js';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import type { ClockPort } from '../../../shared/domain/clock.port.js';
@@ -92,13 +99,25 @@ export class GetBookingIntentUseCase {
   }
 }
 
+/** US-039: runner mínimo para envolver el confirm/cancel + sync en una sola transacción. */
+export interface TransactionRunner {
+  run<T>(fn: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T>;
+}
+
 export class ConfirmBookingIntentUseCase {
+  private readonly budgetSync: BudgetCommittedSyncPort;
+  private readonly tx: TransactionRunner | null;
+
   constructor(
     private readonly bookingIntents: BookingIntentRepository,
     private readonly vendors: VendorProfileReader,
     private readonly clock: ClockPort,
     private readonly logger: DomainEventLogger,
-  ) {}
+    options: { budgetSync?: BudgetCommittedSyncPort; transactionRunner?: TransactionRunner } = {},
+  ) {
+    this.budgetSync = options.budgetSync ?? NoopBudgetCommittedSync;
+    this.tx = options.transactionRunner ?? null;
+  }
 
   async execute(userId: string, bookingIntentId: string, ctx: BookingUseCaseContext = {}): Promise<BookingIntentView> {
     const bi = await this.bookingIntents.findById(bookingIntentId);
@@ -106,20 +125,34 @@ export class ConfirmBookingIntentUseCase {
     const vpId = await requireVendorProfileId(this.vendors, userId);
     if (bi.vendorProfileId !== vpId) throw new NotFoundError('Not found');
     if (!canConfirmBooking(bi.status)) throw invalidBookingState('Only pending booking intents can be confirmed', bi.status);
-    const view = await this.bookingIntents.confirm(bookingIntentId, this.clock.now());
+
+    const view = this.tx
+      ? await this.tx.run(async (tx) => {
+          const v = await this.bookingIntents.confirm(bookingIntentId, this.clock.now(), tx);
+          await this.budgetSync.applyOnConfirm({ bookingIntentId, tx, correlationId: ctx.correlationId });
+          return v;
+        })
+      : await this.bookingIntents.confirm(bookingIntentId, this.clock.now());
     this.logger.emit('booking_intent.confirmed', { correlationId: ctx.correlationId, actorId: userId, bookingIntentId });
     return view;
   }
 }
 
 export class CancelBookingIntentUseCase {
+  private readonly budgetSync: BudgetCommittedSyncPort;
+  private readonly tx: TransactionRunner | null;
+
   constructor(
     private readonly bookingIntents: BookingIntentRepository,
     private readonly events: EventAccessReader,
     private readonly vendors: VendorProfileReader,
     private readonly clock: ClockPort,
     private readonly logger: DomainEventLogger,
-  ) {}
+    options: { budgetSync?: BudgetCommittedSyncPort; transactionRunner?: TransactionRunner } = {},
+  ) {
+    this.budgetSync = options.budgetSync ?? NoopBudgetCommittedSync;
+    this.tx = options.transactionRunner ?? null;
+  }
 
   async execute(
     userId: string,
@@ -132,7 +165,23 @@ export class CancelBookingIntentUseCase {
     if (!bi) throw new NotFoundError('Booking intent not found');
     await authorizeBookingAccess(bi, userId, role, this.events, this.vendors);
     if (!canCancelBooking(bi.status)) throw invalidBookingState('Booking intent cannot be cancelled in its current state', bi.status);
-    const view = await this.bookingIntents.cancel({ id: bookingIntentId, now: this.clock.now(), cancelledBy: userId, reason });
+
+    const now = this.clock.now();
+    const view = this.tx
+      ? await this.tx.run(async (tx) => {
+          const v = await this.bookingIntents.cancel(
+            { id: bookingIntentId, now, cancelledBy: userId, reason },
+            tx,
+          );
+          await this.budgetSync.revertOnCancel({
+            bookingIntentId,
+            tx,
+            cancellation: { at: now, by: userId, reason },
+            correlationId: ctx.correlationId,
+          });
+          return v;
+        })
+      : await this.bookingIntents.cancel({ id: bookingIntentId, now, cancelledBy: userId, reason });
     this.logger.emit('booking_intent.cancelled', { correlationId: ctx.correlationId, actorId: userId, bookingIntentId });
     return view;
   }

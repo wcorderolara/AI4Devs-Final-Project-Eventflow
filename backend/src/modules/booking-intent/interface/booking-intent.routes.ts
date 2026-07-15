@@ -14,6 +14,10 @@ import {
 import { StructuredDomainEventLogger } from '../../../infrastructure/observability/structured-domain-event-logger.js';
 import { PrismaBookingIntentRepository } from '../infrastructure/prisma-booking-intent.repository.js';
 import { PrismaQuoteContextReader } from '../infrastructure/prisma-quote-context.reader.js';
+import { prisma } from '../../../infrastructure/prisma/client.js';
+import { PrismaBudgetItemWriteRepository } from '../../budget-management/infrastructure/prisma-budget-item-write.repository.js';
+import { UpdateCommittedFromBookingIntentUseCase } from '../../budget-management/application/update-committed-from-booking-intent.use-case.js';
+import { BudgetCommittedSyncAdapter } from '../../budget-management/infrastructure/budget-committed-sync.adapter.js';
 import {
   CreateBookingIntentRequestSchema,
   CancelBookingIntentRequestSchema,
@@ -33,11 +37,27 @@ const logger = new StructuredDomainEventLogger();
 const bookingIntents = new PrismaBookingIntentRepository();
 const quoteContext = new PrismaQuoteContextReader();
 
+// US-039: sync `BudgetItem.committed` participando en la tx del confirm/cancel.
+const budgetItemWrites = new PrismaBudgetItemWriteRepository();
+const budgetSyncAdapter = new BudgetCommittedSyncAdapter(
+  new UpdateCommittedFromBookingIntentUseCase(bookingIntents, budgetItemWrites, clock),
+);
+const transactionRunner = {
+  run: <T>(fn: (tx: import('@prisma/client').Prisma.TransactionClient) => Promise<T>): Promise<T> =>
+    prisma.$transaction(fn),
+};
+
 const controller = new BookingIntentsController({
   create: new CreateBookingIntentUseCase(bookingIntents, quoteContext, events, clock, logger),
   get: new GetBookingIntentUseCase(bookingIntents, events, vendors),
-  confirm: new ConfirmBookingIntentUseCase(bookingIntents, vendors, clock, logger),
-  cancel: new CancelBookingIntentUseCase(bookingIntents, events, vendors, clock, logger),
+  confirm: new ConfirmBookingIntentUseCase(bookingIntents, vendors, clock, logger, {
+    budgetSync: budgetSyncAdapter,
+    transactionRunner,
+  }),
+  cancel: new CancelBookingIntentUseCase(bookingIntents, events, vendors, clock, logger, {
+    budgetSync: budgetSyncAdapter,
+    transactionRunner,
+  }),
 });
 
 const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });

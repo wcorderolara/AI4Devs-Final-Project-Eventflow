@@ -562,11 +562,19 @@ export class SeedDemoDataUseCase {
 
     // US-088 AC-05 — `BudgetItem.committed` refleja el monto del quote por cada confirmed_intent.
     // Set fijo (idempotente): re-ejecutar deja el mismo valor. Eventos distintos → sin sobreescritura.
+    // US-039 (SEED-001): además del monto en el item, marca `booking_intents.committed_synced_at`
+    // y `committed_synced_amount` para reflejar el estado post-sync del handler
+    // `UpdateCommittedFromBookingIntent`. Consistente con la demo D1 (idempotencia).
+    const SYNCED_AT = new Date('2026-05-10T00:00:01Z');
     for (const cb of confirmedBookings) {
       const budget = await tx.budget.findUnique({ where: { eventId: cb.eventId }, select: { id: true } });
       if (!budget) continue;
       const item = await tx.budgetItem.findFirst({ where: { budgetId: budget.id, isSeed: true }, orderBy: { label: 'asc' }, select: { id: true } });
       if (item) await tx.budgetItem.update({ where: { id: item.id }, data: { amountCommitted: cb.amount } });
+      await tx.bookingIntent.update({
+        where: { id: cb.id },
+        data: { committedSyncedAt: SYNCED_AT, committedSyncedAmount: cb.amount },
+      });
     }
 
     // US-088 AC-03/EC-04 — Reseñas (24): asociadas SOLO a confirmed_intent; ~70/20/10

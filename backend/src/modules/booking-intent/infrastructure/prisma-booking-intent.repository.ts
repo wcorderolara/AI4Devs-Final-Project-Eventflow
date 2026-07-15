@@ -1,6 +1,11 @@
-// Adapter Prisma — BookingIntentRepository (US-096 / BE-006). Flujo simulado (isSimulated=true).
-import { type PrismaClient, type BookingIntent as PrismaBI } from '@prisma/client';
-import type { BookingIntentRepository, CreateBookingIntentData } from '../ports/booking-intent.repository.js';
+// Adapter Prisma — BookingIntentRepository (US-096 / BE-006; extendido US-039 / BE-004).
+// Flujo simulado (isSimulated=true).
+import { type Prisma, type PrismaClient, type BookingIntent as PrismaBI } from '@prisma/client';
+import type {
+  BookingIntentRepository,
+  BookingIntentSyncSnapshot,
+  CreateBookingIntentData,
+} from '../ports/booking-intent.repository.js';
 import type { BookingIntentView } from '../domain/booking-intent.js';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
 
@@ -44,16 +49,21 @@ export class PrismaBookingIntentRepository implements BookingIntentRepository {
     return b ? toView(b) : null;
   }
 
-  async confirm(id: string, now: Date): Promise<BookingIntentView> {
-    const b = await this.prisma.bookingIntent.update({
+  async confirm(id: string, now: Date, tx?: Prisma.TransactionClient): Promise<BookingIntentView> {
+    const client = tx ?? this.prisma;
+    const b = await client.bookingIntent.update({
       where: { id },
       data: { status: 'confirmed_intent', confirmedAt: now },
     });
     return toView(b);
   }
 
-  async cancel(input: { id: string; now: Date; cancelledBy: string; reason: string }): Promise<BookingIntentView> {
-    const b = await this.prisma.bookingIntent.update({
+  async cancel(
+    input: { id: string; now: Date; cancelledBy: string; reason: string },
+    tx?: Prisma.TransactionClient,
+  ): Promise<BookingIntentView> {
+    const client = tx ?? this.prisma;
+    const b = await client.bookingIntent.update({
       where: { id: input.id },
       data: {
         status: 'cancelled',
@@ -63,5 +73,82 @@ export class PrismaBookingIntentRepository implements BookingIntentRepository {
       },
     });
     return toView(b);
+  }
+
+  async findByIdForSync(
+    tx: Prisma.TransactionClient,
+    id: string,
+  ): Promise<BookingIntentSyncSnapshot | null> {
+    // Adquiere lock pesimista sobre la fila del `booking_intents`. La transacción del invocador
+    // libera el lock al COMMIT/ROLLBACK. Sin este lock, dos `applyOnConfirm` concurrentes sobre
+    // el mismo intent podrían ambos observar `committed_synced_at IS NULL` y ambos incrementar.
+    const locked = await tx.$queryRaw<Array<{ id: string }>>`
+      SELECT id FROM booking_intents WHERE id = ${id}::uuid FOR UPDATE
+    `;
+    if (locked.length === 0) return null;
+
+    const intent = await tx.bookingIntent.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        eventId: true,
+        serviceCategoryId: true,
+        status: true,
+        committedSyncedAt: true,
+        committedSyncedAmount: true,
+        quote: { select: { amount: true, currency: true } },
+        event: {
+          select: {
+            currency: true,
+            budget: { select: { id: true } },
+          },
+        },
+        serviceCategory: { select: { code: true } },
+      },
+    });
+    if (!intent) return null;
+    return {
+      id: intent.id,
+      eventId: intent.eventId,
+      serviceCategoryId: intent.serviceCategoryId,
+      status: intent.status,
+      quote: {
+        amount: intent.quote.amount.toNumber(),
+        currency: intent.quote.currency,
+      },
+      event: {
+        currency: intent.event.currency,
+        budgetId: intent.event.budget?.id ?? null,
+      },
+      serviceCategoryCode: intent.serviceCategory.code,
+      committedSyncedAt: intent.committedSyncedAt,
+      committedSyncedAmount: intent.committedSyncedAmount ? intent.committedSyncedAmount.toNumber() : null,
+    };
+  }
+
+  async markCommittedSynced(
+    tx: Prisma.TransactionClient,
+    args: { id: string; at: Date; amount: number },
+  ): Promise<void> {
+    await tx.bookingIntent.update({
+      where: { id: args.id },
+      data: {
+        committedSyncedAt: args.at,
+        committedSyncedAmount: args.amount,
+      },
+    });
+  }
+
+  async clearCommittedSync(
+    tx: Prisma.TransactionClient,
+    args: { id: string },
+  ): Promise<void> {
+    await tx.bookingIntent.update({
+      where: { id: args.id },
+      data: {
+        committedSyncedAt: null,
+        committedSyncedAmount: null,
+      },
+    });
   }
 }
