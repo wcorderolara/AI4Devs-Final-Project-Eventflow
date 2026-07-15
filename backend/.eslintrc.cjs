@@ -58,6 +58,21 @@ module.exports = {
       },
     },
     {
+      // Excepción documentada (US-037 EMERGENT-025-001): el composition root del HITL
+      // (`ai.routes.ts`) instancia strategies cross-module (`ApplyStrategy` de US-025 registra
+      // strategies definidas en `modules/budget-management`, etc.). Es un composition root de
+      // wire, no lógica de negocio cross-module. ADR-ARCH-001 admite esta excepción explícita
+      // consistente con el patrón del error-handler. La strategy en sí implementa el contrato
+      // `ApplyStrategy<T>` del `shared` mediante los ports de su propio módulo.
+      files: [
+        'src/modules/ai-assistance/interface/ai.routes.ts',
+        'src/modules/budget-management/application/hitl/budget-suggestion-apply.strategy.ts',
+      ],
+      rules: {
+        'boundaries/element-types': 'off',
+      },
+    },
+    {
       // US-092 / OPS-001 — Prohíbe `.passthrough()` en schemas Zod (ADR-API-003, VR-02).
       // `.passthrough()` permite que campos no declarados pasen silenciosamente al controlador,
       // un riesgo de seguridad (inyección de campos). Todos los DTOs deben usar `.strict()`.

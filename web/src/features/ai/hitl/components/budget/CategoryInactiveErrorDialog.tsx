@@ -57,7 +57,7 @@ export function CategoryInactiveErrorDialog({
           {inactiveCategories.map((c) => (
             <li key={c.code}>
               <span className="font-medium">{c.name}</span>
-              <span className="ml-2 text-xs text-neutral-500">({c.code})</span>
+              <span className="ml-2 text-xs text-neutral-500">{`(${c.code})`}</span>
             </li>
           ))}
         </ul>
