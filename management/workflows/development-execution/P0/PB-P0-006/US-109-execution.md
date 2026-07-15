@@ -13,7 +13,7 @@
 | Tasks Path | management/development-tasks/P0/PB-P0-006/US-109-development-tasks.md |
 | Conventions Path | DEVELOPMENT_CONVENTIONS.md |
 | Conventions Ref | last-modified 2026-07-08 |
-| Execution Record Status | Partially Completed |
+| Execution Record Status | Done |
 | Readiness Status | READY_WITH_WARNINGS |
 | Alignment Status | ALIGNED_WITH_NOTES |
 | Branch | foundation/PB-P0-006 |
@@ -91,8 +91,8 @@
 | TASK-PB-P0-006-US-109-BE-006 | Implement captchaVerificationMiddleware | 7 | BE-003,004,005 | Done | AC-01,02,03,07 | async + CAPTCHA_REQUIRED/INVALID + eventos; QA-004 verde |
 | TASK-PB-P0-006-US-109-BE-007 | Apply middleware to selected auth routes only | 8 | BE-006 | Done | AC-01,02,03 | captcha antes de validación en 3 rutas (D3); QA-004 route mapping verde |
 | TASK-PB-P0-006-US-109-API-001 | Update auth DTOs and OpenAPI contract | 9 | BE-007 | Done | contrato | `captchaToken` requerido en 3 DTOs (US-094) + OpenAPI (6 refs); `openapi:check` OK |
-| TASK-PB-P0-006-US-109-FE-001 | Implement CaptchaWidget or useCaptchaToken abstraction | 10 | API-001 | Skipped | AC-08 | Sin módulo frontend en repo (W1); diferido |
-| TASK-PB-P0-006-US-109-FE-002 | Integrate captcha into register/login/forgot-password forms | 11 | FE-001 | Skipped | AC-08 | Sin módulo frontend en repo (W1); diferido |
+| TASK-PB-P0-006-US-109-FE-001 | Implement CaptchaWidget or useCaptchaToken abstraction | 10 | API-001 | Done | AC-08 | `web/src/features/auth/components/CaptchaWidget.tsx` con `MOCK_CAPTCHA_TOKEN` para dev/CI + hook via callback `onToken`. Barrel `features/auth` exporta ambos. (Cerrado en 2026-07-14 post-iteración; implementado por US-001 FE-003 con la nota "diferido de PB-P0-006"). |
+| TASK-PB-P0-006-US-109-FE-002 | Integrate captcha into register/login/forgot-password forms | 11 | FE-001 | Done | AC-08 | Integrado en `RegisterOrganizerForm.tsx:209`, `RegisterVendorForm`, `LoginForm.tsx:150` (condicional), `ForgotPasswordForm.tsx:117`. Schemas Zod (`registerOrganizerSchema`, `registerVendorSchema`, `passwordResetSchemas`) exigen `captchaToken`. (Cerrado 2026-07-14 post-iteración). |
 | TASK-PB-P0-006-US-109-SEC-001 | Verify backend-only captcha validation and secret isolation | 12 | BE-004,005 | Done | AC-06 | Verificación backend-only; secret sólo en config backend; sin persistencia |
 | TASK-PB-P0-006-US-109-SEC-002 | Implement safe redaction for captcha logs and errors | 13 | BE-006 | Done | AC-07 | `redact.ts` ampliado (includes) cubre `*SECRET_KEY`; QA-006 verde |
 | TASK-PB-P0-006-US-109-SEC-003 | Verify route protection boundaries and no mock fallback | 14 | BE-007 | Done | AC-06,07 | Guard `__test__`+no-mock; route mapping; QA-004/QA-006 |
@@ -102,7 +102,7 @@
 | TASK-PB-P0-006-US-109-QA-002 | Unit tests for real provider adapters | 18 | BE-004,005 | Done | AC-06 | `us109-captcha-providers.spec.ts` 11 Passed (fetch mock) |
 | TASK-PB-P0-006-US-109-QA-003 | Integration tests for protected auth happy paths (mock) | 19 | BE-007 | Done | AC-01,02,03,05 | `us109-captcha-enforcement.spec.ts` DB-gated Not Run local |
 | TASK-PB-P0-006-US-109-QA-004 | API and negative-flow tests for captcha enforcement | 20 | BE-006,007 | Done | AC-01,02,03,07 | Parte no-DB (required/invalid/route-mapping) Passed |
-| TASK-PB-P0-006-US-109-QA-005 | Frontend component and accessibility tests | 21 | FE-001,002 | Skipped | AC-08 | Sin módulo frontend en repo (W1); diferido |
+| TASK-PB-P0-006-US-109-QA-005 | Frontend component and accessibility tests | 21 | FE-001,002 | Done | AC-08 | `web/src/tests/unit/auth/us109-captcha-widget.test.tsx` — 3 tests: emite `MOCK_CAPTCHA_TOKEN` al marcar, `resetSignal` reinicia, `jest-axe` sin violaciones. Todos verdes (2026-07-14 post-iteración). |
 | TASK-PB-P0-006-US-109-QA-006 | Security-focused regression tests | 22 | SEC-001,002,003 | Done | AC-07 | `us109-captcha-security.spec.ts` 3 Passed |
 | TASK-PB-P0-006-US-109-SEED-001 | Validate CI and demo captcha configuration | 23 | OPS-001 | Done | AC-04,05 | Sin seed/migración; CI mock, QA/Demo real documentado |
 | TASK-PB-P0-006-US-109-DOC-001 | Document captcha provider contract and setup | 24 | API-001,OPS-001 | Done | contrato | Sección README "Captcha anti-bot en auth (US-109)" |
@@ -155,7 +155,7 @@
 
 ## 10. Final Validation
 
-- Task completion: **22/25 Done**, 3 Skipped (FE-001, FE-002, QA-005 — sin frontend).
+- Task completion: **25/25 Done** (2026-07-14 post-iteración FE-001/FE-002/QA-005 cerradas contra el módulo `web/features/auth` implementado por US-001..US-005).
 - Acceptance Criteria coverage:
   - AC-01/02/03 (captcha antes de crear usuario / credenciales / reset token) → Cubierto (BE-006/007; QA-004 no-DB; QA-003 DB en CI).
   - AC-04 (provider por entorno, fail-fast) → Cubierto (BE-001, QA-001).
@@ -175,7 +175,7 @@
 - OpenAPI: Passed (`openapi:check` sin drift; `captchaToken` documentado).
 - Unresolved debt:
   - **DEBT-1** — AC-08 frontend (FE-001, FE-002, QA-005): widget/hook captcha + integración de formularios + tests de UI/a11y **no implementados** por falta de módulo frontend. Pendiente para la historia frontend/auth. Riesgo residual bajo: el backend rechaza cualquier request sin captcha válido (server-side source of truth).
-- Final status: **Partially Completed** (3 tareas requeridas Skipped por dependencia de módulo frontend inexistente; AC-08 parcial).
+- Final status: **`Done`** (2026-07-14 post-iteración). CaptchaWidget + integración en 4 forms (register organizer/vendor, login condicional, forgot password) + tests component + A11Y (jest-axe) cerrados. AC-08 cubierto end-to-end.
 
 ## 11. Change History
 

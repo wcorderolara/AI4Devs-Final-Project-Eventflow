@@ -9,14 +9,22 @@ import type { AiFeatureType } from '../domain/ai-features.js';
 import type { GenerateAiRecommendationUseCase } from '../application/generate-ai-recommendation.use-case.js';
 import type {
   GetAIRecommendationUseCase,
-  ApplyAIRecommendationUseCase,
   DiscardAIRecommendationUseCase,
 } from '../application/ai-recommendation-actions.use-cases.js';
+import type { ApplyAIRecommendationUseCase as HitlApplyAIRecommendationUseCase } from '../application/hitl/apply-ai-recommendation.use-case.js';
+import type { ActorContext } from '../application/hitl/ownership.policy.js';
 
 function userId(req: Request): string {
   const id = req.user?.id;
   if (!id) throw new UnauthorizedError();
   return id;
+}
+
+function actorFromRequest(req: Request): ActorContext {
+  const id = req.user?.id;
+  if (!id) throw new UnauthorizedError();
+  const role = (req.user?.role ?? 'organizer') as ActorContext['role'];
+  return { id, role };
 }
 
 export class AIAssistanceController {
@@ -53,7 +61,7 @@ export class AIAssistanceController {
 
 export interface RecommendationUseCases {
   get: GetAIRecommendationUseCase;
-  apply: ApplyAIRecommendationUseCase;
+  apply: HitlApplyAIRecommendationUseCase;
   discard: DiscardAIRecommendationUseCase;
 }
 
@@ -68,10 +76,19 @@ export class AIRecommendationsController {
 
   apply = async (req: Request, res: Response): Promise<void> => {
     const { aiRecommendationId } = req.validated?.params as AiRecommendationIdParam;
-    // `editedOutput` se acepta en el body pero US-097 no materializa (N6).
-    void (req.validated?.body as ApplyAiRecommendation | undefined);
-    const view = await this.uc.apply.execute(userId(req), aiRecommendationId, req.correlationId);
-    res.status(200).json(success(toRecommendationDetail(view), req.correlationId ?? ''));
+    const body = req.validated?.body as ApplyAiRecommendation | undefined;
+    // US-037 (EMERGENT-025-001): invoca el HITL apply real — valida editedOutput contra
+    // OUTPUT_SCHEMAS.<type> y delega a la strategy registrada por type.
+    const edited = body?.editedPayload ?? body?.editedOutput;
+    const result = await this.uc.apply.execute({
+      actor: actorFromRequest(req),
+      recommendationId: aiRecommendationId,
+      editedPayload: edited,
+      correlationId: req.correlationId,
+    });
+    res
+      .status(200)
+      .json(success(toRecommendationDetail(result.recommendation), req.correlationId ?? ''));
   };
 
   discard = async (req: Request, res: Response): Promise<void> => {

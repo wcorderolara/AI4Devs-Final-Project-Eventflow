@@ -13,7 +13,7 @@
 | Tasks Path | management/development-tasks/P0/PB-P0-006/US-108-development-tasks.md |
 | Conventions Path | DEVELOPMENT_CONVENTIONS.md |
 | Conventions Ref | last-modified 2026-07-08 |
-| Execution Record Status | Partially Completed |
+| Execution Record Status | Done |
 | Readiness Status | READY_WITH_WARNINGS |
 | Alignment Status | ALIGNED_WITH_NOTES |
 | Branch | foundation/PB-P0-006 |
@@ -87,7 +87,7 @@
 | TASK-PB-P0-006-US-108-BE-004 | Integrar emisión y limpieza de cookie en login/logout | 6 | BE-002, BE-003 | Done | 2026-07-09T14:02Z | 2026-07-09T14:04Z | AC-01,05 | Controller issue/clear + eventos; QA-002 DB-gated Not Run local |
 | TASK-PB-P0-006-US-108-BE-005 | Integrar revocación de sesión si existe store server-side | 7 | PO-001, BE-004 | Done | 2026-07-09T14:02Z | 2026-07-09T14:04Z | AC-03,05 | Store existe; `logout` revoca, `findValid` rechaza expirada/revocada |
 | TASK-PB-P0-006-US-108-API-001 | Actualizar contrato API/OpenAPI para cookieAuth y Set-Cookie | 8 | BE-002, BE-004 | Done | 2026-07-09T14:04Z | 2026-07-09T14:06Z | AC-01,03,04,05 | `cookieAuth` (40 refs), sin bearer; `openapi:check` OK |
-| TASK-PB-P0-006-US-108-FE-001 | Configurar API client frontend con credentials y sin token storage | 9 | BE-002 | Skipped | | 2026-07-09T14:06Z | AC-08 | Sin módulo frontend en repo (W3); diferido per impl notes del task |
+| TASK-PB-P0-006-US-108-FE-001 | Configurar API client frontend con credentials y sin token storage | 9 | BE-002 | Done | 2026-07-14 | 2026-07-14 | AC-08 | `web/src/shared/api-client/httpClient.ts:66` usa `credentials: 'include'`. Sin `localStorage`/`sessionStorage.setItem` en `shared/` ni `features/auth/`. Verificado por QA-005 estático (2026-07-14 post-iteración). |
 | TASK-PB-P0-006-US-108-SEC-001 | Verificar política de cookie y browser storage | 10 | BE-002, FE-001 | Done | 2026-07-09T14:04Z | 2026-07-09T14:06Z | AC-01,02,08 | Flags verificados (QA-001); backend garantiza no-token-JSON/HttpOnly |
 | TASK-PB-P0-006-US-108-SEC-002 | Implementar redacción de cookies, session IDs y secrets en logs | 11 | BE-002 | Done | 2026-07-09T14:00Z | 2026-07-09T14:03Z | AC-07 | `redact.ts` + logger central; QA-004 verde |
 | TASK-PB-P0-006-US-108-SEC-003 | Validar escenarios negativos de autenticación por cookie | 12 | BE-003 | Done | 2026-07-09T14:04Z | 2026-07-09T14:06Z | AC-03,04,05 | QA-003 + us094-security-negative (absent/manipulada → 401) |
@@ -96,7 +96,7 @@
 | TASK-PB-P0-006-US-108-QA-002 | Crear tests integration de login/logout y Set-Cookie | 15 | BE-004 | Done | 2026-07-09T14:04Z | 2026-07-09T14:05Z | AC-01,05 | `us108-cookie-session.spec.ts`; aserciones DB Not Run (sin Postgres local) |
 | TASK-PB-P0-006-US-108-QA-003 | Crear tests API de protected routes con cookie válida e inválida | 16 | BE-003 | Done | 2026-07-09T14:04Z | 2026-07-09T14:05Z | AC-03,04 | Parte no-DB (ausente/manipulada → 401) Passed |
 | TASK-PB-P0-006-US-108-QA-004 | Crear tests de redacción de logs y errores | 17 | SEC-002, OBS-001 | Done | 2026-07-09T14:03Z | 2026-07-09T14:04Z | AC-07 | `us108-log-redaction.spec.ts` 7 tests Passed |
-| TASK-PB-P0-006-US-108-QA-005 | Crear checks frontend/static para credentials y no token storage | 18 | FE-001 | Skipped | | 2026-07-09T14:06Z | AC-08 | Sin módulo frontend en repo (W3); diferido per impl notes del task |
+| TASK-PB-P0-006-US-108-QA-005 | Crear checks frontend/static para credentials y no token storage | 18 | FE-001 | Done | 2026-07-14 | 2026-07-14 | AC-08 | `web/src/tests/unit/api-client/us108-cookie-policy-static.test.ts` — 3 tests: `credentials: 'include'` en httpClient, sin `localStorage`/`sessionStorage` en httpClient, sin `.setItem/.getItem` en `shared/` ni `features/auth/`. Todos verdes (2026-07-14 post-iteración). |
 | TASK-PB-P0-006-US-108-SEED-001 | Validar impacto demo sin cambios de seed | 19 | OPS-001 | Done | 2026-07-09T14:06Z | 2026-07-09T14:06Z | AC-01,02,08 | Sin cambios seed/migración; config demo documentada (DOC-001) |
 | TASK-PB-P0-006-US-108-DOC-001 | Documentar configuración de cookies por entorno | 20 | OPS-001 | Done | 2026-07-09T14:05Z | 2026-07-09T14:06Z | AC-02,06 | Sección README backend (env vars + por entorno) |
 | TASK-PB-P0-006-US-108-DOC-002 | Registrar notas de alineación documental no bloqueantes | 21 | DOC-001 | Done | 2026-07-09T14:05Z | 2026-07-09T14:06Z | AC-01,02 | Sección README (30d, SameSite, cookie name override) |
@@ -205,7 +205,7 @@
 
 ## 10. Final Validation
 
-- Task completion: **19/21 Done**, 2 Skipped (FE-001, QA-005 — sin frontend).
+- Task completion: **21/21 Done** (2026-07-14 post-iteración FE-001/QA-005 cerradas contra el módulo `web/` implementado en historias posteriores).
 - Acceptance Criteria coverage:
   - AC-01 (cookie HttpOnly firmada, 30d) → Cubierto (BE-002/004, QA-001; QA-002 DB en CI).
   - AC-02 (`Secure`/`SameSite` por entorno) → Cubierto (BE-001, QA-001).
@@ -227,7 +227,7 @@
 - OpenAPI: Passed (`openapi:check` sin drift; `cookieAuth` documentado).
 - Unresolved debt:
   - **DEBT-1** — AC-08 frontend (FE-001, QA-005): `credentials: "include"` y ausencia de token en browser storage **no implementados** por falta de módulo frontend en el repo. Pendiente para la historia frontend/auth que cree el API client. Riesgo residual bajo: el backend ya impide leer/almacenar tokens (cookie HttpOnly opaca, JSON sin token).
-- Final status: **Partially Completed** (2 tareas requeridas Skipped por dependencia de módulo frontend inexistente; AC-08 parcial).
+- Final status: **`Done`** (2026-07-14 post-iteración). FE-001 y QA-005 cerradas: `httpClient` con `credentials: 'include'` + policy estática verificada por 3 tests (`us108-cookie-policy-static.test.ts`). AC-08 cubierto end-to-end.
 
 ## 11. Change History
 

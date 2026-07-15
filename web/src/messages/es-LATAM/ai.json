@@ -246,5 +246,62 @@
       "sideEffect": "La acción no se pudo completar. Intenta de nuevo.",
       "payloadTooLarge": "El contenido editado es demasiado grande (máx. 256KB)."
     }
+  },
+  "budgetApply": {
+    "title": "Aplicar sugerencia IA al presupuesto",
+    "description": "Revisa cada partida, edita los montos si es necesario y elige cuáles incluir. Nada se guarda hasta que presiones Aplicar.",
+    "itemsRegionLabel": "Partidas sugeridas del presupuesto",
+    "total": "Total",
+    "toggleAria": "Incluir {category}",
+    "amountAria": "Monto estimado para {category}",
+    "status": {
+      "applying": "Aplicando sugerencia…",
+      "success": "Sugerencia aplicada a tu presupuesto."
+    },
+    "col": {
+      "include": "Incluir",
+      "category": "Categoría",
+      "label": "Etiqueta",
+      "amount": "Monto"
+    },
+    "cta": {
+      "openPreview": "Aplicar sugerencia IA",
+      "cancel": "Cancelar",
+      "apply": "Aplicar",
+      "applying": "Aplicando…"
+    },
+    "replaceConfirm": {
+      "title": "¿Reemplazar partidas IA anteriores?",
+      "body": "Esto reemplazará {count, plural, one {# partida generada por IA} other {# partidas generadas por IA}} en {categories}. Tus partidas manuales se conservan.",
+      "anyCategory": "las categorías existentes",
+      "manualPreserved": "Las partidas que creaste manualmente no se tocan.",
+      "cta": {
+        "cancel": "Cancelar",
+        "confirm": "Sí, reemplazar y aplicar",
+        "confirming": "Reemplazando…"
+      }
+    },
+    "categoryInactive": {
+      "title": "Algunas categorías ya no están disponibles",
+      "body": "Una o más categorías de esta sugerencia se desactivaron después de generarse. Puedes regenerar la sugerencia o aplicar tu presupuesto manualmente.",
+      "listAria": "Categorías inactivas",
+      "cta": {
+        "close": "Cerrar",
+        "regenerate": "Regenerar sugerencia",
+        "manual": "Aplicar manualmente"
+      }
+    },
+    "errors": {
+      "CATEGORY_INACTIVE": "Algunas categorías están inactivas. Regenera la sugerencia o aplica manualmente.",
+      "EVENT_NOT_EDITABLE": "Este evento ya no se puede editar (cancelado o completado).",
+      "CURRENCY_MISMATCH": "La moneda de la sugerencia no coincide con la moneda del evento.",
+      "INVALID_VALUE": "El contenido editado no es válido. Revisa los montos y vuelve a intentar.",
+      "PAYLOAD_INVALID": "La sugerencia guardada no es compatible. Regenérala e intenta de nuevo.",
+      "RECOMMENDATION_NOT_PENDING": "Esta sugerencia ya fue aplicada o descartada.",
+      "UNAUTHORIZED": "Tu sesión expiró. Inicia sesión nuevamente.",
+      "FORBIDDEN": "No puedes aplicar esta sugerencia.",
+      "NOT_FOUND": "La sugerencia no fue encontrada.",
+      "UNKNOWN": "Algo salió mal al aplicar la sugerencia. Intenta de nuevo."
+    }
   }
 }

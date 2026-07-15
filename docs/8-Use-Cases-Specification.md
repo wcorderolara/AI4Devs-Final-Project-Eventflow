@@ -2414,25 +2414,37 @@ El usuario revisa la sugerencia y acepta total o parcialmente.
 3. Actualiza `AIRecommendation.accepted=true`.
 
 #### Flujos de excepción
-- E1: Categoría inexistente → 400.
+- E1: Categoría inexistente → 400 `INVALID_VALUE` (el `service_category_code` no está en el payload original).
+- E1.a (US-037 D6): Categoría existente pero **desactivada** entre US-019 y el apply → 409 `CATEGORY_INACTIVE` con `inactive_categories[]`. La UI ofrece "Regenerar sugerencia" (US-019) o "Aplicar manualmente" (US-036). No se aplica parcialmente.
+- E2 (US-037 D5): Evento en `cancelled`/`completed` → 409 `EVENT_NOT_EDITABLE`. Consistente con US-036 D3.
+- E3 (US-037 AC-08): `AIRecommendation.output.currencyCode != event.currency` (drift entre US-019 y apply) → 409 `CURRENCY_MISMATCH`. Sin conversión FX.
+- E4 (US-037): AIRecommendation ya `accepted`/`discarded` → 409 `RECOMMENDATION_NOT_PENDING`.
 
 #### Postcondiciones
-`BudgetItem` creados; `committed=0`.
+- `BudgetItem` creados con `ai_recommendation_id` = id de la recomendación aplicada (trazabilidad IA por fila; patrón `EventTask.aiRecommendationId` de US-031).
+- `amount_committed = 0` inicial.
+- Items **previos** con `aiRecommendationId != NULL` y distinto del actual (política D2) se **hard-deletan** en la misma transacción (respeta ADR-DB-004: sin soft delete en `BudgetItem`). Los items manuales (`aiRecommendationId IS NULL`) se preservan.
+- `AIRecommendation.status = 'accepted'`, `edited` refleja si hubo subset/edición.
+- Log estructurado `budget.ai_suggestion.applied` emitido (US-037 OBS-001), sin PII.
 
 #### Reglas de negocio relacionadas
-BR-BUDGET-008, BR-AI-008.
+BR-BUDGET-008, BR-AI-008. US-037 D1..D6 (`management/user-stories/decision-resolutions/US-037-decision-resolution.md`).
 
 #### Permisos relacionados
-Sólo el owner del evento.
+Sólo el owner del evento. Admin excluido (403). Vendor 403. Enforcement por `AIRecommendationOwnershipPolicy` (US-025).
 
 #### Entidades involucradas
 `Budget`, `BudgetItem`, `ServiceCategory`, `AIRecommendation`.
 
 #### Criterios de aceptación
-- Los items se crean con `ai_generated=true` y `service_category_id` válido.
+- Los items se crean con `aiRecommendationId` no nulo (trazabilidad por fila).
+- `service_category_code` (columna `BudgetItem.categoryCode`) validado contra whitelist activa vía `ServiceCategoryReadPort` (patrón US-036).
+- Response incluye `created_items` y `replaced_items_count` (implícito vía invalidación de cache `['event', eventId, 'budget']`).
 
 #### Notas para QA
 - Validar suma de `planned` vs `estimated_budget`.
+- Validar D2: items previos IA se hard-deletan; items manuales se preservan (regresión US-035).
+- Validar D5/D6/CURRENCY_MISMATCH con evento y categorías reales.
 
 ---
 
@@ -2465,26 +2477,34 @@ El usuario edita el módulo de presupuesto.
 3. El sistema recalcula `total_planned` y `total_committed`.
 
 #### Flujos de excepción
-- E1: Valores negativos → 400 (C-017).
-- E2: Evento `cancelled` → bloqueado.
+- E1: Valores negativos → 400 (C-017) / `INVALID_VALUE`.
+- E2 (US-036 D3, actualizado 2026-07-14): Evento `cancelled` o `completed` → 409 `EVENT_NOT_EDITABLE`. Consistente con US-036 D3 y con US-037 D5. No se distingue entre los dos estados en la respuesta; el cliente muestra copy genérico.
+- E3 (US-036 AC-04): DELETE con `amount_committed > 0` → 409 `ITEM_HAS_COMMITMENT`.
+- E4 (US-036 AC-05): DELETE con `BookingIntent.pending` para su `(eventId, categoryCode)` → 409 `ITEM_HAS_PENDING_INTENT`.
+- E5 (US-036 D5): PATCH cambia `category_code` con `amount_committed > 0` → 409 `ITEM_HAS_COMMITMENT_CATEGORY_LOCKED`.
+- E6 (US-036 VR-03): `category_code` fuera de la whitelist activa → 400 `INVALID_CATEGORY_CODE`.
 
 #### Postcondiciones
-`BudgetItem` y totales actualizados.
+`BudgetItem` y totales `total_planned` / `total_committed` actualizados atómicamente en la misma transacción (patrón US-036 BLK-E). Hard delete de items (ADR-DB-004; auditoría vía log estructurado + WAL). En MVP R1 no se implementa `paid` (US-035 D3).
 
 #### Reglas de negocio relacionadas
 BR-BUDGET-002, BR-BUDGET-003, BR-BUDGET-009.
 
 #### Permisos relacionados
-Sólo el owner.
+Sólo el owner. Admin excluido (403). Vendor 403. Enforcement por `EventOwnershipPolicy` (US-036 SEC-01).
 
 #### Entidades involucradas
-`Budget`, `BudgetItem`, `ServiceCategory`.
+`Budget`, `BudgetItem`, `ServiceCategory` (whitelist activa; sin FK en R1).
 
 #### Criterios de aceptación
-- Totales reflejan los cambios.
+- Totales reflejan los cambios (recompute atómico en la misma `$transaction`).
+- `category_code` validado contra whitelist activa vía `ServiceCategoryReadPort`.
+- Rutas: `POST /events/:eventId/budget/items`, `PATCH /events/:eventId/budget/items/:itemId`, `DELETE /events/:eventId/budget/items/:itemId`.
 
 #### Notas para QA
 - Validar restricciones de no-negatividad.
+- Validar D5: PATCH `category_code` bloqueado con `committed > 0`.
+- Validar D3: mutaciones bloqueadas en evento `cancelled`/`completed`.
 
 ---
 

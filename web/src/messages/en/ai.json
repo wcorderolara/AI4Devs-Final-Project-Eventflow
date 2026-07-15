@@ -246,5 +246,62 @@
       "sideEffect": "The action could not be completed. Please retry.",
       "payloadTooLarge": "The edited content is too large (max 256KB)."
     }
+  },
+  "budgetApply": {
+    "title": "Apply AI budget suggestion",
+    "description": "Review each item, edit amounts if needed and choose which ones to include. Nothing is saved until you press Apply.",
+    "itemsRegionLabel": "Suggested budget items",
+    "total": "Total",
+    "toggleAria": "Include {category}",
+    "amountAria": "Estimated amount for {category}",
+    "status": {
+      "applying": "Applying suggestion…",
+      "success": "Suggestion applied to your budget."
+    },
+    "col": {
+      "include": "Include",
+      "category": "Category",
+      "label": "Label",
+      "amount": "Amount"
+    },
+    "cta": {
+      "openPreview": "Apply AI suggestion",
+      "cancel": "Cancel",
+      "apply": "Apply",
+      "applying": "Applying…"
+    },
+    "replaceConfirm": {
+      "title": "Replace previous AI items?",
+      "body": "This will replace {count, plural, one {# AI-generated item} other {# AI-generated items}} in {categories}. Your manual items will be preserved.",
+      "anyCategory": "existing categories",
+      "manualPreserved": "Items you created manually will not be touched.",
+      "cta": {
+        "cancel": "Cancel",
+        "confirm": "Yes, replace and apply",
+        "confirming": "Replacing…"
+      }
+    },
+    "categoryInactive": {
+      "title": "Some categories are no longer available",
+      "body": "One or more categories in this suggestion have been deactivated since it was generated. You can regenerate the suggestion or apply your budget manually.",
+      "listAria": "Inactive categories",
+      "cta": {
+        "close": "Close",
+        "regenerate": "Regenerate suggestion",
+        "manual": "Apply manually"
+      }
+    },
+    "errors": {
+      "CATEGORY_INACTIVE": "Some categories are inactive. Regenerate the suggestion or apply manually.",
+      "EVENT_NOT_EDITABLE": "This event can no longer be edited (cancelled or completed).",
+      "CURRENCY_MISMATCH": "The suggestion currency does not match your event currency.",
+      "INVALID_VALUE": "The edited content is invalid. Review the amounts and try again.",
+      "PAYLOAD_INVALID": "The saved suggestion is not compatible. Regenerate it and retry.",
+      "RECOMMENDATION_NOT_PENDING": "This suggestion has already been applied or discarded.",
+      "UNAUTHORIZED": "Your session expired. Please sign in again.",
+      "FORBIDDEN": "You cannot apply this suggestion.",
+      "NOT_FOUND": "The suggestion was not found.",
+      "UNKNOWN": "Something went wrong applying the suggestion. Please try again."
+    }
   }
 }

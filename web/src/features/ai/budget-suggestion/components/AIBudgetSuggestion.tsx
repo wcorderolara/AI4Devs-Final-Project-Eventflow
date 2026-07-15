@@ -11,6 +11,8 @@ import type { EventModel } from '@/features/events/api/eventsApi.types';
 import { useGenerateAIBudget } from '../hooks/useGenerateAIBudget';
 import type { BudgetSuggestionInput } from '../api/aiApi';
 import { AIBudgetViewer } from './AIBudgetViewer';
+// US-037 (PB-P1-021 / FE-006) — Integración del apply HITL con los 3 dialogs.
+import { BudgetApplyContainer, type BudgetItemPreview } from '@/features/ai/hitl';
 
 interface AIBudgetSuggestionProps {
   eventId: string;
@@ -175,14 +177,20 @@ export function AIBudgetSuggestion({ eventId }: AIBudgetSuggestionProps): React.
             autoFocusOnMount={triggered}
           />
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              disabled
-              title={t('actionsDisabledTooltip')}
-              className="rounded-md bg-neutral-200 px-4 py-2 text-sm font-medium text-neutral-500"
-            >
-              {t('actions.apply')}
-            </button>
+            {/* US-037 (FE-006): reemplaza el botón placeholder "Aplicar" por el orquestador HITL. */}
+            <BudgetApplyContainer
+              eventId={eventId}
+              aiRecommendationId={mutation.data.recommendationId}
+              currencyCode={mutation.data.output.currency_code}
+              items={mutation.data.output.categories.map(
+                (c): BudgetItemPreview => ({
+                  category: c.service_category_code,
+                  categoryName: c.name,
+                  estimatedAmount: String(c.amount ?? 0),
+                  notes: c.notes,
+                }),
+              )}
+            />
             <button
               type="button"
               onClick={handleGenerate}

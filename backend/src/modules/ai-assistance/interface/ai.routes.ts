@@ -17,14 +17,24 @@ import {
 } from '../../../infrastructure/readers/prisma-access-readers.js';
 import { StructuredDomainEventLogger } from '../../../infrastructure/observability/structured-domain-event-logger.js';
 import { PrismaAIRecommendationRepository } from '../infrastructure/prisma-ai-recommendation.repository.js';
+import { PrismaAIRecommendationHitlRepository } from '../infrastructure/prisma-ai-recommendation-hitl.repository.js';
 import { createLlmProvider } from '../infrastructure/llm-provider.factory.js';
 import { AiGenerationService } from '../application/ai-generation.service.js';
 import { GenerateAiRecommendationUseCase } from '../application/generate-ai-recommendation.use-case.js';
 import {
   GetAIRecommendationUseCase,
-  ApplyAIRecommendationUseCase,
   DiscardAIRecommendationUseCase,
 } from '../application/ai-recommendation-actions.use-cases.js';
+// US-037 (EMERGENT-025-001): cablear el HITL use case real, no el simplificado.
+import { ApplyAIRecommendationUseCase as HitlApplyAIRecommendationUseCase } from '../application/hitl/apply-ai-recommendation.use-case.js';
+import { AIRecommendationApplyStrategyRegistry } from '../application/hitl/apply-strategy.registry.js';
+import { OutputDtoResolver } from '../application/hitl/output-dto.resolver.js';
+import { AIRecommendationOwnershipPolicy } from '../application/hitl/ownership.policy.js';
+import { MVP_APPLY_STRATEGIES } from '../application/hitl/strategies/index.js';
+// US-037 strategy V2 con lógica D1..D6 completa; reemplaza la placeholder V1 del array MVP.
+import { BudgetSuggestionApplyStrategyV2 } from '../../budget-management/application/hitl/budget-suggestion-apply.strategy.js';
+import { PrismaBudgetItemWriteRepository } from '../../budget-management/infrastructure/prisma-budget-item-write.repository.js';
+import { PrismaServiceCategoryReadAdapter } from '../../budget-management/infrastructure/prisma-service-category-read.adapter.js';
 import {
   AiBaseRequestSchema,
   EventIdParamSchema,
@@ -35,6 +45,7 @@ import {
 import { AIAssistanceController, AIRecommendationsController } from './ai.controllers.js';
 
 const repo = new PrismaAIRecommendationRepository();
+const hitlRepo = new PrismaAIRecommendationHitlRepository();
 const logger = new StructuredDomainEventLogger();
 const generationService = new AiGenerationService(createLlmProvider());
 const generateUseCase = new GenerateAiRecommendationUseCase(
@@ -46,9 +57,26 @@ const generateUseCase = new GenerateAiRecommendationUseCase(
   logger,
 );
 const assistance = new AIAssistanceController(generateUseCase);
+
+// US-025 HITL registry — se sustituye la strategy `budget_suggestion` placeholder por la V2 de US-037.
+const budgetSuggestionV2 = new BudgetSuggestionApplyStrategyV2({
+  budgetItemWriteRepo: new PrismaBudgetItemWriteRepository(),
+  serviceCategoryReadPort: new PrismaServiceCategoryReadAdapter(),
+});
+const mvpStrategiesWithBudgetV2 = MVP_APPLY_STRATEGIES.filter((s) => s.type !== 'budget_suggestion');
+const applyStrategyRegistry = new AIRecommendationApplyStrategyRegistry([
+  ...mvpStrategiesWithBudgetV2,
+  budgetSuggestionV2,
+]);
+const hitlApplyUseCase = new HitlApplyAIRecommendationUseCase(
+  hitlRepo,
+  applyStrategyRegistry,
+  new OutputDtoResolver(),
+  new AIRecommendationOwnershipPolicy(),
+);
 const recommendations = new AIRecommendationsController({
   get: new GetAIRecommendationUseCase(repo),
-  apply: new ApplyAIRecommendationUseCase(repo, logger),
+  apply: hitlApplyUseCase,
   discard: new DiscardAIRecommendationUseCase(repo, logger),
 });
 

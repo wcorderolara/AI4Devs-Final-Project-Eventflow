@@ -246,5 +246,62 @@
       "sideEffect": "A ação não pôde ser concluída. Tente novamente.",
       "payloadTooLarge": "O conteúdo editado é grande demais (máx. 256KB)."
     }
+  },
+  "budgetApply": {
+    "title": "Aplicar sugestão IA ao orçamento",
+    "description": "Revise cada item, edite os valores se necessário e escolha quais incluir. Nada é salvo até você pressionar Aplicar.",
+    "itemsRegionLabel": "Itens sugeridos do orçamento",
+    "total": "Total",
+    "toggleAria": "Incluir {category}",
+    "amountAria": "Valor estimado para {category}",
+    "status": {
+      "applying": "Aplicando sugestão…",
+      "success": "Sugestão aplicada ao seu orçamento."
+    },
+    "col": {
+      "include": "Incluir",
+      "category": "Categoria",
+      "label": "Rótulo",
+      "amount": "Valor"
+    },
+    "cta": {
+      "openPreview": "Aplicar sugestão IA",
+      "cancel": "Cancelar",
+      "apply": "Aplicar",
+      "applying": "Aplicando…"
+    },
+    "replaceConfirm": {
+      "title": "Substituir itens IA anteriores?",
+      "body": "Isso substituirá {count, plural, one {# item gerado por IA} other {# itens gerados por IA}} em {categories}. Seus itens manuais serão preservados.",
+      "anyCategory": "as categorias existentes",
+      "manualPreserved": "Os itens que você criou manualmente não serão alterados.",
+      "cta": {
+        "cancel": "Cancelar",
+        "confirm": "Sim, substituir e aplicar",
+        "confirming": "Substituindo…"
+      }
+    },
+    "categoryInactive": {
+      "title": "Algumas categorias não estão mais disponíveis",
+      "body": "Uma ou mais categorias desta sugestão foram desativadas depois de gerada. Você pode regenerar a sugestão ou aplicar seu orçamento manualmente.",
+      "listAria": "Categorias inativas",
+      "cta": {
+        "close": "Fechar",
+        "regenerate": "Regenerar sugestão",
+        "manual": "Aplicar manualmente"
+      }
+    },
+    "errors": {
+      "CATEGORY_INACTIVE": "Algumas categorias estão inativas. Regenere a sugestão ou aplique manualmente.",
+      "EVENT_NOT_EDITABLE": "Este evento não pode mais ser editado (cancelado ou concluído).",
+      "CURRENCY_MISMATCH": "A moeda da sugestão não corresponde à moeda do evento.",
+      "INVALID_VALUE": "O conteúdo editado é inválido. Revise os valores e tente de novo.",
+      "PAYLOAD_INVALID": "A sugestão salva é incompatível. Regenere-a e tente novamente.",
+      "RECOMMENDATION_NOT_PENDING": "Esta sugestão já foi aplicada ou descartada.",
+      "UNAUTHORIZED": "Sua sessão expirou. Faça login novamente.",
+      "FORBIDDEN": "Você não pode aplicar esta sugestão.",
+      "NOT_FOUND": "A sugestão não foi encontrada.",
+      "UNKNOWN": "Algo deu errado ao aplicar a sugestão. Tente novamente."
+    }
   }
 }

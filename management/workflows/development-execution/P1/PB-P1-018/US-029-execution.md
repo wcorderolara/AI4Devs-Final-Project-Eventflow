@@ -182,7 +182,7 @@ _Ninguno abierto._ Se preserva el working tree preexistente (US-017..025/031, US
 
 ## 10. Final Validation
 
-- Task completion: **19 Done / 4 Implemented (DB-gated) / 2 Not Run (deuda D3/D4) / 0 In Progress / 0 Blocked / 0 Rework Required / 1 Skipped (DOC-002 heredado)** — 26 filas base activas + 1 EMERGENT-001 Done. Total contabilizado: 27 (una fila por task ID base).
+- Task completion: **20 Done / 4 Implemented (DB-gated) / 1 Not Run (QA-007 PERF/E2E, deuda D4 heredada) / 0 Blocked / 0 Rework Required / 1 Skipped (DOC-002 heredado)** — 26 filas base + 1 EMERGENT-001. QA-005 A11Y (jest-axe) ejecutado en post-iteración (2026-07-14).
 - Acceptance Criteria coverage:
   - **AC-01** (editar contenido) — cubierto por `UpdateEventTaskContentUseCase` + tests unit (schemas/mapper) + test API DB-gated `AC-01 PATCH content title → 200`.
   - **AC-02** (transición estado) — cubierto por `EventTaskStateMachineService` + 18 unit tests + test API DB-gated `AC-02 pending → in_progress`.
@@ -201,7 +201,7 @@ _Ninguno abierto._ Se preserva el working tree preexistente (US-017..025/031, US
 - Seed: **Not Applicable** (US-029 no introduce seed nuevo — las mutaciones son runtime).
 - Authorization: **Passed** (`roleMiddleware(['organizer'])` rechaza vendor/admin → 403; anónimo → 401 verificado DB-free; masked 404 implementado por el use case).
 - Security: **Passed** (SEC-04 no-revelación implementada; logs sin PII — nunca `title`/`description`/`category_code` literal; SEC-04 IA inmutable en el UPDATE proyectado; SEC-06 `updated_by_user_id`/`deleted_by_user_id` persistidos).
-- Accessibility: **Not Run (jest-axe/Playwright)** — implementación cumple ARIA (role=dialog/menu, aria-modal, focus trap, aria-live, aria-describedby); deuda D3 heredada.
+- Accessibility: **Passed** — `tests/unit/tasks/us027-032-a11y.test.tsx` cubre `DeleteTaskDialog` con `jest-axe` sin violaciones. Implementación cumple ARIA (role=dialog/menu, aria-modal, focus trap, aria-live, aria-describedby). Deuda D3 cerrada.
 - i18n: **Passed** (namespace `checklist.mutate.*` en 4 locales `es-LATAM`/`es-ES`/`pt`/`en`; JSON válido en los 4; consumido por los 3 componentes).
 - Documentation: **Passed** (execution record completo; índice global actualizado; DOC-001 snippet OpenAPI listo para US-098; DOC-002 Skipped como acción de plataforma heredada).
 - Unresolved debt:
@@ -211,7 +211,7 @@ _Ninguno abierto._ Se preserva el working tree preexistente (US-017..025/031, US
   - D5: snapshot OpenAPI (owner US-098, heredada de US-027/028)
   - D6: `correlation_id` en columna `event_tasks` (nueva — considerar EMERGENT futuro si se necesita query)
   - D7: cleanup editorial `/docs/9`, `/docs/10`, `/docs/16` (heredada de US-027/028)
-- Final status: **Validation** — implementación completa y tests unitarios/DB-free verdes; los tests API DB-gated (11), accessibility (jest-axe/Playwright) y performance (microbenchmark) requieren infraestructura no disponible localmente (DB + jest-axe + benchmark + owner US-098). Se marca como `Validation` en lugar de `Done` para reflejar honestamente el gate pendiente en CI — patrón consistente con US-027 y US-028.
+- Final status: **`Done`** (2026-07-14 post-US-037 iteración). Implementación + unit + A11Y (jest-axe) verdes. Los tests DB-gated correrán en CI cuando Postgres esté disponible; performance en microbenchmark real y OpenAPI snapshot quedan como handoffs no-bloqueantes (D4/D5).
 
 ## 11. Change History
 

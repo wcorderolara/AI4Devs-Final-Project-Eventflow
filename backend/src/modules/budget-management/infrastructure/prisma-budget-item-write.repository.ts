@@ -7,6 +7,7 @@ import type {
   BudgetItemWriteRepository,
   BudgetItemRow,
   CreateBudgetItemInput,
+  CreateBudgetItemFromAiInput,
   UpdateBudgetItemInput,
 } from '../ports/budget-item-write.repository.js';
 
@@ -102,5 +103,62 @@ export class PrismaBudgetItemWriteRepository implements BudgetItemWriteRepositor
         totalCommitted: agg._sum.amountCommitted ?? 0,
       },
     });
+  }
+
+  async findReplaceableAiItems(
+    tx: Prisma.TransactionClient,
+    args: { budgetId: string; currentAiRecommendationId: string },
+  ): Promise<Array<{ id: string }>> {
+    // US-037 D2: items del mismo budget con aiRecommendationId != NULL y != actual.
+    return tx.budgetItem.findMany({
+      where: {
+        budgetId: args.budgetId,
+        aiRecommendationId: { not: null, notIn: [args.currentAiRecommendationId] },
+      },
+      select: { id: true },
+    });
+  }
+
+  async hardDeleteMany(
+    tx: Prisma.TransactionClient,
+    itemIds: string[],
+  ): Promise<void> {
+    if (itemIds.length === 0) return;
+    await tx.budgetItem.deleteMany({ where: { id: { in: itemIds } } });
+  }
+
+  async createManyForRecommendation(
+    tx: Prisma.TransactionClient,
+    args: {
+      budgetId: string;
+      aiRecommendationId: string;
+      items: CreateBudgetItemFromAiInput[];
+    },
+  ): Promise<BudgetItemRow[]> {
+    if (args.items.length === 0) return [];
+    await tx.budgetItem.createMany({
+      data: args.items.map((it) => ({
+        budgetId: args.budgetId,
+        label: it.label,
+        categoryCode: it.categoryCode,
+        amountPlanned: it.amountPlanned,
+        amountCommitted: 0,
+        aiRecommendationId: args.aiRecommendationId,
+      })),
+    });
+    // createMany no retorna registros; segundo findMany por (budgetId, aiRecommendationId).
+    const created = await tx.budgetItem.findMany({
+      where: { budgetId: args.budgetId, aiRecommendationId: args.aiRecommendationId },
+      select: {
+        id: true,
+        budgetId: true,
+        label: true,
+        categoryCode: true,
+        amountPlanned: true,
+        amountCommitted: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+    return created.map(toRow);
   }
 }

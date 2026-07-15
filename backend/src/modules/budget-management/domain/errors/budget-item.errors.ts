@@ -58,3 +58,55 @@ export class InvalidCategoryCodeError extends AppError {
     super(`category_code '${categoryCode}' not found or inactive`);
   }
 }
+
+// ── US-037 (PB-P1-021) ──────────────────────────────────────────────────────
+
+/**
+ * Alguna `service_category_code` referenciada tiene `is_active = false` (AC-05 / D6).
+ * HTTP 409 · code `CATEGORY_INACTIVE` con `inactive_categories[]` en details.
+ */
+export interface InactiveCategoryDetail {
+  code: string;
+  name: string;
+}
+export class CategoryInactiveError extends AppError {
+  readonly code = 'CATEGORY_INACTIVE';
+  constructor(public readonly inactiveCategories: InactiveCategoryDetail[]) {
+    super(`Some categories are inactive: ${inactiveCategories.map((c) => c.code).join(', ')}`);
+  }
+}
+
+/**
+ * `recommendation.payload.currencyCode` distinto de `event.currencyCode` (AC-08).
+ * HTTP 409 · code `CURRENCY_MISMATCH`.
+ */
+export class CurrencyMismatchError extends AppError {
+  readonly code = 'CURRENCY_MISMATCH';
+  constructor(public readonly recommendationCurrency: string, public readonly eventCurrency: string) {
+    super(
+      `Currency mismatch: recommendation=${recommendationCurrency} event=${eventCurrency}`,
+    );
+  }
+}
+
+/**
+ * `editedPayload` inválido: subset no coincide con payload original, o vacío (EC-04/05).
+ * HTTP 400 · code `INVALID_VALUE`.
+ */
+export class InvalidValueError extends AppError {
+  readonly code = 'INVALID_VALUE';
+  constructor(public readonly detail: string) {
+    super(detail);
+  }
+}
+
+/**
+ * `AIRecommendation.output` corrupto (defensa profunda) — no coincide con OUTPUT_SCHEMAS.
+ * HTTP 422 · code `PAYLOAD_INVALID`.
+ */
+export class PayloadInvalidError extends AppError {
+  readonly code = 'PAYLOAD_INVALID';
+  constructor(public readonly detail: string) {
+    super(`Recommendation payload invalid: ${detail}`);
+  }
+}

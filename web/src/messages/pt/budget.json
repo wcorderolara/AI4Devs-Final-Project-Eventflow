@@ -1,0 +1,67 @@
+{
+  "page": {
+    "back": "Voltar ao evento",
+    "title": "Orçamento",
+    "addItemCta": "Adicionar item",
+    "loadError": "Não foi possível carregar o orçamento."
+  },
+  "summary": {
+    "regionLabel": "Resumo do orçamento",
+    "title": "Resumo",
+    "planned": "Planejado",
+    "committed": "Comprometido",
+    "remaining": "Restante",
+    "currency": "Moeda"
+  },
+  "overcommit": {
+    "title": "Orçamento sobrecomprometido",
+    "body": "O valor comprometido excede o planejado. Reveja seus itens ou aumente os valores planejados."
+  },
+  "table": {
+    "caption": "Itens do orçamento agrupados por categoria.",
+    "col": {
+      "label": "Item",
+      "category": "Categoria",
+      "planned": "Planejado",
+      "committed": "Comprometido",
+      "actions": "Ações"
+    },
+    "edit": "Editar",
+    "delete": "Excluir",
+    "editAria": "Editar {label}",
+    "deleteAria": "Excluir {label}"
+  },
+  "empty": {
+    "body": "Ainda não há itens de orçamento. Você pode começar com uma sugestão IA ou adicionar itens manualmente.",
+    "cta": {
+      "ai": "Sugerir com IA",
+      "manual": "Adicionar manualmente"
+    }
+  },
+  "addItem": {
+    "title": "Adicionar item ao orçamento",
+    "description": "Informe um rótulo, uma categoria opcional e o valor planejado.",
+    "field": {
+      "label": "Rótulo",
+      "labelRequired": "O rótulo é obrigatório.",
+      "category": "Código da categoria (opcional)",
+      "categoryPlaceholder": "por exemplo, venue",
+      "amount": "Valor planejado",
+      "amountInvalid": "O valor deve ser um número não negativo."
+    },
+    "cta": {
+      "cancel": "Cancelar",
+      "save": "Salvar",
+      "saving": "Salvando…"
+    }
+  },
+  "deleteItem": {
+    "title": "Excluir item do orçamento?",
+    "body": "Isso excluirá “{label}” permanentemente. Esta ação não pode ser desfeita.",
+    "cta": {
+      "cancel": "Cancelar",
+      "delete": "Excluir",
+      "deleting": "Excluindo…"
+    }
+  }
+}

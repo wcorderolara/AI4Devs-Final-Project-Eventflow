@@ -6,36 +6,48 @@ import { defaultLocale, isSupportedLocale, type Locale } from './config';
 // Catálogos transversales (Doc 15 §31.3). Import estático (catálogos pequeños): robusto y
 // testeable en Vitest y Next sin depender del context dinámico de webpack (Deviation D2).
 import enAdmin from '../../messages/en/admin.json';
+import enAi from '../../messages/en/ai.json';
 import enAuth from '../../messages/en/auth.json';
+import enBudget from '../../messages/en/budget.json';
 import enCommon from '../../messages/en/common.json';
 import enErrors from '../../messages/en/errors.json';
 import enEvents from '../../messages/en/events.json';
 import enNavigation from '../../messages/en/navigation.json';
 import enProfile from '../../messages/en/profile.json';
+import enTasks from '../../messages/en/tasks.json';
 import enValidation from '../../messages/en/validation.json';
 import esEsAdmin from '../../messages/es-ES/admin.json';
+import esEsAi from '../../messages/es-ES/ai.json';
 import esEsAuth from '../../messages/es-ES/auth.json';
+import esEsBudget from '../../messages/es-ES/budget.json';
 import esEsCommon from '../../messages/es-ES/common.json';
 import esEsErrors from '../../messages/es-ES/errors.json';
 import esEsEvents from '../../messages/es-ES/events.json';
 import esEsNavigation from '../../messages/es-ES/navigation.json';
 import esEsProfile from '../../messages/es-ES/profile.json';
+import esEsTasks from '../../messages/es-ES/tasks.json';
 import esEsValidation from '../../messages/es-ES/validation.json';
 import esLatamAdmin from '../../messages/es-LATAM/admin.json';
+import esLatamAi from '../../messages/es-LATAM/ai.json';
 import esLatamAuth from '../../messages/es-LATAM/auth.json';
+import esLatamBudget from '../../messages/es-LATAM/budget.json';
 import esLatamCommon from '../../messages/es-LATAM/common.json';
 import esLatamErrors from '../../messages/es-LATAM/errors.json';
 import esLatamEvents from '../../messages/es-LATAM/events.json';
 import esLatamNavigation from '../../messages/es-LATAM/navigation.json';
 import esLatamProfile from '../../messages/es-LATAM/profile.json';
+import esLatamTasks from '../../messages/es-LATAM/tasks.json';
 import esLatamValidation from '../../messages/es-LATAM/validation.json';
 import ptAdmin from '../../messages/pt/admin.json';
+import ptAi from '../../messages/pt/ai.json';
 import ptAuth from '../../messages/pt/auth.json';
+import ptBudget from '../../messages/pt/budget.json';
 import ptCommon from '../../messages/pt/common.json';
 import ptErrors from '../../messages/pt/errors.json';
 import ptEvents from '../../messages/pt/events.json';
 import ptNavigation from '../../messages/pt/navigation.json';
 import ptProfile from '../../messages/pt/profile.json';
+import ptTasks from '../../messages/pt/tasks.json';
 import ptValidation from '../../messages/pt/validation.json';
 
 export type Messages = Record<string, unknown>;
@@ -50,6 +62,9 @@ const REGISTRY: Record<Locale, Messages> = {
     profile: esLatamProfile,
     events: esLatamEvents,
     admin: esLatamAdmin,
+    ai: esLatamAi,
+    tasks: esLatamTasks,
+    budget: esLatamBudget,
   },
   'es-ES': {
     common: esEsCommon,
@@ -60,6 +75,9 @@ const REGISTRY: Record<Locale, Messages> = {
     profile: esEsProfile,
     events: esEsEvents,
     admin: esEsAdmin,
+    ai: esEsAi,
+    tasks: esEsTasks,
+    budget: esEsBudget,
   },
   pt: {
     common: ptCommon,
@@ -70,6 +88,9 @@ const REGISTRY: Record<Locale, Messages> = {
     profile: ptProfile,
     events: ptEvents,
     admin: ptAdmin,
+    ai: ptAi,
+    tasks: ptTasks,
+    budget: ptBudget,
   },
   en: {
     common: enCommon,
@@ -80,6 +101,9 @@ const REGISTRY: Record<Locale, Messages> = {
     profile: enProfile,
     events: enEvents,
     admin: enAdmin,
+    ai: enAi,
+    tasks: enTasks,
+    budget: enBudget,
   },
 };
 

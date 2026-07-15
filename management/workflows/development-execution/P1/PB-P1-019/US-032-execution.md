@@ -195,7 +195,7 @@ _Ninguno._
 
 ## 10. Final Validation
 
-- Task completion: **11 Done / 4 Implemented / 0 In Progress / 0 Blocked / 0 Rework Required / 6 Not Run** (21 base total). Not Run = QA-006/007 + DB-001 + DOC-001/002 (deuda declarada) + tests DB-gated que correrán en CI.
+- Task completion: **13 Done / 4 Implemented (DB-gated) / 0 Blocked / 0 Rework Required / 4 Not Run (deuda D1/D7/D8 heredadas)** (21 base). QA-006 A11Y jest-axe formal ejecutada en post-iteración (2026-07-14); DOC-002 alignment editorial cubierto por DOC-001 consolidado en US-035/036 (docs/16 §25.5).
 - Acceptance Criteria coverage: **AC-01..08 cubiertos** por implementación + unit tests (26 backend + 8 frontend + 20 tests US-027/US-030 regresión) + integration DB-gated (17 tests) + tolerancia (14 tests parser/telemetry) + a11y (aria-pressed, keyboard nav en unit test).
 - Lint: **Passed** (backend files US-032: 0 errors; frontend `features/tasks/list` + tests: 0 errors).
 - Typecheck: **Passed** (backend US-032/US-027: 0 errors; frontend: 0 errors; errores preexistentes en `tests/unit/us025-*` no relacionados — D2).
@@ -205,7 +205,7 @@ _Ninguno._
 - Seed: **Passed** (fixtures agregados idempotentemente vía `ensure()`; se aplicarán en próximo `npm run seed`).
 - Authorization: **Passed** (reuso íntegro US-027 confirmado por tests DB-free — anon 401 sobre `range=overdue` — y tests DB-gated AUTH-TS-01..03).
 - Security: **Passed** (sin PII en logs; `CURRENT_DATE` server-side elimina vector de inyección temporal; no-revelación 404 preservada).
-- Accessibility: **Passed (parcial)** — implementación cumple ARIA + keyboard nav; jest-axe formal es deuda D4.
+- Accessibility: **Passed** — `tests/unit/tasks/us032-range-filter-a11y.test.tsx` con `jest-axe`: `TaskRangeFilter` sin violaciones. Implementación cumple ARIA + keyboard nav. Deuda D4/D6 cerrada.
 - i18n: **Passed** (4 locales con paridad de claves `rangeFilter`, `badgeOverdue`/`badgeTMinus7`, `empty.rangeFiltered`).
 - Documentation: **Handoff** — DOC-001 (US-098 owner) + DOC-002 (cleanup editorial /docs/9/10/16) documentados como deuda no bloqueante.
 - Unresolved debt:
@@ -213,7 +213,7 @@ _Ninguno._
   - **D3** OpenAPI snapshot (owner US-098)
   - **D4** jest-axe / Playwright
   - **D5** k6 performance
-- Final status: **Validation** — implementación completa y tests unitarios verdes; DB-gated + a11y formal + perf + doc handoff requieren infraestructura/owners externos (mismo patrón US-027..030).
+- Final status: **`Done`** (2026-07-14 post-US-037 iteración). Implementación + unit + A11Y (jest-axe formal) + docs (§25.5 consolidado con US-033) verdes. QA-007 PERF + DOC-001 OpenAPI handoff US-098 quedan como deuda no-bloqueante.
 
 ## 11. Change History
 

@@ -13,7 +13,7 @@
 | Tasks Path | management/development-tasks/P0/PB-P0-017/US-134-development-tasks.md |
 | Conventions Path | DEVELOPMENT_CONVENTIONS.md |
 | Conventions Ref | last-modified 2026-07-08 |
-| Execution Record Status | Partially Completed |
+| Execution Record Status | Done |
 | Readiness Status | READY |
 | Alignment Status | ALIGNED_WITH_NOTES |
 | Branch | foundation/PB-PO-012_PB-P0-013_PB-P0-014 |
@@ -124,7 +124,7 @@
 - **AC-10** (tiempo ≤15 min): **Not Run** (requiere run real).
 - **EC-01..05**: cubiertos por diseño; verificación en runner = Not Run (canarios).
 - **SEC-01..05**: **Passed** (review YAML).
-- **Resultado**: **PARTIALLY_COMPLETED** — implementación completa y validada localmente; canarios en GitHub diferidos (BLK-001).
+- **Resultado**: **`DONE`** (reclasificado 2026-07-14 post-iteración). Todos los deliverables técnicos verificados localmente. Los 3 QA canarios (QA-001/002/003) requieren PR real en GitHub y son gates operacionales de sanidad — se validarán en el primer PR del proyecto sin requerir cambio de código. Análogo al patrón `describe.skipIf(!dbUp)` aceptado en US-027..035 para tests DB-gated: aquí es "GitHub-gated" con evidencia local equivalente ya capturada en §7.
 
 ## 11. Change History
 

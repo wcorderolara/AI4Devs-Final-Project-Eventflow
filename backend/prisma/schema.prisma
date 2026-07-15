@@ -491,15 +491,21 @@ model BudgetItem {
   categoryCode    String? @map("category_code")
   amountPlanned   Decimal @default(0) @map("amount_planned") @db.Decimal(14, 2)
   amountCommitted Decimal @default(0) @map("amount_committed") @db.Decimal(14, 2)
+  // US-037 (PB-P1-021): trazabilidad IA por fila (patrón EventTask.aiRecommendationId).
+  // Nullable — items manuales lo dejan NULL. NO agrega soft delete (respeta ADR-DB-004).
+  // La política D2 (reemplazo) se ejecuta por hard delete filtrado por este campo.
+  aiRecommendationId String? @map("ai_recommendation_id") @db.Uuid
 
   // Única excepción a onDelete: Restrict — composición pura (AC-08).
-  budget Budget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  budget           Budget            @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  aiRecommendation AIRecommendation? @relation("BudgetItemAIRecommendation", fields: [aiRecommendationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
   isSeed    Boolean  @default(false) @map("is_seed")
 
   @@index([budgetId])
+  @@index([aiRecommendationId])
   @@map("budget_items")
 }
 
@@ -703,6 +709,8 @@ model AIRecommendation {
   quoteRequest  QuoteRequest?   @relation(fields: [quoteRequestId], references: [id], onDelete: Restrict)
   // US-031 (PB-P1-017): relación inversa con `event_tasks.ai_recommendation_id`.
   eventTasks    EventTask[]     @relation("EventTaskAIRecommendation")
+  // US-037 (PB-P1-021): relación inversa con `budget_items.ai_recommendation_id`.
+  budgetItems   BudgetItem[]    @relation("BudgetItemAIRecommendation")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)

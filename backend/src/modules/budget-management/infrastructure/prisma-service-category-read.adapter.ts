@@ -3,7 +3,10 @@
 // ADR-ARCH-001. Consulta `service_categories WHERE is_active = true AND deleted_at IS NULL`.
 // Sin cache en MVP (dataset chico); memoizable en el composition root si crece.
 import { prisma } from '../../../shared/infrastructure/prisma/prisma.client.js';
-import type { ServiceCategoryReadPort } from '../ports/service-category-read.port.js';
+import type {
+  ServiceCategoryReadPort,
+  ServiceCategoryRow,
+} from '../ports/service-category-read.port.js';
 
 export class PrismaServiceCategoryReadAdapter implements ServiceCategoryReadPort {
   async getActiveCodes(): Promise<Set<string>> {
@@ -20,5 +23,15 @@ export class PrismaServiceCategoryReadAdapter implements ServiceCategoryReadPort
       select: { id: true },
     });
     return row?.id ?? null;
+  }
+
+  async findManyByCodes(codes: string[]): Promise<ServiceCategoryRow[]> {
+    if (codes.length === 0) return [];
+    const rows = await prisma.serviceCategory.findMany({
+      // Incluye activas e inactivas; excluye soft-deleted (US-037 D6: reportar lista de inactivas).
+      where: { code: { in: codes }, deletedAt: null },
+      select: { code: true, label: true, isActive: true },
+    });
+    return rows.map((r) => ({ code: r.code, name: r.label, isActive: r.isActive }));
   }
 }

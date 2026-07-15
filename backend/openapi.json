@@ -649,6 +649,12 @@
                       "nullable": true
                     },
                     "type": "object"
+                  },
+                  "editedPayload": {
+                    "additionalProperties": {
+                      "nullable": true
+                    },
+                    "type": "object"
                   }
                 },
                 "type": "object"
