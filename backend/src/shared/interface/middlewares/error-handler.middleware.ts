@@ -67,7 +67,13 @@ import {
   InvalidValueError,
   PayloadInvalidError,
 } from '../../../modules/budget-management/domain/errors/budget-item.errors.js';
-import { VendorProfileAlreadyExistsError } from '../../../modules/vendor-management/domain/vendor-profile.errors.js';
+import {
+  VendorProfileAlreadyExistsError,
+  VendorProfileNotFoundError,
+  VendorProfileRejectedError,
+  VendorProfileHiddenError,
+  VendorProfileAlreadyDeletedError,
+} from '../../../modules/vendor-management/domain/vendor-profile.errors.js';
 import { BusinessRuleViolationError } from '../../domain/errors/business-rule-violation.error.js';
 import { RateLimitError } from '../../domain/errors/rate-limit.error.js';
 import { BadRequestError } from '../../domain/errors/bad-request.error.js';
@@ -346,6 +352,19 @@ function mapError(err: unknown): MappedError {
   // `PROFILE_EXISTS`. Antes del ConflictError genérico para conservar el código estable.
   if (err instanceof VendorProfileAlreadyExistsError) {
     return { status: 409, code: ErrorCodes.PROFILE_EXISTS, message: err.message };
+  }
+  // US-041 (PB-P1-024): errores tipados del PATCH/DELETE del VendorProfile.
+  if (err instanceof VendorProfileNotFoundError) {
+    return { status: 404, code: ErrorCodes.PROFILE_NOT_FOUND, message: err.message };
+  }
+  if (err instanceof VendorProfileRejectedError) {
+    return { status: 409, code: ErrorCodes.PROFILE_REJECTED, message: err.message };
+  }
+  if (err instanceof VendorProfileHiddenError) {
+    return { status: 409, code: ErrorCodes.PROFILE_HIDDEN, message: err.message };
+  }
+  if (err instanceof VendorProfileAlreadyDeletedError) {
+    return { status: 409, code: ErrorCodes.PROFILE_DELETED, message: err.message };
   }
   if (err instanceof ConflictError) {
     return { status: 409, code: ErrorCodes.CONFLICT, message: err.message };

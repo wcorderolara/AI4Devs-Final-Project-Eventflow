@@ -8,6 +8,8 @@ import type {
   CreateVendorProfileInput,
   LocationReader,
   ServiceCategoryLookup,
+  UpdateVendorProfileFields,
+  VendorProfileEditableSnapshot,
   VendorProfileRepository,
 } from '../ports/vendor-profile.repository.js';
 import {
@@ -96,6 +98,87 @@ export class PrismaVendorProfileRepository implements VendorProfileRepository {
       throw err;
     }
   }
+
+  async findEditableByVendorUserId(
+    vendorUserId: string,
+    tx?: Prisma.TransactionClient,
+  ): Promise<VendorProfileEditableSnapshot | null> {
+    const client = tx ?? this.prisma;
+    const row = await client.vendorProfile.findFirst({
+      where: { userId: vendorUserId, deletedAt: null },
+      select: { id: true, userId: true, status: true, deletedAt: true },
+    });
+    if (!row) return null;
+    return toSnapshot(row);
+  }
+
+  async findAnyByVendorUserId(
+    vendorUserId: string,
+  ): Promise<VendorProfileEditableSnapshot | null> {
+    const row = await this.prisma.vendorProfile.findFirst({
+      where: { userId: vendorUserId },
+      select: { id: true, userId: true, status: true, deletedAt: true },
+    });
+    return row ? toSnapshot(row) : null;
+  }
+
+  async update(
+    id: string,
+    patch: UpdateVendorProfileFields,
+    tx: Prisma.TransactionClient,
+  ): Promise<void> {
+    const data: Prisma.VendorProfileUpdateInput = {};
+    if (patch.businessName !== undefined) data.businessName = patch.businessName;
+    if (patch.bio !== undefined) data.bio = patch.bio;
+    if (patch.locationId !== undefined) data.location = { connect: { id: patch.locationId } };
+    if (patch.languagesSupported !== undefined) data.languagesSupported = patch.languagesSupported;
+    await tx.vendorProfile.update({ where: { id }, data });
+  }
+
+  async updateStatus(
+    id: string,
+    status: VendorProfileStatus,
+    tx: Prisma.TransactionClient,
+  ): Promise<void> {
+    await tx.vendorProfile.update({ where: { id }, data: { status } });
+  }
+
+  async softDelete(id: string, deletedBy: string): Promise<void> {
+    await this.prisma.vendorProfile.update({
+      where: { id },
+      data: { deletedAt: new Date(), deletedBy },
+    });
+  }
+
+  async findByIdWithCategories(id: string): Promise<VendorProfileView | null> {
+    const row = await this.prisma.vendorProfile.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        userId: true,
+        businessName: true,
+        bio: true,
+        locationId: true,
+        languagesSupported: true,
+        slug: true,
+        status: true,
+        createdAt: true,
+        categories: {
+          select: {
+            serviceCategory: { select: { id: true, label: true } },
+          },
+        },
+      },
+    });
+    if (!row) return null;
+    return toView({
+      ...row,
+      categories: row.categories.map((c) => ({
+        id: c.serviceCategory.id,
+        name: c.serviceCategory.label,
+      })),
+    });
+  }
 }
 
 export class PrismaLocationReader implements LocationReader {
@@ -159,6 +242,20 @@ function toView(row: RawVendorRow): VendorProfileView {
 
 function isPrismaKnown(err: unknown): err is Prisma.PrismaClientKnownRequestError {
   return err instanceof Prisma.PrismaClientKnownRequestError;
+}
+
+function toSnapshot(row: {
+  id: string;
+  userId: string;
+  status: string;
+  deletedAt: Date | null;
+}): VendorProfileEditableSnapshot {
+  return {
+    id: row.id,
+    vendorUserId: row.userId,
+    status: row.status as VendorProfileEditableSnapshot['status'],
+    deletedAt: row.deletedAt,
+  };
 }
 
 export type { SupportedLanguage };

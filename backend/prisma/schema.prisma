@@ -320,6 +320,10 @@ model VendorProfile {
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
   isSeed    Boolean   @default(false) @map("is_seed")
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+  // US-041 (PB-P1-024, AC-05 / D4): id del usuario que ejecutó el soft delete. Sin FK explícita
+  // para simetría con `Event.deletedBy` (Doc 6 §Event) — el userId se preserva aunque el actor
+  // cambie de rol o sea borrado a futuro.
+  deletedBy String?   @map("deleted_by") @db.Uuid
 
   @@unique([userId])
   @@index([locationId])
@@ -693,20 +697,31 @@ model Notification {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model AdminAction {
-  id           String @id @default(uuid()) @db.Uuid
-  adminUserId  String @map("admin_user_id") @db.Uuid
+  id           String  @id @default(uuid()) @db.Uuid
+  // US-041 (PB-P1-024): `adminUserId` se vuelve NULLABLE porque no todas las acciones auditables
+  // vienen de un admin — ver `vendor_pending_after_major_edit` disparada por el propio vendor al
+  // editar campos mayores (AC-02 / D2). Se mantiene la relación con onDelete: Restrict para
+  // acciones históricas emitidas por admins reales.
+  adminUserId  String? @map("admin_user_id") @db.Uuid
   action       String
-  targetEntity String @map("target_entity")
-  targetId     String @map("target_id") @db.Uuid
-  metadata     Json?  @db.JsonB
+  targetEntity String  @map("target_entity")
+  targetId     String  @map("target_id") @db.Uuid
+  metadata     Json?   @db.JsonB
+  // US-041: actor efectivo (vendor u organizer que dispara la acción de auditoría). Puede
+  // coincidir con `adminUserId` cuando la acción viene de un admin. Nullable por retro-compat.
+  actorUserId    String? @map("actor_user_id") @db.Uuid
+  actorRole      String? @map("actor_role")
+  correlationId  String? @map("correlation_id")
 
-  adminUser User @relation(fields: [adminUserId], references: [id], onDelete: Restrict)
+  adminUser User? @relation(fields: [adminUserId], references: [id], onDelete: Restrict)
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
   isSeed    Boolean  @default(false) @map("is_seed")
 
   @@index([adminUserId])
+  @@index([actorUserId])
+  @@index([targetEntity, targetId])
   @@map("admin_actions")
 }
 

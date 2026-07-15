@@ -46,3 +46,21 @@ export interface ServiceCategoriesEnvelopeDTO {
   data: ServiceCategoryOption[];
   meta: { correlationId: string; timestamp?: string };
 }
+
+// ── US-041 ─────────────────────────────────────────────────────────────────
+export interface UpdateVendorProfileRequestDTO {
+  business_name?: string;
+  bio?: string;
+  location_id?: string;
+  languages_supported?: SupportedLanguage[];
+}
+
+export interface UpdateVendorProfileResultDTO {
+  profile: VendorProfileDTO;
+  repending: boolean;
+}
+
+export interface UpdateVendorProfileEnvelopeDTO {
+  data: UpdateVendorProfileResultDTO;
+  meta: { correlationId: string; timestamp?: string };
+}

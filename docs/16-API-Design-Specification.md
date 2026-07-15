@@ -1225,6 +1225,30 @@ type CreateVendorProfileRequestDto = {
 // y campos: `id`, `vendor_user_id`, `business_name`, `bio`, `location_id`,
 // `languages_supported`, `categories: [{id, name}]`, `slug`, `status`, `created_at`.
 
+// US-041 (PB-P1-024): edición y soft-delete del VendorProfile.
+// - `PATCH /vendors/me`: body con campos opcionales `business_name`, `bio`, `location_id`,
+//   `languages_supported`. Zod `.strict()` + `.refine` (body no vacío). Rechaza `slug`, `status`,
+//   `categories`, `vendor_user_id`, `category_change_count` → 400 `VALIDATION_ERROR`.
+//   Response: `{ profile: VendorProfileResponseDto, repending: boolean }`.
+//   D1 (campos mayores) + D2 (re-pending automático): si `business_name` o `location_id` están
+//   en el body y `status='approved'`, la transacción cambia `status→'pending'` e inserta un
+//   `AdminAction(action='vendor_pending_after_major_edit', target_entity='VendorProfile',
+//   actor_user_id=currentUser.id, actor_role='vendor', correlation_id)`. `repending=true` en la
+//   response para que la UI muestre el banner.
+//
+// - `DELETE /vendors/me`: soft delete. Setea `deleted_at=NOW()` y `deleted_by=currentUser.id`.
+//   Response 204. Bloqueado si `status='hidden'` (409 `PROFILE_HIDDEN`) o si ya está soft-deleted
+//   (409 `PROFILE_DELETED`).
+//
+// - `GET /vendors/me` (EMERGENT US-041): lectura del perfil activo del vendor autenticado.
+//   Response `VendorProfileResponseDto` con shape canónico snake_case.
+//
+// Códigos de error nuevos consumidos por el frontend / MSW:
+//   - 404 `PROFILE_NOT_FOUND`   — vendor autenticado sin perfil activo.
+//   - 409 `PROFILE_REJECTED`    — PATCH bloqueado en `status='rejected'`.
+//   - 409 `PROFILE_HIDDEN`      — PATCH/DELETE bloqueado en `status='hidden'`.
+//   - 409 `PROFILE_DELETED`     — DELETE sobre perfil ya soft-deleted.
+
 type UpdateVendorProfileRequestDto = Partial<CreateVendorProfileRequestDto> & {
   availabilitySummary?: string;
 };
