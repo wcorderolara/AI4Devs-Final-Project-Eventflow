@@ -1517,6 +1517,21 @@ type BookingIntentResponseDto = {
 - **BR-BOOKING-004**: NO se procesa pago real.
 - **BR-BOOKING-009**: cancelable incluso desde `confirmed_intent` sin penalización. Requiere `cancellationReason`.
 
+### 32.5 Structured logs — sync `BudgetItem.committed` (US-039 / PB-P1-023)
+
+Emitidos por el handler `UpdateCommittedFromBookingIntent` durante `POST /booking-intents/:id/confirm` y `POST /booking-intents/:id/cancel` (participa en la `prisma.$transaction` del invocador). Todos sin PII: solo IDs, montos, códigos.
+
+| Event | Level | Trigger | Payload keys |
+| --- | --- | --- | --- |
+| `budget.committed.synced` | info | `applyOnConfirm` / `revertOnCancel` exitoso | `action` (`apply`/`revert`), `bookingIntentId`, `budgetItemId`, `eventId`, `serviceCategoryCode`, `amount`, `correlationId`, `durationMs` |
+| `budget.committed.skipped_already_synced` | info | Segundo `applyOnConfirm` sobre intent ya sincronizado (D1 idempotencia) | `bookingIntentId`, `correlationId` |
+| `budget.committed.skipped_nothing_to_revert` | info | `revertOnCancel` sobre intent con `committed_synced_at IS NULL` | `bookingIntentId`, `correlationId` |
+| `budget.committed.skipped_zero_amount` | info | `applyOnConfirm` con `quote.amount = 0` (D3) | `bookingIntentId`, `correlationId` |
+| `budget.item.auto_created_by_booking` | warn | `applyOnConfirm` sin BudgetItem previo para la categoría (D2 auto-create) | `bookingIntentId`, `newBudgetItemId`, `eventId`, `serviceCategoryCode`, `correlationId` |
+| `budget.committed.currency_mismatch` | error | `quote.currency` distinto de `event.currency` (defensa profunda AC-05) — rollback total | `bookingIntentId`, `eventId`, `intentCurrency`, `eventCurrency`, `correlationId` |
+
+Fuente: `backend/src/shared/logging/budget-sync-events.ts`.
+
 ---
 
 ## 33. Reviews API

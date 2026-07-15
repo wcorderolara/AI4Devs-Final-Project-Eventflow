@@ -594,6 +594,11 @@ model BookingIntent {
   cancelledAt        DateTime?           @map("cancelled_at") @db.Timestamptz(6)
   cancelledBy        String?             @map("cancelled_by") @db.Uuid
   cancellationReason String?             @map("cancellation_reason")
+  // US-039 (PB-P1-023 / D1): idempotencia del sync de `BudgetItem.committed`. Ambos NULL cuando
+  // el intent no está sincronizado; `committedSyncedAmount` preserva el monto original para una
+  // reversa exacta independiente de cambios posteriores en `Quote.amount`.
+  committedSyncedAt     DateTime? @map("committed_synced_at") @db.Timestamptz(6)
+  committedSyncedAmount Decimal?  @map("committed_synced_amount") @db.Decimal(14, 2)
 
   quote           Quote           @relation(fields: [quoteId], references: [id], onDelete: Restrict)
   event           Event           @relation(fields: [eventId], references: [id], onDelete: Restrict)

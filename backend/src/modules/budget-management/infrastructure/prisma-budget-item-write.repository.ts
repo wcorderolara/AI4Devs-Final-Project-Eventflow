@@ -86,6 +86,72 @@ export class PrismaBudgetItemWriteRepository implements BudgetItemWriteRepositor
     await tx.budgetItem.delete({ where: { id: itemId } });
   }
 
+  async findByBudgetAndCategoryCode(
+    tx: Prisma.TransactionClient,
+    args: { budgetId: string; categoryCode: string },
+  ): Promise<BudgetItemRow | null> {
+    const item = await tx.budgetItem.findFirst({
+      where: { budgetId: args.budgetId, categoryCode: args.categoryCode },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true,
+        budgetId: true,
+        label: true,
+        categoryCode: true,
+        amountPlanned: true,
+        amountCommitted: true,
+      },
+    });
+    return item ? toRow(item) : null;
+  }
+
+  async incrementCommittedBy(
+    tx: Prisma.TransactionClient,
+    args: { itemId: string; delta: number },
+  ): Promise<BudgetItemRow> {
+    const updated = await tx.budgetItem.update({
+      where: { id: args.itemId },
+      data: { amountCommitted: { increment: args.delta } },
+      select: {
+        id: true,
+        budgetId: true,
+        label: true,
+        categoryCode: true,
+        amountPlanned: true,
+        amountCommitted: true,
+      },
+    });
+    return toRow(updated);
+  }
+
+  async decrementCommittedBy(
+    tx: Prisma.TransactionClient,
+    args: { itemId: string; delta: number },
+  ): Promise<BudgetItemRow> {
+    const updated = await tx.budgetItem.update({
+      where: { id: args.itemId },
+      data: { amountCommitted: { decrement: args.delta } },
+      select: {
+        id: true,
+        budgetId: true,
+        label: true,
+        categoryCode: true,
+        amountPlanned: true,
+        amountCommitted: true,
+      },
+    });
+    return toRow(updated);
+  }
+
+  async lockBudgetForSync(
+    tx: Prisma.TransactionClient,
+    args: { budgetId: string },
+  ): Promise<void> {
+    // Serializa el "find-or-auto-create" del BudgetItem (D2) entre confirmaciones concurrentes
+    // sobre el mismo `Budget`. El lock se libera al cerrar la transacción del invocador.
+    await tx.$queryRaw`SELECT id FROM budgets WHERE id = ${args.budgetId}::uuid FOR UPDATE`;
+  }
+
   async recomputeBudgetTotals(
     tx: Prisma.TransactionClient,
     budgetId: string,

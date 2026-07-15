@@ -64,9 +64,18 @@ module.exports = {
       // wire, no lógica de negocio cross-module. ADR-ARCH-001 admite esta excepción explícita
       // consistente con el patrón del error-handler. La strategy en sí implementa el contrato
       // `ApplyStrategy<T>` del `shared` mediante los ports de su propio módulo.
+      //
+      // Excepción documentada (US-039 PB-P1-023): el handler `UpdateCommittedFromBookingIntent`
+      // vive en `modules/budget-management` (dueño del cálculo sobre `BudgetItem.committed`) y
+      // el port `BudgetCommittedSyncPort` está definido por su consumidor en `modules/booking-intent`
+      // (patrón consumer-owned interface). El adapter y el composition root del router requieren
+      // el mismo tipo de wire cross-module que la excepción US-037.
       files: [
         'src/modules/ai-assistance/interface/ai.routes.ts',
         'src/modules/budget-management/application/hitl/budget-suggestion-apply.strategy.ts',
+        'src/modules/booking-intent/interface/booking-intent.routes.ts',
+        'src/modules/budget-management/application/update-committed-from-booking-intent.use-case.ts',
+        'src/modules/budget-management/infrastructure/budget-committed-sync.adapter.ts',
       ],
       rules: {
         'boundaries/element-types': 'off',

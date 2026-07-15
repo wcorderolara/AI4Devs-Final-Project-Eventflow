@@ -918,6 +918,8 @@ Documentos 1 (§6.9, §7), 3 (§7.11, §13), 4 (§19 BR-BOOKING-*), 5 (§9.13).
 | cancelled_at | datetime | No | Fecha de cancelación. | Derived | BR-BOOKING-009. |
 | cancelled_by | enum BookingCancelledBy | No | organizer, vendor, system. | Derived | Trazabilidad. |
 | cancellation_reason | text | No | Motivo. | Derived | BR-BOOKING-009. |
+| committed_synced_at | datetime | No | Marca idempotencia del sync `BudgetItem.committed` (US-039 D1). NULL cuando el intent no está sincronizado; set al aplicar `applyOnConfirm`; reseteado a NULL al aplicar `revertOnCancel`. | Derived | US-039 (PB-P1-023). |
+| committed_synced_amount | decimal(14,2) | No | Monto exacto sumado en el último `applyOnConfirm` (US-039 D1). Preserva la reversa exacta aunque `Quote.amount` cambie después. NULL cuando `committed_synced_at IS NULL`. | Derived | US-039 (PB-P1-023). |
 | is_simulated | boolean | Sí | Marca explícita (siempre `true` en MVP). | Explicit | BR-BOOKING-004. |
 | is_seed | boolean | No | Marca seed. | Recommended | BR-SEED-006. |
 | created_at | datetime | Sí | Auditoría. | Derived | — |

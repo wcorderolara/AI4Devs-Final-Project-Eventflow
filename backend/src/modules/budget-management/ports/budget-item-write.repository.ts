@@ -44,6 +44,47 @@ export interface BudgetItemWriteRepository {
     input: UpdateBudgetItemInput,
   ): Promise<BudgetItemRow>;
   hardDelete(tx: Prisma.TransactionClient, itemId: string): Promise<void>;
+
+  /**
+   * US-039 (PB-P1-023 / BE-005): busca el primer `BudgetItem` activo del budget para la
+   * categoría dada (`ServiceCategory.code`). Retorna `null` si no existe. No hay soft delete
+   * en `BudgetItem` (ADR-DB-004), por lo que "activo" equivale a "existente".
+   */
+  findByBudgetAndCategoryCode(
+    tx: Prisma.TransactionClient,
+    args: { budgetId: string; categoryCode: string },
+  ): Promise<BudgetItemRow | null>;
+
+  /**
+   * US-039 (PB-P1-023 / BE-005): incrementa atómicamente `amount_committed` (SQL `column + $delta`).
+   * PostgreSQL adquiere ROW EXCLUSIVE en el UPDATE; concurrentes se serializan por fila.
+   * `delta` DEBE ser > 0. Retorna el nuevo valor.
+   */
+  incrementCommittedBy(
+    tx: Prisma.TransactionClient,
+    args: { itemId: string; delta: number },
+  ): Promise<BudgetItemRow>;
+
+  /**
+   * US-039 (PB-P1-023 / BE-005): decrementa atómicamente `amount_committed`. `delta` DEBE ser > 0.
+   * El caller (use case) valida que `committed >= delta` a nivel semántico (el intent guardó
+   * `committed_synced_amount` con el valor exacto sumado en el apply).
+   */
+  decrementCommittedBy(
+    tx: Prisma.TransactionClient,
+    args: { itemId: string; delta: number },
+  ): Promise<BudgetItemRow>;
+
+  /**
+   * US-039 (PB-P1-023 / BE-005): `SELECT id FROM budgets WHERE id = $1 FOR UPDATE`.
+   * Serializa el "find-or-auto-create" del BudgetItem (D2) entre transacciones concurrentes
+   * que apliquen sync sobre el mismo `Budget` (mismo evento).
+   */
+  lockBudgetForSync(
+    tx: Prisma.TransactionClient,
+    args: { budgetId: string },
+  ): Promise<void>;
+
   /**
    * Recomputa `Budget.totalPlanned` y `Budget.totalCommitted` con `SUM(items.amount*)` y
    * ejecuta `UPDATE budgets`. Se invoca al final de cada mutación (BLK-E compromiso R1 US-035).
