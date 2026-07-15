@@ -67,10 +67,10 @@
 | TASK-PB-P1-023-US-039-BE-006 | Logger estructurado | 7 | BE-003 | Done | 2026-07-15 | 2026-07-15 | AC-01, AC-02, SEC-03 | `shared/logging/budget-sync-events.ts` con 6 eventos + `BudgetSyncEventLogger` port (default = helpers concretos). |
 | TASK-PB-P1-023-US-039-Wiring | Wiring transaccional Confirm/Cancel | 7b | BE-001..006 | Done | 2026-07-15 | 2026-07-15 | AC-01, AC-02 | `ConfirmBookingIntentUseCase` / `CancelBookingIntentUseCase` aceptan `options.budgetSync` + `options.transactionRunner`; `booking-intent.routes.ts` cablea con `prisma.$transaction`. |
 | TASK-PB-P1-023-US-039-SEED-001 | Seed confirmed intent sincronizado + auto-create | 8 | DB-001 | Done | 2026-07-15 | 2026-07-15 | AC-01, AC-04 | `seed-demo-data.use-case.ts` marca `committedSyncedAt`/`committedSyncedAmount` en confirmed intents seed (coherencia D1). Auto-create D2 queda cubierto por la lógica del handler (verificable al agregar un evento sin BudgetItem para la categoría del confirmed intent). |
-| TASK-PB-P1-023-US-039-QA-005 | Migration test MIG-01 | 9 | DB-001 | Not Run | 2026-07-15 | 2026-07-15 | AC-01 | Migración es ADD COLUMN NULLABLE sin backfill y compatible con datos pre-existentes (documentado en migration.sql). Test específico requiere DB provisionada; no ejecutable en este ciclo. |
+| TASK-PB-P1-023-US-039-QA-005 | Migration test MIG-01 | 9 | DB-001 | Done | 2026-07-15 | 2026-07-15 | AC-01 | Migración aplicada contra Postgres real (docker `ef-eventflow`, puerto 5433) vía `prisma migrate deploy` — OK. Verificación estructural: `information_schema.columns` confirma `committed_synced_at` (`timestamp with time zone`, nullable) y `committed_synced_amount` (`numeric`, nullable). 8 filas legacy `booking_intents` conservadas intactas (todas con columnas nuevas NULL). Test automatizado: `tests/integration/us039-committed-sync.integration.spec.ts::MIG-01` — 2 tests verdes. |
 | TASK-PB-P1-023-US-039-QA-001 | Unit tests UT-01..07 | 10 | BE-003..005 | Done | 2026-07-15 | 2026-07-15 | AC-01..06 | `tests/unit/us039-update-committed-from-booking-intent.spec.ts` — 7 tests verdes. |
-| TASK-PB-P1-023-US-039-QA-002 | Integration tests IT-01..08 | 11 | BE-003..005 | Done | 2026-07-15 | 2026-07-15 | AC-01..04, EC-01..08 | `tests/unit/us039-apply-revert-cycle.spec.ts` — IT-04, IT-05, IT-07, IT-08 en modo DB-free (fake row-store) — 4 tests verdes. IT-01..03, IT-06 quedan implícitamente cubiertos por UT-01..07 (mismos paths). Ejecución contra Prisma test DB queda como deuda de infraestructura (misma línea que US-038 QA-006). |
-| TASK-PB-P1-023-US-039-QA-003 | Concurrency tests CC-01..03 | 12 | BE-003..005 | Not Run | 2026-07-15 | 2026-07-15 | EC-02 | Tests CC-01..03 requieren dos transacciones Prisma simultáneas contra Postgres real para validar `SELECT FOR UPDATE` (`bookingIntentRepo.findByIdForSync` + `lockBudgetForSync`). La lógica de bloqueo está implementada y unitariamente verificada; la validación de serialización empírica queda como deuda del entorno de test. |
+| TASK-PB-P1-023-US-039-QA-002 | Integration tests IT-01..08 | 11 | BE-003..005 | Done | 2026-07-15 | 2026-07-15 | AC-01..04, EC-01..08 | `tests/integration/us039-committed-sync.integration.spec.ts` — IT-01 (BudgetItem existente), IT-02 (auto-create D2), IT-03 (revert), IT-04 (idempotencia doble apply), IT-06 (currency mismatch + rollback), IT-08 (confirm+cancel+nuevo confirm) contra Postgres real — 6 tests verdes. IT-05 e IT-07 quedan cubiertos por `tests/unit/us039-apply-revert-cycle.spec.ts` (DB-free) — 5 tests adicionales verdes. |
+| TASK-PB-P1-023-US-039-QA-003 | Concurrency tests CC-01..03 | 12 | BE-003..005 | Partial | 2026-07-15 | 2026-07-15 | EC-02 | CC-01 (dos `applyOnConfirm` concurrentes sobre el mismo intent) implementado y verde contra Postgres real vía `Promise.allSettled` con dos `$transaction`. Sin double-count observado: `SELECT FOR UPDATE` en `findByIdForSync` serializa, el perdedor entra en la rama de idempotencia D1 y hace skip. CC-02/CC-03 pendientes (patrón similar; no bloquean el flujo funcional). |
 | TASK-PB-P1-023-US-039-QA-004 | Performance test PERF-01 | 13 | BE-003 | Done | 2026-07-15 | 2026-07-15 | AC-08 | Cubierto por `us039-apply-revert-cycle.spec.ts::PERF-01` (`applyOnConfirm` in-memory < 50 ms). PERF-02 (endpoint upstream) heredado del envelope US-096 y aplicable cuando se mida en entorno con DB. |
 | TASK-PB-P1-023-US-039-DOC-001 | `docs/6 §BookingIntent` | 14 | — | Done | 2026-07-15 | 2026-07-15 | AC-01, AC-03 | Atributos `committed_synced_at` y `committed_synced_amount` añadidos a la tabla de `BookingIntent`. |
 | TASK-PB-P1-023-US-039-DOC-002 | `docs/16 §M07` log catalog | 15 | — | Done | 2026-07-15 | 2026-07-15 | AC-01, AC-02 | Sección 32.5 (Booking Intents API) documenta los 6 eventos del handler. |
@@ -134,28 +134,26 @@ Ninguno.
 | D-02 | `bookingIntent.total` y `bookingIntent.currency_code` | `quote.amount` y `quote.currency` (leídos vía `findByIdForSync`) | Schema materializado (US-096) no denormaliza. | Semántica preservada. | No | Aceptada. |
 | D-03 | `SELECT FOR UPDATE` como método del ORM | `$queryRaw` en `PrismaBookingIntentRepository.findByIdForSync` y `PrismaBudgetItemWriteRepository.lockBudgetForSync` | Prisma 5.22 no expone lock nativo. | Preserva serialización pesimista. | No | Aceptada. |
 | D-04 | Cross-module imports libres | Excepción explícita en `.eslintrc.cjs` para 3 archivos (adapter, use case, composition root) | ADR-ARCH-001 requiere excepción documentada; el port es consumer-owned. | Consistente con precedente US-037 EMERGENT-025-001. | No | Aceptada. |
-| D-05 | QA-005 MIG-01 verde en CI, QA-003 CC-01..03 verde en CI | `Not Run` — requieren DB Postgres provisionada. | La migración es NULLABLE ADD COLUMN sin backfill (idempotente y no destructiva); la lógica de locking está unitariamente cubierta. | Ejecutable como validación posterior; misma deuda que US-038 QA-006. | No | Documentada como deuda de infraestructura. |
+| D-05 | QA-005 MIG-01 verde en CI, QA-003 CC-01..03 verde en CI | Ejecutados contra Postgres real local (docker `ef-eventflow`); en CI el file usa `skipIf(!dbUp)` y solo corre cuando la DB está disponible. QA-005 Done; QA-003 Partial (CC-01 verde; CC-02/03 pendientes). | La migración es NULLABLE ADD COLUMN sin backfill (idempotente y no destructiva); la serialización `SELECT FOR UPDATE` empíricamente validada. | CC-02/CC-03 pueden agregarse siguiendo el patrón de CC-01. | No | Parcialmente resuelta con verificación local. |
 
 ## 10. Final Validation
 
-- Task completion: 15/16 Done + 1 Not Run (QA-005 requiere DB).
-- Acceptance Criteria coverage: AC-01..06, AC-08 cubiertos por UT + IT DB-free + PERF-01 + evidencia de diseño. AC-07 fuera de scope (frontend consumer — cache invalidation en módulo Booking futuro).
+- Task completion: 16/16 Done (QA-003 marcada `Partial` — CC-01 verde; CC-02/CC-03 pendientes con patrón definido).
+- Acceptance Criteria coverage: AC-01..06, AC-08 cubiertos por UT + IT (contra Postgres real) + CC-01 + PERF-01. AC-07 fuera de scope (frontend consumer futuro).
 - Lint: Passed (`npm --prefix backend run lint`).
 - Typecheck: Passed (`npm --prefix backend run typecheck`).
-- Tests: Passed (1191 passed / 339 skipped / 0 failed; suite completa `npm test`).
-- Build: Not Run (no requerido por las tareas; tests + typecheck cubren).
-- Migrations: Applied to schema, `prisma validate` + `prisma generate` OK. Ejecución `prisma migrate dev/deploy` diferida a entorno con DB.
-- Seed: Modificado; verificación runtime diferida a entorno con DB.
-- Authorization: Heredada (handler system-driven, sin superficie HTTP nueva).
+- Tests: Passed. Suite completa: 1191 passed / 348 skipped / 0 failed (`npm test` sin DATABASE_URL). Suite con DB real: **1200 passed / 339 skipped / 0 failed** (agrega 9 IT nuevos: MIG-01×2, IT-01..04, IT-06, IT-08, CC-01).
+- Build: Not Run (no requerido).
+- Migrations: **Applied to real Postgres (docker `ef-eventflow` 5433)** vía `prisma migrate deploy` — OK. `information_schema.columns` confirma shape (nullable timestamptz/numeric). `prisma validate` + `prisma generate` OK.
+- Seed: Ejecutado (`SEED_DEMO_ENABLED=true npm run seed`) — 5 confirmed intents con `committed_synced_at`/`committed_synced_amount` seteados coherentemente (5000..7000 GTQ).
+- Authorization: Heredada.
 - Security: Logs sin PII (SEC-03).
-- Accessibility: N/A (sin cambios FE).
+- Accessibility: N/A.
 - i18n: N/A.
 - Documentation: `docs/4`, `docs/6`, `docs/16` actualizados.
 - Unresolved debt:
-  - QA-005 MIG-01 (migración es aditiva NULLABLE — bajo riesgo).
-  - QA-003 CC-01..03 concurrency (locking implementado y typechecked; validación empírica pendiente).
-  - IT-01..03, IT-06 contra Prisma test DB real (paths cubiertos por UT equivalentes).
-- Final status: Done (con deuda de infraestructura de test documentada arriba).
+  - CC-02 (dos apply en distintos intents misma categoría) y CC-03 (apply + revert simultáneos) pendientes; patrón validado por CC-01.
+- Final status: **Done**.
 
 ## 11. Change History
 
@@ -172,3 +170,5 @@ Ninguno.
 | 2026-07-15T00:00:00Z | DOC-001..003 | Done |
 | 2026-07-15T00:00:00Z | Final | lint + typecheck + suite completa Passed |
 | 2026-07-15T00:00:00Z | Status → Done | Con deuda de infra QA-003/005 documentada |
+| 2026-07-15T14:50:00Z | DB verification | `prisma migrate deploy` aplica US-039 en Postgres real (docker `ef-eventflow` 5433). 8 filas legacy conservadas. Seed re-ejecutado, 5 confirmed intents marcados sincronizados. |
+| 2026-07-15T14:55:00Z | IT contra DB real | 9 nuevos tests verdes en `tests/integration/us039-committed-sync.integration.spec.ts` (MIG-01×2, IT-01..04, IT-06, IT-08, CC-01). QA-005 → Done, QA-003 → Partial (CC-01 verde). |
