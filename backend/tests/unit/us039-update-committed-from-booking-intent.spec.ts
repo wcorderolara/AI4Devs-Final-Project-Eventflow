@@ -90,6 +90,7 @@ function fakeItemRepo(
       fakeItem({ id: args.itemId, amountCommitted: 200 - args.delta }),
     ),
     lockBudgetForSync: vi.fn(async () => undefined),
+    ensureBudgetForEvent: vi.fn(async () => ({ id: BUDGET_ID })),
     ...overrides,
   };
 }

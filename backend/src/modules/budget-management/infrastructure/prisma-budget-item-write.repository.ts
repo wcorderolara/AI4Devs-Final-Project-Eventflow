@@ -152,6 +152,22 @@ export class PrismaBudgetItemWriteRepository implements BudgetItemWriteRepositor
     await tx.$queryRaw`SELECT id FROM budgets WHERE id = ${args.budgetId}::uuid FOR UPDATE`;
   }
 
+  async ensureBudgetForEvent(
+    tx: Prisma.TransactionClient,
+    args: { eventId: string },
+  ): Promise<{ id: string }> {
+    // Creación lazy: si el organizer no visitó la vista Budget aún, el evento no tendrá Budget.
+    // `upsert` sobre la `@unique(eventId)` garantiza idempotencia bajo concurrencia (una unique
+    // violation es capturada internamente por upsert → devuelve el existente).
+    const budget = await tx.budget.upsert({
+      where: { eventId: args.eventId },
+      create: { eventId: args.eventId, totalPlanned: 0, totalCommitted: 0 },
+      update: {},
+      select: { id: true },
+    });
+    return { id: budget.id };
+  }
+
   async recomputeBudgetTotals(
     tx: Prisma.TransactionClient,
     budgetId: string,

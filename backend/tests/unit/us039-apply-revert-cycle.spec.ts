@@ -126,6 +126,7 @@ function itemRepoOn(store: Store): BudgetItemWriteRepository {
       return { ...updated };
     },
     lockBudgetForSync: async () => undefined,
+    ensureBudgetForEvent: async () => ({ id: BUDGET_ID }),
   };
 }
 

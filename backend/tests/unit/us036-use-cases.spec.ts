@@ -96,6 +96,7 @@ function mkWriteRepo(overrides: Partial<BudgetItemWriteRepository> = {}): Budget
     incrementCommittedBy: async () => ({}) as BudgetItemRow,
     decrementCommittedBy: async () => ({}) as BudgetItemRow,
     lockBudgetForSync: async () => undefined,
+    ensureBudgetForEvent: async () => ({ id: 'budget-1' }),
     ...overrides,
   };
 }

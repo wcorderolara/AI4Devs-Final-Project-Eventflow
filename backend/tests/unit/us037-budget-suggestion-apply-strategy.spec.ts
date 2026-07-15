@@ -57,6 +57,7 @@ function makeRepo(overrides: Partial<BudgetItemWriteRepository> = {}): BudgetIte
     incrementCommittedBy: vi.fn(async () => ({ id: 'x', budgetId: BUDGET_ID, label: '', categoryCode: null, amountPlanned: 0, amountCommitted: 0 })),
     decrementCommittedBy: vi.fn(async () => ({ id: 'x', budgetId: BUDGET_ID, label: '', categoryCode: null, amountPlanned: 0, amountCommitted: 0 })),
     lockBudgetForSync: vi.fn(async () => undefined),
+    ensureBudgetForEvent: vi.fn(async () => ({ id: BUDGET_ID })),
     ...overrides,
   };
 }
