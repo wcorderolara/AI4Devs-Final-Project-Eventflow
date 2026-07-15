@@ -5,9 +5,15 @@ import { UnauthorizedError } from '../../../shared/domain/errors/unauthorized.er
 import type { CreateVendorProfileUseCase } from '../application/create-vendor-profile.use-case.js';
 import type { UpdateVendorProfileUseCase } from '../application/update-vendor-profile.use-case.js';
 import type { SoftDeleteVendorProfileUseCase } from '../application/soft-delete-vendor-profile.use-case.js';
+import type { ChangeVendorCategoriesUseCase } from '../application/change-vendor-categories.use-case.js';
 import type { CreateVendorProfileRequest } from './dto/create-vendor-profile.request.js';
 import type { UpdateVendorProfileRequest } from './dto/update-vendor-profile.request.js';
-import { toVendorProfileResponse } from './dto/vendor-profile.response.js';
+import type { ChangeVendorCategoriesRequest } from './dto/change-vendor-categories.request.js';
+import {
+  toVendorProfileResponse,
+  toVendorProfileResponseWithCategoryMeta,
+} from './dto/vendor-profile.response.js';
+import { toChangeVendorCategoriesResponse } from './dto/change-vendor-categories.response.js';
 import type { VendorProfileRepository } from '../ports/vendor-profile.repository.js';
 import { VendorProfileNotFoundError } from '../domain/vendor-profile.errors.js';
 
@@ -21,6 +27,7 @@ export interface VendorProfileUseCases {
   create: CreateVendorProfileUseCase;
   update: UpdateVendorProfileUseCase;
   softDelete: SoftDeleteVendorProfileUseCase;
+  changeCategories: ChangeVendorCategoriesUseCase;
 }
 
 export class VendorProfileController {
@@ -36,11 +43,25 @@ export class VendorProfileController {
    * vista ya se hidrata con `findByIdWithCategories` + `findEditableByVendorUserId`.
    */
   getMine = async (req: Request, res: Response): Promise<void> => {
-    const snapshot = await this.repository.findEditableByVendorUserId(requireUserId(req));
+    // US-042 (FE-001): hidratamos también `category_change_count`, `requires_admin_review`
+    // y `last_category_change_at` para que el editor de categorías muestre el contador antes
+    // de la primera mutación. Los campos son opcionales en el DTO (retro-compat US-040/041).
+    const snapshot = await this.repository.findActiveWithCategoriesByVendorUserId(
+      requireUserId(req),
+    );
     if (!snapshot) throw new VendorProfileNotFoundError();
     const view = await this.repository.findByIdWithCategories(snapshot.id);
     if (!view) throw new VendorProfileNotFoundError();
-    res.status(200).json(success(toVendorProfileResponse(view), req.correlationId ?? ''));
+    res.status(200).json(
+      success(
+        toVendorProfileResponseWithCategoryMeta(view, {
+          categoryChangeCount: snapshot.categoryChangeCount,
+          requiresAdminReview: snapshot.requiresAdminReview,
+          lastCategoryChangeAt: snapshot.lastCategoryChangeAt,
+        }),
+        req.correlationId ?? '',
+      ),
+    );
   };
 
   create = async (req: Request, res: Response): Promise<void> => {
@@ -82,5 +103,29 @@ export class VendorProfileController {
       { correlationId: req.correlationId },
     );
     res.status(204).end();
+  };
+
+  changeCategories = async (req: Request, res: Response): Promise<void> => {
+    const body = req.validated?.body as ChangeVendorCategoriesRequest;
+    const result = await this.uc.changeCategories.execute(
+      {
+        vendorUserId: requireUserId(req),
+        serviceCategoryIds: body.service_category_ids,
+      },
+      { correlationId: req.correlationId },
+    );
+    res.status(200).json(
+      success(
+        toChangeVendorCategoriesResponse({
+          profile: result.profile,
+          repending: result.repending,
+          noop: result.noop,
+          categoryChangeCount: result.categoryChangeCount,
+          requiresAdminReview: result.requiresAdminReview,
+          lastCategoryChangeAt: result.lastCategoryChangeAt,
+        }),
+        req.correlationId ?? '',
+      ),
+    );
   };
 }

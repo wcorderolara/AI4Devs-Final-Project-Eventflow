@@ -117,5 +117,53 @@
     "es-ES": "Español (España)",
     "pt": "Portugués",
     "en": "Inglés"
+  },
+  "categories": {
+    "change": {
+      "title": "Cambiar mis categorías de servicio",
+      "subtitle": "Escoge entre 1 y 5 categorías. Cada cambio aceptado activa una nueva revisión del equipo.",
+      "loading": "Cargando tus categorías…",
+      "links": { "createNew": "Crear mi perfil" },
+      "counter": {
+        "remaining": "Cambios de categorías restantes: {remaining} de {max}.",
+        "reached": "Ya has alcanzado el máximo de 5 cambios de categorías."
+      },
+      "fields": {
+        "categories": {
+          "label": "Categorías de servicio",
+          "help": "Entre 1 y 5 categorías. Añadir o eliminar cualquiera cuenta como un cambio.",
+          "maxHelp": "Puedes seleccionar hasta {max} categorías."
+        }
+      },
+      "buttons": {
+        "submit": "Solicitar cambio",
+        "submitting": "Enviando…"
+      },
+      "banners": {
+        "saved": "Tus categorías se han actualizado.",
+        "noop": "El conjunto enviado coincide con tus categorías actuales — no ha habido cambios.",
+        "repending": {
+          "title": "Tu perfil vuelve a estar en revisión",
+          "body": "Los cambios de categorías requieren una nueva verificación antes de que tu perfil vuelva a ser público."
+        }
+      },
+      "confirm": {
+        "title": "Estos cambios enviarán tu perfil a revisión",
+        "description": "Cualquier cambio en tus categorías requiere una nueva verificación del equipo. ¿Continuar?",
+        "cancel": "Cancelar",
+        "confirm": "Continuar y enviar"
+      },
+      "errors": {
+        "CATEGORY_CHANGE_LIMIT": "Has alcanzado el máximo de 5 cambios de categorías. Contacta con soporte si necesitas volver a cambiar.",
+        "INVALID_CATEGORIES": "Selecciona entre 1 y 5 categorías únicas.",
+        "INVALID_CATEGORY": "Alguna de las categorías ya no está disponible. Recarga la página e inténtalo de nuevo.",
+        "PROFILE_HIDDEN": "Un administrador ha ocultado tu perfil. Contacta con nosotros para reactivarlo.",
+        "PROFILE_NOT_FOUND": "Aún no tienes un perfil.",
+        "VALIDATION_ERROR": "Revisa los datos introducidos.",
+        "AUTHENTICATION_REQUIRED": "Tu sesión ha expirado. Vuelve a iniciar sesión.",
+        "FORBIDDEN": "Solo los proveedores pueden cambiar estas categorías.",
+        "UNEXPECTED": "Ha ocurrido un error inesperado. Inténtalo de nuevo."
+      }
+    }
   }
 }

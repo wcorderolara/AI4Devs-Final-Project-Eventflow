@@ -300,6 +300,9 @@ export class SeedDemoDataUseCase {
     const vendors = [];
     for (let i = 0; i < vendorUsers.length; i += 1) {
       const user = vendorUsers[i]!;
+      // US-042 SEED-001: el primer vendor demo carga `categoryChangeCount=4` para poder
+      // demostrar el bloqueo `409 CATEGORY_CHANGE_LIMIT` al 5to/6to cambio sin scripting.
+      const isCategoryLimitDemoVendor = i === 0;
       const profile = await ensure(
         () => tx.vendorProfile.findUnique({ where: { userId: user.id } }),
         () =>
@@ -311,6 +314,8 @@ export class SeedDemoDataUseCase {
               status: 'approved',
               locationId: locations[i % locations.length]!.id,
               languagesSupported: ['es-LATAM', 'es-ES'],
+              categoryChangeCount: isCategoryLimitDemoVendor ? 4 : 0,
+              requiresAdminReview: isCategoryLimitDemoVendor,
               isSeed: true,
             },
           }),
@@ -338,6 +343,21 @@ export class SeedDemoDataUseCase {
           }),
         counts,
       );
+      // US-042: pobla la M:N `vendor_profile_categories` alineada con la categoría del
+      // servicio del vendor. La PK compuesta previene duplicados en re-runs (idempotente).
+      const existingLink = await tx.vendorProfileCategory.findUnique({
+        where: {
+          vendorProfileId_serviceCategoryId: {
+            vendorProfileId: profile.id,
+            serviceCategoryId: category.id,
+          },
+        },
+      });
+      if (!existingLink) {
+        await tx.vendorProfileCategory.create({
+          data: { vendorProfileId: profile.id, serviceCategoryId: category.id },
+        });
+      }
       vendors.push({ id: profile.id, userId: user.id });
     }
     return vendors;

@@ -303,6 +303,12 @@ model VendorProfile {
   // US-102: soporte para chk_vendor_profiles_category_change_max (C-022b; <= 5)
   // y chk_vendor_profiles_languages_not_empty (Doc 18 §15.1; cardinality > 0).
   categoryChangeCount Int                 @default(0) @map("category_change_count")
+  // US-042 (PB-P1-025 / D2): timestamp del último cambio aplicado y flag de revisión admin.
+  // `lastCategoryChangeAt` es NULLABLE — solo se setea tras la primera mutación real (no en
+  // creación US-040). `requiresAdminReview` arranca en `false` y pasa a `true` en cada
+  // mutación aplicada (no en noop), independientemente del status previo.
+  lastCategoryChangeAt DateTime?          @map("last_category_change_at") @db.Timestamptz(6)
+  requiresAdminReview  Boolean            @default(false) @map("requires_admin_review")
   languagesSupported  String[]            @map("languages_supported")
 
   user     User      @relation(fields: [userId], references: [id], onDelete: Restrict)

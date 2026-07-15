@@ -5,12 +5,14 @@
 import { Prisma, type PrismaClient } from '@prisma/client';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
 import type {
+  CategoryReplacementResult,
   CreateVendorProfileInput,
   LocationReader,
   ServiceCategoryLookup,
   UpdateVendorProfileFields,
   VendorProfileEditableSnapshot,
   VendorProfileRepository,
+  VendorProfileWithCategoriesSnapshot,
 } from '../ports/vendor-profile.repository.js';
 import {
   ProfileAlreadyExistsError,
@@ -150,6 +152,109 @@ export class PrismaVendorProfileRepository implements VendorProfileRepository {
     });
   }
 
+  async findActiveWithCategoriesByVendorUserId(
+    vendorUserId: string,
+  ): Promise<VendorProfileWithCategoriesSnapshot | null> {
+    const row = await this.prisma.vendorProfile.findFirst({
+      where: { userId: vendorUserId, deletedAt: null },
+      select: {
+        id: true,
+        userId: true,
+        status: true,
+        deletedAt: true,
+        categoryChangeCount: true,
+        requiresAdminReview: true,
+        lastCategoryChangeAt: true,
+        categories: {
+          select: { serviceCategoryId: true },
+          orderBy: { serviceCategoryId: 'asc' },
+        },
+      },
+    });
+    if (!row) return null;
+    return toWithCategoriesSnapshot(row);
+  }
+
+  async lockAndRereadForCategoryChange(
+    vendorProfileId: string,
+    tx: Prisma.TransactionClient,
+  ): Promise<VendorProfileWithCategoriesSnapshot | null> {
+    // Lock explícito de la fila para evitar TOCTOU con `PATCH /vendors/me`, `DELETE
+    // /vendors/me` o cambios concurrentes desde el mismo endpoint.
+    const locked = await tx.$queryRaw<
+      { id: string }[]
+    >`SELECT id FROM "vendor_profiles" WHERE id = ${vendorProfileId}::uuid AND deleted_at IS NULL FOR UPDATE`;
+    if (locked.length === 0) return null;
+    const row = await tx.vendorProfile.findFirst({
+      where: { id: vendorProfileId, deletedAt: null },
+      select: {
+        id: true,
+        userId: true,
+        status: true,
+        deletedAt: true,
+        categoryChangeCount: true,
+        requiresAdminReview: true,
+        lastCategoryChangeAt: true,
+        categories: {
+          select: { serviceCategoryId: true },
+          orderBy: { serviceCategoryId: 'asc' },
+        },
+      },
+    });
+    if (!row) return null;
+    return toWithCategoriesSnapshot(row);
+  }
+
+  async replaceCategoriesAndAdvanceCounter(args: {
+    vendorProfileId: string;
+    currentCategoryIds: readonly string[];
+    desiredCategoryIds: readonly string[];
+    tx: Prisma.TransactionClient;
+  }): Promise<CategoryReplacementResult> {
+    const desired = new Set(args.desiredCategoryIds);
+    const current = new Set(args.currentCategoryIds);
+    const toRemove = [...current].filter((id) => !desired.has(id));
+    const toAdd = [...desired].filter((id) => !current.has(id));
+
+    if (toRemove.length > 0) {
+      await args.tx.vendorProfileCategory.deleteMany({
+        where: {
+          vendorProfileId: args.vendorProfileId,
+          serviceCategoryId: { in: toRemove },
+        },
+      });
+    }
+    if (toAdd.length > 0) {
+      await args.tx.vendorProfileCategory.createMany({
+        data: toAdd.map((serviceCategoryId) => ({
+          vendorProfileId: args.vendorProfileId,
+          serviceCategoryId,
+        })),
+      });
+    }
+
+    const updated = await args.tx.vendorProfile.update({
+      where: { id: args.vendorProfileId },
+      data: {
+        categoryChangeCount: { increment: 1 },
+        lastCategoryChangeAt: new Date(),
+        requiresAdminReview: true,
+      },
+      select: {
+        categoryChangeCount: true,
+        requiresAdminReview: true,
+        lastCategoryChangeAt: true,
+      },
+    });
+
+    // `lastCategoryChangeAt` acaba de setearse — el `!` refleja el invariante post-write.
+    return {
+      categoryChangeCount: updated.categoryChangeCount,
+      requiresAdminReview: updated.requiresAdminReview,
+      lastCategoryChangeAt: updated.lastCategoryChangeAt as Date,
+    };
+  }
+
   async findByIdWithCategories(id: string): Promise<VendorProfileView | null> {
     const row = await this.prisma.vendorProfile.findUnique({
       where: { id },
@@ -206,6 +311,15 @@ export class PrismaServiceCategoryLookup implements ServiceCategoryLookup {
     });
     return rows.map((r) => ({ id: r.id, name: r.label }));
   }
+
+  async findByIds(ids: readonly string[]): Promise<{ id: string; isActive: boolean }[]> {
+    if (ids.length === 0) return [];
+    const rows = await this.prisma.serviceCategory.findMany({
+      where: { id: { in: [...ids] }, deletedAt: null },
+      select: { id: true, isActive: true },
+    });
+    return rows.map((r) => ({ id: r.id, isActive: r.isActive }));
+  }
 }
 
 interface RawVendorRow {
@@ -255,6 +369,28 @@ function toSnapshot(row: {
     vendorUserId: row.userId,
     status: row.status as VendorProfileEditableSnapshot['status'],
     deletedAt: row.deletedAt,
+  };
+}
+
+function toWithCategoriesSnapshot(row: {
+  id: string;
+  userId: string;
+  status: string;
+  deletedAt: Date | null;
+  categoryChangeCount: number;
+  requiresAdminReview: boolean;
+  lastCategoryChangeAt: Date | null;
+  categories: { serviceCategoryId: string }[];
+}): VendorProfileWithCategoriesSnapshot {
+  return {
+    id: row.id,
+    vendorUserId: row.userId,
+    status: row.status as VendorProfileWithCategoriesSnapshot['status'],
+    deletedAt: row.deletedAt,
+    categoryChangeCount: row.categoryChangeCount,
+    requiresAdminReview: row.requiresAdminReview,
+    lastCategoryChangeAt: row.lastCategoryChangeAt,
+    categoryIds: row.categories.map((c) => c.serviceCategoryId),
   };
 }
 

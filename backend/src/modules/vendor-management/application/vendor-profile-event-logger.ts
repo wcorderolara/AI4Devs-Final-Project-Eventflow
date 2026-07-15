@@ -9,6 +9,9 @@ export const VENDOR_PROFILE_CREATED_EVENT = 'vendor.profile.created';
 export const VENDOR_PROFILE_UPDATED_EVENT = 'vendor.profile.updated';
 export const VENDOR_PROFILE_REPENDING_EVENT = 'vendor.profile.repending';
 export const VENDOR_PROFILE_SOFT_DELETED_EVENT = 'vendor.profile.soft_deleted';
+export const VENDOR_CATEGORY_CHANGED_EVENT = 'vendor.category.changed';
+export const VENDOR_CATEGORY_NOOP_EVENT = 'vendor.category.noop';
+export const VENDOR_CATEGORY_LIMIT_REACHED_EVENT = 'vendor.category.limit_reached';
 
 export interface VendorProfileUpdatedContext {
   correlationId?: string;
@@ -28,6 +31,33 @@ export interface VendorProfileSoftDeletedContext {
   previousStatus: VendorProfileStatus;
 }
 
+export interface VendorCategoryChangedContext {
+  correlationId?: string;
+  vendorProfileId: string;
+  vendorUserId: string;
+  before: readonly string[];
+  after: readonly string[];
+  categoryChangeCountAfter: number;
+  repending: boolean;
+  previousStatus: VendorProfileStatus;
+  newStatus: VendorProfileStatus;
+  durationMs?: number;
+}
+
+export interface VendorCategoryNoopContext {
+  correlationId?: string;
+  vendorProfileId: string;
+  vendorUserId: string;
+  categoryIds: readonly string[];
+}
+
+export interface VendorCategoryLimitReachedContext {
+  correlationId?: string;
+  vendorProfileId: string;
+  vendorUserId: string;
+  categoryChangeCount: number;
+}
+
 export interface VendorProfileEventLogger {
   emitProfileCreated(view: VendorProfileView, ctx: { correlationId?: string; durationMs?: number }): void;
   emitProfileUpdated(view: VendorProfileView, ctx: VendorProfileUpdatedContext): void;
@@ -36,6 +66,9 @@ export interface VendorProfileEventLogger {
     ids: { vendorProfileId: string; vendorUserId: string },
     ctx: VendorProfileSoftDeletedContext,
   ): void;
+  emitCategoryChanged(ctx: VendorCategoryChangedContext): void;
+  emitCategoryNoop(ctx: VendorCategoryNoopContext): void;
+  emitCategoryLimitReached(ctx: VendorCategoryLimitReachedContext): void;
 }
 
 export interface VendorProfileCreatedPayload {
@@ -145,5 +178,77 @@ export function buildVendorProfileSoftDeletedPayload(
     vendorUserId: ids.vendorUserId,
     deletedBy: ctx.deletedBy,
     previousStatus: ctx.previousStatus,
+  };
+}
+
+export interface VendorCategoryChangedPayload {
+  event: typeof VENDOR_CATEGORY_CHANGED_EVENT;
+  correlationId?: string;
+  vendorProfileId: string;
+  vendorUserId: string;
+  before: readonly string[];
+  after: readonly string[];
+  categoryChangeCountAfter: number;
+  repending: boolean;
+  previousStatus: VendorProfileStatus;
+  newStatus: VendorProfileStatus;
+  durationMs?: number;
+}
+
+export function buildVendorCategoryChangedPayload(
+  ctx: VendorCategoryChangedContext,
+): VendorCategoryChangedPayload {
+  return {
+    event: VENDOR_CATEGORY_CHANGED_EVENT,
+    correlationId: ctx.correlationId,
+    vendorProfileId: ctx.vendorProfileId,
+    vendorUserId: ctx.vendorUserId,
+    before: ctx.before,
+    after: ctx.after,
+    categoryChangeCountAfter: ctx.categoryChangeCountAfter,
+    repending: ctx.repending,
+    previousStatus: ctx.previousStatus,
+    newStatus: ctx.newStatus,
+    durationMs: ctx.durationMs,
+  };
+}
+
+export interface VendorCategoryNoopPayload {
+  event: typeof VENDOR_CATEGORY_NOOP_EVENT;
+  correlationId?: string;
+  vendorProfileId: string;
+  vendorUserId: string;
+  categoryIds: readonly string[];
+}
+
+export function buildVendorCategoryNoopPayload(
+  ctx: VendorCategoryNoopContext,
+): VendorCategoryNoopPayload {
+  return {
+    event: VENDOR_CATEGORY_NOOP_EVENT,
+    correlationId: ctx.correlationId,
+    vendorProfileId: ctx.vendorProfileId,
+    vendorUserId: ctx.vendorUserId,
+    categoryIds: ctx.categoryIds,
+  };
+}
+
+export interface VendorCategoryLimitReachedPayload {
+  event: typeof VENDOR_CATEGORY_LIMIT_REACHED_EVENT;
+  correlationId?: string;
+  vendorProfileId: string;
+  vendorUserId: string;
+  categoryChangeCount: number;
+}
+
+export function buildVendorCategoryLimitReachedPayload(
+  ctx: VendorCategoryLimitReachedContext,
+): VendorCategoryLimitReachedPayload {
+  return {
+    event: VENDOR_CATEGORY_LIMIT_REACHED_EVENT,
+    correlationId: ctx.correlationId,
+    vendorProfileId: ctx.vendorProfileId,
+    vendorUserId: ctx.vendorUserId,
+    categoryChangeCount: ctx.categoryChangeCount,
   };
 }

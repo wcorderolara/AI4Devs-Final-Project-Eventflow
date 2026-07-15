@@ -1,9 +1,12 @@
 'use client';
 
-// Mutations de la feature vendor-profile (US-040 / FE-001; US-041 / FE-001).
-import { useMutation } from '@tanstack/react-query';
+// Mutations de la feature vendor-profile (US-040 / FE-001; US-041 / FE-001; US-042 / FE-002).
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { vendorProfileApi } from '../api/vendorProfileApi';
+import { vendorProfileKeys } from './useVendorProfileQueries';
 import type {
+  ChangeVendorCategoriesRequestDTO,
+  ChangeVendorCategoriesResultDTO,
   CreateVendorProfileRequestDTO,
   UpdateVendorProfileRequestDTO,
   UpdateVendorProfileResultDTO,
@@ -32,5 +35,28 @@ export function useSoftDeleteVendorProfile(): ReturnType<typeof useMutation<void
   return useMutation<void, Error, void>({
     mutationFn: () => vendorProfileApi.softDelete(),
     retry: false,
+  });
+}
+
+export function useChangeVendorCategories(): ReturnType<
+  typeof useMutation<
+    ChangeVendorCategoriesResultDTO,
+    Error,
+    ChangeVendorCategoriesRequestDTO
+  >
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    ChangeVendorCategoriesResultDTO,
+    Error,
+    ChangeVendorCategoriesRequestDTO
+  >({
+    mutationFn: (input) => vendorProfileApi.changeCategories(input),
+    retry: false,
+    onSuccess: () => {
+      // Invalida la query `vendor.me` para que próximas lecturas del editor traigan el set
+      // fresco tras la re-pending (US-042 AC-01..04).
+      void queryClient.invalidateQueries({ queryKey: vendorProfileKeys.me });
+    },
   });
 }

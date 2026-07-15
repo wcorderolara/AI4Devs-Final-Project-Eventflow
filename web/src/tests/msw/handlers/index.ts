@@ -5,6 +5,7 @@ import { eventsHandlers } from './events';
 import { healthHandlers } from './health';
 import { profileHandlers } from './profile';
 import { tasksHandlers } from './tasks';
+import { vendorProfileHandlers } from './vendor-profile';
 
 // Catch-all: cualquier `/api/v1/*` sin handler dedicado → 501 visible (falla ruidosamente).
 // DEBE ir al final del array; cada feature agrega su handler ANTES de este.
@@ -23,6 +24,7 @@ const catchAllHandlers = [
 
 export const handlers = [
   ...profileHandlers,
+  ...vendorProfileHandlers,
   ...eventsHandlers,
   ...tasksHandlers,
   ...aiHandlers,

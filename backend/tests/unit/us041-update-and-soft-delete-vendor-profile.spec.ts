@@ -68,6 +68,14 @@ function fakeRepo(overrides: Partial<VendorProfileRepository> = {}): VendorProfi
     updateStatus: vi.fn(async () => undefined),
     softDelete: vi.fn(async () => undefined),
     findByIdWithCategories: vi.fn(async () => view()),
+    // Métodos US-042 no ejercitados por este archivo; stubs para satisfacer el port.
+    findActiveWithCategoriesByVendorUserId: vi.fn(async () => null),
+    lockAndRereadForCategoryChange: vi.fn(async () => null),
+    replaceCategoriesAndAdvanceCounter: vi.fn(async () => ({
+      categoryChangeCount: 0,
+      requiresAdminReview: false,
+      lastCategoryChangeAt: NOW,
+    })),
     ...overrides,
   };
 }
@@ -100,6 +108,10 @@ function fakeEvents(): VendorProfileEventLogger & { calls: unknown[] } {
     emitProfileSoftDeleted: (ids, ctx) => {
       calls.push({ event: 'soft_deleted', ids, ctx });
     },
+    // Stubs de eventos US-042 (no ejercitados aquí).
+    emitCategoryChanged: () => undefined,
+    emitCategoryNoop: () => undefined,
+    emitCategoryLimitReached: () => undefined,
   };
 }
 

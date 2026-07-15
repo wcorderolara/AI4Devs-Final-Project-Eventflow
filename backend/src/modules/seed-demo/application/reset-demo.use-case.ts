@@ -38,6 +38,13 @@ const DELETE_ORDER: ReadonlyArray<{ entity: string; deleteMany: (tx: Prisma.Tran
   { entity: 'attachments', deleteMany: (tx) => tx.attachment.deleteMany({ where: { isSeed: true } }) },
   { entity: 'events', deleteMany: (tx) => tx.event.deleteMany({ where: { isSeed: true } }) },
   { entity: 'vendorServices', deleteMany: (tx) => tx.vendorService.deleteMany({ where: { isSeed: true } }) },
+  // US-042 SEED-001: la M:N `vendor_profile_categories` no tiene `isSeed` propia — se filtra
+  // por su vendorProfile padre. FK `ON DELETE RESTRICT` obliga a borrarla antes de vendor_profiles.
+  {
+    entity: 'vendorProfileCategories',
+    deleteMany: (tx) =>
+      tx.vendorProfileCategory.deleteMany({ where: { vendorProfile: { isSeed: true } } }),
+  },
   { entity: 'vendorProfiles', deleteMany: (tx) => tx.vendorProfile.deleteMany({ where: { isSeed: true } }) },
   { entity: 'adminActions', deleteMany: (tx) => tx.adminAction.deleteMany({ where: { isSeed: true } }) },
   { entity: 'serviceCategories', deleteMany: (tx) => tx.serviceCategory.deleteMany({ where: { isSeed: true } }) },

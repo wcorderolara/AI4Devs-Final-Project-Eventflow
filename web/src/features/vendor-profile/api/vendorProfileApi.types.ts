@@ -21,6 +21,10 @@ export interface VendorProfileDTO {
   slug: string;
   status: VendorProfileStatus;
   created_at: string;
+  // US-042 (opcionales, presentes en GET /vendors/me y en la respuesta del POST /categories).
+  category_change_count?: number;
+  requires_admin_review?: boolean;
+  last_category_change_at?: string | null;
 }
 
 export interface VendorProfileEnvelopeDTO {
@@ -62,5 +66,25 @@ export interface UpdateVendorProfileResultDTO {
 
 export interface UpdateVendorProfileEnvelopeDTO {
   data: UpdateVendorProfileResultDTO;
+  meta: { correlationId: string; timestamp?: string };
+}
+
+// ── US-042 ─────────────────────────────────────────────────────────────────
+export interface ChangeVendorCategoriesRequestDTO {
+  service_category_ids: string[];
+}
+
+export interface ChangeVendorCategoriesResultDTO {
+  profile: VendorProfileDTO;
+  repending: boolean;
+  noop: boolean;
+  category_change_count: number;
+  requires_admin_review: boolean;
+  status: VendorProfileStatus;
+  last_category_change_at: string | null;
+}
+
+export interface ChangeVendorCategoriesEnvelopeDTO {
+  data: ChangeVendorCategoriesResultDTO;
   meta: { correlationId: string; timestamp?: string };
 }
