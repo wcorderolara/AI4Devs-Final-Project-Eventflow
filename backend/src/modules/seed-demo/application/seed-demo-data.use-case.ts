@@ -396,30 +396,32 @@ export class SeedDemoDataUseCase {
 
     for (const scenario of scenarios) {
       const vendor = vendors[scenario.vendorIndex]!;
-      const existing = await tx.attachment.count({
-        where: {
-          ownerType: 'vendor_work',
-          ownerId: vendor.id,
-          workLabel: scenario.workLabel,
-          status: 'active',
-          isSeed: true,
-        },
-      });
-      const missing = scenario.count - existing;
-      for (let i = 0; i < missing; i += 1) {
+      // Idempotente vía `ensure` por índice (fileName determinista): la primera pasada crea
+      // N attachments, la segunda encuentra los mismos → suma a `unchanged` (US-085 TS-02).
+      for (let i = 0; i < scenario.count; i += 1) {
+        const fileName = `${scenario.workLabel}-${i + 1}.jpg`;
         await ensure(
-          () => Promise.resolve(null),
+          () =>
+            tx.attachment.findFirst({
+              where: {
+                ownerType: 'vendor_work',
+                ownerId: vendor.id,
+                workLabel: scenario.workLabel,
+                fileName,
+                isSeed: true,
+              },
+            }),
           () =>
             tx.attachment.create({
               data: {
                 ownerType: 'vendor_work',
                 ownerId: vendor.id,
                 status: 'active',
-                url: `seed/${vendor.id}/${scenario.workLabel}-${existing + i + 1}.jpg`,
-                fileName: `${scenario.workLabel}-${existing + i + 1}.jpg`,
+                url: `seed/${vendor.id}/${fileName}`,
+                fileName,
                 mimeType: 'image/jpeg',
                 workLabel: scenario.workLabel,
-                sizeBytes: 200_000 + (i * 1_000),
+                sizeBytes: 200_000 + i * 1_000,
                 uploadedBy: vendor.userId,
                 isSeed: true,
               },
@@ -429,13 +431,25 @@ export class SeedDemoDataUseCase {
       }
     }
 
-    // Escenario `hidden` — sólo si hay ≥3 vendors demo.
+    // Escenario `hidden` — sólo si hay ≥3 vendors demo. Idempotente vía `ensure`: la primera
+    // pasada aplica el UPDATE (via `create` sintético que hace update); la segunda encuentra
+    // el vendor ya `hidden` y suma `unchanged`.
     if (vendors.length > 2) {
       const hiddenVendor = vendors[2]!;
-      await tx.vendorProfile.update({
-        where: { id: hiddenVendor.id },
-        data: { status: 'hidden' },
-      });
+      await ensure(
+        () =>
+          tx.vendorProfile.findFirst({
+            where: { id: hiddenVendor.id, status: 'hidden' },
+            select: { id: true },
+          }),
+        () =>
+          tx.vendorProfile.update({
+            where: { id: hiddenVendor.id },
+            data: { status: 'hidden' },
+            select: { id: true },
+          }),
+        counts,
+      );
     }
   }
 
