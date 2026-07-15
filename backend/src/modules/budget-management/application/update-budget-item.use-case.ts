@@ -107,12 +107,18 @@ export class UpdateBudgetItemUseCase {
       latencyMs: this.now() - startedAt,
     });
 
+    // US-038 (PB-P1-022 / BE-003): shape extendido forward-compat. La bandera per-item se
+    // deriva puntualmente (tolerancia MVP = 0.01, todas las monedas del enum). El GET del
+    // summary aplica la tolerancia adaptativa completa.
+    const itemDelta = updated.amountCommitted - updated.amountPlanned;
     return {
       id: updated.id,
       label: updated.label,
       category_code: updated.categoryCode,
       amount_planned: updated.amountPlanned,
       amount_committed: updated.amountCommitted,
+      over_committed: itemDelta > 0.01,
+      overcommitted_amount: Math.max(0, itemDelta),
     };
   }
 }

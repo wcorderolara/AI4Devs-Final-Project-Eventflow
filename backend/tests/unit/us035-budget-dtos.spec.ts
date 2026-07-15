@@ -10,14 +10,16 @@ import {
 } from '../../src/modules/budget-management/dto/index.js';
 
 describe('US-035 QA-001 — budgetSummaryDto (R1)', () => {
-  it('UT-05 acepta el shape canónico R1 (sin paid_total)', () => {
+  it('UT-05 acepta el shape canónico R1 extendido (US-038 BE-003)', () => {
     const parsed = budgetSummaryDto.parse({
       total_planned: 12500,
       total_committed: 9800,
       over_committed: false,
       currency_code: 'USD',
+      overcommitted_amount: 0,
     });
     expect(parsed.over_committed).toBe(false);
+    expect(parsed.overcommitted_amount).toBe(0);
   });
 
   it('UT-05 rechaza currency_code fuera del enum CurrencyCode', () => {
@@ -26,6 +28,7 @@ describe('US-035 QA-001 — budgetSummaryDto (R1)', () => {
       total_committed: 0,
       over_committed: false,
       currency_code: 'ARS',
+      overcommitted_amount: 0,
     });
     expect(res.success).toBe(false);
   });
@@ -36,6 +39,7 @@ describe('US-035 QA-001 — budgetSummaryDto (R1)', () => {
       total_committed: 0,
       over_committed: false,
       currency_code: code,
+      overcommitted_amount: 0,
     });
     expect(res.success).toBe(true);
   });
@@ -46,6 +50,7 @@ describe('US-035 QA-001 — budgetSummaryDto (R1)', () => {
       total_committed: 0,
       over_committed: false,
       currency_code: 'USD',
+      overcommitted_amount: 0,
     });
     expect(res.success).toBe(false);
   });
@@ -56,6 +61,7 @@ describe('US-035 QA-001 — budgetSummaryDto (R1)', () => {
       total_committed: -0.01,
       over_committed: false,
       currency_code: 'USD',
+      overcommitted_amount: 0,
     });
     expect(res.success).toBe(false);
   });
@@ -69,6 +75,8 @@ describe('US-035 QA-001 — budgetItemDto (R1)', () => {
       category_code: null,
       amount_planned: 1000,
       amount_committed: 500,
+      over_committed: false,
+      overcommitted_amount: 0,
     });
     expect(parsed.category_code).toBeNull();
   });
@@ -80,6 +88,8 @@ describe('US-035 QA-001 — budgetItemDto (R1)', () => {
       category_code: 'catering',
       amount_planned: 4500,
       amount_committed: 3800,
+      over_committed: false,
+      overcommitted_amount: 0,
     });
     expect(parsed.category_code).toBe('catering');
   });
@@ -91,6 +101,8 @@ describe('US-035 QA-001 — budgetItemDto (R1)', () => {
       category_code: null,
       amount_planned: -1,
       amount_committed: 0,
+      over_committed: false,
+      overcommitted_amount: 0,
     });
     expect(res.success).toBe(false);
   });
@@ -102,6 +114,8 @@ describe('US-035 QA-001 — budgetItemDto (R1)', () => {
       category_code: null,
       amount_planned: 0,
       amount_committed: 0,
+      over_committed: false,
+      overcommitted_amount: 0,
     });
     expect(res.success).toBe(false);
   });
@@ -113,6 +127,8 @@ describe('US-035 QA-001 — budgetItemDto (R1)', () => {
       category_code: null,
       amount_planned: 0,
       amount_committed: 0,
+      over_committed: false,
+      overcommitted_amount: 0,
     });
     expect(res.success).toBe(false);
   });
@@ -126,6 +142,7 @@ describe('US-035 QA-001 — getBudgetResponseDto (R1)', () => {
         total_committed: 0,
         over_committed: false,
         currency_code: 'GTQ',
+        overcommitted_amount: 0,
       },
       items: [],
     });
@@ -139,6 +156,7 @@ describe('US-035 QA-001 — getBudgetResponseDto (R1)', () => {
         total_committed: 8000,
         over_committed: false,
         currency_code: 'MXN',
+        overcommitted_amount: 0,
       },
       items: [
         {
@@ -147,6 +165,8 @@ describe('US-035 QA-001 — getBudgetResponseDto (R1)', () => {
           category_code: 'catering',
           amount_planned: 6000,
           amount_committed: 5000,
+          over_committed: false,
+          overcommitted_amount: 0,
         },
         {
           id: '22222222-2222-2222-2222-222222222222',
@@ -154,6 +174,8 @@ describe('US-035 QA-001 — getBudgetResponseDto (R1)', () => {
           category_code: null,
           amount_planned: 4000,
           amount_committed: 3000,
+          over_committed: false,
+          overcommitted_amount: 0,
         },
       ],
     });

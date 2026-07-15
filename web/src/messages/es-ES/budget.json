@@ -15,7 +15,11 @@
   },
   "overcommit": {
     "title": "Presupuesto sobre-comprometido",
-    "body": "El importe comprometido supera el planificado. Revisa tus partidas o aumenta los importes planificados."
+    "body": "El importe comprometido supera el planificado. Revisa tus partidas o aumenta los importes planificados.",
+    "delta_label": "Excede por {amount}",
+    "item_badge": "Sobrecomprometido",
+    "item_aria_label": "Categoría sobrecomprometida por {amount}",
+    "cta_edit_items": "Editar partidas"
   },
   "table": {
     "caption": "Partidas del presupuesto agrupadas por categoría.",

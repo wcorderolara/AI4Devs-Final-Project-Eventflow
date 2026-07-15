@@ -1265,10 +1265,12 @@ Documentos 2 (§10), 3 (§7.15), 4 (BR-BUDGET-006).
 | display_name | json (i18n) | No | Nombre por idioma. | Recommended | UX. |
 | symbol | string | No | Símbolo monetario. | Recommended | UX. |
 | is_active | boolean | Sí | Habilita en selectores. | Derived | — |
+| decimal_places | integer | Recommended | Cantidad de decimales de la moneda (0 para CLP/JPY, 2 para el resto). Requerido por BR-BUDGET-004 (US-038 D3) para calcular la tolerancia adaptativa `10^(-decimal_places)`. En MVP se implementa vía adapter estático en memoria; migrar a columna cuando se catalogue en tabla. | Recommended | US-038 D3. |
 
 #### Notas de implementación
-- En MVP basta con un enum. Migrar a tabla si se requiere extensibilidad futura.
+- En MVP basta con un enum + adapter estático de `decimal_places` (`GTQ/EUR/MXN/COP/USD ⇒ 2`, `CLP/JPY ⇒ 0`). Migrar a tabla si se requiere extensibilidad futura.
 - **No** se almacena tipo de cambio (BR-BUDGET-007, BR-OOS-015).
+- **Verificación DOC-003 (US-038, 2026-07-15)**: `Currency` NO está persistida como tabla Prisma en el schema actual; sólo existe el enum `CurrencyCode`. `BR-BUDGET-004` opera con adapter estático + fallback defensivo `decimal_places = 2` y log `currency.decimal_places.missing`. Follow-up sugerido: migrar a tabla si se adoptan monedas sin decimales (CLP/JPY).
 
 ---
 

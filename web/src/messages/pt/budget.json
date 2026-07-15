@@ -15,7 +15,11 @@
   },
   "overcommit": {
     "title": "Orçamento sobrecomprometido",
-    "body": "O valor comprometido excede o planejado. Reveja seus itens ou aumente os valores planejados."
+    "body": "O valor comprometido excede o planejado. Reveja seus itens ou aumente os valores planejados.",
+    "delta_label": "Excede em {amount}",
+    "item_badge": "Sobrecomprometido",
+    "item_aria_label": "Categoria sobrecomprometida em {amount}",
+    "cta_edit_items": "Editar itens"
   },
   "table": {
     "caption": "Itens do orçamento agrupados por categoria.",

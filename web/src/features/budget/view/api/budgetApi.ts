@@ -7,6 +7,10 @@ export interface BudgetItemDto {
   category_code: string | null;
   amount_planned: number;
   amount_committed: number;
+  // US-038 (PB-P1-022 / BE-003): bandera + delta per-item (AC-01, AC-03, VR-03).
+  // Siempre presentes; default `false` / `0` cuando no aplica.
+  over_committed: boolean;
+  overcommitted_amount: number;
 }
 
 export interface BudgetSummaryDto {
@@ -14,6 +18,8 @@ export interface BudgetSummaryDto {
   total_planned: number;
   total_committed: number;
   over_committed: boolean;
+  // US-038 (PB-P1-022 / BE-003): monto bruto del exceso a nivel evento (AC-01).
+  overcommitted_amount: number;
 }
 
 export interface GetBudgetResponseDto {

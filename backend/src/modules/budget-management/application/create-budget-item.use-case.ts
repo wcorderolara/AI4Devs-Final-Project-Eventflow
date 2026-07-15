@@ -81,12 +81,18 @@ export class CreateBudgetItemUseCase {
       latencyMs: this.now() - startedAt,
     });
 
+    // US-038 (PB-P1-022 / BE-003): shape extendido forward-compat. Ítem recién creado no
+    // tiene contexto de la tolerancia adaptativa del summary; se retornan los defaults del
+    // shape (`false`, `0`) y el próximo GET del summary refleja el estado agregado real.
+    const itemDelta = created.amountCommitted - created.amountPlanned;
     return {
       id: created.id,
       label: created.label,
       category_code: created.categoryCode,
       amount_planned: created.amountPlanned,
       amount_committed: created.amountCommitted,
+      over_committed: itemDelta > 0.01,
+      overcommitted_amount: Math.max(0, itemDelta),
     };
   }
 }
