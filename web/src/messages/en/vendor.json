@@ -118,6 +118,41 @@
     "pt": "Portuguese",
     "en": "English"
   },
+  "portfolio": {
+    "title": "My portfolio",
+    "subtitle": "Upload up to 10 images per work to showcase what you offer.",
+    "empty": "You haven't uploaded any portfolio images yet.",
+    "workLabel": {
+      "label": "Work name",
+      "placeholder": "e.g. wedding-lopez-2024"
+    },
+    "dropzone": {
+      "placeholder": "Drop an image here or press Enter to choose one",
+      "helper": "JPG, PNG or WebP. Up to 5 MB. Long side is resized to 2048 px."
+    },
+    "actions": {
+      "upload": "Upload image",
+      "uploading": "Uploading…"
+    },
+    "grid": {
+      "label": "Portfolio grouped by work",
+      "counter": "{current} of {max} images",
+      "imageAria": "Image {width}×{height}"
+    },
+    "errors": {
+      "INVALID_MIME": "That file type isn't allowed. Use JPG, PNG or WebP.",
+      "INVALID_IMAGE": "We couldn't process that image. Try another one.",
+      "INVALID_WORK_LABEL": "The work name only accepts letters, digits, spaces, hyphens and underscores (1–80 characters).",
+      "FILE_TOO_LARGE": "The file exceeds the 5 MB limit.",
+      "IMAGE_LIMIT_REACHED": "This work already has the maximum of 10 images.",
+      "WORK_LABEL_LIMIT_REACHED": "You have reached the maximum of 20 works. Delete an existing one to add a new one.",
+      "PROFILE_HIDDEN": "Your profile is hidden by an administrator. Contact us to reactivate it.",
+      "PROFILE_NOT_FOUND": "You don't have a vendor profile yet.",
+      "AUTHENTICATION_REQUIRED": "Your session expired. Please sign in again.",
+      "FORBIDDEN": "Only vendors can upload portfolio images.",
+      "UNEXPECTED": "Something went wrong. Please try again."
+    }
+  },
   "categories": {
     "change": {
       "title": "Change my service categories",

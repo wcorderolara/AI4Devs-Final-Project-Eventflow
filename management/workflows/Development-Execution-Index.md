@@ -81,3 +81,4 @@
 | P1 | PB-P1-024 | US-040 | Crear mi VendorProfile (status=pending) | [record](development-execution/P1/PB-P1-024/US-040-execution.md) | 24 | 21 | 0 | 0 | 0 | 3 | `Done` | 2026-07-15 |
 | P1 | PB-P1-024 | US-041 | Editar y soft-delete VendorProfile (re-pending auto) | [record](development-execution/P1/PB-P1-024/US-041-execution.md) | 19 | 17 | 0 | 0 | 0 | 2 | `Done` | 2026-07-15 |
 | P1 | PB-P1-025 | US-042 | Cambiar categorías del vendor (máx 5 cambios acumulados) | [record](development-execution/P1/PB-P1-025/US-042-execution.md) | 20 | 19 | 0 | 0 | 0 | 1 | `Done` | 2026-07-15 |
+| P1 | PB-P1-026 | US-043 | Subir hasta 10 imágenes por trabajo del portafolio | [record](development-execution/P1/PB-P1-026/US-043-execution.md) | 23 | 22 | 0 | 0 | 0 | 1 | `Done` | 2026-07-15 |

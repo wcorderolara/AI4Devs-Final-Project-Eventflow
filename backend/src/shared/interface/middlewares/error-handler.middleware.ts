@@ -77,6 +77,16 @@ import {
   InvalidCategoriesError,
   InvalidCategoryError,
 } from '../../../modules/vendor-management/domain/vendor-profile.errors.js';
+import {
+  FileTooLargeError,
+  ImageLimitReachedError,
+  InvalidImageError,
+  InvalidMimeError,
+  InvalidWorkLabelError,
+  PortfolioProfileHiddenError,
+  PortfolioProfileNotFoundError,
+  WorkLabelLimitReachedError,
+} from '../../../modules/attachments/domain/attachment.errors.js';
 import { BusinessRuleViolationError } from '../../domain/errors/business-rule-violation.error.js';
 import { RateLimitError } from '../../domain/errors/rate-limit.error.js';
 import { BadRequestError } from '../../domain/errors/bad-request.error.js';
@@ -383,6 +393,31 @@ function mapError(err: unknown): MappedError {
       message: err.message,
       details: err.unknownOrInactive.map((id) => ({ field: 'service_category_ids', message: id })),
     };
+  }
+  // US-043 (PB-P1-026): upload de imágenes del portafolio del vendor.
+  if (err instanceof PortfolioProfileNotFoundError) {
+    return { status: 404, code: ErrorCodes.PROFILE_NOT_FOUND, message: err.message };
+  }
+  if (err instanceof PortfolioProfileHiddenError) {
+    return { status: 409, code: ErrorCodes.PROFILE_HIDDEN, message: err.message };
+  }
+  if (err instanceof InvalidMimeError) {
+    return { status: 400, code: ErrorCodes.INVALID_MIME, message: err.message };
+  }
+  if (err instanceof InvalidImageError) {
+    return { status: 400, code: ErrorCodes.INVALID_IMAGE, message: err.message };
+  }
+  if (err instanceof InvalidWorkLabelError) {
+    return { status: 400, code: ErrorCodes.INVALID_WORK_LABEL, message: err.message };
+  }
+  if (err instanceof ImageLimitReachedError) {
+    return { status: 409, code: ErrorCodes.IMAGE_LIMIT_REACHED, message: err.message };
+  }
+  if (err instanceof WorkLabelLimitReachedError) {
+    return { status: 409, code: ErrorCodes.WORK_LABEL_LIMIT_REACHED, message: err.message };
+  }
+  if (err instanceof FileTooLargeError) {
+    return { status: 413, code: ErrorCodes.FILE_TOO_LARGE, message: err.message };
   }
   if (err instanceof ConflictError) {
     return { status: 409, code: ErrorCodes.CONFLICT, message: err.message };

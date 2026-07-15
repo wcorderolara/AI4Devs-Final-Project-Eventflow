@@ -113,6 +113,13 @@ export const ErrorCodes = {
   CATEGORY_CHANGE_LIMIT: 'CATEGORY_CHANGE_LIMIT', // 409 — category_change_count >= 5 (AC-02 / D1)
   INVALID_CATEGORIES: 'INVALID_CATEGORIES', // 400 — cardinalidad fuera de 1..5 o duplicados (EC-04)
   INVALID_CATEGORY: 'INVALID_CATEGORY', // 400 — categoría inexistente o inactiva (EC-05); include details.unknown_or_inactive[]
+  // US-043 (PB-P1-026): subir imágenes del portafolio del vendor.
+  INVALID_MIME: 'INVALID_MIME', // 400 — header MIME o magic-bytes fuera del allowlist (EC-01, NT-07)
+  INVALID_IMAGE: 'INVALID_IMAGE', // 400 — sharp falla al decodificar el binario (imagen corrupta)
+  INVALID_WORK_LABEL: 'INVALID_WORK_LABEL', // 400 — path param no matchea ^[a-zA-Z0-9\-_ ]{1,80}$ (EC-05)
+  IMAGE_LIMIT_REACHED: 'IMAGE_LIMIT_REACHED', // 409 — 10 imágenes activas en el mismo work_label (AC-02, C-022)
+  WORK_LABEL_LIMIT_REACHED: 'WORK_LABEL_LIMIT_REACHED', // 409 — 20 work_labels distintos por vendor (EC-06 / D6)
+  FILE_TOO_LARGE: 'FILE_TOO_LARGE', // 413 — multer rechaza el binario > FILE_SIZE_LIMIT (5 MB por defecto, EC-02)
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

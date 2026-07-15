@@ -205,6 +205,7 @@ Los NFRs explícitamente excluyen requerimientos de marketplace transaccional, p
 | NFR-PERF-004 | El dashboard administrativo debe renderizar sus métricas operativas en menos de 3 segundos con seed/demo data. | Performance | Should Have | MVP | Recommended | Tiempo de carga del panel admin con métricas FR-ADMIN-005. | FR-ADMIN-005, 8.1 decisión #10 |
 | NFR-PERF-005 | El directorio de proveedores debe permanecer usable con el volumen esperado de seed (10–20 proveedores). | Performance | Must Have | MVP | Derived | Paginación funcional + filtros respondan en menos de 1.5 s. | FR-VENDOR-006, BR-VENDOR-001 |
 | NFR-PERF-006 | El backend debe evitar llamadas IA innecesarias caché-pasibles y permitir regeneración explícita por el usuario. | Performance / AI | Should Have | MVP | Derived | No se invoca IA en cargas pasivas; solo bajo acción explícita o on-demand. | FR-AI-013, BR-AI-008 |
+| NFR-PERF-UPLOAD-001 | Los uploads binarios (portafolio del vendor, US-043 D2) están limitados a **5 MB** por archivo con allowlist MIME (`image/jpeg`, `image/png`, `image/webp`) y resize server-side (long-edge ≤ 2048 px). | Performance / Security | Should Have | MVP | Housekeeping (US-043 DOC-002) | Config `FILE_SIZE_LIMIT` (backend env) + validador magic-bytes + pipeline `sharp`. Ratificación formal pendiente. | FR-VENDOR-006/007/008, BR-VENDOR-005, US-043 |
 
 ---
 
