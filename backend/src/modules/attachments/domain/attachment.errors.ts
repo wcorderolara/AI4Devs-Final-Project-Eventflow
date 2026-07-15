@@ -82,3 +82,30 @@ export class PortfolioProfileHiddenError extends AppError {
     super(message);
   }
 }
+
+/**
+ * US-048 EC-01/EC-02 — attachment inexistente, ajeno o ya soft-deleted. → 404 uniforme (D4)
+ * para no revelar existencia ni ownership. La idempotencia también cae aquí (segundo DELETE
+ * al mismo `imageId` responde igual).
+ */
+export class AttachmentNotFoundError extends AppError {
+  readonly code = ErrorCodes.ATTACHMENT_NOT_FOUND;
+
+  constructor(message = 'Attachment not found') {
+    super(message);
+  }
+}
+
+/**
+ * US-048 EC-05 — body con `deletion_reason` fuera de 1..500 chars. → 400. Se lanza sólo
+ * cuando el body viola la validación Zod y el mapping por defecto no aplica; en la práctica
+ * el `validateRequestMiddleware` intercepta antes con `ValidationError` genérico. Esta clase
+ * existe para que el use case pueda rechazar body preprocesado sin depender del middleware.
+ */
+export class InvalidDeletionReasonError extends AppError {
+  readonly code = ErrorCodes.INVALID_DELETION_REASON;
+
+  constructor(message = 'deletion_reason must be between 1 and 500 characters') {
+    super(message);
+  }
+}

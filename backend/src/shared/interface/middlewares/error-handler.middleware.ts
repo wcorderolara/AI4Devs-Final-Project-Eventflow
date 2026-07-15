@@ -78,8 +78,10 @@ import {
   InvalidCategoryError,
 } from '../../../modules/vendor-management/domain/vendor-profile.errors.js';
 import {
+  AttachmentNotFoundError,
   FileTooLargeError,
   ImageLimitReachedError,
+  InvalidDeletionReasonError,
   InvalidImageError,
   InvalidMimeError,
   InvalidWorkLabelError,
@@ -418,6 +420,12 @@ function mapError(err: unknown): MappedError {
   }
   if (err instanceof FileTooLargeError) {
     return { status: 413, code: ErrorCodes.FILE_TOO_LARGE, message: err.message };
+  }
+  if (err instanceof AttachmentNotFoundError) {
+    return { status: 404, code: ErrorCodes.ATTACHMENT_NOT_FOUND, message: err.message };
+  }
+  if (err instanceof InvalidDeletionReasonError) {
+    return { status: 400, code: ErrorCodes.INVALID_DELETION_REASON, message: err.message };
   }
   if (err instanceof ConflictError) {
     return { status: 409, code: ErrorCodes.CONFLICT, message: err.message };

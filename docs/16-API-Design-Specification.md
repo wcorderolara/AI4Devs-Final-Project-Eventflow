@@ -1204,6 +1204,7 @@ Gestionar el perfil del proveedor, aprobación admin, directorio público.
 | DELETE | `/vendors/me` | Sí | vendor | Soft delete del perfil propio. | 204 | 401, 403, 409 `PROFILE_HIDDEN`/`PROFILE_DELETED` |
 | POST | `/vendors/me/categories` | Sí | vendor | Cambia el set de categorías (tope acumulado 5). | 200 | 400 `INVALID_CATEGORIES`/`INVALID_CATEGORY`, 401, 403, 404 `PROFILE_NOT_FOUND`, 409 `CATEGORY_CHANGE_LIMIT`/`PROFILE_HIDDEN` |
 | POST | `/vendors/me/portfolio/works/:workLabel/images` | Sí | vendor | Sube una imagen al `work_label` del portafolio (US-043). | 201 | 400 `INVALID_MIME`/`INVALID_WORK_LABEL`/`INVALID_IMAGE`, 401, 403, 404 `PROFILE_NOT_FOUND`, 409 `IMAGE_LIMIT_REACHED`/`WORK_LABEL_LIMIT_REACHED`/`PROFILE_HIDDEN`, 413 `FILE_TOO_LARGE` |
+| DELETE | `/vendors/me/portfolio/images/:imageId` | Sí | vendor | Soft delete del attachment del portafolio (US-048). Body opcional `{ deletion_reason? }`. | 204 | 400 `VALIDATION_ERROR`/`INVALID_DELETION_REASON`, 401, 403, 404 `ATTACHMENT_NOT_FOUND`/`PROFILE_NOT_FOUND`, 409 `PROFILE_HIDDEN` |
 | POST | `/vendors/me/submit-approval` | Sí | vendor | Envía perfil a admin. | 200 | 401, 403, 422 |
 | GET | `/vendors/:vendorProfileId` | No (público si approved) | anonymous, organizer, admin | Detalle público. | 200 | 404 |
 | GET | `/api/v1/public/vendors` | No | anonymous | Directorio público. | 200 | — |
@@ -1319,6 +1320,35 @@ type CreateVendorProfileRequestDto = {
 //     Observability: log `vendor.portfolio.uploaded` (info) con `vendor_profile_id`, `work_label`,
 //     `attachment_id`, `mime='image/jpeg'`, `size_bytes`, `dimensions`, `correlation_id`; error
 //     4xx/5xx → `vendor.portfolio.upload_failed` (warn) con `phase` y `code`.
+//
+// US-048 (PB-P1-026): soft delete vendor-driven del attachment del portafolio.
+// - `DELETE /vendors/me/portfolio/images/:imageId`:
+//     Path param `:imageId` — UUID (Zod). Body opcional `application/json`:
+//       `{ "deletion_reason"?: string }` con `1..500` chars (D2 / EC-05); ausente ⇒ persiste
+//       `null`. Extras rechazados por Zod `.strict()`.
+//     Backend:
+//       1) Resolve `vendor_profile` por sesión; null/deleted → 404 (D3 EC-04); `status='hidden'`
+//          → 409 `PROFILE_HIDDEN` (D3 EC-03).
+//       2) Repository filtra por `id`, `owner_id=vendor_profile.id`, `owner_type='vendor_work'`
+//          y `status='active'`. Si no encuentra → 404 `ATTACHMENT_NOT_FOUND` (D4: uniforme
+//          para ajeno / inexistente / ya soft-deleted; anti information-leakage / SEC-03).
+//       3) `UPDATE attachments SET status='deleted', deleted_at=NOW(), deleted_by=$actor,
+//          deletion_reason=$reason WHERE id=$id AND owner_id=$owner AND status='active'`.
+//          El guard `status='active'` en el WHERE es TOCTOU-safe: dos DELETE concurrentes
+//          resultan en un solo side-effect + un `404 ATTACHMENT_NOT_FOUND` para el segundo.
+//     Response: `204 No Content` (sin body).
+//     Errores:
+//       - 400 `VALIDATION_ERROR` — `:imageId` no es UUID.
+//       - 400 `INVALID_DELETION_REASON` — body con `deletion_reason` fuera de 1..500.
+//       - 401 sesión ausente; 403 rol distinto de vendor.
+//       - 404 `PROFILE_NOT_FOUND` — vendor sin perfil activo o soft-deleted.
+//       - 404 `ATTACHMENT_NOT_FOUND` — attachment ajeno / inexistente / ya soft-deleted.
+//       - 409 `PROFILE_HIDDEN` — `status='hidden'`.
+//     Observability: log `vendor.portfolio.deleted` (info) con `vendor_profile_id`,
+//     `attachment_id`, `work_label`, `deletion_reason` (o `null`), `correlation_id`.
+//     Sin `AdminAction` (SEC-05: acción vendor-driven; los flujos admin `hide_attachment` /
+//     `remove_attachment` viven en historias futuras). El binario físico se preserva para
+//     auditoría; el lifecycle policy de purga vive fuera del MVP.
 
 type UpdateVendorProfileRequestDto = Partial<CreateVendorProfileRequestDto> & {
   availabilitySummary?: string;

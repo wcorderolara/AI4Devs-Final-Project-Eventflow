@@ -139,6 +139,33 @@
       "counter": "{current} of {max} images",
       "imageAria": "Image {width}×{height}"
     },
+    "delete": {
+      "trigger": {
+        "label": "Delete",
+        "aria": "Delete image {index} of work {workLabel}"
+      },
+      "title": "Delete this image from \"{workLabel}\"?",
+      "description": "Soft delete: the image will disappear from your portfolio immediately. We keep the metadata for auditing.",
+      "reason": {
+        "label": "Reason (optional)",
+        "placeholder": "e.g. Outdated image",
+        "remaining": "{remaining} characters remaining"
+      },
+      "actions": {
+        "cancel": "Cancel",
+        "confirm": "Delete",
+        "deleting": "Deleting…"
+      },
+      "errors": {
+        "ATTACHMENT_NOT_FOUND": "This image is no longer available.",
+        "INVALID_DELETION_REASON": "The reason must be between 1 and 500 characters.",
+        "PROFILE_HIDDEN": "Your profile is hidden by an administrator. Contact us to reactivate it.",
+        "PROFILE_NOT_FOUND": "You don't have a vendor profile yet.",
+        "AUTHENTICATION_REQUIRED": "Your session expired. Please sign in again.",
+        "FORBIDDEN": "Only vendors can delete portfolio images.",
+        "UNEXPECTED": "Something went wrong. Please try again."
+      }
+    },
     "errors": {
       "INVALID_MIME": "That file type isn't allowed. Use JPG, PNG or WebP.",
       "INVALID_IMAGE": "We couldn't process that image. Try another one.",

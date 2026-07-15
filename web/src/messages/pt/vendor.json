@@ -139,6 +139,33 @@
       "counter": "{current} de {max} imagens",
       "imageAria": "Imagem {width}×{height}"
     },
+    "delete": {
+      "trigger": {
+        "label": "Eliminar",
+        "aria": "Eliminar imagem {index} do trabalho {workLabel}"
+      },
+      "title": "Eliminar esta imagem de \"{workLabel}\"?",
+      "description": "Soft delete: a imagem desaparecerá do seu portefólio imediatamente. Guardamos os metadados para auditoria.",
+      "reason": {
+        "label": "Razão (opcional)",
+        "placeholder": "ex.: Imagem desatualizada",
+        "remaining": "{remaining} caracteres restantes"
+      },
+      "actions": {
+        "cancel": "Cancelar",
+        "confirm": "Eliminar",
+        "deleting": "A eliminar…"
+      },
+      "errors": {
+        "ATTACHMENT_NOT_FOUND": "Esta imagem já não está disponível.",
+        "INVALID_DELETION_REASON": "A razão deve ter entre 1 e 500 caracteres.",
+        "PROFILE_HIDDEN": "O seu perfil está oculto por um administrador. Contacte-nos para o reativar.",
+        "PROFILE_NOT_FOUND": "Ainda não tem um perfil de fornecedor.",
+        "AUTHENTICATION_REQUIRED": "A sua sessão expirou. Inicie sessão novamente.",
+        "FORBIDDEN": "Só os fornecedores podem eliminar imagens do portefólio.",
+        "UNEXPECTED": "Algo correu mal. Tente novamente."
+      }
+    },
     "errors": {
       "INVALID_MIME": "Esse tipo de ficheiro não é permitido. Use JPG, PNG ou WebP.",
       "INVALID_IMAGE": "Não foi possível processar essa imagem. Tente outra.",

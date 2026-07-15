@@ -8,8 +8,10 @@ import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.j
 import type { AttachmentView } from '../domain/attachment.js';
 import { OWNER_TYPE_VENDOR_WORK, type AttachmentOwnerType } from '../domain/constants.js';
 import type {
+  ActiveAttachmentSnapshot,
   AttachmentRepository,
   CreateAttachmentInput,
+  SoftDeleteAttachmentInput,
   VendorProfileForPortfolio,
   VendorProfileForPortfolioReader,
 } from '../ports/attachment.repository.js';
@@ -77,6 +79,44 @@ export class PrismaAttachmentRepository implements AttachmentRepository {
     );
     const [first] = rows;
     return first ? Number(first.count) : 0;
+  }
+
+  async findActiveOwnedByIdAndVendor(
+    imageId: string,
+    ownerId: string,
+  ): Promise<ActiveAttachmentSnapshot | null> {
+    const row = await this.prisma.attachment.findFirst({
+      where: {
+        id: imageId,
+        ownerId,
+        ownerType: OWNER_TYPE_VENDOR_WORK,
+        status: 'active',
+      },
+      select: { id: true, ownerId: true, workLabel: true },
+    });
+    if (!row) return null;
+    // `workLabel` es opcional en el schema (Doc 18 §19). Un attachment vendor_work sin label
+    // sería un dato inconsistente; devolvemos cadena vacía para preservar el contrato del
+    // snapshot y que el log lo refleje sin lanzar.
+    return { id: row.id, ownerId: row.ownerId, workLabel: row.workLabel ?? '' };
+  }
+
+  async softDeleteByIdOwned(input: SoftDeleteAttachmentInput): Promise<boolean> {
+    const result = await this.prisma.attachment.updateMany({
+      where: {
+        id: input.id,
+        ownerId: input.ownerId,
+        ownerType: OWNER_TYPE_VENDOR_WORK,
+        status: 'active',
+      },
+      data: {
+        status: 'deleted',
+        deletedAt: new Date(),
+        deletedBy: input.deletedBy,
+        deletionReason: input.deletionReason,
+      },
+    });
+    return result.count > 0;
   }
 
   async countDistinctActiveLabelsByOwner(ownerId: string): Promise<number> {

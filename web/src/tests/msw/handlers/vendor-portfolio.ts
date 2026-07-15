@@ -77,6 +77,60 @@ export const vendorPortfolioHandlers = [
   }),
 ];
 
+// US-048 (PB-P1-026 / FE-002): MSW del DELETE. La rama se dispara por el sufijo del `imageId`
+// (UUID donde los últimos 12 hex dígitos codifican el escenario). Reuso del mismo mapping de
+// códigos que el upload; agregamos `ATTACHMENT_NOT_FOUND` (404 uniforme para ajeno/inexistente/
+// idempotencia) e `INVALID_DELETION_REASON` (400) e `INVALID_UUID` (implícito por regex del
+// route matcher, que ya rechazaría non-UUIDs).
+
+const DELETE_ERRORS: Record<string, { code: string; status: number; message: string }> = {
+  'attachment-not-found': {
+    code: 'ATTACHMENT_NOT_FOUND',
+    status: 404,
+    message: 'Attachment not found',
+  },
+  'invalid-deletion-reason': {
+    code: 'INVALID_DELETION_REASON',
+    status: 400,
+    message: 'deletion_reason must be between 1 and 500 characters',
+  },
+  'profile-hidden': { code: 'PROFILE_HIDDEN', status: 409, message: 'Profile hidden by admin' },
+  'profile-not-found': { code: 'PROFILE_NOT_FOUND', status: 404, message: 'Vendor profile not found' },
+  'unauth': { code: 'AUTHENTICATION_REQUIRED', status: 401, message: 'Session required' },
+  'forbidden': { code: 'FORBIDDEN', status: 403, message: 'Vendors only' },
+};
+
+function resolveDeleteError(imageId: string): { code: string; status: number; message: string } | null {
+  for (const [trigger, spec] of Object.entries(DELETE_ERRORS)) {
+    if (imageId.includes(trigger)) return spec;
+  }
+  return null;
+}
+
+vendorPortfolioHandlers.push(
+  http.delete('*/api/v1/vendors/me/portfolio/images/:imageId', async ({ params }) => {
+    const rawId = params.imageId;
+    const imageId = typeof rawId === 'string' ? rawId : '';
+    const errorSpec = resolveDeleteError(imageId);
+    if (errorSpec !== null) {
+      return HttpResponse.json(
+        { error: { code: errorSpec.code, message: errorSpec.message, correlationId: CORRELATION } },
+        { status: errorSpec.status },
+      );
+    }
+    return new HttpResponse(null, { status: 204 });
+  }),
+);
+
+export const VENDOR_PORTFOLIO_DELETE_MSW_TRIGGERS = {
+  ATTACHMENT_NOT_FOUND: 'attachment-not-found',
+  INVALID_DELETION_REASON: 'invalid-deletion-reason',
+  PROFILE_HIDDEN: 'profile-hidden',
+  PROFILE_NOT_FOUND: 'profile-not-found',
+  AUTHENTICATION_REQUIRED: 'unauth',
+  FORBIDDEN: 'forbidden',
+} as const;
+
 export const VENDOR_PORTFOLIO_MSW_TRIGGERS = {
   INVALID_MIME: TRIGGER_INVALID_MIME,
   INVALID_IMAGE: TRIGGER_INVALID_IMAGE,

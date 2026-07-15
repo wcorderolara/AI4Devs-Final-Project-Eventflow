@@ -67,6 +67,8 @@ function fakeAttachments(overrides: Partial<AttachmentRepository> = {}): Attachm
     existsActiveByOwnerAndLabel: vi.fn(async () => false),
     countActiveByOwnerAndLabel: vi.fn(async () => 0),
     countDistinctActiveLabelsByOwner: vi.fn(async () => 0),
+    findActiveOwnedByIdAndVendor: vi.fn(async () => null),
+    softDeleteByIdOwned: vi.fn(async () => true),
     ...overrides,
   };
 }
@@ -90,7 +92,7 @@ function fakeStorage(overrides: Partial<FileStoragePort> = {}): FileStoragePort 
 }
 
 function fakeLogger(): PortfolioEventLogger {
-  return { emitUploaded: vi.fn(), emitUploadFailed: vi.fn() };
+  return { emitUploaded: vi.fn(), emitUploadFailed: vi.fn(), emitDeleted: vi.fn() };
 }
 
 function fakeProcessor(dims = { width: 1536, height: 2048 }) {
