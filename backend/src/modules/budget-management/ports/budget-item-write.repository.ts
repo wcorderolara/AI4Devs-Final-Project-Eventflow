@@ -86,6 +86,17 @@ export interface BudgetItemWriteRepository {
   ): Promise<void>;
 
   /**
+   * US-039 (PB-P1-023 / BE-005): asegura que el evento tenga un Budget asociado. Si ya existe,
+   * lo retorna. Si no, lo crea con `totalPlanned=0`, `totalCommitted=0` (creación lazy — el
+   * organizer aún no visitó la vista Budget). Idempotente y seguro para concurrencia por la
+   * restricción `@unique(eventId)` en `Budget`.
+   */
+  ensureBudgetForEvent(
+    tx: Prisma.TransactionClient,
+    args: { eventId: string },
+  ): Promise<{ id: string }>;
+
+  /**
    * Recomputa `Budget.totalPlanned` y `Budget.totalCommitted` con `SUM(items.amount*)` y
    * ejecuta `UPDATE budgets`. Se invoca al final de cada mutación (BLK-E compromiso R1 US-035).
    */

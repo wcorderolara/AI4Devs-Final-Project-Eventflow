@@ -78,7 +78,10 @@ export class UpdateCommittedFromBookingIntentUseCase {
       return;
     }
     this.assertCurrencyMatch(snapshot, input.correlationId);
-    const budgetId = this.requireBudgetId(snapshot);
+    // El evento puede no tener Budget aún (creación lazy — el organizer aún no visitó la vista).
+    // `ensureBudgetForEvent` es idempotente vía `Budget.@unique(eventId)`.
+    const budgetId = snapshot.event.budgetId
+      ?? (await this.budgetItems.ensureBudgetForEvent(input.tx, { eventId: snapshot.eventId })).id;
 
     await this.budgetItems.lockBudgetForSync(input.tx, { budgetId });
 
@@ -158,7 +161,9 @@ export class UpdateCommittedFromBookingIntentUseCase {
       });
       return;
     }
-    const budgetId = this.requireBudgetId(snapshot);
+    // Revert siempre supone que existe Budget (fue creado en el apply que dejó `committed_synced_at`).
+    const budgetId = snapshot.event.budgetId
+      ?? (await this.budgetItems.ensureBudgetForEvent(input.tx, { eventId: snapshot.eventId })).id;
 
     await this.budgetItems.lockBudgetForSync(input.tx, { budgetId });
 
@@ -206,12 +211,4 @@ export class UpdateCommittedFromBookingIntentUseCase {
     }
   }
 
-  private requireBudgetId(snap: BookingIntentSyncSnapshot): string {
-    if (!snap.event.budgetId) {
-      // El evento debería tener siempre un Budget (creado en onboarding US-035). Si falta, es un
-      // estado inconsistente que debe bloquear el commit del invocador.
-      throw new NotFoundError(`Budget not found for eventId=${snap.eventId}`);
-    }
-    return snap.event.budgetId;
-  }
 }
