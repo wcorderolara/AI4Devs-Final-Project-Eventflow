@@ -93,10 +93,17 @@ describe.skipIf(!dbUp)('US-085 — Seed reproducible e idempotente', () => {
     }
   });
 
-  it('TS-06: AIRecommendation deterministas para las 8 features (accepted, is_seed)', async () => {
+  it('TS-06: AIRecommendation deterministas — 8 accepted (features) + 1 pending budget (US-037 SEED-001)', async () => {
     const recs = await prisma.aIRecommendation.findMany({ where: { isSeed: true } });
-    expect(recs).toHaveLength(8);
-    expect(recs.every((r) => r.status === 'accepted' && r.isSeed)).toBe(true);
+    // US-037 SEED-001: además de una AIRecommendation `accepted` por cada feature (8), el seed
+    // agrega una `budget_suggestion` extra en `status='pending'` para demoar el flujo HITL.
+    expect(recs).toHaveLength(9);
+    const accepted = recs.filter((r) => r.status === 'accepted');
+    const pending = recs.filter((r) => r.status === 'pending');
+    expect(accepted).toHaveLength(8);
+    expect(pending).toHaveLength(1);
+    expect(pending[0]?.kind).toBe('budget_suggestion');
+    expect(recs.every((r) => r.isSeed)).toBe(true);
   });
 
   it('TS-02: re-ejecución idempotente (created=0, unchanged>0)', () => {

@@ -693,10 +693,19 @@ export class SeedDemoDataUseCase {
       // ── US-037 SEED-001 ────────────────────────────────────────────────
       // Garantiza:
       //  1. Al menos un AIRecommendation { type='budget_suggestion', status='pending' } sobre
-      //     un evento distinto (el segundo) para demoar el flujo HITL de US-037.
+      //     un evento **editable** (draft o active) para demoar el flujo HITL de US-037
+      //     (D5 rechaza cancelled/completed con 409 EVENT_NOT_EDITABLE).
       //  2. Al menos un BudgetItem con `aiRecommendationId` de la recomendación previa
       //     `accepted` de budget_suggestion, para demoar el reemplazo D2.
-      const pendingBudgetEventTarget = events[1] ?? events[0]!;
+      // US-087 default plan: events[0..2]=completed, events[3..7]=active, events[8..9]=draft.
+      const editableStatuses = new Set(['draft', 'active']);
+      const editableEvents = await tx.event.findMany({
+        where: { id: { in: events.map((e) => e.id) }, status: { in: ['draft', 'active'] } },
+        select: { id: true },
+        take: 2,
+      });
+      const pendingBudgetEventTarget = editableEvents[0] ?? events[3] ?? events[0]!;
+      void editableStatuses;
       const pendingBudgetGen = generated.find((g) => g.feature === 'budget_suggestion');
       if (pendingBudgetGen) {
         await ensure(
