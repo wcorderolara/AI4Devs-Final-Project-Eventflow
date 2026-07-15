@@ -1210,13 +1210,20 @@ Gestionar el perfil del proveedor, aprobación admin, directorio público.
 ### 27.4 DTOs
 
 ```ts
+// US-040 (PB-P1-024): shape implementado del body con snake_case (Zod .strict rechaza extras).
+// El endpoint `POST /vendors/me` valida cap 1-3 categorías (D2), bio 50-1000 (D4) y genera slug
+// server-side desde `business_name` con desambiguación numérica (D5).
 type CreateVendorProfileRequestDto = {
-  businessName: string;
-  bio: string;
-  locationId: string;
-  languagesSupported: ("es-LATAM" | "es-ES" | "pt" | "en")[];
-  serviceCategoryIds: string[];
+  business_name: string;                 // 2-150 chars (VR-01)
+  bio: string;                           // 50-1000 chars (VR-02, D4)
+  location_id: string;                   // UUID de Location activa (VR-04)
+  languages_supported: ("es-LATAM" | "es-ES" | "pt" | "en")[]; // ≥1 (VR-05)
+  categories: string[];                  // UUIDs de ServiceCategory activas, cap 1-3 (VR-03, D2)
 };
+
+// La response usa el shape canónico documentado abajo (`VendorProfileResponseDto`) con snake_case
+// y campos: `id`, `vendor_user_id`, `business_name`, `bio`, `location_id`,
+// `languages_supported`, `categories: [{id, name}]`, `slug`, `status`, `created_at`.
 
 type UpdateVendorProfileRequestDto = Partial<CreateVendorProfileRequestDto> & {
   availabilitySummary?: string;

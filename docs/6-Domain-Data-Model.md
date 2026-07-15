@@ -611,6 +611,7 @@ Documentos 1 (§7, §6.11), 3 (§7.7, §13), 4 (§14 BR-VENDOR-*), 5 (§9.8).
 | bio | text | Sí | Descripción del proveedor. | Explicit | BR-VENDOR-002. |
 | location_id | uuid (FK Location) | Sí | Ciudad/país base. | Explicit | BR-VENDOR-002. |
 | languages_supported | array<LanguageCode> | Sí | Idiomas atendidos. | Explicit | BR-VENDOR-002. |
+| slug | string (UNIQUE) | Sí (creación US-040) | Slug URL-safe auto-generado desde `business_name` con desambiguación numérica. Inmutable en US-040 (D5). | Explicit | US-040 / AC-03. Migración `20260715130000_us040_vendor_profile_slug_and_categories`. Nullable en BD para perfiles legacy anteriores a esa migración. |
 | status | enum VendorStatus | Sí | pending, approved, rejected, hidden. | Explicit | BR-VENDOR-003. |
 | subscription_status | enum SubscriptionStatus | No | active/inactive (conceptual). | Explicit | BR-VENDOR-007. |
 | availability_summary | string | No | Disponibilidad simple (no calendario). | Explicit | BR-VENDOR-009. |

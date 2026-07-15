@@ -67,6 +67,7 @@ import {
   InvalidValueError,
   PayloadInvalidError,
 } from '../../../modules/budget-management/domain/errors/budget-item.errors.js';
+import { VendorProfileAlreadyExistsError } from '../../../modules/vendor-management/domain/vendor-profile.errors.js';
 import { BusinessRuleViolationError } from '../../domain/errors/business-rule-violation.error.js';
 import { RateLimitError } from '../../domain/errors/rate-limit.error.js';
 import { BadRequestError } from '../../domain/errors/bad-request.error.js';
@@ -340,6 +341,11 @@ function mapError(err: unknown): MappedError {
   }
   if (err instanceof SeedResetFailedError) {
     return { status: 500, code: ErrorCodes.SEED_RESET_FAILED, message: err.message };
+  }
+  // US-040 (PB-P1-024): el vendor ya tiene un VendorProfile (EC-01) → 409 con código específico
+  // `PROFILE_EXISTS`. Antes del ConflictError genérico para conservar el código estable.
+  if (err instanceof VendorProfileAlreadyExistsError) {
+    return { status: 409, code: ErrorCodes.PROFILE_EXISTS, message: err.message };
   }
   if (err instanceof ConflictError) {
     return { status: 409, code: ErrorCodes.CONFLICT, message: err.message };

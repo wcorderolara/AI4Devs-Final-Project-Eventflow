@@ -1,0 +1,74 @@
+{
+  "profile": {
+    "wizard": {
+      "title": "Crea tu perfil de proveedor",
+      "subtitle": "Cuéntanos sobre tu negocio para que el equipo administrador pueda revisarlo.",
+      "progress": "Paso {current} de {total}: {stepTitle}",
+      "next": "Siguiente",
+      "back": "Atrás",
+      "submit": "Enviar a revisión",
+      "cancel": "Cancelar",
+      "submitting": "Enviando…",
+      "success": {
+        "title": "¡Tu perfil está en revisión!",
+        "body": "Recibirás una notificación cuando el equipo lo apruebe."
+      }
+    },
+    "steps": {
+      "basic": {
+        "title": "Datos básicos",
+        "businessNameLabel": "Nombre comercial",
+        "businessNamePlaceholder": "Ej. Acme Catering",
+        "bioLabel": "Descripción de tu negocio",
+        "bioHelp": "Entre 50 y 1000 caracteres."
+      },
+      "locationCategories": {
+        "title": "Ubicación y categorías",
+        "locationLabel": "Ciudad principal",
+        "locationPlaceholder": "Selecciona una ciudad",
+        "categoriesLabel": "Categorías de servicio (1 a 3)",
+        "categoriesHelp": "Elige entre 1 y 3 categorías que representen a tu negocio."
+      },
+      "languages": {
+        "title": "Idiomas",
+        "label": "Idiomas atendidos",
+        "help": "Selecciona al menos un idioma en el que puedas atender clientes."
+      },
+      "review": {
+        "title": "Confirmación",
+        "intro": "Revisa la información antes de enviarla a revisión.",
+        "businessName": "Nombre comercial",
+        "bio": "Descripción",
+        "location": "Ciudad",
+        "categories": "Categorías",
+        "languages": "Idiomas"
+      }
+    },
+    "banner": {
+      "pendingTitle": "Tu perfil está en revisión",
+      "pendingBody": "Nuestro equipo lo revisará en breve. Puedes editarlo mientras tanto.",
+      "editCta": "Editar mi perfil"
+    },
+    "validation": {
+      "businessNameRequired": "El nombre comercial es obligatorio.",
+      "businessNameLength": "Debe tener entre 2 y 150 caracteres.",
+      "bioLength": "La descripción debe tener entre 50 y 1000 caracteres.",
+      "locationRequired": "Selecciona una ciudad.",
+      "categoriesRange": "Debes elegir entre 1 y 3 categorías.",
+      "languagesRequired": "Selecciona al menos un idioma."
+    },
+    "errors": {
+      "PROFILE_EXISTS": "Ya tienes un perfil de proveedor. Puedes editarlo desde tu perfil.",
+      "VALIDATION_ERROR": "Revisa los datos introducidos.",
+      "AUTHENTICATION_REQUIRED": "Debes iniciar sesión para crear tu perfil.",
+      "FORBIDDEN": "Solo los proveedores pueden crear un perfil de proveedor.",
+      "UNEXPECTED": "Ha ocurrido un error inesperado. Inténtalo de nuevo."
+    }
+  },
+  "languages": {
+    "es-LATAM": "Español (Latinoamérica)",
+    "es-ES": "Español (España)",
+    "pt": "Portugués",
+    "en": "Inglés"
+  }
+}

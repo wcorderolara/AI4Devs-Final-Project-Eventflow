@@ -1,0 +1,74 @@
+{
+  "profile": {
+    "wizard": {
+      "title": "Create your vendor profile",
+      "subtitle": "Tell us about your business so our admin team can review it.",
+      "progress": "Step {current} of {total}: {stepTitle}",
+      "next": "Next",
+      "back": "Back",
+      "submit": "Send for review",
+      "cancel": "Cancel",
+      "submitting": "Sending…",
+      "success": {
+        "title": "Your profile is under review!",
+        "body": "You'll get a notification once our team approves it."
+      }
+    },
+    "steps": {
+      "basic": {
+        "title": "Basic info",
+        "businessNameLabel": "Business name",
+        "businessNamePlaceholder": "e.g. Acme Catering",
+        "bioLabel": "Business description",
+        "bioHelp": "Between 50 and 1000 characters."
+      },
+      "locationCategories": {
+        "title": "Location and categories",
+        "locationLabel": "Primary city",
+        "locationPlaceholder": "Select a city",
+        "categoriesLabel": "Service categories (1 to 3)",
+        "categoriesHelp": "Pick between 1 and 3 categories that represent your business."
+      },
+      "languages": {
+        "title": "Languages",
+        "label": "Supported languages",
+        "help": "Pick at least one language you can serve clients in."
+      },
+      "review": {
+        "title": "Review",
+        "intro": "Please review the information before sending it for approval.",
+        "businessName": "Business name",
+        "bio": "Description",
+        "location": "City",
+        "categories": "Categories",
+        "languages": "Languages"
+      }
+    },
+    "banner": {
+      "pendingTitle": "Your profile is under review",
+      "pendingBody": "Our team will review it shortly. You can edit it in the meantime.",
+      "editCta": "Edit my profile"
+    },
+    "validation": {
+      "businessNameRequired": "Business name is required.",
+      "businessNameLength": "Must be between 2 and 150 characters.",
+      "bioLength": "Description must be between 50 and 1000 characters.",
+      "locationRequired": "Please select a city.",
+      "categoriesRange": "Please pick between 1 and 3 categories.",
+      "languagesRequired": "Please pick at least one language."
+    },
+    "errors": {
+      "PROFILE_EXISTS": "You already have a vendor profile. You can edit it from your profile page.",
+      "VALIDATION_ERROR": "Please review the information you entered.",
+      "AUTHENTICATION_REQUIRED": "You need to sign in to create your profile.",
+      "FORBIDDEN": "Only vendors can create a vendor profile.",
+      "UNEXPECTED": "Something went wrong. Please try again."
+    }
+  },
+  "languages": {
+    "es-LATAM": "Spanish (Latin America)",
+    "es-ES": "Spanish (Spain)",
+    "pt": "Portuguese",
+    "en": "English"
+  }
+}

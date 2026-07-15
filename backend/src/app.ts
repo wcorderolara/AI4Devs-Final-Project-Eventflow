@@ -30,6 +30,10 @@ import { eventTasksMutateRouter } from './modules/task-management/mutate/interfa
 import { seedDemoRouter, isSeedDemoEnabled } from './modules/seed-demo/interface/seed-demo.routes.js';
 import { adminEventsRouter } from './modules/admin-governance/interface/admin-events.routes.js';
 import { budgetRouter, budgetItemMutationRouter } from './modules/budget-management/interface/index.js';
+import {
+  vendorProfileRouter,
+  serviceCategoriesRouter,
+} from './modules/vendor-management/interface/index.js';
 
 /** Construye y configura la aplicación Express. */
 export function createApp(): Express {
@@ -93,6 +97,13 @@ export function createApp(): Express {
   // no declara `deletedAt`); auditoría vía log estructurado `budget.item.deleted`.
   apiV1.use(budgetItemMutationRouter);
   apiV1.use('/booking-intents', bookingIntentRouter);
+  // US-040 (PB-P1-024): creación del VendorProfile por el propio vendor. Contrato
+  // `POST /api/v1/vendors/me` (Doc 16 §M07). Solo rol `vendor` (organizer/admin → 403; sin
+  // sesión → 401). El endpoint público del directorio de vendors vive en US futura.
+  apiV1.use('/vendors', vendorProfileRouter);
+  // US-040 (EMERGENT): catálogo de ServiceCategory activas, requerido por el wizard vendor
+  // (FE-004). Curado por admin (BR-SERVICE-003); solo requiere sesión válida.
+  apiV1.use('/service-categories', serviceCategoriesRouter);
   apiV1.use('/events', eventPlanningRouter); // US-095 / API-001
   apiV1.use('/event-types', eventTypesRouter); // US-009 / catálogo
   apiV1.use('/locations', locationsRouter); // US-009 / catálogo
