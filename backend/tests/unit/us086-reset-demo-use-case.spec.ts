@@ -8,9 +8,13 @@ import { SeedResetLock } from '../../src/modules/seed-demo/application/seed-rese
 import { SeedResetInProgressError, SeedResetFailedError } from '../../src/shared/domain/errors/seed-demo.errors.js';
 import type { SeedReport } from '../../src/modules/seed-demo/domain/seed-report.js';
 
+// US-042: `vendorProfileCategory` se agrega antes de `vendorProfile` (FK ON DELETE RESTRICT).
+// Su where usa el filtro navegable `{ vendorProfile: { isSeed: true } }` porque la M:N no tiene
+// columna `isSeed` propia — igualmente surgical (SEC-04).
 const DELETE_MODELS = [
   'notification', 'aIRecommendation', 'review', 'bookingIntent', 'quote', 'quoteRequest',
-  'budgetItem', 'budget', 'eventTask', 'attachment', 'event', 'vendorService', 'vendorProfile',
+  'budgetItem', 'budget', 'eventTask', 'attachment', 'event', 'vendorService',
+  'vendorProfileCategory', 'vendorProfile',
   'adminAction', 'serviceCategory', 'eventType', 'location', 'user',
 ] as const;
 
@@ -77,8 +81,18 @@ describe('US-086 — ResetDemoUseCase', () => {
     expect(report.seedVersion).toBe('1.0.0');
     expect(report.durationMs).toBeGreaterThanOrEqual(0);
     expect(report.entitiesReseeded.users).toBe(19);
-    // Todos los deletes filtran por is_seed=true (surgical, SEC-04).
-    expect(calls.every((c) => JSON.stringify(c.where) === JSON.stringify({ isSeed: true }))).toBe(true);
+    // Todos los deletes filtran por is_seed=true (surgical, SEC-04). Excepción documentada:
+    // `vendorProfileCategory` (US-042) usa el filtro navegable `{ vendorProfile: { isSeed: true } }`
+    // porque la tabla M:N no tiene columna `isSeed` propia — igualmente surgical.
+    expect(
+      calls.every((c) => {
+        const w = JSON.stringify(c.where);
+        return (
+          w === JSON.stringify({ isSeed: true }) ||
+          w === JSON.stringify({ vendorProfile: { isSeed: true } })
+        );
+      }),
+    ).toBe(true);
     // Orden FK descendente: notification primero, user último.
     expect(calls[0]!.model).toBe('notification');
     expect(calls[calls.length - 1]!.model).toBe('user');
