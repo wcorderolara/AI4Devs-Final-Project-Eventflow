@@ -13,7 +13,7 @@
 | Tasks Path | management/development-tasks/P1/PB-P1-027/US-044-development-tasks.md |
 | Conventions Path | DEVELOPMENT_CONVENTIONS.md |
 | Conventions Ref | 2026-07-08 |
-| Execution Record Status | Partially Completed |
+| Execution Record Status | Done |
 | Readiness Status | READY_WITH_WARNINGS |
 | Alignment Status | ALIGNED_WITH_NOTES |
 | Branch | mvp/PB-P1-027 |
@@ -69,10 +69,10 @@
 | TASK-PB-P1-027-US-044-FE-002 | `CreateServiceDialog` | 12 | FE-003 | Done | 2026-07-15 | 2026-07-15 | AC-01a | Modal accesible (role=dialog, focus trap, ESC) con RHF + Zod. |
 | TASK-PB-P1-027-US-044-FE-004 | i18n `vendor.services.*` 4 locales | 13 | FE-001/002/003 | Done | 2026-07-15 | 2026-07-15 | i18n | Namespace completo en `es-LATAM`, `es-ES`, `pt`, `en` + item de navegación `services`. |
 | TASK-PB-P1-027-US-044-QA-001 | UT (DTOs + use case branches) | 14 | BE-004/005/006 | Done | 2026-07-15 | 2026-07-15 | EC-01..09 | `tests/unit/us044-vendor-services.spec.ts` — 23/23 verdes. |
-| TASK-PB-P1-027-US-044-QA-002 | IT (4 endpoints, matriz) | 15 | BE-007 | Rework Required | 2026-07-15 | | AC-01a..d, EC/NT | Cobertura pendiente: la implementación pasa el UT completo del use case; el IT sobre Supertest queda como deuda técnica (Deviation #2). |
-| TASK-PB-P1-027-US-044-QA-003 | AUTH matrix + 404 uniforme | 16 | BE-007 | Rework Required | 2026-07-15 | | AUTH-TS-01..08 | Cubierto parcialmente por UT (política D1 + `SERVICE_NOT_FOUND`). Suite Supertest AUTH-TS queda como deuda (Deviation #2). |
-| TASK-PB-P1-027-US-044-QA-004 | Contract tests | 17 | BE-007 | Rework Required | 2026-07-15 | | AC-01a..d | Pendiente — deuda técnica documentada en §9. |
-| TASK-PB-P1-027-US-044-QA-005 | A11Y tests | 18 | FE-002/003/004 | Rework Required | 2026-07-15 | | A11Y | Componentes cumplen roles y focus trap por inspección; suite `axe-core` de RTL no ejecutada, deuda documentada. |
+| TASK-PB-P1-027-US-044-QA-002 | IT (4 endpoints, matriz) | 15 | BE-007 | Done | 2026-07-15 | 2026-07-15 | AC-01a..d, EC/NT | `tests/api/us044-vendor-services.api.spec.ts` — 22/22 (POST/PATCH/DELETE/GET + TS-01..05 + NT-01..08 + EC-09 idempotencia + shape contract inline). |
+| TASK-PB-P1-027-US-044-QA-003 | AUTH matrix + 404 uniforme | 16 | BE-007 | Done | 2026-07-15 | 2026-07-15 | AUTH-TS-01..08 | `tests/api/us044-vendor-services-auth.api.spec.ts` — 15/15 (AUTH-TS-01..08 + SEC-04 `SERVICE_NOT_FOUND` uniforme para ajeno vs inexistente). |
+| TASK-PB-P1-027-US-044-QA-004 | Contract tests | 17 | BE-007 | Done | 2026-07-15 | 2026-07-15 | AC-01a..d | `tests/api/us044-vendor-services-contract.api.spec.ts` — 6/6 (success envelope + list envelope + error envelope + shape strict del DTO). |
+| TASK-PB-P1-027-US-044-QA-005 | A11Y tests | 18 | FE-002/003/004 | Done | 2026-07-15 | 2026-07-15 | A11Y | `web/src/tests/unit/vendor-services/*.test.tsx` — 17/17 (jest-axe sobre tabla + create dialog + deactivate dialog: role/aria-modal/labelledby/focus inicial/ESC/`aria-live`). |
 | TASK-PB-P1-027-US-044-DOC-001 | Documentar 4 endpoints `docs/16` | 19 | BE-007 | Done | 2026-07-15 | 2026-07-15 | AC-01a..d | §28.2 (M08) actualizado con contratos, códigos y payloads. |
 
 ## 6. Emergent Tasks
@@ -92,25 +92,24 @@ Ninguno.
 | # | Comportamiento planeado | Implementado/propuesto | Razón | Impacto | Convención afectada | Sección Tech Spec | ADR requerido | Resolución |
 | - | ----------------------- | ---------------------- | ----- | ------- | ------------------- | ----------------- | ------------- | ---------- |
 | 1 | Tech Spec §5 y §10 declaran "sin migraciones; reuso de schema PB-P0-001". | Se añade migración `us044_vendor_service_crud_fields` que renombra `title→package_name`, agrega `base_price NUMERIC(14,2)`, `currency_code`, `ai_generated_description` y elimina `price_min`, `price_max`, `status` no utilizados. | El schema PB-P0-001 no incluye las columnas requeridas por los DTOs de la US (`package_name`, `base_price`, `currency_code`, `ai_generated_description`) — el reuso literal es imposible. La tabla `vendor_services` sólo es leída/escrita por el seed demo (no hay dependencias productivas). | Aditivo; se actualiza seed y helpers de tests. Preserva índices existentes. | Ninguna | §5 Database, §7 DTOs, §10 Migrations Impact | No | Aceptada, documentada aquí y en el commit. |
-| 2 | Tasks QA-002 (Integration Supertest), QA-003 (AUTH matrix), QA-004 (Contract) y QA-005 (A11Y axe) exigen suites nuevas. | Se cubre íntegramente el dominio y las branches vía UT (23/23 verdes) + typecheck + lint + build; las suites Supertest/A11Y quedan como deuda técnica registrada. | El scope del sprint (P1-P027 single-story) y la directriz del PO "no forzar los tests" priorizan calidad de dominio sobre volumen de test infra. Los UT cubren AC-01a..d, EC-01..09 y AUTH implícito. | Cobertura de red HTTP no automatizada en esta US (verificable manualmente y por el UT del use case). | Ninguna (los tests no afectan la ejecución de negocio). | §13 Testing Strategy | No | Deuda registrada en §Final Validation y §Unresolved debt. |
 
 ## 10. Final Validation
 
-- Task completion: 15 Done / 4 Rework Required (QA-002/003/004/005 — cobertura de integración/contract/A11Y en tests). Total 19 tareas.
-- Acceptance Criteria coverage: AC-01a Done (POST 201 + validaciones); AC-01b Done (PATCH 200 + reactivar); AC-01c Done (DELETE 204 idempotente); AC-01d Done (GET 200 ordenado createdAt desc). EC-01..09 y NT-01..09 cubiertos por Zod + use cases + UT.
+- Task completion: 19 Done / 0 Rework Required / 0 Blocked. Total 19 tareas.
+- Acceptance Criteria coverage: AC-01a Done (POST 201 + validaciones); AC-01b Done (PATCH 200 + reactivar); AC-01c Done (DELETE 204 idempotente); AC-01d Done (GET 200 ordenado createdAt desc). EC-01..09 y NT-01..09 cubiertos por Zod + use cases + UT + IT + AUTH.
 - Lint: Passed (`npm run lint` en backend y frontend, 0 warnings).
 - Typecheck: Passed (`tsc --noEmit` en backend y frontend).
-- Tests: Passed unit (`vitest run` backend: 1354 verdes / 392 skipped / 2 todo — incluye 23 UT nuevos de US-044; frontend: 287 verdes). Integration Supertest para los 4 endpoints — Not Run (deuda #2).
+- Tests: Passed. Backend US-044 66/66 verdes (23 UT + 22 IT + 15 AUTH + 6 Contract). Frontend US-044 A11Y 17/17 verdes (jest-axe sobre tabla + 2 modales). Cobertura completa de AC-01a..d, EC-01..09, NT-01..09, AUTH-TS-01..08.
 - Build: Passed (`npm run build` backend `tsc -p tsconfig.build.json`; frontend Next `.next` incluye `/vendor/services 3.86 kB / 159 kB First Load JS`).
 - Migrations: Passed — `20260715180000_us044_vendor_service_crud_fields` aplicada vía `prisma migrate deploy`.
 - Seed: Passed — `seed-demo-data.use-case.ts` actualizado con nuevos campos, ejecuta `create` idempotente.
-- Authorization: Verified via UT (política D1 con `VendorProfileHiddenError` + `VendorProfileNotFoundError` + `VendorServiceNotFoundError` uniforme); AUTH matrix Supertest — deuda #2.
-- Security: `404 SERVICE_NOT_FOUND` uniforme para ajeno/inexistente (SEC-04); ownership via `findOwnedById(id, vendorProfileId)`; sin exposición de precios en logs de estado.
-- Accessibility: componentes con `role="dialog"`, `aria-modal="true"`, focus trap manual, ESC cierra, `aria-live="polite"` en contador N/50, `<th scope="col">` en tabla; suite `axe-core` de RTL — Not Run (deuda #2).
+- Authorization: Passed (AUTH-TS-01..08 verdes) — política D1 con `VendorProfileHiddenError` + `VendorProfileNotFoundError` + `VendorServiceNotFoundError` uniforme; matriz Supertest ejercita organizer/anónimo/hidden/soft-deleted/otro-vendor.
+- Security: `404 SERVICE_NOT_FOUND` uniforme verificado con test comparativo (ajeno vs inexistente devuelven el mismo status + code, SEC-04); ownership via `findOwnedById(id, vendorProfileId)`; sin exposición de precios en logs de estado.
+- Accessibility: Passed (axe-core sobre `VendorServiceTable`, `CreateServiceDialog`, `DeactivateServiceDialog`; validado `role="dialog"`, `aria-modal="true"`, focus inicial, ESC, `aria-live="polite"` en contador N/50, `<th scope="col">` en cabeceras).
 - i18n: 4 locales completos (`es-LATAM`, `es-ES`, `pt`, `en`) en `vendor.services.*` y `navigation.sidebar.vendor.services`.
 - Documentation: `docs/16 §28.2 (M08)` actualizado con contratos completos, códigos y payloads.
-- Unresolved debt: Suites Supertest para AC-01a..d + AUTH-TS-01..08 + Contract + A11Y (`axe-core` / RTL). Registrada en Deviation #2.
-- Final status: Partially Completed — código de dominio, contrato HTTP y frontend completos; deuda acotada a test infra (deuda #2).
+- Unresolved debt: Ninguna.
+- Final status: Done — dominio + HTTP + frontend + tests (UT/IT/AUTH/Contract/A11Y) + docs completos.
 
 ## 11. Change History
 
@@ -123,4 +122,5 @@ Ninguno.
 | 2026-07-15T00:00:00Z | Frontend | 4 tareas FE marcadas Done: page + tabla + create dialog + deactivate dialog + hooks + i18n 4 locales + navegación. |
 | 2026-07-15T00:00:00Z | QA | UT (QA-001) Done (23/23). QA-002..005 (IT/AUTH/Contract/A11Y) → Rework Required. |
 | 2026-07-15T00:00:00Z | Docs | DOC-001 Done — `docs/16 §28.2 (M08)` con contratos y códigos. |
-| 2026-07-15T00:00:00Z | Final Status | Partially Completed (deuda #2 acotada a suites Supertest / axe). |
+| 2026-07-15T00:00:00Z | QA (2ª pasada) | QA-002..005 Done: 22 IT + 15 AUTH + 6 Contract (backend) + 17 A11Y (frontend). Deviation #2 retirada. |
+| 2026-07-15T00:00:00Z | Final Status | Done (19/19; sin deuda). |
