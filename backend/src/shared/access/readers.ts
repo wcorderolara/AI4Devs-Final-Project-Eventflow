@@ -18,11 +18,22 @@ export interface EventAccessReader {
   findOwnedEvent(eventId: string, ownerId: string): Promise<OwnedEvent | null>;
 }
 
+export interface ActiveVendorProfile {
+  id: string;
+  status: 'pending' | 'approved' | 'rejected' | 'hidden';
+  userId: string;
+}
+
 export interface VendorProfileReader {
   /** VendorProfile id del usuario (rol vendor), o null si no tiene perfil. */
   getVendorProfileIdForUser(userId: string): Promise<string | null>;
   /** ¿Existe un VendorProfile no soft-deleted con ese id? */
   existsActive(vendorProfileId: string): Promise<boolean>;
+  /**
+   * US-051 (BE-002): devuelve el VendorProfile visible del usuario. Filtra `deletedAt IS NULL`.
+   * El UC decide qué estados aceptar (por ej. rechazar `hidden` para responder `404` uniforme).
+   */
+  findActiveByUserId(userId: string): Promise<ActiveVendorProfile | null>;
 }
 
 export interface ServiceCategoryReader {

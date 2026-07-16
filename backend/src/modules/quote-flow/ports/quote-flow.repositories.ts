@@ -11,6 +11,15 @@ export interface QuoteRequestRepository {
    */
   createWithChecks(data: CreateQuoteRequestData, maxActive: number): Promise<QuoteRequestView>;
   findById(id: string): Promise<QuoteRequestView | null>;
+  /**
+   * US-051 (BE-002): busca un QuoteRequest visible para el vendor autenticado. Filtra por
+   * `vendorProfileId` (asignación real) y devuelve `null` si el QR no existe o no pertenece
+   * al vendor. Habilita el `404 QR_NOT_FOUND` uniforme sin filtrar por estado.
+   */
+  findByIdAndVendorProfile(
+    qrId: string,
+    vendorProfileId: string,
+  ): Promise<QuoteRequestView | null>;
   listByEvent(
     eventId: string,
     filters: { status?: QuoteRequestStatusValue },

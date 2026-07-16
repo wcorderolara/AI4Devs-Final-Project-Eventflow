@@ -296,6 +296,37 @@
       "UNEXPECTED": "Something went wrong. Please try again."
     }
   },
+  "qr": {
+    "detail": {
+      "title": "Request detail",
+      "createdAt": "Request received on {date}",
+      "status": {
+        "sent": "Sent",
+        "viewed": "Viewed",
+        "responded": "Responded",
+        "expired": "Expired",
+        "cancelled": "Cancelled"
+      },
+      "brief": {
+        "title": "Event context",
+        "budget": "Budget",
+        "eventDate": "Event date",
+        "guests": "Guests",
+        "message": "Organizer message",
+        "requirements": "Requirements",
+        "questions": "Questions",
+        "empty": "The organizer did not attach additional context."
+      },
+      "notFound": {
+        "title": "Request unavailable",
+        "description": "We could not find this request. It may no longer exist or it is not assigned to you.",
+        "backLink": "Back to my requests"
+      },
+      "error": {
+        "generic": "We could not load the request. Please try again in a few seconds."
+      }
+    }
+  },
   "directory": {
     "title": "Find vendors",
     "subtitle": "Filter by category, city and price range. Results are paginated.",

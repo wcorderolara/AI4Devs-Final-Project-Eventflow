@@ -5,6 +5,7 @@ import type {
   EventAccessReader,
   OwnedEvent,
   VendorProfileReader,
+  ActiveVendorProfile,
   ServiceCategoryReader,
   QuoteRequestEventReader,
 } from '../../shared/access/readers.js';
@@ -50,6 +51,14 @@ export class PrismaVendorProfileReader implements VendorProfileReader {
       select: { id: true },
     });
     return vp !== null;
+  }
+
+  async findActiveByUserId(userId: string): Promise<ActiveVendorProfile | null> {
+    const vp = await this.prisma.vendorProfile.findFirst({
+      where: { userId, deletedAt: null },
+      select: { id: true, status: true, userId: true },
+    });
+    return vp ? { id: vp.id, status: vp.status, userId: vp.userId } : null;
   }
 }
 

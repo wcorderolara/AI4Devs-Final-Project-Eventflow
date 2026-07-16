@@ -26,6 +26,7 @@ function toView(qr: PrismaQR): QuoteRequestView {
     brief: (qr.brief as QuoteRequestBrief | null) ?? null,
     aiRecommendationId: qr.aiRecommendationId ?? null,
     viewedAt: qr.viewedAt ? qr.viewedAt.toISOString() : null,
+    viewedBy: qr.viewedBy ?? null,
     cancelledAt: qr.cancelledAt ? qr.cancelledAt.toISOString() : null,
     createdAt: qr.createdAt.toISOString(),
     updatedAt: qr.updatedAt.toISOString(),
@@ -80,6 +81,18 @@ export class PrismaQuoteRequestRepository implements QuoteRequestRepository {
 
   async findById(id: string): Promise<QuoteRequestView | null> {
     const qr = await this.prisma.quoteRequest.findUnique({ where: { id } });
+    return qr ? toView(qr) : null;
+  }
+
+  async findByIdAndVendorProfile(
+    qrId: string,
+    vendorProfileId: string,
+  ): Promise<QuoteRequestView | null> {
+    // Uniformidad SEC (US-051 §12): filtrar por assignment aquí evita revelar existencia por
+    // reflejo lateral. El estado del QR se evalúa en el UC, no en el repo.
+    const qr = await this.prisma.quoteRequest.findFirst({
+      where: { id: qrId, vendorProfileId },
+    });
     return qr ? toView(qr) : null;
   }
 

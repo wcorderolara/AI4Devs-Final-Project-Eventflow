@@ -25,6 +25,8 @@ export interface QuoteRequestView {
   brief: QuoteRequestBrief | null;
   aiRecommendationId: string | null;
   viewedAt: string | null;
+  /** US-051 (D3): usuario del vendor que disparó la primera transición `sent → viewed`. */
+  viewedBy: string | null;
   cancelledAt: string | null;
   createdAt: string;
   updatedAt: string;

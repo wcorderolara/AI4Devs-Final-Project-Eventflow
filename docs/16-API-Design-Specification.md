@@ -1770,6 +1770,54 @@ Errores (envelope estándar):
 
 Observabilidad: sin log de dominio dedicado en el GET (queda cubierto por el request log estándar). Cuando el `POST /quote-requests` retorna `409 QR_CATEGORY_LIMIT_REACHED`, el UC de US-049 emite el evento `quote_request.limit_reached` (warn) con `{ correlationId, actorId, eventId, serviceCategoryId, activeCount, limit }` — ver DEV-04 de `management/workflows/development-execution/P1/PB-P1-030/US-050-execution.md`.
 
+### 30.7 US-051 · `GET`/`POST /api/v1/vendor/quote-requests/:id` (detalle + mark-viewed transaccional)
+
+Endpoints vendor-scoped que separan la lectura del detalle (safe + idempotent) de la transición `sent → viewed` (POST idempotente). Frontend orquesta: la página `app/(app)/vendor/quotes/[id]/page.tsx` hace el `GET` al montar y dispara el `POST` sólo si `status === 'sent'`. Uniformidad SEC (D4): QR inexistente, ajena, vendor con `status='hidden'` o soft-deleted ⇒ `404 QR_NOT_FOUND`.
+
+| Método | Path | Auth | Roles | Propósito | Success | Errores |
+| --- | --- | --- | --- | --- | --- | --- |
+| GET | `/api/v1/vendor/quote-requests/:id` | Sí (cookie de sesión) | vendor | Detalle sin side-effect. | 200 | 400 (`INVALID_UUID`), 401, 403, 404 (`QR_NOT_FOUND`) |
+| POST | `/api/v1/vendor/quote-requests/:id/mark-viewed` | Sí | vendor | Transición idempotente `sent → viewed`. | 200 | 400 (`INVALID_UUID`), 401, 403, 404 (`QR_NOT_FOUND`) |
+
+```ts
+// Response 200 (ambos endpoints, envelope { data, correlationId })
+type VendorQuoteRequestResponse = {
+  id: string;                          // uuid
+  eventId: string;                     // uuid
+  serviceCategoryId: string;           // uuid
+  vendorProfileId: string | null;
+  status: 'sent' | 'viewed' | 'responded' | 'expired' | 'cancelled';
+  brief: object | null;                // shape depende del origen (US-049 canónico o US-096 legado)
+  aiRecommendationId: string | null;
+  viewedAt: string | null;             // ISO-8601
+  viewedBy: string | null;             // uuid del usuario del vendor que disparó la transición
+  cancelledAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+```
+
+Semántica del POST (Tech Spec §7 / execution record DEV-01/DEV-02):
+
+- Se ejecuta dentro de `prisma.$transaction` con `SELECT ... FOR UPDATE` sobre `quote_requests` para prevenir doble Notification en carreras (§17 riesgo #1).
+- Transición sólo desde `status='sent'`. Cualquier otro estado (`viewed`, `responded`, `expired`, `cancelled`) devuelve el estado actual (AC-03/AC-04) sin insertar Notification ni loguear.
+- Filtro lazy de expiración (EC-01): si `expires_at IS NOT NULL AND expires_at <= NOW()` el POST devuelve el QR actual sin transicionar.
+- Persistencia atómica del par `(status='viewed', viewed_at, viewed_by)` — la columna `viewed_by` la agrega la migración `20260716180000_us051_quote_request_viewed_by` (US-051 DB-001).
+- Al transicionar exitosamente, INSERT `notifications(user_id=organizer, type='quote_request.viewed', payload={channel:'in_app', deliveryStatus:'delivered', event, quote_request_id, vendor_profile_id, viewed_at})` en la misma `prisma.$transaction` (D5).
+
+Errores (envelope estándar):
+
+| Código | HTTP | `details` | Trigger |
+| --- | ---: | --- | --- |
+| `INVALID_UUID` | 400 | `[{ field: 'id', message: 'invalid' }]` | Path param no es UUID (Zod). |
+| `AUTHENTICATION_REQUIRED` | 401 | — | Sin sesión. |
+| `FORBIDDEN` | 403 | — | Rol distinto de `vendor`. |
+| `QR_NOT_FOUND` | 404 | — | QR inexistente, ajena, vendor con `status='hidden'` o soft-deleted (uniforme; SEC-05). |
+
+Observabilidad: log estructurado `quote_request.viewed` (`info`) con `{ correlationId, actorId, quoteRequestId }` — se emite **sólo** cuando ocurre transición real. Los no-ops idempotentes no loguean.
+
+Compatibilidad con la ruta legado `PATCH /quote-requests/:quoteRequestId/viewed` (US-096): se preserva por consumidores existentes. El nuevo endpoint POST bajo `vendor/` es el canónico para MVP y el único que persiste `viewed_by` + Notification atómica al organizer.
+
 ---
 
 ## 31. Quotes API
