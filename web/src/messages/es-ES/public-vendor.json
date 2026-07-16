@@ -1,0 +1,29 @@
+{
+  "categories": {
+    "label": "Categorías de servicio"
+  },
+  "rating": {
+    "label": "Valoración media",
+    "summary": "{count, plural, one {# reseña} other {# reseñas}}",
+    "empty": "Aún sin reseñas."
+  },
+  "portfolio": {
+    "title": "Portafolio",
+    "empty": "Este proveedor aún no ha publicado trabajos.",
+    "imageAlt": "{vendor} — {work}, imagen {index}"
+  },
+  "packages": {
+    "title": "Paquetes",
+    "empty": "Este proveedor no ha publicado paquetes."
+  },
+  "reviews": {
+    "title": "Reseñas",
+    "empty": "Este proveedor todavía no tiene reseñas publicadas.",
+    "summaryShown": "Mostrando {shown} de {total} reseñas."
+  },
+  "notFound": {
+    "title": "Proveedor no encontrado",
+    "body": "El proveedor que buscas no existe o ya no está disponible.",
+    "cta": "Volver al directorio"
+  }
+}

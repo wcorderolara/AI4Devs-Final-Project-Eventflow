@@ -35,6 +35,7 @@ import {
   serviceCategoriesRouter,
   vendorServiceRouter,
   vendorSearchRouter,
+  publicVendorRouter,
 } from './modules/vendor-management/interface/index.js';
 import { portfolioRouter } from './modules/attachments/interface/index.js';
 
@@ -107,6 +108,11 @@ export function createApp(): Express {
   // `GET/POST/PATCH/DELETE /api/v1/vendors/me/services[/:id]` (Doc 16 §M07). Sólo rol `vendor`
   // (organizer/admin → 403; sin sesión → 401). Se monta ANTES de `/vendors` (vendorProfileRouter
   // captura `/vendors/me`) para que `/vendors/me/services*` tenga match específico primero.
+  // US-046 (PB-P1-029): perfil público SEO del vendor. Endpoint sin auth
+  // (`GET /api/v1/public/vendors/:slug`); rate limit dedicado (60/min/IP) declarado en el
+  // propio router. Se monta ANTES de `/vendors` para preservar el prefijo `/public/*` como
+  // namespace exclusivo de endpoints públicos y evitar cualquier colisión con `/vendors/me[...]`.
+  apiV1.use('/public/vendors', publicVendorRouter);
   apiV1.use('/vendors/me/services', vendorServiceRouter);
   apiV1.use('/vendors', vendorProfileRouter);
   // US-045 (PB-P1-028): directorio autenticado `GET /api/v1/vendors`. Se monta como último
