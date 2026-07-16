@@ -2,11 +2,15 @@
 export { EventSnapshotCard } from './components/EventSnapshotCard';
 export { VendorCardSummary } from './components/VendorCardSummary';
 export { QuoteRequestForm } from './components/QuoteRequestForm';
+export { QRLimitBadge, QR_LIMIT_REASON_ID } from './components/QRLimitBadge';
 export { quotesApi } from './api/quotesApi';
-export { useCreateQuoteRequest, quotesKeys } from './hooks/quotesQueries';
+export { useCreateQuoteRequest, useActiveQrCount, quotesKeys } from './hooks/quotesQueries';
 export type {
   CreateQuoteRequestInput,
   CreateQuoteRequestView,
   CreateQuoteRequestDTO,
   QuoteRequestSource,
+  ActiveQrCountInput,
+  ActiveQrCountView,
+  ActiveQrCountDTO,
 } from './api/quotesApi.types';

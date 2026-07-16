@@ -44,5 +44,9 @@
       "FORBIDDEN": "Tu rol no puede crear solicitudes de cotización.",
       "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
     }
+  },
+  "limit": {
+    "label": "{count}/{limit} cotizaciones activas en esta categoría",
+    "reached": "Alcanzaste el máximo de solicitudes activas para esta categoría. Espera a que alguna se responda o cancele para enviar otra."
   }
 }

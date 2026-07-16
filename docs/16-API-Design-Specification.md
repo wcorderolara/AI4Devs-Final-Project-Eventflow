@@ -1729,6 +1729,47 @@ Detalles de errores (envelope estándar `{ error: { code, message, correlationId
 
 Observabilidad: log estructurado `quote_request.created` con `{ correlationId, actorId, quoteRequestId }` (sin brief ni PII — SEC-09). Notificaciones persistidas: `type='quote_request.created'`; `payload` incluye `{ channel, deliveryStatus, event, quote_request_id, event_id, service_category_id }` (ver DEV-02 de `management/workflows/development-execution/P1/PB-P1-030/US-049-execution.md`).
 
+### 30.6 US-050 · `GET /api/v1/quote-requests/active-count` (pre-check del límite)
+
+Pre-check UX del límite BR-QUOTE-009 (5 QRs activas por `(event, service_category)`). Alimenta el badge `QRLimitBadge` del form de US-049 y deshabilita el CTA cuando `available_slots = 0`. El backend re-valida en el `POST` (defense in depth).
+
+| Método | Path | Auth | Roles | Propósito | Success | Errores |
+| --- | --- | --- | --- | --- | --- | --- |
+| GET | `/api/v1/quote-requests/active-count?event_id=<uuid>&service_category_id=<uuid>` | Sí (cookie de sesión) | organizer | Conteo lazy de QRs activas en `(event, category)`. | 200 | 400 (`INVALID_CATEGORY`), 401, 403, 404 (`EVENT_NOT_FOUND` uniforme) |
+
+```ts
+// Query params
+type ActiveQrCountQuery = {
+  event_id: string;             // uuid; ownership del organizer autenticado
+  service_category_id: string;  // uuid; is_active=true
+};
+
+// Response 200 (envelope { data, correlationId })
+type ActiveQrCountResponse = {
+  active_count: number;          // QRs activas actualmente
+  limit: 5;                       // BR-QUOTE-009 / C-016
+  available_slots: number;        // max(0, limit - active_count)
+  statuses_counted: ['sent', 'viewed', 'responded']; // DEV-02 US-050
+};
+```
+
+Semántica del conteo (Tech Spec §7 / EC-01, execution record DEV-01):
+
+- `status ∈ ('sent','viewed','responded')` — alineado con el enum físico `QuoteRequestStatus`.
+- `expires_at IS NULL OR expires_at > NOW()` — conteo lazy sobre la columna `expires_at` (agregada por la migración `20260716140000_us050_quote_request_expires_at`).
+- Una QR con `expires_at < NOW()` no cuenta aunque su `status` siga siendo activo — la transición formal a `status='expired'` la asume un job batch futuro (BR-QUOTE-005).
+
+Errores (envelope estándar):
+
+| Código | HTTP | `details` | Trigger |
+| --- | ---: | --- | --- |
+| `EVENT_NOT_FOUND` | 404 | — | Evento inexistente o ajeno (SEC-05 uniforme; hereda de US-049). |
+| `INVALID_CATEGORY` | 400 | `[{ field: 'service_category_id', message: 'not_available' }]` | Categoría inexistente o `is_active=false`. |
+| `AUTHENTICATION_REQUIRED` | 401 | — | Sin sesión. |
+| `FORBIDDEN` | 403 | — | Rol distinto de `organizer`. |
+
+Observabilidad: sin log de dominio dedicado en el GET (queda cubierto por el request log estándar). Cuando el `POST /quote-requests` retorna `409 QR_CATEGORY_LIMIT_REACHED`, el UC de US-049 emite el evento `quote_request.limit_reached` (warn) con `{ correlationId, actorId, eventId, serviceCategoryId, activeCount, limit }` — ver DEV-04 de `management/workflows/development-execution/P1/PB-P1-030/US-050-execution.md`.
+
 ---
 
 ## 31. Quotes API
