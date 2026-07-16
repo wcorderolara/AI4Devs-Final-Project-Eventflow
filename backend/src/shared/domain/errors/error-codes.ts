@@ -159,6 +159,10 @@ export const ErrorCodes = {
   QUOTE_NOT_FOUND: 'QUOTE_NOT_FOUND', // 404 — Quote inexistente o de evento no propio (SEC-03 uniforme).
   QUOTE_NOT_REJECTABLE: 'QUOTE_NOT_REJECTABLE', // 409 — Quote.status ≠ 'sent' (EC-01/05); `details.current_status`.
   INVALID_REJECTION_REASON: 'INVALID_REJECTION_REASON', // 400 — body.reason > 500 chars (EC-03, VR-02).
+  // US-056 (PB-P1-034): cancelación de QuoteRequest por organizer. Códigos específicos §7 Tech Spec.
+  QR_NOT_CANCELLABLE: 'QR_NOT_CANCELLABLE', // 409 — QR.status ∉ ACTIVE_STATES (EC-02/06, VR-04); `details.current_status`.
+  QR_HAS_CONFIRMED_BOOKING: 'QR_HAS_CONFIRMED_BOOKING', // 409 — existe BookingIntent confirmed_intent (EC-01, VR-05); `details.booking_intent_id`.
+  INVALID_CANCELLATION_REASON: 'INVALID_CANCELLATION_REASON', // 400 — body.reason > 500 chars (EC-04, VR-02).
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

@@ -9,7 +9,7 @@ import type {
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import type { ClockPort } from '../../../shared/domain/clock.port.js';
 import type { QuoteRequestView, QuoteRequestStatusValue } from '../domain/quote-request.js';
-import { canCancelQuoteRequest, canMarkViewed } from '../domain/quote-policies.js';
+import { canMarkViewed } from '../domain/quote-policies.js';
 import type { CreateQuoteRequestRequest } from '../dto/index.js';
 import type { PaginationInput } from '../../../shared/validation/pagination.js';
 import { NotFoundError } from '../../../shared/domain/errors/not-found.error.js';
@@ -145,30 +145,10 @@ export class GetQuoteRequestUseCase {
   }
 }
 
-export class CancelQuoteRequestUseCase {
-  constructor(
-    private readonly quoteRequests: QuoteRequestRepository,
-    private readonly events: EventAccessReader,
-    private readonly clock: ClockPort,
-    private readonly logger: DomainEventLogger,
-  ) {}
-
-  async execute(userId: string, quoteRequestId: string, ctx: QuoteUseCaseContext = {}): Promise<QuoteRequestView> {
-    const qr = await this.quoteRequests.findById(quoteRequestId);
-    if (!qr) throw new NotFoundError('Quote request not found');
-    await requireEventOwner(this.events, qr.eventId, userId);
-    if (!canCancelQuoteRequest(qr.status)) {
-      throw new BusinessRuleViolationError(
-        ErrorCodes.BUSINESS_RULE_VIOLATION,
-        'Quote request cannot be cancelled in its current state',
-        [{ field: 'status', message: `Quote request is ${qr.status}` }],
-      );
-    }
-    const view = await this.quoteRequests.cancel(quoteRequestId, this.clock.now());
-    this.logger.emit('quote_request.cancelled', { correlationId: ctx.correlationId, actorId: userId, quoteRequestId });
-    return view;
-  }
-}
+// US-056 (PB-P1-034): `CancelQuoteRequestUseCase` original removido. El wiring del controller
+// usa `CancelQuoteRequestUs056UseCase` (transaccional + notifs atómicas + check
+// `confirmed_intent` + audit fields `cancelled_by` / `cancellation_reason`). Ver DEV-02 del
+// execution record `US-056-execution.md`.
 
 export class MarkQuoteRequestViewedUseCase {
   constructor(

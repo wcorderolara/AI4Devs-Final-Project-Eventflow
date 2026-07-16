@@ -13,17 +13,18 @@ import { SystemClock } from '../infrastructure/time/system-clock.js';
 import { StructuredDomainEventLogger } from '../infrastructure/observability/structured-domain-event-logger.js';
 import { PrismaQuoteNotificationSenderAdapter } from '../infrastructure/notifications/prisma-quote-notification-sender.adapter.js';
 import { ExpireQuotesUs053UseCase } from '../modules/quote-flow/application/expire-quotes.us053.use-case.js';
-import { QuoteNotificationService } from '../modules/quote-flow/services/quote-notification.service.js';
+// US-056 (BE-002/003): service común genérico — reemplaza al `QuoteNotificationService`.
+import { QuoteEventNotificationService } from '../modules/quote-flow/services/quote-event-notification.service.js';
 import { config } from '../config/env.js';
 
 async function main(): Promise<void> {
   const clock = new SystemClock();
   const logger = new StructuredDomainEventLogger();
-  const quoteNotifications = new QuoteNotificationService(
+  const quoteEvents = new QuoteEventNotificationService(
     new PrismaQuoteNotificationSenderAdapter(prisma),
     logger,
   );
-  const uc = new ExpireQuotesUs053UseCase(quoteNotifications, clock, logger, prisma);
+  const uc = new ExpireQuotesUs053UseCase(quoteEvents, clock, logger, prisma);
   const runId = uuidv4();
   const result = await uc.execute({
     correlationId: `cli-${runId}`,

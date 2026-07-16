@@ -20,10 +20,10 @@ import { Prisma, type PrismaClient } from '@prisma/client';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import type { ClockPort } from '../../../shared/domain/clock.port.js';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
-// US-054 (BE-004): refactor — invoca `QuoteNotificationService.emitQuoteStateChange` en lugar
-// de duplicar las 2 llamadas a `NotificationSenderPort.notify`. Preserva la atomicidad por batch
-// (el service recibe `tx` y emite las 2 rows dentro de la misma transacción).
-import type { QuoteNotificationService } from '../services/quote-notification.service.js';
+// US-054 (BE-004) + US-056 (BE-002/003): refactor — invoca `QuoteEventNotificationService.emit`
+// en lugar de duplicar las 2 llamadas a `NotificationSenderPort.notify`. Preserva la atomicidad
+// por batch (el service recibe `tx` y emite las 2 rows dentro de la misma transacción).
+import type { QuoteEventNotificationService } from '../services/quote-event-notification.service.js';
 
 export interface ExpireQuotesInput {
   correlationId?: string;
@@ -56,7 +56,7 @@ const MAX_BATCHES = 10_000;
 
 export class ExpireQuotesUs053UseCase {
   constructor(
-    private readonly quoteNotifications: QuoteNotificationService,
+    private readonly quoteEvents: QuoteEventNotificationService,
     private readonly clock: ClockPort,
     private readonly logger: DomainEventLogger,
     private readonly prisma: PrismaClient = defaultPrisma,
@@ -159,10 +159,10 @@ export class ExpireQuotesUs053UseCase {
           quote_request_id: c.quote_request_id,
           valid_until: c.valid_until.toISOString(),
         };
-        // US-054 (BE-004): fan-out delegado al service común — mismas 2 Notifications atómicas.
-        await this.quoteNotifications.emitQuoteStateChange({
+        // US-054 (BE-004) + US-056 (BE-002/003): fan-out delegado al service común genérico.
+        await this.quoteEvents.emit({
           quoteId: c.id,
-          vendorUserId: recipient,
+          recipientUserId: recipient,
           eventName: 'quote.expired',
           payload,
           tx,

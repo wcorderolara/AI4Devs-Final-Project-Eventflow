@@ -30,9 +30,12 @@ import {
   ListEventQuoteRequestsUseCase,
   ListVendorQuoteRequestsUseCase,
   GetQuoteRequestUseCase,
-  CancelQuoteRequestUseCase,
   MarkQuoteRequestViewedUseCase,
 } from '../application/quote-request.use-cases.js';
+// US-056 (PB-P1-034 / BE-004/005): cancelación transaccional + notifications + check
+// `confirmed_intent` (reemplaza `CancelQuoteRequestUseCase` de US-096 en el wiring — DEV-02).
+import { CancelQuoteRequestUs056UseCase } from '../application/cancel-quote-request.us056.use-case.js';
+import { cancelQuoteRequestBodySchema } from '../dto/cancel-quote-request.us056.request.js';
 import {
   CreateQuoteUseCase,
   GetQuoteForQuoteRequestUseCase,
@@ -44,7 +47,9 @@ import {
 // US-054 (PB-P1-032): rechazo transaccional con notifications atómicas (reemplaza el
 // `RejectQuoteUseCase` original de US-096 — ver DEV-02 del execution record).
 import { RejectQuoteUs054UseCase } from '../application/reject-quote.us054.use-case.js';
-import { QuoteNotificationService } from '../services/quote-notification.service.js';
+// US-056 (BE-002): service común genérico — soporta `quote.rejected`, `quote.expired`,
+// `quote_request.cancelled`. Reemplaza al `QuoteNotificationService` (US-054) sin duplicar rutas.
+import { QuoteEventNotificationService } from '../services/quote-event-notification.service.js';
 import { PrismaQuoteNotificationSenderAdapter } from '../../../infrastructure/notifications/prisma-quote-notification-sender.adapter.js';
 import { prisma } from '../../../infrastructure/prisma/client.js';
 import { rejectQuoteBodySchema } from '../dto/reject-quote.us054.request.js';
@@ -57,18 +62,20 @@ const logger = new StructuredDomainEventLogger();
 const quoteRequests = new PrismaQuoteRequestRepository();
 const quotes = new PrismaQuoteRepository();
 
+// US-054 (PB-P1-032 / BE-002/003) + US-056 (BE-002): servicio común genérico + adapter Prisma
+// reutilizado desde US-049. Emite `quote.rejected` (US-054), `quote.expired` (US-053) y
+// `quote_request.cancelled` (US-056).
+const notifications = new PrismaQuoteNotificationSenderAdapter(prisma);
+const quoteEvents = new QuoteEventNotificationService(notifications, logger);
+
 const qrController = new QuoteRequestsController({
   create: new CreateQuoteRequestUseCase(quoteRequests, events, vendors, categories, logger),
   listByEvent: new ListEventQuoteRequestsUseCase(quoteRequests, events),
   listByVendor: new ListVendorQuoteRequestsUseCase(quoteRequests, vendors),
   get: new GetQuoteRequestUseCase(quoteRequests, events, vendors),
-  cancel: new CancelQuoteRequestUseCase(quoteRequests, events, clock, logger),
+  cancel: new CancelQuoteRequestUs056UseCase(quoteEvents, clock, logger, prisma),
   markViewed: new MarkQuoteRequestViewedUseCase(quoteRequests, vendors, clock, logger),
 });
-
-// US-054 (PB-P1-032 / BE-002/003): servicio común + adapter Prisma reutilizado desde US-049.
-const notifications = new PrismaQuoteNotificationSenderAdapter(prisma);
-const quoteNotifications = new QuoteNotificationService(notifications, logger);
 
 const quoteController = new QuotesController({
   create: new CreateQuoteUseCase(quotes, quoteRequests, events, vendors, logger),
@@ -76,7 +83,7 @@ const quoteController = new QuotesController({
   update: new UpdateQuoteUseCase(quotes, quoteRequests, events, vendors, logger),
   send: new SendQuoteUseCase(quotes, vendors, clock, logger),
   accept: new AcceptQuoteUseCase(quotes, quoteRequests, events, clock, logger),
-  reject: new RejectQuoteUs054UseCase(quoteNotifications, clock, logger, prisma),
+  reject: new RejectQuoteUs054UseCase(quoteEvents, clock, logger, prisma),
   prefer: new PreferQuoteUseCase(quotes, quoteRequests, events, logger),
 });
 
@@ -117,11 +124,13 @@ quoteFlowRouter.get(
   v(z.object({ params: QuoteRequestIdParamSchema })),
   asyncHandler(qrController.get),
 );
+// US-056 (PB-P1-034 / BE-005): body opcional `{ reason?: string [0..500] }`. Se preserva
+// el verbo PATCH y la ruta existente (US-096) — DEV-02 evita duplicar `/organizer/...`.
 quoteFlowRouter.patch(
   '/quote-requests/:quoteRequestId/cancel',
   sessionAuth,
   organizer,
-  v(z.object({ params: QuoteRequestIdParamSchema })),
+  v(z.object({ params: QuoteRequestIdParamSchema, body: cancelQuoteRequestBodySchema })),
   asyncHandler(qrController.cancel),
 );
 quoteFlowRouter.patch(

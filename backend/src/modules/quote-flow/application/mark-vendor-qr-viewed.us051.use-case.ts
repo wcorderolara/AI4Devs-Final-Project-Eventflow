@@ -53,6 +53,10 @@ function rowToView(row: QuoteRequestLockRow): QuoteRequestView {
     viewedAt: row.viewed_at ? row.viewed_at.toISOString() : null,
     viewedBy: row.viewed_by ?? null,
     cancelledAt: row.cancelled_at ? row.cancelled_at.toISOString() : null,
+    // US-056 (DB-001): audit fields de cancelación. La US-051 no los emite (mark-viewed no cancela),
+    // pero deben incluirse en el shape del view para preservar el contrato canónico.
+    cancelledBy: null,
+    cancellationReason: null,
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
   };

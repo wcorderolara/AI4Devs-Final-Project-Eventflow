@@ -1,0 +1,27 @@
+{
+  "qr": {
+    "cancel": {
+      "title": "Cancel quote request",
+      "description": "The request will be marked as cancelled and the vendor will receive a notification. The associated quote is not modified. This action cannot be undone.",
+      "reasonLabel": "Cancellation reason (optional)",
+      "reasonPlaceholder": "E.g. Change of plans…",
+      "reasonHint": "Up to 500 characters.",
+      "reasonCounter": "{count}/500",
+      "actions": {
+        "cancel": "Back",
+        "submit": "Confirm cancellation",
+        "submitting": "Cancelling…"
+      },
+      "success": "Request cancelled. The vendor has been notified.",
+      "errors": {
+        "INVALID_CANCELLATION_REASON": "The reason cannot exceed 500 characters.",
+        "QR_NOT_FOUND": "We could not find this request or it is no longer available.",
+        "QR_NOT_CANCELLABLE": "This request can no longer be cancelled in its current state.",
+        "QR_HAS_CONFIRMED_BOOKING": "Cancellation is not possible: a confirmed booking intent is associated. Cancel the booking first.",
+        "AUTHENTICATION_REQUIRED": "You need to sign in to cancel the request.",
+        "FORBIDDEN": "Your role cannot cancel quote requests.",
+        "UNEXPECTED": "An unexpected error occurred. Please try again."
+      }
+    }
+  }
+}

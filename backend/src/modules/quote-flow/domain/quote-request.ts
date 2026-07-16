@@ -28,6 +28,10 @@ export interface QuoteRequestView {
   /** US-051 (D3): usuario del vendor que disparó la primera transición `sent → viewed`. */
   viewedBy: string | null;
   cancelledAt: string | null;
+  /** US-056 (D4): usuario organizer que ejecutó la cancelación. Null si la QR no está cancelada. */
+  cancelledBy: string | null;
+  /** US-056 (D4): motivo opcional capturado por el organizer. Null si la QR no está cancelada o si no se envió. */
+  cancellationReason: string | null;
   createdAt: string;
   updatedAt: string;
 }

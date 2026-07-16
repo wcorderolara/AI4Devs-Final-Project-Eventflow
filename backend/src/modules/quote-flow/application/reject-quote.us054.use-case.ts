@@ -6,8 +6,8 @@
 //   2. Verifica ownership del evento (colapsa a 404 uniforme si el organizer no es dueño — D8/SEC-03).
 //   3. Verifica que `status = 'sent'` (409 QUOTE_NOT_REJECTABLE si no — EC-01/EC-05).
 //   4. UPDATE `status='rejected' + rejected_at + rejection_reason?`.
-//   5. Invoca `QuoteNotificationService.emitQuoteStateChange({ eventName: 'quote.rejected', tx })`
-//      que persiste 2 Notifications atómicamente.
+//   5. Invoca `QuoteEventNotificationService.emit({ eventName: 'quote.rejected', tx })`
+//      (US-056 refactor) que persiste 2 Notifications atómicamente.
 //   6. Emite log `quote.rejected` con metadatos seguros.
 //
 // Idempotencia (EC-05): un re-rechazo entra al paso 3 con `status='rejected'` y retorna 409 sin
@@ -21,7 +21,8 @@ import type { QuoteView } from '../domain/quote.js';
 import type { ClockPort } from '../../../shared/domain/clock.port.js';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
-import type { QuoteNotificationService } from '../services/quote-notification.service.js';
+// US-056 (BE-002/003): refactor a service común genérico. `emit({ recipientUserId, eventName, ... })`.
+import type { QuoteEventNotificationService } from '../services/quote-event-notification.service.js';
 import {
   QuoteNotFoundError,
   QuoteNotRejectableError,
@@ -52,7 +53,7 @@ export interface RejectQuoteCtx {
 
 export class RejectQuoteUs054UseCase {
   constructor(
-    private readonly quoteNotifications: QuoteNotificationService,
+    private readonly quoteEvents: QuoteEventNotificationService,
     private readonly clock: ClockPort,
     private readonly logger: DomainEventLogger,
     private readonly prisma: PrismaClient = defaultPrisma,
@@ -125,9 +126,9 @@ export class RejectQuoteUs054UseCase {
         throw new QuoteNotFoundError();
       }
 
-      await this.quoteNotifications.emitQuoteStateChange({
+      await this.quoteEvents.emit({
         quoteId: updated.id,
-        vendorUserId: vendor.user_id,
+        recipientUserId: vendor.user_id,
         eventName: 'quote.rejected',
         payload: {
           quote_id: updated.id,

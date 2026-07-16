@@ -46,6 +46,16 @@ import {
   QuoteNotRejectableError,
   InvalidRejectionReasonError,
 } from '../../../modules/quote-flow/domain/us054.errors.js';
+// US-056 (PB-P1-034): cancelación de QuoteRequest por organizer. Errores mapeados a
+// `QR_NOT_FOUND` (404), `QR_NOT_CANCELLABLE` (409), `QR_HAS_CONFIRMED_BOOKING` (409),
+// `INVALID_CANCELLATION_REASON` (400). `QrNotFoundError` es distinto de `QuoteNotFoundError`
+// pero reusa el código estable `QR_NOT_FOUND` introducido por US-051.
+import {
+  QrNotFoundError as Us056QrNotFoundError,
+  QrNotCancellableError,
+  QrHasConfirmedBookingError,
+  InvalidCancellationReasonError,
+} from '../../../modules/quote-flow/domain/us056.errors.js';
 import {
   MissingInputError,
   AiInvalidBudgetError,
@@ -293,6 +303,34 @@ function mapError(err: unknown): MappedError {
     return {
       status: 400,
       code: ErrorCodes.INVALID_REJECTION_REASON,
+      message: err.message,
+      details: [{ field: 'reason', message: 'too_long' }],
+    };
+  }
+  // US-056 (PB-P1-034): cancelación de QuoteRequest por organizer.
+  if (err instanceof Us056QrNotFoundError) {
+    return { status: 404, code: ErrorCodes.QR_NOT_FOUND, message: 'Quote request not found', masked: true };
+  }
+  if (err instanceof QrNotCancellableError) {
+    return {
+      status: 409,
+      code: ErrorCodes.QR_NOT_CANCELLABLE,
+      message: err.message,
+      details: [{ field: 'current_status', message: err.currentStatus }],
+    };
+  }
+  if (err instanceof QrHasConfirmedBookingError) {
+    return {
+      status: 409,
+      code: ErrorCodes.QR_HAS_CONFIRMED_BOOKING,
+      message: err.message,
+      details: [{ field: 'booking_intent_id', message: err.bookingIntentId }],
+    };
+  }
+  if (err instanceof InvalidCancellationReasonError) {
+    return {
+      status: 400,
+      code: ErrorCodes.INVALID_CANCELLATION_REASON,
       message: err.message,
       details: [{ field: 'reason', message: 'too_long' }],
     };

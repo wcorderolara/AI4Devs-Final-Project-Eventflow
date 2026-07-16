@@ -2,11 +2,14 @@
 // Un único método `createRequest` que llama `POST /api/v1/quote-requests` y desanida el envelope.
 // Los errores se mapean automáticamente a `ApiError` por el `httpClient`; la vista consume el
 // `errorCode` para pintar el banner i18n (`quotes.create.errors.*`).
-import { httpGet, httpPost } from '@/shared/api-client';
+import { httpGet, httpPatch, httpPost } from '@/shared/api-client';
 import type {
   ActiveQrCountEnvelope,
   ActiveQrCountInput,
   ActiveQrCountView,
+  CancelQrEnvelope,
+  CancelQrInput,
+  CancelQrView,
   CreateQuoteRequestEnvelope,
   CreateQuoteRequestInput,
   CreateQuoteRequestView,
@@ -16,6 +19,7 @@ import type {
 } from './quotesApi.types';
 import {
   toActiveQrCountView,
+  toCancelQrView,
   toCreateQuoteRequestView,
   toRejectQuoteView,
 } from './quotesApi.types';
@@ -59,5 +63,25 @@ export const quotesApi = {
       { body },
     );
     return toRejectQuoteView(envelope.data);
+  },
+
+  /**
+   * US-056 (FE-002): cancelación de un QuoteRequest activo por el organizer dueño del evento.
+   * Body opcional con `reason` (0..500). El backend emite 2 Notifications al vendor atómicamente
+   * y bloquea si existe un BookingIntent `confirmed_intent` asociado. Códigos de error
+   * consumibles por el banner i18n del dialog: `INVALID_CANCELLATION_REASON` (400),
+   * `AUTHENTICATION_REQUIRED` (401), `FORBIDDEN` (403), `QR_NOT_FOUND` (404),
+   * `QR_NOT_CANCELLABLE` (409), `QR_HAS_CONFIRMED_BOOKING` (409).
+   *
+   * Verbo: PATCH (preserva la ruta canónica de US-096 — ver DEV-02 del execution record).
+   */
+  async cancelQr(input: CancelQrInput): Promise<CancelQrView> {
+    const body: { reason?: string } = {};
+    if (input.reason !== undefined && input.reason.length > 0) body.reason = input.reason;
+    const envelope = await httpPatch<CancelQrEnvelope, { reason?: string }>(
+      `/quote-requests/${encodeURIComponent(input.quoteRequestId)}/cancel`,
+      { body },
+    );
+    return toCancelQrView(envelope.data);
   },
 };

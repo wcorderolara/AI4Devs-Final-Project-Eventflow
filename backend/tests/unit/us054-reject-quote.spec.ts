@@ -1,15 +1,16 @@
 // US-054 (PB-P1-032 / QA-001) — Unit tests.
 // Cobertura:
 //   - DTO `rejectQuoteBodySchema`: body vacío/omitido, `reason` opcional string, `.strict()`.
-//   - `QuoteNotificationService`: emite exactamente 2 Notifications (in_app + email_simulated)
-//     con mismo `event` y `payload`; propaga `tx` y `correlationId`.
+//   - `QuoteEventNotificationService` (US-056 refactor de US-054 QuoteNotificationService): emite
+//     exactamente 2 Notifications (in_app + email_simulated) con mismo `event` y `payload`;
+//     propaga `tx` y `correlationId`.
 //   - `RejectQuoteUs054UseCase`: happy path (con y sin reason), EC-01 estado inválido,
 //     EC-02 Quote inexistente, EC-05 idempotencia (re-rechazo), EC-03 reason > 500,
 //     404 uniforme cuando organizer ajeno, transacción rollback en fallo del service.
 import { QuoteStatus } from '@prisma/client';
 import { describe, expect, it, vi } from 'vitest';
 import { rejectQuoteBodySchema } from '../../src/modules/quote-flow/dto/reject-quote.us054.request.js';
-import { QuoteNotificationService } from '../../src/modules/quote-flow/services/quote-notification.service.js';
+import { QuoteEventNotificationService } from '../../src/modules/quote-flow/services/quote-event-notification.service.js';
 import { RejectQuoteUs054UseCase } from '../../src/modules/quote-flow/application/reject-quote.us054.use-case.js';
 import {
   QuoteNotFoundError,
@@ -64,23 +65,23 @@ describe('US-054 · rejectQuoteBodySchema', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// QuoteNotificationService
+// QuoteEventNotificationService (refactor US-056)
 // ─────────────────────────────────────────────────────────────────────────────
-describe('US-054 · QuoteNotificationService', () => {
+describe('US-054/056 · QuoteEventNotificationService', () => {
   function makeService() {
     const notify = vi.fn<(input: NotifyInput) => Promise<void>>(async () => {});
     const notifications: QuoteNotificationSenderPort = { notify };
     const emit = vi.fn();
     const logger: DomainEventLogger = { emit };
-    return { service: new QuoteNotificationService(notifications, logger), notify, emit };
+    return { service: new QuoteEventNotificationService(notifications, logger), notify, emit };
   }
 
   it('emite exactamente 2 Notifications con mismo event/payload y canales in_app + email_simulated', async () => {
     const { service, notify, emit } = makeService();
     const payload = { quote_id: QUOTE_ID, foo: 'bar' };
-    await service.emitQuoteStateChange({
+    await service.emit({
       quoteId: QUOTE_ID,
-      vendorUserId: VENDOR_USER_ID,
+      recipientUserId: VENDOR_USER_ID,
       eventName: 'quote.rejected',
       payload,
       correlationId: 'corr-54',
@@ -99,7 +100,7 @@ describe('US-054 · QuoteNotificationService', () => {
     const email = calls.find((c) => c.channel === 'email_simulated')!;
     expect(inApp.deliveryStatus).toBe('delivered');
     expect(email.deliveryStatus).toBe('simulated');
-    // Log agregado.
+    // Log agregado — la clave del log preserva `vendorUserId` (contrato DomainEventLogger).
     expect(emit).toHaveBeenCalledWith(
       'quote.notification.emitted',
       expect.objectContaining({
@@ -113,10 +114,10 @@ describe('US-054 · QuoteNotificationService', () => {
 
   it('propaga `tx` a ambas llamadas del port (atomicidad D7)', async () => {
     const { service, notify } = makeService();
-    const fakeTx = { __marker: 'tx' } as unknown as Parameters<typeof service.emitQuoteStateChange>[0]['tx'];
-    await service.emitQuoteStateChange({
+    const fakeTx = { __marker: 'tx' } as unknown as Parameters<typeof service.emit>[0]['tx'];
+    await service.emit({
       quoteId: QUOTE_ID,
-      vendorUserId: VENDOR_USER_ID,
+      recipientUserId: VENDOR_USER_ID,
       eventName: 'quote.expired',
       payload: {},
       tx: fakeTx,
@@ -133,11 +134,11 @@ describe('US-054 · QuoteNotificationService', () => {
     const notifications: QuoteNotificationSenderPort = { notify };
     const emit = vi.fn();
     const logger: DomainEventLogger = { emit };
-    const service = new QuoteNotificationService(notifications, logger);
+    const service = new QuoteEventNotificationService(notifications, logger);
     await expect(
-      service.emitQuoteStateChange({
+      service.emit({
         quoteId: QUOTE_ID,
-        vendorUserId: VENDOR_USER_ID,
+        recipientUserId: VENDOR_USER_ID,
         eventName: 'quote.rejected',
         payload: {},
       }),
@@ -164,7 +165,7 @@ function makeUc(overrides: Overrides = {}) {
   const emit = vi.fn();
   const logger: DomainEventLogger = { emit };
   const notifications: QuoteNotificationSenderPort = { notify };
-  const service = new QuoteNotificationService(notifications, logger);
+  const service = new QuoteEventNotificationService(notifications, logger);
   const now = new Date(Date.UTC(2026, 6, 16, 12, 0, 0));
   const clock: ClockPort = { now: () => now };
 

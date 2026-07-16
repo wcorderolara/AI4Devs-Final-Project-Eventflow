@@ -1,0 +1,27 @@
+{
+  "qr": {
+    "cancel": {
+      "title": "Cancelar solicitud de cotización",
+      "description": "La solicitud se marcará como cancelada y el proveedor recibirá una notificación. La cotización asociada no se modifica. Esta acción no se puede deshacer.",
+      "reasonLabel": "Motivo de la cancelación (opcional)",
+      "reasonPlaceholder": "Ej. Cambio de planes…",
+      "reasonHint": "Máximo 500 caracteres.",
+      "reasonCounter": "{count}/500",
+      "actions": {
+        "cancel": "Volver",
+        "submit": "Confirmar cancelación",
+        "submitting": "Cancelando…"
+      },
+      "success": "Solicitud cancelada. Notificamos al proveedor.",
+      "errors": {
+        "INVALID_CANCELLATION_REASON": "El motivo no puede superar 500 caracteres.",
+        "QR_NOT_FOUND": "No encontramos esta solicitud o ya no está disponible.",
+        "QR_NOT_CANCELLABLE": "Esta solicitud ya no puede cancelarse en su estado actual.",
+        "QR_HAS_CONFIRMED_BOOKING": "No es posible cancelar: existe un intento de reserva confirmado asociado. Cancela primero la reserva.",
+        "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para cancelar la solicitud.",
+        "FORBIDDEN": "Tu rol no puede cancelar solicitudes de cotización.",
+        "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
+      }
+    }
+  }
+}

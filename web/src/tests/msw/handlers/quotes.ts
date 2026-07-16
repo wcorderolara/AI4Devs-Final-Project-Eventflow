@@ -63,6 +63,16 @@ const REJECT_TRIGGER_NOT_FOUND = 'ffffffff-0000-0000-0054-000000000404';
 const REJECT_TRIGGER_NOT_REJECTABLE = 'ffffffff-0000-0000-0054-000000000409';
 const REJECT_TRIGGER_INVALID_REASON = 'ffffffff-0000-0000-0054-000000000400';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// US-056 · cancel quote request triggers (via :quoteRequestId path param).
+// ─────────────────────────────────────────────────────────────────────────────
+const CANCEL_QR_TRIGGER_UNAUTH = 'ffffffff-0000-0000-0056-000000000401';
+const CANCEL_QR_TRIGGER_FORBIDDEN = 'ffffffff-0000-0000-0056-000000000403';
+const CANCEL_QR_TRIGGER_NOT_FOUND = 'ffffffff-0000-0000-0056-000000000404';
+const CANCEL_QR_TRIGGER_NOT_CANCELLABLE = 'ffffffff-0000-0000-0056-000000000409';
+const CANCEL_QR_TRIGGER_HAS_CONFIRMED = 'ffffffff-0000-0000-0056-000000000410';
+const CANCEL_QR_TRIGGER_INVALID_REASON = 'ffffffff-0000-0000-0056-000000000400';
+
 export const quotesHandlers = [
   http.get('*/api/v1/quote-requests/active-count', ({ request }) => {
     const url = new URL(request.url);
@@ -242,6 +252,68 @@ export const quotesHandlers = [
       { status: 200 },
     );
   }),
+
+  // US-056 · PATCH /api/v1/quote-requests/:quoteRequestId/cancel (organizer).
+  // Los disparadores viven en el `:quoteRequestId` — el `reason` del body se refleja en la
+  // respuesta 200 para permitir aserciones desde los tests del dialog.
+  http.patch('*/api/v1/quote-requests/:quoteRequestId/cancel', async ({ request, params }) => {
+    const quoteRequestId = String(params.quoteRequestId ?? '');
+    const raw = await request.text();
+    const body: { reason?: string } = raw ? JSON.parse(raw) : {};
+
+    if (quoteRequestId === CANCEL_QR_TRIGGER_UNAUTH) {
+      return HttpResponse.json(errorEnvelope('AUTHENTICATION_REQUIRED', 'Authentication required'), {
+        status: 401,
+      });
+    }
+    if (quoteRequestId === CANCEL_QR_TRIGGER_FORBIDDEN) {
+      return HttpResponse.json(errorEnvelope('FORBIDDEN', 'Only organizers can cancel quote requests'), {
+        status: 403,
+      });
+    }
+    if (quoteRequestId === CANCEL_QR_TRIGGER_NOT_FOUND) {
+      return HttpResponse.json(errorEnvelope('QR_NOT_FOUND', 'Quote request not found'), {
+        status: 404,
+      });
+    }
+    if (quoteRequestId === CANCEL_QR_TRIGGER_NOT_CANCELLABLE) {
+      return HttpResponse.json(
+        errorEnvelope('QR_NOT_CANCELLABLE', 'Quote request cannot be cancelled in its current state', [
+          { field: 'current_status', message: 'expired' },
+        ]),
+        { status: 409 },
+      );
+    }
+    if (quoteRequestId === CANCEL_QR_TRIGGER_HAS_CONFIRMED) {
+      return HttpResponse.json(
+        errorEnvelope('QR_HAS_CONFIRMED_BOOKING', 'Quote request has a confirmed booking intent', [
+          { field: 'booking_intent_id', message: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb' },
+        ]),
+        { status: 409 },
+      );
+    }
+    if (quoteRequestId === CANCEL_QR_TRIGGER_INVALID_REASON) {
+      return HttpResponse.json(
+        errorEnvelope('INVALID_CANCELLATION_REASON', 'reason exceeds maximum length of 500 characters', [
+          { field: 'reason', message: 'too_long' },
+        ]),
+        { status: 400 },
+      );
+    }
+
+    const now = new Date('2026-07-16T12:00:00Z').toISOString();
+    const actorId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+    return HttpResponse.json(
+      envelope({
+        id: quoteRequestId,
+        status: 'cancelled',
+        cancelledAt: now,
+        cancelledBy: actorId,
+        cancellationReason: body.reason && body.reason.length > 0 ? body.reason : null,
+      }),
+      { status: 200 },
+    );
+  }),
 ];
 
 // Exports para tests que quieran forzar escenarios sin duplicar UUIDs.
@@ -265,6 +337,16 @@ export const rejectQuoteMswTriggers = {
   NOT_FOUND: REJECT_TRIGGER_NOT_FOUND,
   NOT_REJECTABLE: REJECT_TRIGGER_NOT_REJECTABLE,
   INVALID_REASON: REJECT_TRIGGER_INVALID_REASON,
+} as const;
+
+// US-056 (FE-002) — triggers para el `CancelQRDialog` y los tests de mutations.
+export const cancelQrMswTriggers = {
+  UNAUTH: CANCEL_QR_TRIGGER_UNAUTH,
+  FORBIDDEN: CANCEL_QR_TRIGGER_FORBIDDEN,
+  NOT_FOUND: CANCEL_QR_TRIGGER_NOT_FOUND,
+  NOT_CANCELLABLE: CANCEL_QR_TRIGGER_NOT_CANCELLABLE,
+  HAS_CONFIRMED_BOOKING: CANCEL_QR_TRIGGER_HAS_CONFIRMED,
+  INVALID_REASON: CANCEL_QR_TRIGGER_INVALID_REASON,
 } as const;
 
 export const quotesActiveCountMswTriggers = {
