@@ -224,7 +224,7 @@ model Location {
   // US-045 (PB-P1-028): slug estable requerido por el directorio (`locationCode` query param).
   // UNIQUE parcial (NULL permitido para filas legacy previas a US-045); las filas nuevas y las
   // seed se pueblan siempre server-side. Ejemplo: `GT-GUA`, `MX-CDMX`, `CO-ANT`.
-  code    String? @unique
+  code    String? @unique @db.VarChar(64)
   country String
   region  String?
   city    String?
