@@ -79,7 +79,7 @@ export class CreateQuoteRequestUs049UseCase {
       const vendor = await this.lockVendor(tx, body.vendor_profile_id);
       await this.assertCategoryActive(tx, body.service_category_id);
       await this.assertNoActiveDuplicate(tx, body.event_id, body.vendor_profile_id);
-      await this.assertBelowCategoryLimit(tx, body.event_id, body.service_category_id);
+      await this.assertBelowCategoryLimit(tx, body.event_id, body.service_category_id, ctx, currentUserId);
 
       const aiGenerated = body.source === 'ai_generated';
       const briefEnvelope = {
@@ -221,6 +221,8 @@ export class CreateQuoteRequestUs049UseCase {
     tx: Prisma.TransactionClient,
     eventId: string,
     serviceCategoryId: string,
+    ctx: CreateQuoteRequestUs049Ctx,
+    actorId: string,
   ): Promise<void> {
     const activeCount = await tx.quoteRequest.count({
       where: {
@@ -230,6 +232,16 @@ export class CreateQuoteRequestUs049UseCase {
       },
     });
     if (activeCount >= MAX_ACTIVE_PER_CATEGORY) {
+      // US-050 (BE-005): emitir warning ANTES del throw para que sobreviva al rollback de la
+      // transacción y quede trazable el intento bloqueado (BR-QUOTE-009).
+      this.logger.emit('quote_request.limit_reached', {
+        correlationId: ctx.correlationId,
+        actorId,
+        eventId,
+        serviceCategoryId,
+        activeCount,
+        limit: MAX_ACTIVE_PER_CATEGORY,
+      });
       throw new QuoteRequestCategoryLimitReachedError(activeCount);
     }
   }

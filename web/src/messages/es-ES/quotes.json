@@ -44,5 +44,9 @@
       "FORBIDDEN": "Tu rol no puede crear solicitudes de presupuesto.",
       "UNEXPECTED": "Se ha producido un error inesperado. Inténtalo de nuevo."
     }
+  },
+  "limit": {
+    "label": "{count}/{limit} presupuestos activos en esta categoría",
+    "reached": "Has alcanzado el máximo de solicitudes activas para esta categoría. Espera a que alguna sea respondida o cancelada para enviar otra."
   }
 }

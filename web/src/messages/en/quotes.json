@@ -44,5 +44,9 @@
       "FORBIDDEN": "Your role cannot create quote requests.",
       "UNEXPECTED": "An unexpected error occurred. Please try again."
     }
+  },
+  "limit": {
+    "label": "{count}/{limit} active quote requests in this category",
+    "reached": "You've reached the maximum active requests for this category. Wait for one to be answered or cancelled before sending another."
   }
 }

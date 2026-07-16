@@ -576,6 +576,11 @@ model QuoteRequest {
   brief              Json?              @db.JsonB
   viewedAt           DateTime?          @map("viewed_at") @db.Timestamptz(6)
   cancelledAt        DateTime?          @map("cancelled_at") @db.Timestamptz(6)
+  // US-050 (PB-P1-030 / DB-001): TTL opcional para el conteo lazy `active-count`. NULL indica
+  // "sin expiración explícita"; el filtro del endpoint aplica `(expires_at IS NULL OR expires_at
+  // > NOW())`. La transición formal a `status='expired'` la asume un job batch de BR-QUOTE-005
+  // (Future). Ninguna otra US actual escribe la columna.
+  expiresAt          DateTime?          @map("expires_at") @db.Timestamptz(6)
   aiRecommendationId String?            @map("ai_recommendation_id") @db.Uuid
 
   event           Event           @relation(fields: [eventId], references: [id], onDelete: Restrict)
@@ -592,6 +597,9 @@ model QuoteRequest {
   @@index([eventId])
   @@index([serviceCategoryId])
   @@index([vendorProfileId])
+  // US-050 (PB-P1-030 / DB-001): índice `expires_at` acota el filtro lazy del endpoint
+  // `active-count` cuando la cardinalidad de QRs por evento crezca.
+  @@index([expiresAt])
   @@map("quote_requests")
 }
 

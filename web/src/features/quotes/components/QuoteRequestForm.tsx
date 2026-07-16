@@ -10,9 +10,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useCreateQuoteRequest } from '../hooks/quotesQueries';
+import { useActiveQrCount, useCreateQuoteRequest } from '../hooks/quotesQueries';
 import type { QuoteRequestSource } from '../api/quotesApi.types';
 import { ApiError } from '@/shared/api-client';
+import { QR_LIMIT_REASON_ID, QRLimitBadge } from './QRLimitBadge';
 
 /** Códigos de error del backend que renderizan un mensaje i18n dedicado. */
 const KNOWN_ERROR_CODES = [
@@ -72,6 +73,14 @@ export function QuoteRequestForm(props: QuoteRequestFormProps): JSX.Element {
     mode: 'onSubmit',
   });
 
+  // US-050: pre-check del límite BR-QUOTE-009. Se dispara la query cuando ambos IDs están
+  // disponibles; el CTA se deshabilita si `available_slots=0` (defense in depth con backend).
+  const activeCountQuery = useActiveQrCount({
+    eventId: props.eventId,
+    serviceCategoryId: props.serviceCategoryId,
+  });
+  const limitReached = activeCountQuery.data?.availableSlots === 0;
+
   const onSubmit = handleSubmit(async (values) => {
     setServerErrorCode(null);
     try {
@@ -100,6 +109,7 @@ export function QuoteRequestForm(props: QuoteRequestFormProps): JSX.Element {
 
   return (
     <form onSubmit={onSubmit} noValidate className="mt-4 space-y-4" aria-describedby={bannerMessage ? bannerId : undefined}>
+      <QRLimitBadge eventId={props.eventId} serviceCategoryId={props.serviceCategoryId} />
       {bannerMessage != null && (
         <div
           id={bannerId}
@@ -155,7 +165,8 @@ export function QuoteRequestForm(props: QuoteRequestFormProps): JSX.Element {
       <div className="flex items-center justify-end gap-2">
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || limitReached}
+          aria-describedby={limitReached ? QR_LIMIT_REASON_ID : undefined}
           className="inline-flex items-center rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? t('actions.submitting') : t('actions.submit')}

@@ -87,3 +87,4 @@
 | P1 | PB-P1-028 | US-045 | Buscar proveedores en directorio (autenticado) | [record](development-execution/P1/PB-P1-028/US-045-execution.md) | 17 | 17 | 0 | 0 | 0 | 0 | `Done` | 2026-07-16 |
 | P1 | PB-P1-029 | US-046 | Perfil público SEO del vendor | [record](development-execution/P1/PB-P1-029/US-046-execution.md) | 20 | 20 | 0 | 0 | 0 | 0 | `Done` | 2026-07-16 |
 | P1 | PB-P1-030 | US-049 | Enviar QuoteRequest con brief estructurado | [record](development-execution/P1/PB-P1-030/US-049-execution.md) | 19 | 14 | 0 | 0 | 0 | 5 | `Done` | 2026-07-16 |
+| P1 | PB-P1-030 | US-050 | Enforcement + UX del límite de 5 QR activas por categoría | [record](development-execution/P1/PB-P1-030/US-050-execution.md) | 14 | 11 | 0 | 0 | 0 | 3 | `Done` | 2026-07-16 |

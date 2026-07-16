@@ -45,7 +45,54 @@ function errorEnvelope(code: string, message: string, details?: unknown): {
   return { error };
 }
 
+// US-050 · GET active-count triggers (por `event_id` o `service_category_id`).
+const AC_TRIGGER_EVENT_NOT_FOUND = 'ffffffff-0000-0000-0050-000000000404';
+const AC_TRIGGER_CATEGORY_INVALID = 'ffffffff-0000-0000-0050-000000000400';
+const AC_TRIGGER_UNAUTH = 'ffffffff-0000-0000-0050-000000000401';
+const AC_TRIGGER_FORBIDDEN = 'ffffffff-0000-0000-0050-000000000403';
+// UUIDs que fuerzan un count específico (para probar el badge en 0/4/5).
+const AC_TRIGGER_COUNT_FIVE = 'ffffffff-0000-0000-0050-000000000005';
+const AC_TRIGGER_COUNT_FOUR = 'ffffffff-0000-0000-0050-000000000004';
+
 export const quotesHandlers = [
+  http.get('*/api/v1/quote-requests/active-count', ({ request }) => {
+    const url = new URL(request.url);
+    const eventId = url.searchParams.get('event_id') ?? '';
+    const serviceCategoryId = url.searchParams.get('service_category_id') ?? '';
+
+    if (eventId === AC_TRIGGER_UNAUTH) {
+      return HttpResponse.json(errorEnvelope('AUTHENTICATION_REQUIRED', 'Authentication required'), {
+        status: 401,
+      });
+    }
+    if (eventId === AC_TRIGGER_FORBIDDEN) {
+      return HttpResponse.json(errorEnvelope('FORBIDDEN', 'Only organizers'), { status: 403 });
+    }
+    if (eventId === AC_TRIGGER_EVENT_NOT_FOUND) {
+      return HttpResponse.json(errorEnvelope('EVENT_NOT_FOUND', 'Event not found'), { status: 404 });
+    }
+    if (serviceCategoryId === AC_TRIGGER_CATEGORY_INVALID) {
+      return HttpResponse.json(
+        errorEnvelope('INVALID_CATEGORY', 'Service category not available', [
+          { field: 'service_category_id', message: 'not_available' },
+        ]),
+        { status: 400 },
+      );
+    }
+
+    const activeCount =
+      eventId === AC_TRIGGER_COUNT_FIVE ? 5 : eventId === AC_TRIGGER_COUNT_FOUR ? 4 : 0;
+    return HttpResponse.json(
+      envelope({
+        active_count: activeCount,
+        limit: 5,
+        available_slots: Math.max(0, 5 - activeCount),
+        statuses_counted: ['sent', 'viewed', 'responded'],
+      }),
+      { status: 200 },
+    );
+  }),
+
   http.post('*/api/v1/quote-requests', async ({ request }) => {
     const body = (await request.json()) as CreateBody;
 
@@ -150,4 +197,13 @@ export const quotesMswTriggers = {
   QR_CATEGORY_LIMIT: TRIGGER_QR_CATEGORY_LIMIT,
   RATE_LIMIT: TRIGGER_RATE_LIMIT,
   INVALID_BRIEF: TRIGGER_INVALID_BRIEF,
+} as const;
+
+export const quotesActiveCountMswTriggers = {
+  UNAUTH: AC_TRIGGER_UNAUTH,
+  FORBIDDEN: AC_TRIGGER_FORBIDDEN,
+  EVENT_NOT_FOUND: AC_TRIGGER_EVENT_NOT_FOUND,
+  CATEGORY_INVALID: AC_TRIGGER_CATEGORY_INVALID,
+  COUNT_FOUR: AC_TRIGGER_COUNT_FOUR,
+  COUNT_FIVE: AC_TRIGGER_COUNT_FIVE,
 } as const;

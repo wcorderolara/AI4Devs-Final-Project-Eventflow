@@ -44,5 +44,9 @@
       "FORBIDDEN": "Seu perfil não pode criar solicitações de cotação.",
       "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
     }
+  },
+  "limit": {
+    "label": "{count}/{limit} cotações ativas nesta categoria",
+    "reached": "Você atingiu o máximo de solicitações ativas para esta categoria. Aguarde alguma ser respondida ou cancelada para enviar outra."
   }
 }

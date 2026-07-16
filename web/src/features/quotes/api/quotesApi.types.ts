@@ -61,6 +61,43 @@ export interface CreateQuoteRequestView {
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// US-050 · active-count
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ActiveQrCountInput {
+  eventId: string;
+  serviceCategoryId: string;
+}
+
+export interface ActiveQrCountDTO {
+  active_count: number;
+  limit: number;
+  available_slots: number;
+  statuses_counted: string[];
+}
+
+export interface ActiveQrCountEnvelope {
+  data: ActiveQrCountDTO;
+  correlationId: string;
+}
+
+export interface ActiveQrCountView {
+  activeCount: number;
+  limit: number;
+  availableSlots: number;
+  statusesCounted: string[];
+}
+
+export function toActiveQrCountView(dto: ActiveQrCountDTO): ActiveQrCountView {
+  return {
+    activeCount: dto.active_count,
+    limit: dto.limit,
+    availableSlots: dto.available_slots,
+    statusesCounted: dto.statuses_counted,
+  };
+}
+
 export function toCreateQuoteRequestView(dto: CreateQuoteRequestDTO): CreateQuoteRequestView {
   return {
     id: dto.id,
