@@ -10,6 +10,7 @@ import { vendorPortfolioHandlers } from './vendor-portfolio';
 import { vendorDirectoryHandlers } from './vendor-directory';
 import { vendorPublicHandlers } from './vendor-public';
 import { quotesHandlers } from './quotes';
+import { vendorQrHandlers } from './vendor-qr';
 
 // Catch-all: cualquier `/api/v1/*` sin handler dedicado → 501 visible (falla ruidosamente).
 // DEBE ir al final del array; cada feature agrega su handler ANTES de este.
@@ -33,6 +34,7 @@ export const handlers = [
   ...vendorDirectoryHandlers,
   ...vendorPublicHandlers,
   ...quotesHandlers,
+  ...vendorQrHandlers,
   ...eventsHandlers,
   ...tasksHandlers,
   ...aiHandlers,

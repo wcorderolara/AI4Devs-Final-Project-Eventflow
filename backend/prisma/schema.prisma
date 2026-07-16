@@ -173,6 +173,9 @@ model User {
   eventTasksUpdated   EventTask[]          @relation("EventTaskUpdatedBy")
   eventTasksDeleted   EventTask[]          @relation("EventTaskDeletedBy")
   eventTasksConfirmed EventTask[]          @relation("EventTaskConfirmedBy")
+  // US-051 (PB-P1-031 / DB-001): relación inversa de auditoría de la transición
+  // `sent → viewed` en QuoteRequest. `viewed_by` referencia al usuario del vendor que la disparó.
+  quoteRequestsViewed QuoteRequest[]       @relation("QuoteRequestViewedBy")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -575,6 +578,10 @@ model QuoteRequest {
   // como JSONB; timestamps de lifecycle; referencia opcional a AIRecommendation (sin FK formal).
   brief              Json?              @db.JsonB
   viewedAt           DateTime?          @map("viewed_at") @db.Timestamptz(6)
+  // US-051 (PB-P1-031 / DB-001): usuario del vendor que disparó la primera transición
+  // `sent → viewed` (D3). Nullable: QRs previas a US-051 y QRs en estados distintos a `viewed`
+  // no la tienen. FK a `users` con `ON DELETE RESTRICT` para preservar auditoría.
+  viewedBy           String?            @map("viewed_by") @db.Uuid
   cancelledAt        DateTime?          @map("cancelled_at") @db.Timestamptz(6)
   // US-050 (PB-P1-030 / DB-001): TTL opcional para el conteo lazy `active-count`. NULL indica
   // "sin expiración explícita"; el filtro del endpoint aplica `(expires_at IS NULL OR expires_at
@@ -586,6 +593,8 @@ model QuoteRequest {
   event           Event           @relation(fields: [eventId], references: [id], onDelete: Restrict)
   serviceCategory ServiceCategory @relation(fields: [serviceCategoryId], references: [id], onDelete: Restrict)
   vendorProfile   VendorProfile?  @relation(fields: [vendorProfileId], references: [id], onDelete: Restrict)
+  // US-051 (PB-P1-031 / DB-001): FK opcional a `users` para auditar el viewer.
+  viewedByUser    User?           @relation("QuoteRequestViewedBy", fields: [viewedBy], references: [id], onDelete: Restrict)
 
   quotes            Quote[]
   aiRecommendations AIRecommendation[]
@@ -601,6 +610,8 @@ model QuoteRequest {
   // `active-count` cuando la cardinalidad de QRs por evento crezca. `map` conserva el nombre
   // convencional `idx_*` usado por otras migraciones manuales del módulo.
   @@index([expiresAt], map: "idx_quote_requests_expires_at")
+  // US-051 (PB-P1-031 / DB-001): índice para lookup reverso por viewer.
+  @@index([viewedBy], map: "idx_quote_requests_viewed_by")
   @@map("quote_requests")
 }
 

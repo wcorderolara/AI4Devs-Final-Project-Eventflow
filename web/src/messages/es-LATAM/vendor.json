@@ -296,6 +296,37 @@
       "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
     }
   },
+  "qr": {
+    "detail": {
+      "title": "Detalle de la solicitud",
+      "createdAt": "Solicitud recibida el {date}",
+      "status": {
+        "sent": "Enviada",
+        "viewed": "Vista",
+        "responded": "Respondida",
+        "expired": "Vencida",
+        "cancelled": "Cancelada"
+      },
+      "brief": {
+        "title": "Contexto del evento",
+        "budget": "Presupuesto",
+        "eventDate": "Fecha del evento",
+        "guests": "Invitados",
+        "message": "Mensaje del organizador",
+        "requirements": "Requerimientos",
+        "questions": "Preguntas",
+        "empty": "El organizador no adjuntó contexto adicional."
+      },
+      "notFound": {
+        "title": "Solicitud no disponible",
+        "description": "No pudimos encontrar esta solicitud. Puede que ya no exista o que no esté asignada a ti.",
+        "backLink": "Volver a mis solicitudes"
+      },
+      "error": {
+        "generic": "No pudimos cargar la solicitud. Intenta nuevamente en unos segundos."
+      }
+    }
+  },
   "directory": {
     "title": "Buscar proveedores",
     "subtitle": "Filtra por categoría, ciudad y rango de precio. Los resultados vienen paginados.",

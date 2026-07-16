@@ -20,6 +20,7 @@ export const QuoteRequestResponseSchema = z
       .nullable(),
     aiRecommendationId: z.string().uuid().nullable(),
     viewedAt: z.string().nullable(),
+    viewedBy: z.string().uuid().nullable(),
     cancelledAt: z.string().nullable(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),

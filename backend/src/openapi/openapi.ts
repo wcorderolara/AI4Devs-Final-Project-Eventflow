@@ -40,6 +40,8 @@ import {
   QuoteRequestIdParamSchema,
   QuoteIdParamSchema,
 } from '../modules/quote-flow/dto/index.js';
+// US-051 (PB-P1-031 / BE-005): path param `{ id: uuid }` para las rutas vendor-scoped.
+import { us051QrIdParamSchema as Us051IdParamSchema } from '../modules/quote-flow/dto/us051-qr-id.param.js';
 import {
   CreateBookingIntentRequestSchema,
   CancelBookingIntentRequestSchema,
@@ -245,7 +247,10 @@ op({ method: 'post', path: '/events/{eventId}/quote-requests', operationId: 'cre
 op({ method: 'get', path: '/quote-requests/{quoteRequestId}', operationId: 'getQuoteRequest', tags: ['QuoteRequests'], summary: 'Obtener QuoteRequest', secured: true, params: QuoteRequestIdParamSchema, success: { status: 200, schema: envelope(QuoteRequestResponseSchema) }, errors: [401, 403, 404] });
 op({ method: 'patch', path: '/quote-requests/{quoteRequestId}/cancel', operationId: 'cancelQuoteRequest', tags: ['QuoteRequests'], summary: 'Cancelar QuoteRequest', secured: true, params: QuoteRequestIdParamSchema, success: { status: 200, schema: envelope(QuoteRequestResponseSchema) }, errors: [401, 403, 404, 422] });
 op({ method: 'get', path: '/vendors/me/quote-requests', operationId: 'listVendorQuoteRequests', tags: ['QuoteRequests'], summary: 'Listar QuoteRequests asignados (vendor)', secured: true, query: ListQuoteRequestsQuerySchema, success: { status: 200, schema: listEnvelope(QuoteRequestResponseSchema) }, errors: [401, 403, 422] });
-op({ method: 'patch', path: '/quote-requests/{quoteRequestId}/viewed', operationId: 'markQuoteRequestViewed', tags: ['QuoteRequests'], summary: 'Marcar QuoteRequest como visto (vendor)', secured: true, params: QuoteRequestIdParamSchema, success: { status: 204 }, errors: [401, 403, 404, 422] });
+op({ method: 'patch', path: '/quote-requests/{quoteRequestId}/viewed', operationId: 'markQuoteRequestViewed', tags: ['QuoteRequests'], summary: 'Marcar QuoteRequest como visto (vendor, legado US-096)', secured: true, params: QuoteRequestIdParamSchema, success: { status: 204 }, errors: [401, 403, 404, 422] });
+// US-051 (PB-P1-031): endpoints vendor-scoped detalle + mark-viewed transaccional.
+op({ method: 'get', path: '/vendor/quote-requests/{id}', operationId: 'getVendorQuoteRequest', tags: ['QuoteRequests'], summary: 'Detalle de QuoteRequest (vendor)', secured: true, params: Us051IdParamSchema, success: { status: 200, schema: envelope(QuoteRequestResponseSchema) }, errors: [400, 401, 403, 404] });
+op({ method: 'post', path: '/vendor/quote-requests/{id}/mark-viewed', operationId: 'markVendorQuoteRequestViewed', tags: ['QuoteRequests'], summary: 'Marcar QuoteRequest como visto transaccional (vendor)', secured: true, params: Us051IdParamSchema, success: { status: 200, schema: envelope(QuoteRequestResponseSchema) }, errors: [400, 401, 403, 404] });
 op({ method: 'get', path: '/quote-requests/{quoteRequestId}/quote', operationId: 'getQuoteForRequest', tags: ['Quotes'], summary: 'Obtener el Quote actual del QuoteRequest', secured: true, params: QuoteRequestIdParamSchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404] });
 op({ method: 'post', path: '/quote-requests/{quoteRequestId}/quote', operationId: 'createQuote', tags: ['Quotes'], summary: 'Crear Quote draft (vendor)', secured: true, params: QuoteRequestIdParamSchema, body: CreateQuoteRequestBodySchema, success: { status: 201, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404, 409, 422] });
 op({ method: 'patch', path: '/quotes/{quoteId}', operationId: 'updateQuote', tags: ['Quotes'], summary: 'Editar Quote draft (vendor)', secured: true, params: QuoteIdParamSchema, body: UpdateQuoteRequestBodySchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404, 422] });

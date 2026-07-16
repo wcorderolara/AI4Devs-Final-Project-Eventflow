@@ -4053,6 +4053,11 @@
                           "viewedAt": {
                             "nullable": true,
                             "type": "string"
+                          },
+                          "viewedBy": {
+                            "format": "uuid",
+                            "nullable": true,
+                            "type": "string"
                           }
                         },
                         "required": [
@@ -4064,6 +4069,7 @@
                           "brief",
                           "aiRecommendationId",
                           "viewedAt",
+                          "viewedBy",
                           "cancelledAt",
                           "createdAt",
                           "updatedAt"
@@ -4286,6 +4292,11 @@
                         "viewedAt": {
                           "nullable": true,
                           "type": "string"
+                        },
+                        "viewedBy": {
+                          "format": "uuid",
+                          "nullable": true,
+                          "type": "string"
                         }
                       },
                       "required": [
@@ -4297,6 +4308,7 @@
                         "brief",
                         "aiRecommendationId",
                         "viewedAt",
+                        "viewedBy",
                         "cancelledAt",
                         "createdAt",
                         "updatedAt"
@@ -4447,6 +4459,11 @@
                         "viewedAt": {
                           "nullable": true,
                           "type": "string"
+                        },
+                        "viewedBy": {
+                          "format": "uuid",
+                          "nullable": true,
+                          "type": "string"
                         }
                       },
                       "required": [
@@ -4458,6 +4475,7 @@
                         "brief",
                         "aiRecommendationId",
                         "viewedAt",
+                        "viewedBy",
                         "cancelledAt",
                         "createdAt",
                         "updatedAt"
@@ -4734,6 +4752,11 @@
                         "viewedAt": {
                           "nullable": true,
                           "type": "string"
+                        },
+                        "viewedBy": {
+                          "format": "uuid",
+                          "nullable": true,
+                          "type": "string"
                         }
                       },
                       "required": [
@@ -4745,6 +4768,7 @@
                         "brief",
                         "aiRecommendationId",
                         "viewedAt",
+                        "viewedBy",
                         "cancelledAt",
                         "createdAt",
                         "updatedAt"
@@ -5223,7 +5247,7 @@
             "cookieAuth": []
           }
         ],
-        "summary": "Marcar QuoteRequest como visto (vendor)",
+        "summary": "Marcar QuoteRequest como visto (vendor, legado US-096)",
         "tags": [
           "QuoteRequests"
         ]
@@ -6549,6 +6573,334 @@
         ]
       }
     },
+    "/api/v1/vendor/quote-requests/{id}": {
+      "get": {
+        "operationId": "getVendorQuoteRequest",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "aiRecommendationId": {
+                          "format": "uuid",
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "brief": {
+                          "nullable": true,
+                          "properties": {
+                            "constraints": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "questions": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "requirements": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "summary": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "summary",
+                            "requirements",
+                            "questions"
+                          ],
+                          "type": "object"
+                        },
+                        "cancelledAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "eventId": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "id": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "serviceCategoryId": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": [
+                            "sent",
+                            "viewed",
+                            "responded",
+                            "expired",
+                            "cancelled"
+                          ],
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "vendorProfileId": {
+                          "format": "uuid",
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "viewedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "viewedBy": {
+                          "format": "uuid",
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "eventId",
+                        "serviceCategoryId",
+                        "vendorProfileId",
+                        "status",
+                        "brief",
+                        "aiRecommendationId",
+                        "viewedAt",
+                        "viewedBy",
+                        "cancelledAt",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "type": "object"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Detalle de QuoteRequest (vendor)",
+        "tags": [
+          "QuoteRequests"
+        ]
+      }
+    },
+    "/api/v1/vendor/quote-requests/{id}/mark-viewed": {
+      "post": {
+        "operationId": "markVendorQuoteRequestViewed",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "aiRecommendationId": {
+                          "format": "uuid",
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "brief": {
+                          "nullable": true,
+                          "properties": {
+                            "constraints": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "questions": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "requirements": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "summary": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "summary",
+                            "requirements",
+                            "questions"
+                          ],
+                          "type": "object"
+                        },
+                        "cancelledAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "eventId": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "id": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "serviceCategoryId": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": [
+                            "sent",
+                            "viewed",
+                            "responded",
+                            "expired",
+                            "cancelled"
+                          ],
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "vendorProfileId": {
+                          "format": "uuid",
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "viewedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "viewedBy": {
+                          "format": "uuid",
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "eventId",
+                        "serviceCategoryId",
+                        "vendorProfileId",
+                        "status",
+                        "brief",
+                        "aiRecommendationId",
+                        "viewedAt",
+                        "viewedBy",
+                        "cancelledAt",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "type": "object"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Marcar QuoteRequest como visto transaccional (vendor)",
+        "tags": [
+          "QuoteRequests"
+        ]
+      }
+    },
     "/api/v1/vendors/me/ai/bio": {
       "post": {
         "operationId": "aiGenerateVendorBio",
@@ -6801,6 +7153,11 @@
                           "viewedAt": {
                             "nullable": true,
                             "type": "string"
+                          },
+                          "viewedBy": {
+                            "format": "uuid",
+                            "nullable": true,
+                            "type": "string"
                           }
                         },
                         "required": [
@@ -6812,6 +7169,7 @@
                           "brief",
                           "aiRecommendationId",
                           "viewedAt",
+                          "viewedBy",
                           "cancelledAt",
                           "createdAt",
                           "updatedAt"

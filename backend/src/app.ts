@@ -22,6 +22,7 @@ import {
 } from './modules/event-planning/interface/catalog.routes.js';
 import { quoteFlowRouter } from './modules/quote-flow/interface/quote-flow.routes.js';
 import { us049QuoteRequestsRouter } from './modules/quote-flow/interface/us049-quote-requests.routes.js';
+import { us051VendorQuoteRequestsRouter } from './modules/quote-flow/interface/us051-vendor-quote-requests.routes.js';
 import { bookingIntentRouter } from './modules/booking-intent/interface/booking-intent.routes.js';
 import { aiAssistanceRouter } from './modules/ai-assistance/interface/ai.routes.js';
 import { bulkConfirmRouter } from './modules/task-management/bulk-confirm/interface/http/bulk-confirm.routes.js';
@@ -80,6 +81,10 @@ export function createApp(): Express {
   // — ver DEV-03 del execution record. Se monta a nivel `/api/v1` para exponer el path sin prefijo
   // de recurso padre. Se ubica ANTES de event-planning para preservar el orden global de captura.
   apiV1.use(us049QuoteRequestsRouter);
+  // US-051 (PB-P1-031): endpoints vendor-scoped `GET /api/v1/vendor/quote-requests/:id` y
+  // `POST /api/v1/vendor/quote-requests/:id/mark-viewed`. Se monta a nivel `/api/v1` porque los
+  // paths ya incluyen el prefijo `vendor/`, sin colisionar con rutas legacy US-096.
+  apiV1.use(us051VendorQuoteRequestsRouter);
   // US-097: ai-assistance también a nivel `/api/v1` y ANTES de event-planning (por `/events/:id/ai/*`).
   apiV1.use(aiAssistanceRouter);
   // US-031 (PB-P1-017): bulk confirm HITL a nivel `/api/v1` y ANTES de event-planning
