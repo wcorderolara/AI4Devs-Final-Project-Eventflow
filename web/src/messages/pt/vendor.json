@@ -305,6 +305,9 @@
       "conditions": "Condições (opcional)",
       "validUntil": "Válido até",
       "validUntilHelp": "Por padrão sua cotação expira em 15 dias. Faixa permitida: hoje a hoje+90.",
+      "validUntilPicker": {
+        "help": "Escolha uma data entre {min} e {max}."
+      },
       "submit": "Enviar cotação",
       "submitting": "Enviando…",
       "breakdown": {

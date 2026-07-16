@@ -557,6 +557,28 @@ Antes de almacenar:
 | `S3_BUCKET_NAME` | Config | App Runner env | Bucket del entorno. |
 | `S3_REGION` | Config | App Runner env | Región del bucket. |
 | `CAPTCHA_SECRET_KEY` | Secreto | Secrets Manager / SSM | Verificación server-side. |
+| `JOBS_ENABLED` | Config | App Runner env | Habilita el registro de schedulers intra-proceso (US-015 / US-053). Debe estar en `true` en EXACTAMENTE UNA réplica del backend para evitar duplicación multi-instancia. Default `false` en dev/test/QA. |
+| `JOBS_AUTOCOMPLETE_CRON` | Config | App Runner env | Cadencia del `AutoCompletePastEventsJob` (US-015). Default `30 0 * * *` (00:30 UTC diario). |
+| `JOBS_EXPIRE_QUOTES_CRON` | Config | App Runner env | Cadencia del `ExpireQuotesJob` (US-053). Default `5 0 * * *` (00:05 UTC diario). Ver §14bis. |
+| `JOBS_EXPIRE_QUOTES_JITTER_MAX_MS` | Config | App Runner env | Jitter máximo (ms) antes de invocar el `ExpireQuotesUseCase`. Default `600000` (10 min). Pon `0` en tests para determinismo. |
+| `JOBS_EXPIRE_QUOTES_BATCH_SIZE` | Config | App Runner env | Tamaño del batch `LIMIT ? FOR UPDATE SKIP LOCKED` (US-053). Default `100`. |
+
+### 14bis. Cron schedule catalog (jobs intra-proceso)
+
+Los jobs viven dentro del backend Node y se activan sólo cuando `JOBS_ENABLED=true` (US-015 §14).
+Un despliegue multi-instancia DEBE elegir exactamente una réplica como scheduler-primary; el
+resto queda con `JOBS_ENABLED=false`.
+
+| Job | Env cron | Default | Timezone | Trigger interno | Documentación |
+|-----|----------|---------|----------|-----------------|---------------|
+| `AutoCompletePastEventsJob` | `JOBS_AUTOCOMPLETE_CRON` | `30 0 * * *` | UTC | `NodeCronScheduler` (adapter del port `Scheduler`) | `docs/14 §23.2` |
+| `ExpireQuotesJob` | `JOBS_EXPIRE_QUOTES_CRON` | `5 0 * * *` | UTC | Idem. Jitter `[0..JOBS_EXPIRE_QUOTES_JITTER_MAX_MS]` antes de invocar el UC. CLI ad-hoc: `npm run job:expire-quotes` | `docs/14 §23.2` |
+
+Reglas operativas:
+
+- Cron expressions se validan por `node-cron` al bootstrap (fail-fast).
+- Los jobs no se registran cuando `JOBS_ENABLED=false` (log `jobs.registry.disabled`).
+- Un run genera un `correlationId=job-<runId>` que aparece en todos los logs derivados del UC.
 
 ### 14.3 CI/CD variables (GitHub Actions)
 

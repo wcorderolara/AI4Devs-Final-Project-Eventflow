@@ -42,13 +42,20 @@ describe('US-015 — registerJobs gated por JOBS_ENABLED', () => {
     expect(handle.handles).toHaveLength(0);
   });
 
-  it('JOBS_ENABLED=true: registra AutoCompletePastEventsJob con la cadencia configurada', async () => {
-    const { registerJobs } = await loadRegistry({ JOBS_ENABLED: 'true', JOBS_AUTOCOMPLETE_CRON: '30 0 * * *' });
+  it('JOBS_ENABLED=true: registra AutoCompletePastEventsJob + ExpireQuotesJob con sus cadencias', async () => {
+    // US-053 (PB-P1-031): `registerJobs` ahora agrega `ExpireQuotesJob` con su propia cadence
+    // (`JOBS_EXPIRE_QUOTES_CRON`). Ambos jobs comparten el `Scheduler` port de US-015.
+    const { registerJobs } = await loadRegistry({
+      JOBS_ENABLED: 'true',
+      JOBS_AUTOCOMPLETE_CRON: '30 0 * * *',
+      JOBS_EXPIRE_QUOTES_CRON: '5 0 * * *',
+    });
     const scheduler = new RecordingScheduler();
     const handle = registerJobs({ scheduler });
-    expect(scheduler.tasks).toHaveLength(1);
-    expect(scheduler.tasks[0]!.cron).toBe('30 0 * * *');
-    expect(handle.handles).toHaveLength(1);
+    expect(scheduler.tasks).toHaveLength(2);
+    const crons = scheduler.tasks.map((t) => t.cron).sort();
+    expect(crons).toEqual(['30 0 * * *', '5 0 * * *'].sort());
+    expect(handle.handles).toHaveLength(2);
     handle.stopAll();
   });
 });
