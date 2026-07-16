@@ -8,7 +8,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ExpireQuotesUs053UseCase } from '../../src/modules/quote-flow/application/expire-quotes.us053.use-case.js';
 import { ExpireQuotesJob } from '../../src/jobs/expire-quotes.job.js';
-import type { QuoteNotificationSenderPort } from '../../src/shared/application/quote-notification-sender.port.js';
+import type {
+  NotifyInput,
+  QuoteNotificationSenderPort,
+} from '../../src/shared/application/quote-notification-sender.port.js';
 import type { DomainEventLogger } from '../../src/shared/observability/domain-event-logger.js';
 import type { ClockPort } from '../../src/shared/domain/clock.port.js';
 
@@ -29,7 +32,7 @@ function makeUc(
   batches: Candidate[][],
   overrides: { throwOnBatch?: number; nowMs?: number } = {},
 ) {
-  const notify = vi.fn(async () => {});
+  const notify = vi.fn<(input: NotifyInput) => Promise<void>>(async () => {});
   const notifications: QuoteNotificationSenderPort = { notify };
   const emit = vi.fn();
   const logger: DomainEventLogger = { emit };
@@ -107,14 +110,14 @@ describe('US-053 · ExpireQuotesUs053UseCase', () => {
     expect(result.batchCount).toBe(1);
     expect(notify).toHaveBeenCalledTimes(6);
     // Cada quote genera un in_app y un email_simulated.
-    const channels = notify.mock.calls.map((c) => c[0].channel).sort();
+    const channels = notify.mock.calls.map((c) => c[0]!.channel).sort();
     expect(channels.filter((c) => c === 'in_app')).toHaveLength(3);
     expect(channels.filter((c) => c === 'email_simulated')).toHaveLength(3);
     expect(updateManyMock).toHaveBeenCalledTimes(1);
     // Emite `quote.expired.batch` una vez.
     const batchEmits = emit.mock.calls.filter((c) => c[0] === 'quote.expired.batch');
     expect(batchEmits).toHaveLength(1);
-    expect(batchEmits[0][1]).toMatchObject({ batchIndex: 0, count: 3 });
+    expect(batchEmits[0]?.[1]).toMatchObject({ batchIndex: 0, count: 3 });
   });
 
   it('batching de 250 con batchSize=100 requiere 3 iteraciones (100+100+50)', async () => {
@@ -137,7 +140,7 @@ describe('US-053 · ExpireQuotesUs053UseCase', () => {
     expect(result.totalExpired).toBe(0);
     expect(result.batchCount).toBe(0);
     expect(result.errors.length).toBe(1);
-    expect(result.errors[0].message).toContain('simulated batch failure');
+    expect(result.errors[0]?.message).toContain('simulated batch failure');
     expect(emit).toHaveBeenCalledWith(
       'quote.expired.batch.failed',
       expect.objectContaining({ batchIndex: 0 }),
