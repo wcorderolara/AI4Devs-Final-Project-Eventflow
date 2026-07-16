@@ -305,6 +305,9 @@
       "conditions": "Conditions (optional)",
       "validUntil": "Valid until",
       "validUntilHelp": "By default your quote expires in 15 days. Allowed range: today to today+90.",
+      "validUntilPicker": {
+        "help": "Pick a date between {min} and {max}."
+      },
       "submit": "Send quote",
       "submitting": "Sending…",
       "breakdown": {

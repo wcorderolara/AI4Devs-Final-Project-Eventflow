@@ -13,6 +13,10 @@ import { SystemClock } from '../infrastructure/time/system-clock.js';
 import { PrismaEventRepository } from '../modules/event-planning/infrastructure/prisma-event.repository.js';
 import { AutoCompletePastEventsUseCase } from '../modules/event-planning/application/auto-complete-past-events.use-case.js';
 import { AutoCompletePastEventsJob } from './auto-complete-past-events.job.js';
+import { ExpireQuotesJob } from './expire-quotes.job.js';
+import { ExpireQuotesUs053UseCase } from '../modules/quote-flow/application/expire-quotes.us053.use-case.js';
+import { PrismaQuoteNotificationSenderAdapter } from '../infrastructure/notifications/prisma-quote-notification-sender.adapter.js';
+import { StructuredDomainEventLogger } from '../infrastructure/observability/structured-domain-event-logger.js';
 import { NodeCronScheduler } from './node-cron-scheduler.js';
 import type { Scheduler, ScheduledTaskHandle } from './scheduler.port.js';
 
@@ -27,6 +31,7 @@ export interface RegisterJobsDeps {
   scheduler?: Scheduler;
   clock?: import('../shared/domain/clock.port.js').ClockPort;
   autoCompleteUseCase?: AutoCompletePastEventsUseCase;
+  expireQuotesUseCase?: ExpireQuotesUs053UseCase;
   now?: () => Date;
 }
 
@@ -62,10 +67,30 @@ export function registerJobs(deps: RegisterJobsDeps = {}): JobRegistryHandle {
   const handle = scheduler.schedule(config.JOBS_AUTOCOMPLETE_CRON, () => autoCompleteJob.run());
   const handles = [handle];
 
+  // US-053 (PB-P1-031): ExpireQuotesJob. Comparte `Scheduler` con el job de US-015 y usa el
+  // `StructuredDomainEventLogger` para colar los eventos en el canal de dominio (canal `error`
+  // para `.failed`).
+  const domainLogger = new StructuredDomainEventLogger();
+  const expireQuotesUseCase =
+    deps.expireQuotesUseCase ??
+    new ExpireQuotesUs053UseCase(new PrismaQuoteNotificationSenderAdapter(), clock, domainLogger);
+  const expireQuotesJob = new ExpireQuotesJob({
+    useCase: expireQuotesUseCase,
+    clock,
+    logger: domainLogger,
+    cadence: config.JOBS_EXPIRE_QUOTES_CRON,
+    jitterMaxMs: config.JOBS_EXPIRE_QUOTES_JITTER_MAX_MS,
+    batchSize: config.JOBS_EXPIRE_QUOTES_BATCH_SIZE,
+  });
+  handles.push(scheduler.schedule(config.JOBS_EXPIRE_QUOTES_CRON, () => expireQuotesJob.run()));
+
   logger.info({
     event: 'jobs.registry.enabled',
-    jobs: ['auto-complete-past-events'],
-    cadence: config.JOBS_AUTOCOMPLETE_CRON,
+    jobs: ['auto-complete-past-events', 'expire-quotes'],
+    cadence: {
+      autoComplete: config.JOBS_AUTOCOMPLETE_CRON,
+      expireQuotes: config.JOBS_EXPIRE_QUOTES_CRON,
+    },
   });
 
   return {

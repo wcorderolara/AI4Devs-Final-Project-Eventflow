@@ -149,6 +149,17 @@ export const configSchema = z.object({
   // (00:30 UTC diario, decisión PO 8.1 #6). `docs/14` ofrece `0 * * * *` como opción; la
   // validación real de la expresión la hace `node-cron` en el adapter (fail-fast en bootstrap).
   JOBS_AUTOCOMPLETE_CRON: z.string().min(1).default('30 0 * * *'),
+  // JOBS — US-053 / PB-P1-031 (ExpireQuotesJob).
+  // Cron diario UTC del `ExpireQuotesJob`. Default `5 0 * * *` (00:05 UTC) para separarlo del
+  // `AutoCompletePastEventsJob` (00:30 UTC) y evitar picos coincidentes. `node-cron` valida la
+  // expresión al schedule; una expresión inválida hace fail-fast en bootstrap.
+  JOBS_EXPIRE_QUOTES_CRON: z.string().min(1).default('5 0 * * *'),
+  // Jitter máximo (ms) antes de invocar el use case, aplicado con `setTimeout` dentro del handler.
+  // Default 600000 (10 min). Evita que múltiples réplicas del scheduler golpeen la BD al mismo
+  // instante en despliegues multi-región. `0` deshabilita el jitter (útil en tests).
+  JOBS_EXPIRE_QUOTES_JITTER_MAX_MS: z.coerce.number().int().min(0).max(3_600_000).default(600_000),
+  // Tamaño de batch del loop `SELECT ... FOR UPDATE SKIP LOCKED`. Default 100 (Tech Spec §7).
+  JOBS_EXPIRE_QUOTES_BATCH_SIZE: z.coerce.number().int().min(1).max(1000).default(100),
 });
 
 /** `Secure` efectivo: explícito si se define; si no, activo en producción (no-local). */

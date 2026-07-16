@@ -82,7 +82,7 @@ describe('US-052 · QuoteResponseForm', () => {
     const removeButtons = screen.getAllByRole('button', { name: /Quitar el concepto/i });
     expect(removeButtons.length).toBe(2);
     // Ambos deben ser navegables por teclado (tabIndex por defecto en <button>).
-    expect(removeButtons[0].tagName).toBe('BUTTON');
+    expect(removeButtons[0]?.tagName).toBe('BUTTON');
   });
 
   it('propaga el currencyCode al label del monto del breakdown', () => {

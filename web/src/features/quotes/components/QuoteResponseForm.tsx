@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useRespondVendorQr } from '../hooks/vendorQrQueries';
 import { BreakdownEditor } from './BreakdownEditor';
+import { ValidUntilPicker } from './ValidUntilPicker';
 import { ApiError } from '@/shared/api-client';
 
 const DECIMAL_2 = /^\d+(\.\d{1,2})?$/;
@@ -209,24 +210,15 @@ export function QuoteResponseForm({
         />
       </div>
 
-      <div>
-        <label htmlFor={validUntilId} className="block text-sm font-medium text-neutral-900">
-          {t('validUntil')}
-        </label>
-        <input
-          id={validUntilId}
-          type="date"
-          className="mt-1 w-full max-w-xs rounded border border-neutral-300 px-3 py-2 text-sm"
-          aria-invalid={Boolean(validUntilErr)}
-          {...register('valid_until')}
-        />
-        {validUntilErr && (
-          <p className="mt-1 text-xs text-red-700">
-            {tError(String(validUntilErr) as KnownErrorCode)}
-          </p>
-        )}
-        <p className="mt-1 text-xs text-neutral-500">{t('validUntilHelp')}</p>
-      </div>
+      <ValidUntilPicker
+        id={validUntilId}
+        label={t('validUntil')}
+        helpText={t('validUntilHelp')}
+        errorMessage={
+          validUntilErr ? tError(String(validUntilErr) as KnownErrorCode) : undefined
+        }
+        {...register('valid_until')}
+      />
 
       <div className="flex items-center gap-3">
         <button

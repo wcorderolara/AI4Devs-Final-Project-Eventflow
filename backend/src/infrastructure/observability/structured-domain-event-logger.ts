@@ -17,12 +17,26 @@ export class StructuredDomainEventLogger implements DomainEventLogger {
       activeCount?: number;
       limit?: number;
       reason?: string;
+      // US-053 (BE-005): metadatos del ExpireQuotesJob.
+      runId?: string;
+      totalExpired?: number;
+      batchCount?: number;
+      batchIndex?: number;
+      count?: number;
+      durationMs?: number;
+      errorCount?: number;
+      jitterMs?: number;
     },
   ): void {
     // Warnings de dominio (p. ej. `quote_request.limit_reached`) van al canal `warn` para
-    // que aparezcan en el flujo operativo apropiado; el resto sigue en `info`.
+    // que aparezcan en el flujo operativo apropiado. Errores del job (p. ej. batch/run failed)
+    // van a `error`. El resto sigue en `info`.
     if (event.endsWith('.limit_reached')) {
       logger.warn({ event, ...data });
+      return;
+    }
+    if (event.endsWith('.failed')) {
+      logger.error({ event, ...data });
       return;
     }
     logger.info({ event, ...data });

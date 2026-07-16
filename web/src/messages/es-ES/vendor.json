@@ -305,6 +305,9 @@
       "conditions": "Condiciones (opcional)",
       "validUntil": "Vigencia hasta",
       "validUntilHelp": "Por defecto tu cotización caduca en 15 días. Rango permitido: hoy a hoy+90.",
+      "validUntilPicker": {
+        "help": "Elige una fecha entre {min} y {max}."
+      },
       "submit": "Enviar cotización",
       "submitting": "Enviando…",
       "breakdown": {

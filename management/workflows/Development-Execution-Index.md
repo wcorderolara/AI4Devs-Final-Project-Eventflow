@@ -90,3 +90,4 @@
 | P1 | PB-P1-030 | US-050 | Enforcement + UX del límite de 5 QR activas por categoría | [record](development-execution/P1/PB-P1-030/US-050-execution.md) | 14 | 11 | 0 | 0 | 0 | 3 | `Done` | 2026-07-16 |
 | P1 | PB-P1-031 | US-051 | Vendor ve QR y marca como viewed | [record](development-execution/P1/PB-P1-031/US-051-execution.md) | 16 | 16 | 0 | 0 | 0 | 0 | `Done` | 2026-07-16 |
 | P1 | PB-P1-031 | US-052 | Vendor responde Quote con desglose | [record](development-execution/P1/PB-P1-031/US-052-execution.md) | 16 | 14 | 0 | 0 | 0 | 0 | `Done` | 2026-07-16 |
+| P1 | PB-P1-031 | US-053 | ValidUntilPicker + ExpireQuotesJob | [record](development-execution/P1/PB-P1-031/US-053-execution.md) | 16 | 13 | 0 | 0 | 0 | 0 | `Done` | 2026-07-16 |

@@ -21,6 +21,7 @@
     "docker:build": "docker build -t eventflow-backend:local .",
     "docker:run": "docker run --rm -p 3000:3000 -e PORT=3000 eventflow-backend:local",
     "seed": "tsx src/scripts/seed.ts",
+    "job:expire-quotes": "tsx src/scripts/expire-quotes.cli.ts",
     "check:structure": "bash scripts/check-structure.sh",
     "db:validate": "prisma validate",
     "db:generate": "prisma generate",

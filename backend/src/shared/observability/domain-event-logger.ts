@@ -16,6 +16,17 @@ export interface DomainEventLogger {
       activeCount?: number;
       limit?: number;
       reason?: string;
+      // US-053 (BE-005): metadatos del `ExpireQuotesJob`. `runId` correla batches con el run
+      // padre; `totalExpired`/`batchCount`/`durationMs` son las métricas agregadas del run;
+      // `batchIndex`/`count` son las métricas por batch.
+      runId?: string;
+      totalExpired?: number;
+      batchCount?: number;
+      batchIndex?: number;
+      count?: number;
+      durationMs?: number;
+      errorCount?: number;
+      jitterMs?: number;
     },
   ): void;
 }
