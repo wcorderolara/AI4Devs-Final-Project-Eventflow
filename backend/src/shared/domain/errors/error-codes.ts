@@ -134,6 +134,9 @@ export const ErrorCodes = {
   // US-045 (PB-P1-028): directorio autenticado (`GET /vendors`).
   INVALID_FILTERS: 'INVALID_FILTERS', // 400 — slug inexistente/inactivo, precio sin currency, priceMin>priceMax, limit fuera de rango (EC-01..04, VR-01..05).
   INVALID_CURSOR: 'INVALID_CURSOR', // 400 — cursor no decodifica o payload inconsistente (EC-05, VR-06).
+  // US-046 (PB-P1-029): perfil público SEO del vendor (`GET /public/vendors/:slug`).
+  VENDOR_NOT_FOUND: 'VENDOR_NOT_FOUND', // 404 — slug inexistente o vendor no `approved` (D6, response uniforme sin information leakage).
+  INVALID_SLUG: 'INVALID_SLUG', // 400 — slug no matchea `^[a-z0-9-]+$` o fuera de [1..200] (EC-03, VR-01).
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

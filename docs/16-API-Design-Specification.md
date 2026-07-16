@@ -1209,7 +1209,7 @@ Gestionar el perfil del proveedor, aprobación admin, directorio público.
 | GET | `/vendors` | Sí | organizer, vendor, admin | Directorio autenticado con filtros + cursor pagination (US-045). | 200 | 400 `VALIDATION_ERROR`/`INVALID_FILTERS`/`INVALID_CURSOR`, 401 |
 | GET | `/vendors/:vendorProfileId` | No (público si approved) | anonymous, organizer, admin | Detalle público. | 200 | 404 |
 | GET | `/api/v1/public/vendors` | No | anonymous | Directorio público. | 200 | — |
-| GET | `/api/v1/public/vendors/:vendorSlug` | No | anonymous | Vendor por slug. | 200 | 404 |
+| GET | `/api/v1/public/vendors/:vendorSlug` | No | anonymous | Perfil público SEO del vendor por slug (US-046). Whitelist explícita (D1). Cache-Control `public, max-age=60, stale-while-revalidate=300` (D4). Rate limit 60 req/min por IP (D7). | 200 | 400 `VALIDATION_ERROR`, 404 `VENDOR_NOT_FOUND` (uniforme D6), 429 `RATE_LIMIT_EXCEEDED` |
 | GET | `/api/v1/public/vendors/:vendorSlug/portfolio` | No | anonymous | Portafolio público. | 200 | 404 |
 
 ### 27.4 DTOs
@@ -1442,6 +1442,76 @@ Directorio server-side con filtros básicos + cursor pagination estable. Devuelv
 - El endpoint reutiliza los índices `idx_vendor_profiles_status_location` + `idx_vendor_services_active` y agrega `idx_vendor_profiles_directory (rating_avg DESC NULLS LAST, created_at DESC, id DESC) WHERE status='approved' AND deleted_at IS NULL` para keyset (US-045 / DB-001).
 - El cursor es opaco: **no** exponer al cliente ninguna dependencia sobre su forma interna.
 - `ratingAvg` / `reviewsCount` viven denormalizados en `vendor_profiles` y se recomputan por US-088 (publicar/moderar review) o por el batch del seed demo (`seed-demo-data.use-case.ts`).
+
+### 27.7 Perfil público SEO — `GET /public/vendors/:slug` (US-046)
+
+Endpoint público (sin auth) del perfil SEO de un vendor. Alimenta el Server Component `app/vendors/[slug]/page.tsx` (Next.js App Router + ISR). Devuelve **sólo** vendors con `status='approved'` y `deletedAt IS NULL` (BR-VENDOR-001, D6). Cualquier otro estado (pending / rejected / hidden / soft-deleted) o slug inexistente ⇒ `404 VENDOR_NOT_FOUND` uniforme — sin distinción para evitar information leakage.
+
+#### Path param
+
+| Param | Tipo | Notas |
+| --- | --- | --- |
+| `slug` | string `^[a-z0-9-]+$`, longitud `[1..200]` | `vendor_profiles.slug` UNIQUE (D5 US-040). Formato inválido ⇒ `400 VALIDATION_ERROR`. |
+
+#### Headers de response
+
+| Header | Valor | Nota |
+| --- | --- | --- |
+| `Cache-Control` | `public, max-age=60, stale-while-revalidate=300` | Solo en 200 (D4). El `404` no se cachea para evitar propagar desapariciones. |
+
+#### Rate limit
+
+- Key: `public:vendor_profile`
+- Ventana: `60 s`, tope `60 req/min` por IP (D7).
+- Excedido ⇒ `429 RATE_LIMIT_EXCEEDED` con `Retry-After`.
+
+#### Response (200) — whitelist explícita (D1)
+
+```json
+{
+  "data": {
+    "slug": "banquetes-el-quetzal",
+    "businessName": "Banquetes El Quetzal",
+    "bio": "Servicio premium con 20 años de experiencia.",
+    "location": { "display": "Ciudad de Guatemala, Guatemala", "code": "GT-GUA" },
+    "categories": [{ "code": "catering", "name": "Catering" }],
+    "ratingAvg": 4.8,
+    "reviewsCount": 24,
+    "reviewsTotalPublished": 24,
+    "packages": [
+      {
+        "packageName": "Menú clásico",
+        "basePrice": "250.00",
+        "currencyCode": "GTQ",
+        "description": "Menú de 3 tiempos.",
+        "serviceCategoryCode": "catering"
+      }
+    ],
+    "portfolio": [
+      { "workLabel": "boda-clasica", "thumbnails": ["https://cdn/1.jpg", "https://cdn/2.jpg"] }
+    ],
+    "reviews": [
+      { "rating": 5, "comment": "Excelente", "createdAt": "2026-06-15T10:00:00.000Z", "reviewerDisplayName": "Juan P." }
+    ]
+  },
+  "meta": { "correlationId": "…", "timestamp": "…" }
+}
+```
+
+#### Errores
+
+- `400 VALIDATION_ERROR` — slug fuera del alfabeto o longitud.
+- `404 VENDOR_NOT_FOUND` — slug inexistente **o** vendor no `approved` (uniforme por D6).
+- `429 RATE_LIMIT_EXCEEDED` — supera 60 req/min/IP.
+
+#### Notas
+
+- **Whitelist explícita (D1)**: no se emite `email`, `phone`, IDs internos, `deleted_*`, ni packages `is_active=false`. El mapper `PublicVendorMapper` es la única frontera confiable.
+- **Reviews**: se emiten a lo sumo las 10 `published` más recientes; `reviewsTotalPublished` contiene el total. Paginación adicional queda como Future (D5).
+- **Portfolio**: los attachments `owner_type='vendor_work' AND status='active' AND deleted_at IS NULL` se agrupan por `work_label` preservando el orden natural `created_at ASC`.
+- **`reviewer_display_name`**: pseudonimizado (`Juan P.`) desde `users.full_name`; fallback `Anónimo`.
+- **XSS**: la `bio` viaja como string; Next.js aplica auto-escape en el renderer. La API no permite HTML en el input (BR US-041).
+- **ISR**: la página cachea el resultado por 300 s. Invalidación on-demand queda como Future.
 
 ---
 

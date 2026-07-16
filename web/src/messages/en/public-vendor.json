@@ -1,0 +1,29 @@
+{
+  "categories": {
+    "label": "Service categories"
+  },
+  "rating": {
+    "label": "Average rating",
+    "summary": "{count, plural, one {# review} other {# reviews}}",
+    "empty": "No reviews yet."
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "empty": "This vendor hasn't published any work yet.",
+    "imageAlt": "{vendor} — {work}, image {index}"
+  },
+  "packages": {
+    "title": "Packages",
+    "empty": "This vendor hasn't published any packages."
+  },
+  "reviews": {
+    "title": "Reviews",
+    "empty": "This vendor doesn't have published reviews yet.",
+    "summaryShown": "Showing {shown} of {total} reviews."
+  },
+  "notFound": {
+    "title": "Vendor not found",
+    "body": "The vendor you're looking for doesn't exist or is no longer available.",
+    "cta": "Back to directory"
+  }
+}

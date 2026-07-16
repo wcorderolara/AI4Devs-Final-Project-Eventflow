@@ -3,3 +3,7 @@ export { vendorProfileRouter } from './vendor-profile.routes.js';
 export { serviceCategoriesRouter } from './service-categories.routes.js';
 export { vendorServiceRouter } from './vendor-service.routes.js';
 export { vendorSearchRouter } from './vendor-search.routes.js';
+// US-046 (PB-P1-029): endpoint público SEO del vendor. Sub-feature dentro de vendor-management
+// (§7 Tech Spec — opción "sub-feature en `modules/vendors`") para preservar el invariante de 16
+// bounded contexts canónicos (US-090 / Doc 14 §9).
+export { publicVendorRouter } from './public-vendor.routes.js';
