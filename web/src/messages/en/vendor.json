@@ -295,5 +295,43 @@
       "VALIDATION_ERROR": "Please review the details entered.",
       "UNEXPECTED": "Something went wrong. Please try again."
     }
+  },
+  "directory": {
+    "title": "Find vendors",
+    "subtitle": "Filter by category, city and price range. Results are paginated.",
+    "loading": "Loading vendors…",
+    "error": "We couldn't load the directory. Please retry in a few seconds.",
+    "empty": {
+      "body": "We couldn't find vendors matching those filters.",
+      "cta": "Clear filters"
+    },
+    "grid": {
+      "ariaLabel": "Vendor listing"
+    },
+    "loadMore": {
+      "label": "Load more",
+      "loading": "Loading more…"
+    },
+    "filters": {
+      "formLabel": "Search filters",
+      "category": "Category",
+      "categoryPlaceholder": "e.g. catering",
+      "location": "City",
+      "locationPlaceholder": "e.g. GT-GUA",
+      "priceMin": "Min price",
+      "priceMax": "Max price",
+      "currency": "Currency",
+      "currencyAny": "Any",
+      "submit": "Apply",
+      "reset": "Clear"
+    },
+    "card": {
+      "rating": "Rating",
+      "noRating": "No reviews yet",
+      "categories": "Categories",
+      "noCategories": "No categories",
+      "priceRange": "Price range",
+      "ratingAria": "{avg} stars, {count} reviews"
+    }
   }
 }

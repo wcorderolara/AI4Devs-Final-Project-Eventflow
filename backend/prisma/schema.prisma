@@ -221,6 +221,10 @@ model PasswordResetToken {
 
 model Location {
   id      String  @id @default(uuid()) @db.Uuid
+  // US-045 (PB-P1-028): slug estable requerido por el directorio (`locationCode` query param).
+  // UNIQUE parcial (NULL permitido para filas legacy previas a US-045); las filas nuevas y las
+  // seed se pueblan siempre server-side. Ejemplo: `GT-GUA`, `MX-CDMX`, `CO-ANT`.
+  code    String? @unique
   country String
   region  String?
   city    String?
@@ -305,6 +309,12 @@ model VendorProfile {
   lastCategoryChangeAt DateTime?          @map("last_category_change_at") @db.Timestamptz(6)
   requiresAdminReview  Boolean            @default(false) @map("requires_admin_review")
   languagesSupported  String[]            @map("languages_supported")
+  // US-045 (PB-P1-028): agregados denormalizados leídos por el directorio (`GET /vendors`).
+  // `rating_avg` NULL = "sin reviews aún" (ordena `NULLS LAST`). `reviews_count` empieza en 0.
+  // Se recomputan por US-088 (publicar/moderar review) o por el batch del seed demo; ninguna
+  // otra US actual muta reviews en runtime.
+  ratingAvg    Decimal? @map("rating_avg") @db.Decimal(3, 2)
+  reviewsCount Int      @default(0) @map("reviews_count")
 
   user     User      @relation(fields: [userId], references: [id], onDelete: Restrict)
   location Location? @relation(fields: [locationId], references: [id], onDelete: Restrict)

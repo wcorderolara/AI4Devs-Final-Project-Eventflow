@@ -186,6 +186,10 @@ export class SeedDemoDataUseCase {
     await run('adminActions', (c) =>
       this.prisma.$transaction((tx) => this.seedAdminActions(tx, c, identities.admin, vendors), TX_OPTS),
     );
+    // US-045 (PB-P1-028 / DB-001): recompone `rating_avg` y `reviews_count` denormalizados en
+    // `vendor_profiles` a partir de las reviews sembradas. Idempotente: fija el estado exacto
+    // en cada ejecución (setea 0/NULL si no hay reviews).
+    await this.recomputeVendorRatingAggregates();
 
     const finishedAt = new Date();
     report.finishedAt = finishedAt.toISOString();
@@ -219,13 +223,27 @@ export class SeedDemoDataUseCase {
     }
     const locations = [];
     for (const loc of LOCATIONS) {
-      locations.push(
-        await ensure(
-          () => tx.location.findFirst({ where: { country: loc.country, city: loc.city, isSeed: true } }),
-          () => tx.location.create({ data: { country: loc.country, region: loc.region, city: loc.city, isSeed: true } }),
-          counts,
-        ),
+      const created = await ensure(
+        () => tx.location.findFirst({ where: { country: loc.country, city: loc.city, isSeed: true } }),
+        () =>
+          tx.location.create({
+            data: {
+              code: loc.code,
+              country: loc.country,
+              region: loc.region,
+              city: loc.city,
+              isSeed: true,
+            },
+          }),
+        counts,
       );
+      // Backfill idempotente del `code` en filas seed pre-US-045 (creadas antes de que el campo
+      // existiera). No sobrescribe si ya está poblado.
+      if (created.code !== loc.code) {
+        await tx.location.update({ where: { id: created.id }, data: { code: loc.code } });
+        created.code = loc.code;
+      }
+      locations.push(created);
     }
     return { eventTypes, categories, locations };
   }
@@ -951,6 +969,34 @@ export class SeedDemoDataUseCase {
       );
     }
     return {};
+  }
+
+  /**
+   * US-045 (PB-P1-028 / DB-001): recompone `vendor_profiles.rating_avg` y `reviews_count`
+   * desde `reviews` publicadas y no soft-deleted. Fija el estado exacto (setea `0`/`NULL` en
+   * vendors sin reviews) para preservar idempotencia entre corridas. No usa `$transaction`
+   * porque la operación es autocontenida y no debe abortar el batch previo si falla.
+   */
+  private async recomputeVendorRatingAggregates(): Promise<void> {
+    await this.prisma.$executeRawUnsafe(`
+      UPDATE "vendor_profiles" vp
+      SET
+        "rating_avg" = agg."avg",
+        "reviews_count" = COALESCE(agg."cnt", 0)
+      FROM (
+        SELECT
+          vp2."id" AS vpid,
+          ROUND(AVG(r."rating")::numeric, 2) AS "avg",
+          COUNT(r."id")::int AS "cnt"
+        FROM "vendor_profiles" vp2
+        LEFT JOIN "reviews" r
+          ON r."vendor_profile_id" = vp2."id"
+         AND r."status" = 'published'
+         AND r."deleted_at" IS NULL
+        GROUP BY vp2."id"
+      ) agg
+      WHERE vp."id" = agg.vpid
+    `);
   }
 }
 

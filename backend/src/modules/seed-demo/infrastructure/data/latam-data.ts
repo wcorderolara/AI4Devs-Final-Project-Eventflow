@@ -26,10 +26,10 @@ export const SERVICE_CATEGORIES: Array<{ code: string; label: string; depthLevel
   { code: 'makeup', label: 'Maquillaje y Peinado', depthLevel: 1 },
 ];
 
-export const LOCATIONS: Array<{ country: string; region: string; city: string }> = [
-  { country: 'Guatemala', region: 'Guatemala', city: 'Ciudad de Guatemala' },
-  { country: 'México', region: 'CDMX', city: 'Ciudad de México' },
-  { country: 'Colombia', region: 'Antioquia', city: 'Medellín' },
+export const LOCATIONS: Array<{ code: string; country: string; region: string; city: string }> = [
+  { code: 'GT-GUA', country: 'Guatemala', region: 'Guatemala', city: 'Ciudad de Guatemala' },
+  { code: 'MX-CDMX', country: 'México', region: 'CDMX', city: 'Ciudad de México' },
+  { code: 'CO-ANT', country: 'Colombia', region: 'Antioquia', city: 'Medellín' },
 ];
 
 export const ORGANIZER_NAMES = [

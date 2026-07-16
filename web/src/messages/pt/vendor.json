@@ -295,5 +295,43 @@
       "VALIDATION_ERROR": "Verifique os dados inseridos.",
       "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
     }
+  },
+  "directory": {
+    "title": "Buscar fornecedores",
+    "subtitle": "Filtre por categoria, cidade e faixa de preço. Os resultados vêm paginados.",
+    "loading": "Carregando fornecedores…",
+    "error": "Não conseguimos carregar o diretório. Tente novamente em alguns segundos.",
+    "empty": {
+      "body": "Não encontramos fornecedores com esses filtros.",
+      "cta": "Limpar filtros"
+    },
+    "grid": {
+      "ariaLabel": "Listagem de fornecedores"
+    },
+    "loadMore": {
+      "label": "Carregar mais",
+      "loading": "Carregando mais…"
+    },
+    "filters": {
+      "formLabel": "Filtros de busca",
+      "category": "Categoria",
+      "categoryPlaceholder": "ex.: catering",
+      "location": "Cidade",
+      "locationPlaceholder": "ex.: GT-GUA",
+      "priceMin": "Preço mínimo",
+      "priceMax": "Preço máximo",
+      "currency": "Moeda",
+      "currencyAny": "Qualquer",
+      "submit": "Aplicar",
+      "reset": "Limpar"
+    },
+    "card": {
+      "rating": "Avaliação",
+      "noRating": "Sem avaliações ainda",
+      "categories": "Categorias",
+      "noCategories": "Sem categorias",
+      "priceRange": "Faixa de preço",
+      "ratingAria": "{avg} estrelas, {count} avaliações"
+    }
   }
 }

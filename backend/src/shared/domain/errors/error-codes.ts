@@ -131,6 +131,9 @@ export const ErrorCodes = {
   INVALID_DESCRIPTION: 'INVALID_DESCRIPTION', // 400 — `description` fuera de [10..2000] (VR-06, EC-05).
   SERVICE_LIMIT_REACHED: 'SERVICE_LIMIT_REACHED', // 409 — 50 servicios activos por vendor (VR-05, EC-04).
   SERVICE_NOT_FOUND: 'SERVICE_NOT_FOUND', // 404 — servicio ajeno o inexistente (SEC-04, EC-08).
+  // US-045 (PB-P1-028): directorio autenticado (`GET /vendors`).
+  INVALID_FILTERS: 'INVALID_FILTERS', // 400 — slug inexistente/inactivo, precio sin currency, priceMin>priceMax, limit fuera de rango (EC-01..04, VR-01..05).
+  INVALID_CURSOR: 'INVALID_CURSOR', // 400 — cursor no decodifica o payload inconsistente (EC-05, VR-06).
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
