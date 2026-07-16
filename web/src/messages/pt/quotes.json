@@ -48,5 +48,27 @@
   "limit": {
     "label": "{count}/{limit} cotações ativas nesta categoria",
     "reached": "Você atingiu o máximo de solicitações ativas para esta categoria. Aguarde alguma ser respondida ou cancelada para enviar outra."
+  },
+  "reject": {
+    "title": "Recusar cotação",
+    "description": "Será marcada como recusada e o fornecedor receberá uma notificação. Esta ação não pode ser desfeita.",
+    "reasonLabel": "Motivo da recusa (opcional)",
+    "reasonPlaceholder": "Ex.: preço fora do orçamento…",
+    "reasonHint": "Máximo de 500 caracteres.",
+    "reasonCounter": "{count}/500",
+    "actions": {
+      "cancel": "Cancelar",
+      "submit": "Recusar cotação",
+      "submitting": "Recusando…"
+    },
+    "success": "Cotação recusada. Notificamos o fornecedor.",
+    "errors": {
+      "INVALID_REJECTION_REASON": "O motivo não pode ultrapassar 500 caracteres.",
+      "QUOTE_NOT_FOUND": "Não encontramos esta cotação ou ela não está mais disponível.",
+      "QUOTE_NOT_REJECTABLE": "Esta cotação não pode mais ser recusada no seu estado atual.",
+      "AUTHENTICATION_REQUIRED": "Você precisa iniciar sessão para recusar a cotação.",
+      "FORBIDDEN": "Seu perfil não pode recusar cotações.",
+      "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
+    }
   }
 }

@@ -48,5 +48,27 @@
   "limit": {
     "label": "{count}/{limit} presupuestos activos en esta categoría",
     "reached": "Has alcanzado el máximo de solicitudes activas para esta categoría. Espera a que alguna sea respondida o cancelada para enviar otra."
+  },
+  "reject": {
+    "title": "Rechazar presupuesto",
+    "description": "Se marcará como rechazado y el proveedor recibirá una notificación. Esta acción no se puede deshacer.",
+    "reasonLabel": "Motivo del rechazo (opcional)",
+    "reasonPlaceholder": "Ej. Precio fuera de presupuesto…",
+    "reasonHint": "Máximo 500 caracteres.",
+    "reasonCounter": "{count}/500",
+    "actions": {
+      "cancel": "Cancelar",
+      "submit": "Rechazar presupuesto",
+      "submitting": "Rechazando…"
+    },
+    "success": "Presupuesto rechazado. Notificamos al proveedor.",
+    "errors": {
+      "INVALID_REJECTION_REASON": "El motivo no puede superar 500 caracteres.",
+      "QUOTE_NOT_FOUND": "No hemos encontrado este presupuesto o ya no está disponible.",
+      "QUOTE_NOT_REJECTABLE": "Este presupuesto ya no puede rechazarse en su estado actual.",
+      "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para rechazar el presupuesto.",
+      "FORBIDDEN": "Tu rol no puede rechazar presupuestos.",
+      "UNEXPECTED": "Ha ocurrido un error inesperado. Vuelve a intentarlo."
+    }
   }
 }

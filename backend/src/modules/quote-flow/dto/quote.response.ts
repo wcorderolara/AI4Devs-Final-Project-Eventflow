@@ -20,6 +20,7 @@ export const QuoteResponseSchema = z
     sentAt: z.string().nullable(),
     acceptedAt: z.string().nullable(),
     rejectedAt: z.string().nullable(),
+    rejectionReason: z.string().nullable(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
   })

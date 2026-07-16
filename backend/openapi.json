@@ -4894,6 +4894,10 @@
                           "nullable": true,
                           "type": "string"
                         },
+                        "rejectionReason": {
+                          "nullable": true,
+                          "type": "string"
+                        },
                         "sentAt": {
                           "nullable": true,
                           "type": "string"
@@ -4938,6 +4942,7 @@
                         "sentAt",
                         "acceptedAt",
                         "rejectedAt",
+                        "rejectionReason",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -5121,6 +5126,10 @@
                           "nullable": true,
                           "type": "string"
                         },
+                        "rejectionReason": {
+                          "nullable": true,
+                          "type": "string"
+                        },
                         "sentAt": {
                           "nullable": true,
                           "type": "string"
@@ -5165,6 +5174,7 @@
                         "sentAt",
                         "acceptedAt",
                         "rejectedAt",
+                        "rejectionReason",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -5392,6 +5402,10 @@
                           "nullable": true,
                           "type": "string"
                         },
+                        "rejectionReason": {
+                          "nullable": true,
+                          "type": "string"
+                        },
                         "sentAt": {
                           "nullable": true,
                           "type": "string"
@@ -5436,6 +5450,7 @@
                         "sentAt",
                         "acceptedAt",
                         "rejectedAt",
+                        "rejectionReason",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -5560,6 +5575,10 @@
                           "nullable": true,
                           "type": "string"
                         },
+                        "rejectionReason": {
+                          "nullable": true,
+                          "type": "string"
+                        },
                         "sentAt": {
                           "nullable": true,
                           "type": "string"
@@ -5604,6 +5623,7 @@
                         "sentAt",
                         "acceptedAt",
                         "rejectedAt",
+                        "rejectionReason",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -5731,6 +5751,10 @@
                           "nullable": true,
                           "type": "string"
                         },
+                        "rejectionReason": {
+                          "nullable": true,
+                          "type": "string"
+                        },
                         "sentAt": {
                           "nullable": true,
                           "type": "string"
@@ -5775,6 +5799,7 @@
                         "sentAt",
                         "acceptedAt",
                         "rejectedAt",
+                        "rejectionReason",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -5832,6 +5857,21 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {
@@ -5899,6 +5939,10 @@
                           "nullable": true,
                           "type": "string"
                         },
+                        "rejectionReason": {
+                          "nullable": true,
+                          "type": "string"
+                        },
                         "sentAt": {
                           "nullable": true,
                           "type": "string"
@@ -5943,6 +5987,7 @@
                         "sentAt",
                         "acceptedAt",
                         "rejectedAt",
+                        "rejectionReason",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -5962,6 +6007,9 @@
             },
             "description": "OK"
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -5970,6 +6018,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
           },
           "422": {
             "$ref": "#/components/responses/ValidationError"
@@ -6067,6 +6118,10 @@
                           "nullable": true,
                           "type": "string"
                         },
+                        "rejectionReason": {
+                          "nullable": true,
+                          "type": "string"
+                        },
                         "sentAt": {
                           "nullable": true,
                           "type": "string"
@@ -6111,6 +6166,7 @@
                         "sentAt",
                         "acceptedAt",
                         "rejectedAt",
+                        "rejectionReason",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -7037,6 +7093,10 @@
                           "nullable": true,
                           "type": "string"
                         },
+                        "rejectionReason": {
+                          "nullable": true,
+                          "type": "string"
+                        },
                         "sentAt": {
                           "nullable": true,
                           "type": "string"
@@ -7081,6 +7141,7 @@
                         "sentAt",
                         "acceptedAt",
                         "rejectedAt",
+                        "rejectionReason",
                         "createdAt",
                         "updatedAt"
                       ],

@@ -24,6 +24,7 @@ export interface QuoteView {
   sentAt: string | null;
   acceptedAt: string | null;
   rejectedAt: string | null;
+  rejectionReason: string | null;
   createdAt: string;
   updatedAt: string;
 }

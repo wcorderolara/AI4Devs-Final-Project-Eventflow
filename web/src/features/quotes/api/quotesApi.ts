@@ -10,8 +10,15 @@ import type {
   CreateQuoteRequestEnvelope,
   CreateQuoteRequestInput,
   CreateQuoteRequestView,
+  RejectQuoteEnvelope,
+  RejectQuoteInput,
+  RejectQuoteView,
 } from './quotesApi.types';
-import { toActiveQrCountView, toCreateQuoteRequestView } from './quotesApi.types';
+import {
+  toActiveQrCountView,
+  toCreateQuoteRequestView,
+  toRejectQuoteView,
+} from './quotesApi.types';
 
 export const quotesApi = {
   async createRequest(input: CreateQuoteRequestInput): Promise<CreateQuoteRequestView> {
@@ -35,5 +42,22 @@ export const quotesApi = {
     }).toString();
     const envelope = await httpGet<ActiveQrCountEnvelope>(`/quote-requests/active-count?${qs}`);
     return toActiveQrCountView(envelope.data);
+  },
+
+  /**
+   * US-054 (FE-002): rechazo del Quote por el organizer dueño del evento. Body opcional con
+   * `reason` (0..500). El backend emite 2 Notifications al vendor atómicamente. Los códigos
+   * de error consumibles por el banner i18n del dialog: `INVALID_REJECTION_REASON` (400),
+   * `AUTHENTICATION_REQUIRED` (401), `FORBIDDEN` (403), `QUOTE_NOT_FOUND` (404),
+   * `QUOTE_NOT_REJECTABLE` (409).
+   */
+  async rejectQuote(input: RejectQuoteInput): Promise<RejectQuoteView> {
+    const body: { reason?: string } = {};
+    if (input.reason !== undefined && input.reason.length > 0) body.reason = input.reason;
+    const envelope = await httpPost<RejectQuoteEnvelope, { reason?: string }>(
+      `/quotes/${encodeURIComponent(input.quoteId)}/reject`,
+      { body },
+    );
+    return toRejectQuoteView(envelope.data);
   },
 };

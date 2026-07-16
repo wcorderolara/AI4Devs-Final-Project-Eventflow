@@ -155,6 +155,10 @@ export const ErrorCodes = {
   INVALID_BREAKDOWN_SUM: 'INVALID_BREAKDOWN_SUM', // 400 — sum(items.amount) - total > 0.01 (AC-04).
   INVALID_TOTAL: 'INVALID_TOTAL', // 400 — total_price no es decimal>0 con hasta 2 decimales (EC-03).
   INVALID_VALID_UNTIL: 'INVALID_VALID_UNTIL', // 400 — valid_until fuera de rango (today..today+90) (EC-06).
+  // US-054 (PB-P1-032): rechazo de Quote por organizer. Códigos específicos §7 Tech Spec.
+  QUOTE_NOT_FOUND: 'QUOTE_NOT_FOUND', // 404 — Quote inexistente o de evento no propio (SEC-03 uniforme).
+  QUOTE_NOT_REJECTABLE: 'QUOTE_NOT_REJECTABLE', // 409 — Quote.status ≠ 'sent' (EC-01/05); `details.current_status`.
+  INVALID_REJECTION_REASON: 'INVALID_REJECTION_REASON', // 400 — body.reason > 500 chars (EC-03, VR-02).
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

@@ -27,6 +27,11 @@ export interface DomainEventLogger {
       durationMs?: number;
       errorCount?: number;
       jitterMs?: number;
+      // US-054 (BE-006): `quote.notification.emitted` acarrea el nombre del evento notificado
+      // (`quote.rejected` | `quote.expired`) y el `vendorUserId` destinatario para trazar
+      // la fan-out del `QuoteNotificationService` sin exponer el payload (SEC-09).
+      eventName?: string;
+      vendorUserId?: string;
     },
   ): void;
 }

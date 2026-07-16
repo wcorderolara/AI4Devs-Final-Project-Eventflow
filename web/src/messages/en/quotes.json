@@ -48,5 +48,27 @@
   "limit": {
     "label": "{count}/{limit} active quote requests in this category",
     "reached": "You've reached the maximum active requests for this category. Wait for one to be answered or cancelled before sending another."
+  },
+  "reject": {
+    "title": "Reject quote",
+    "description": "This quote will be marked as rejected and the vendor will be notified. This action cannot be undone.",
+    "reasonLabel": "Reason (optional)",
+    "reasonPlaceholder": "e.g. Price is above our budget…",
+    "reasonHint": "Up to 500 characters.",
+    "reasonCounter": "{count}/500",
+    "actions": {
+      "cancel": "Cancel",
+      "submit": "Reject quote",
+      "submitting": "Rejecting…"
+    },
+    "success": "Quote rejected. We notified the vendor.",
+    "errors": {
+      "INVALID_REJECTION_REASON": "The reason cannot be longer than 500 characters.",
+      "QUOTE_NOT_FOUND": "We couldn't find this quote or it's no longer available.",
+      "QUOTE_NOT_REJECTABLE": "This quote can no longer be rejected in its current state.",
+      "AUTHENTICATION_REQUIRED": "You need to sign in to reject this quote.",
+      "FORBIDDEN": "Your role cannot reject quotes.",
+      "UNEXPECTED": "Something went wrong. Please try again."
+    }
   }
 }

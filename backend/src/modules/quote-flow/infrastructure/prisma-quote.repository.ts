@@ -22,6 +22,7 @@ function toView(q: PrismaQuote): QuoteView {
     sentAt: q.sentAt ? q.sentAt.toISOString() : null,
     acceptedAt: q.acceptedAt ? q.acceptedAt.toISOString() : null,
     rejectedAt: q.rejectedAt ? q.rejectedAt.toISOString() : null,
+    rejectionReason: q.rejectionReason ?? null,
     createdAt: q.createdAt.toISOString(),
     updatedAt: q.updatedAt.toISOString(),
   };

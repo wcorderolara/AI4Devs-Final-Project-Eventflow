@@ -194,23 +194,9 @@ export class AcceptQuoteUseCase {
   }
 }
 
-export class RejectQuoteUseCase {
-  constructor(
-    private readonly quotes: QuoteRepository,
-    private readonly quoteRequests: QuoteRequestRepository,
-    private readonly events: EventAccessReader,
-    private readonly clock: ClockPort,
-    private readonly logger: DomainEventLogger,
-  ) {}
-
-  async execute(userId: string, quoteId: string, ctx: QuoteUseCaseContext = {}): Promise<QuoteView> {
-    const quote = await loadOwnedByOrganizer(this.quotes, this.quoteRequests, this.events, userId, quoteId);
-    if (!canDecideQuote(quote.status)) throw invalidState('Only sent quotes can be rejected', quote.status);
-    const view = await this.quotes.reject(quoteId, this.clock.now());
-    this.logger.emit('quote.rejected', { correlationId: ctx.correlationId, actorId: userId, quoteId });
-    return view;
-  }
-}
+// US-054 (PB-P1-032): `RejectQuoteUseCase` original removido. El wiring del controller usa
+// `RejectQuoteUs054UseCase` (transaccional + notifs atómicas + rejection_reason). Ver DEV-02
+// del execution record `US-054-execution.md`.
 
 export class PreferQuoteUseCase {
   constructor(

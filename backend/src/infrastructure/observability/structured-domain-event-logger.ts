@@ -26,6 +26,9 @@ export class StructuredDomainEventLogger implements DomainEventLogger {
       durationMs?: number;
       errorCount?: number;
       jitterMs?: number;
+      // US-054 (BE-006): metadatos de `quote.notification.emitted`.
+      eventName?: string;
+      vendorUserId?: string;
     },
   ): void {
     // Warnings de dominio (p. ej. `quote_request.limit_reached`) van al canal `warn` para
