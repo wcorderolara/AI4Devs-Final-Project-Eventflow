@@ -18,6 +18,7 @@ import enTasks from '../../messages/en/tasks.json';
 import enValidation from '../../messages/en/validation.json';
 import enVendor from '../../messages/en/vendor.json';
 import enPublicVendor from '../../messages/en/public-vendor.json';
+import enQuotes from '../../messages/en/quotes.json';
 import esEsAdmin from '../../messages/es-ES/admin.json';
 import esEsAi from '../../messages/es-ES/ai.json';
 import esEsAuth from '../../messages/es-ES/auth.json';
@@ -31,6 +32,7 @@ import esEsTasks from '../../messages/es-ES/tasks.json';
 import esEsValidation from '../../messages/es-ES/validation.json';
 import esEsVendor from '../../messages/es-ES/vendor.json';
 import esEsPublicVendor from '../../messages/es-ES/public-vendor.json';
+import esEsQuotes from '../../messages/es-ES/quotes.json';
 import esLatamAdmin from '../../messages/es-LATAM/admin.json';
 import esLatamAi from '../../messages/es-LATAM/ai.json';
 import esLatamAuth from '../../messages/es-LATAM/auth.json';
@@ -44,6 +46,7 @@ import esLatamTasks from '../../messages/es-LATAM/tasks.json';
 import esLatamValidation from '../../messages/es-LATAM/validation.json';
 import esLatamVendor from '../../messages/es-LATAM/vendor.json';
 import esLatamPublicVendor from '../../messages/es-LATAM/public-vendor.json';
+import esLatamQuotes from '../../messages/es-LATAM/quotes.json';
 import ptAdmin from '../../messages/pt/admin.json';
 import ptAi from '../../messages/pt/ai.json';
 import ptAuth from '../../messages/pt/auth.json';
@@ -57,6 +60,7 @@ import ptTasks from '../../messages/pt/tasks.json';
 import ptValidation from '../../messages/pt/validation.json';
 import ptVendor from '../../messages/pt/vendor.json';
 import ptPublicVendor from '../../messages/pt/public-vendor.json';
+import ptQuotes from '../../messages/pt/quotes.json';
 
 export type Messages = Record<string, unknown>;
 
@@ -75,6 +79,7 @@ const REGISTRY: Record<Locale, Messages> = {
     budget: esLatamBudget,
     vendor: esLatamVendor,
     publicVendor: esLatamPublicVendor,
+    quotes: esLatamQuotes,
   },
   'es-ES': {
     common: esEsCommon,
@@ -90,6 +95,7 @@ const REGISTRY: Record<Locale, Messages> = {
     budget: esEsBudget,
     vendor: esEsVendor,
     publicVendor: esEsPublicVendor,
+    quotes: esEsQuotes,
   },
   pt: {
     common: ptCommon,
@@ -105,6 +111,7 @@ const REGISTRY: Record<Locale, Messages> = {
     budget: ptBudget,
     vendor: ptVendor,
     publicVendor: ptPublicVendor,
+    quotes: ptQuotes,
   },
   en: {
     common: enCommon,
@@ -120,6 +127,7 @@ const REGISTRY: Record<Locale, Messages> = {
     budget: enBudget,
     vendor: enVendor,
     publicVendor: enPublicVendor,
+    quotes: enQuotes,
   },
 };
 

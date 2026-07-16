@@ -1,0 +1,48 @@
+{
+  "create": {
+    "title": "Nova solicitação de cotação",
+    "subtitle": "Envie seu briefing ao fornecedor. Você será avisado quando ele responder.",
+    "eventSnapshot": {
+      "heading": "Resumo do evento",
+      "titleLabel": "Evento",
+      "typeLabel": "Tipo",
+      "dateLabel": "Data",
+      "locationLabel": "Local",
+      "guestsLabel": "Convidados",
+      "currencyLabel": "Moeda"
+    },
+    "vendorSummary": {
+      "heading": "Fornecedor",
+      "ratingAria": "Avaliação média {rating} de 5"
+    },
+    "fields": {
+      "budget": {
+        "label": "Orçamento estimado",
+        "placeholder": "Por exemplo: 5000,00"
+      },
+      "message": {
+        "label": "Mensagem para o fornecedor",
+        "placeholder": "Conte ao fornecedor o que você precisa…"
+      }
+    },
+    "actions": {
+      "submit": "Enviar solicitação",
+      "submitting": "Enviando…"
+    },
+    "errors": {
+      "EVENT_NOT_FOUND": "Não encontramos esse evento ou você não tem permissão para usá-lo.",
+      "EVENT_NOT_ACTIVE": "Você só pode solicitar cotações para eventos ativos.",
+      "VENDOR_NOT_AVAILABLE": "Esse fornecedor não está mais disponível.",
+      "INVALID_BRIEF": "Revise o briefing: há campos com formato inválido.",
+      "INVALID_BRIEF_BUDGET": "Digite um orçamento válido (por exemplo, 5000.00).",
+      "INVALID_BRIEF_MESSAGE": "A mensagem não pode ultrapassar 5000 caracteres.",
+      "INVALID_CATEGORY": "A categoria de serviço selecionada não está disponível.",
+      "QR_ALREADY_ACTIVE": "Você já tem uma solicitação ativa para este fornecedor neste evento.",
+      "QR_CATEGORY_LIMIT_REACHED": "Você atingiu o limite de 5 solicitações ativas por categoria.",
+      "RATE_LIMIT_EXCEEDED": "Muitas solicitações. Tente novamente em instantes.",
+      "AUTHENTICATION_REQUIRED": "É necessário iniciar sessão para enviar a solicitação.",
+      "FORBIDDEN": "Seu perfil não pode criar solicitações de cotação.",
+      "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
+    }
+  }
+}

@@ -1670,6 +1670,65 @@ type QuoteRequestResponseDto = {
 - **BR-QUOTE-004 / BR-QUOTE-009**: máximo **5 quote requests activas por categoría/evento**. Estados activos: `sent`, `viewed`, `responded`. Excedido → `409 MAX_QUOTE_REQUESTS_EXCEEDED`.
 - **BR-QUOTE-006**: vendor solo ve quote requests asignadas.
 
+### 30.5 US-049 · `POST /api/v1/quote-requests` (endpoint canónico organizer-driven)
+
+Coexiste con `POST /events/:eventId/quote-requests` (US-096 bilateral). El endpoint US-049 espera `event_id` en el body, hereda `currency_code` del evento y persiste dos notificaciones atómicas (`in_app` + `email_simulated`) en la misma transacción que el `QuoteRequest`.
+
+| Método | Path | Auth | Roles | Propósito | Success | Errores |
+| --- | --- | --- | --- | --- | --- | --- |
+| POST | `/api/v1/quote-requests` | Sí (cookie de sesión) | organizer | Crea `QuoteRequest` + 2 `Notification` rows atómicas. Rate limit `10 req/min` por usuario. | 201 | 400 (`INVALID_BRIEF`, `INVALID_CATEGORY`, `VENDOR_NOT_AVAILABLE`), 401, 403, 404 (`EVENT_NOT_FOUND` uniforme), 409 (`EVENT_NOT_ACTIVE`, `QR_ALREADY_ACTIVE`, `QR_CATEGORY_LIMIT_REACHED`), 429 (`RATE_LIMIT_EXCEEDED`) |
+
+```ts
+// Request body (US-049)
+type CreateQuoteRequestUs049Body = {
+  event_id: string;             // uuid
+  vendor_profile_id: string;    // uuid
+  service_category_id: string;  // uuid
+  brief: {
+    budget: string;             // decimal(14,2) como string, p. ej. "5000.00"
+    message: string;            // 0..5000 chars
+  };
+  source?: 'manual' | 'ai_generated'; // default 'manual'; setea ai_generated_brief
+};
+
+// Response 201
+type CreateQuoteRequestUs049Response = {
+  id: string;
+  status: 'sent';
+  sent_at: string;              // ISO-8601 UTC
+  event_id: string;
+  vendor_profile_id: string;
+  service_category_id: string;
+  ai_generated_brief: boolean;  // derivado de source
+  brief: {
+    budget: string;
+    currency_code: string;      // heredado del evento (inmutable)
+    message: string;
+  };
+  event_snapshot: {
+    event_type_id: string;
+    event_date: string | null;
+    location_id: string | null;
+    guests_count: number | null;
+  };
+};
+```
+
+Detalles de errores (envelope estándar `{ error: { code, message, correlationId, details? } }`):
+
+| Código | HTTP | `details` | Trigger |
+| --- | ---: | --- | --- |
+| `EVENT_NOT_FOUND` | 404 | — | Evento inexistente o de otro organizer (SEC-05 uniforme). |
+| `EVENT_NOT_ACTIVE` | 409 | `[{ field: 'status', message: <status> }]` | Evento en `draft`/`completed`/`cancelled`. |
+| `VENDOR_NOT_AVAILABLE` | 400 | — | Vendor no `approved`, soft-deleted o UUID inexistente (SEC-06 uniforme). |
+| `INVALID_BRIEF` | 400 | `[{ field: 'budget' | 'message', message: 'invalid' }]` | `budget<0` o `message>5000`. |
+| `INVALID_CATEGORY` | 400 | `[{ field: 'service_category_id', message: 'not_available' }]` | Categoría inexistente o `is_active=false`. |
+| `QR_ALREADY_ACTIVE` | 409 | `[{ field: 'existing_quote_request_id', message: <uuid> }]` | Ya existe QR activa (`sent/viewed/responded`) para el par (event, vendor) — BR-QUOTE-004. |
+| `QR_CATEGORY_LIMIT_REACHED` | 409 | `[{ field: 'active_count', message: '5' }]` | ≥ 5 QRs activas en (event, category) — BR-QUOTE-009. |
+| `RATE_LIMIT_EXCEEDED` | 429 | — (incluye header `Retry-After`) | > 10 req/min por usuario. |
+
+Observabilidad: log estructurado `quote_request.created` con `{ correlationId, actorId, quoteRequestId }` (sin brief ni PII — SEC-09). Notificaciones persistidas: `type='quote_request.created'`; `payload` incluye `{ channel, deliveryStatus, event, quote_request_id, event_id, service_category_id }` (ver DEV-02 de `management/workflows/development-execution/P1/PB-P1-030/US-049-execution.md`).
+
 ---
 
 ## 31. Quotes API

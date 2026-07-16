@@ -1,0 +1,48 @@
+{
+  "create": {
+    "title": "New quote request",
+    "subtitle": "Send your brief to the vendor. You'll be notified when they respond.",
+    "eventSnapshot": {
+      "heading": "Event summary",
+      "titleLabel": "Event",
+      "typeLabel": "Type",
+      "dateLabel": "Date",
+      "locationLabel": "Location",
+      "guestsLabel": "Guests",
+      "currencyLabel": "Currency"
+    },
+    "vendorSummary": {
+      "heading": "Vendor",
+      "ratingAria": "Average rating {rating} out of 5"
+    },
+    "fields": {
+      "budget": {
+        "label": "Estimated budget",
+        "placeholder": "e.g. 5000.00"
+      },
+      "message": {
+        "label": "Message to the vendor",
+        "placeholder": "Tell the vendor what you need…"
+      }
+    },
+    "actions": {
+      "submit": "Send request",
+      "submitting": "Sending…"
+    },
+    "errors": {
+      "EVENT_NOT_FOUND": "We couldn't find that event, or you don't have permission to use it.",
+      "EVENT_NOT_ACTIVE": "You can only request quotes for active events.",
+      "VENDOR_NOT_AVAILABLE": "This vendor is no longer available.",
+      "INVALID_BRIEF": "Please review the brief: some fields have an invalid format.",
+      "INVALID_BRIEF_BUDGET": "Enter a valid budget (e.g. 5000.00).",
+      "INVALID_BRIEF_MESSAGE": "The message cannot exceed 5000 characters.",
+      "INVALID_CATEGORY": "The selected service category is not available.",
+      "QR_ALREADY_ACTIVE": "You already have an active request to this vendor for this event.",
+      "QR_CATEGORY_LIMIT_REACHED": "You've reached the maximum of 5 active requests per category.",
+      "RATE_LIMIT_EXCEEDED": "Too many requests. Please try again shortly.",
+      "AUTHENTICATION_REQUIRED": "You need to sign in to send the request.",
+      "FORBIDDEN": "Your role cannot create quote requests.",
+      "UNEXPECTED": "An unexpected error occurred. Please try again."
+    }
+  }
+}

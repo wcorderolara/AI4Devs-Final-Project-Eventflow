@@ -1,0 +1,48 @@
+{
+  "create": {
+    "title": "Nueva solicitud de cotización",
+    "subtitle": "Envía tu brief al proveedor. Recibirás una notificación cuando responda.",
+    "eventSnapshot": {
+      "heading": "Resumen del evento",
+      "titleLabel": "Evento",
+      "typeLabel": "Tipo",
+      "dateLabel": "Fecha",
+      "locationLabel": "Ubicación",
+      "guestsLabel": "Invitados",
+      "currencyLabel": "Moneda"
+    },
+    "vendorSummary": {
+      "heading": "Proveedor",
+      "ratingAria": "Calificación promedio {rating} sobre 5"
+    },
+    "fields": {
+      "budget": {
+        "label": "Presupuesto estimado",
+        "placeholder": "Por ejemplo: 5000.00"
+      },
+      "message": {
+        "label": "Mensaje para el proveedor",
+        "placeholder": "Cuéntale al proveedor qué necesitas…"
+      }
+    },
+    "actions": {
+      "submit": "Enviar solicitud",
+      "submitting": "Enviando…"
+    },
+    "errors": {
+      "EVENT_NOT_FOUND": "No encontramos ese evento o no tienes permiso para usarlo.",
+      "EVENT_NOT_ACTIVE": "Solo puedes solicitar cotizaciones para eventos activos.",
+      "VENDOR_NOT_AVAILABLE": "Este proveedor ya no está disponible.",
+      "INVALID_BRIEF": "Revisa el brief: hay campos con formato inválido.",
+      "INVALID_BRIEF_BUDGET": "Ingresa un presupuesto válido (por ejemplo, 5000.00).",
+      "INVALID_BRIEF_MESSAGE": "El mensaje no puede superar 5000 caracteres.",
+      "INVALID_CATEGORY": "La categoría de servicio seleccionada no está disponible.",
+      "QR_ALREADY_ACTIVE": "Ya tienes una solicitud activa a este proveedor para este evento.",
+      "QR_CATEGORY_LIMIT_REACHED": "Alcanzaste el máximo de 5 solicitudes activas por categoría.",
+      "RATE_LIMIT_EXCEEDED": "Hiciste demasiadas solicitudes. Intenta en un momento.",
+      "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para enviar la solicitud.",
+      "FORBIDDEN": "Tu rol no puede crear solicitudes de cotización.",
+      "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
+    }
+  }
+}

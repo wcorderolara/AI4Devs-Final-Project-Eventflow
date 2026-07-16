@@ -24,6 +24,17 @@ import {
   DuplicateQuoteRequestActiveError,
   QuoteExpiredError,
 } from '../../domain/errors/quote-flow.errors.js';
+// US-049 (PB-P1-030): errores específicos del endpoint `POST /api/v1/quote-requests`.
+// La excepción ADR-ARCH-001 para este archivo permite importar errores de módulo (ver §37 del archivo).
+import {
+  EventNotFoundError,
+  EventNotActiveError,
+  VendorNotAvailableError,
+  InvalidBriefError,
+  QuoteRequestAlreadyActiveError,
+  QuoteRequestCategoryLimitReachedError,
+  ServiceCategoryUnavailableError,
+} from '../../../modules/quote-flow/domain/us049.errors.js';
 import {
   MissingInputError,
   AiInvalidBudgetError,
@@ -178,6 +189,53 @@ function mapError(err: unknown): MappedError {
   }
   if (err instanceof QuoteExpiredError) {
     return { status: 410, code: ErrorCodes.QUOTE_EXPIRED, message: err.message };
+  }
+  // US-049 (PB-P1-030): endpoint `POST /api/v1/quote-requests`.
+  if (err instanceof EventNotFoundError) {
+    return { status: 404, code: ErrorCodes.EVENT_NOT_FOUND, message: err.message };
+  }
+  if (err instanceof EventNotActiveError) {
+    return {
+      status: 409,
+      code: ErrorCodes.EVENT_NOT_ACTIVE,
+      message: err.message,
+      details: [{ field: 'status', message: err.eventStatus }],
+    };
+  }
+  if (err instanceof VendorNotAvailableError) {
+    return { status: 400, code: ErrorCodes.VENDOR_NOT_AVAILABLE, message: err.message };
+  }
+  if (err instanceof InvalidBriefError) {
+    return {
+      status: 400,
+      code: ErrorCodes.INVALID_BRIEF,
+      message: err.message,
+      details: [{ field: err.field, message: 'invalid' }],
+    };
+  }
+  if (err instanceof QuoteRequestAlreadyActiveError) {
+    return {
+      status: 409,
+      code: ErrorCodes.QR_ALREADY_ACTIVE,
+      message: err.message,
+      details: [{ field: 'existing_quote_request_id', message: err.existingQuoteRequestId }],
+    };
+  }
+  if (err instanceof QuoteRequestCategoryLimitReachedError) {
+    return {
+      status: 409,
+      code: ErrorCodes.QR_CATEGORY_LIMIT_REACHED,
+      message: err.message,
+      details: [{ field: 'active_count', message: String(err.activeCount) }],
+    };
+  }
+  if (err instanceof ServiceCategoryUnavailableError) {
+    return {
+      status: 400,
+      code: ErrorCodes.INVALID_CATEGORY,
+      message: err.message,
+      details: [{ field: 'service_category_id', message: 'not_available' }],
+    };
   }
   if (err instanceof MissingInputError) {
     return { status: 400, code: ErrorCodes.MISSING_INPUT, message: err.message };
