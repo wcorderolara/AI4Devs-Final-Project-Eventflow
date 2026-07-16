@@ -150,16 +150,32 @@ export const configSchema = z.object({
   // validación real de la expresión la hace `node-cron` en el adapter (fail-fast en bootstrap).
   JOBS_AUTOCOMPLETE_CRON: z.string().min(1).default('30 0 * * *'),
   // JOBS — US-053 / PB-P1-031 (ExpireQuotesJob).
-  // Cron diario UTC del `ExpireQuotesJob`. Default `5 0 * * *` (00:05 UTC) para separarlo del
-  // `AutoCompletePastEventsJob` (00:30 UTC) y evitar picos coincidentes. `node-cron` valida la
-  // expresión al schedule; una expresión inválida hace fail-fast en bootstrap.
-  JOBS_EXPIRE_QUOTES_CRON: z.string().min(1).default('5 0 * * *'),
+  // Cron diario UTC del `ExpireQuotesJob`. Default `0 1 * * *` (01:00 UTC).
+  // US-055 (PB-P1-033 / BE-005): reconciliación con `ExpireQuoteRequestsJob` — ambos jobs
+  // corren a la misma hora (jitter ±5min separa ejecución real) para consolidar la ventana de
+  // batch nocturno. Cambio del default previo `5 0 * * *` documentado en `docs/21 §Cron`.
+  // `node-cron` valida la expresión al schedule; una expresión inválida hace fail-fast en bootstrap.
+  JOBS_EXPIRE_QUOTES_CRON: z.string().min(1).default('0 1 * * *'),
   // Jitter máximo (ms) antes de invocar el use case, aplicado con `setTimeout` dentro del handler.
   // Default 600000 (10 min). Evita que múltiples réplicas del scheduler golpeen la BD al mismo
   // instante en despliegues multi-región. `0` deshabilita el jitter (útil en tests).
   JOBS_EXPIRE_QUOTES_JITTER_MAX_MS: z.coerce.number().int().min(0).max(3_600_000).default(600_000),
   // Tamaño de batch del loop `SELECT ... FOR UPDATE SKIP LOCKED`. Default 100 (Tech Spec §7).
   JOBS_EXPIRE_QUOTES_BATCH_SIZE: z.coerce.number().int().min(1).max(1000).default(100),
+
+  // JOBS — US-055 / PB-P1-033 (ExpireQuoteRequestsJob).
+  // Cadencia diaria UTC del `ExpireQuoteRequestsJob`. Default `0 1 * * *` (01:00 UTC) —
+  // idéntica al `ExpireQuotesJob` (BE-005) tras la reconciliación de horarios; el jitter ±5min
+  // desincroniza la ejecución real y el `SKIP LOCKED` protege contra colisión con réplicas.
+  JOBS_EXPIRE_QUOTE_REQUESTS_CRON: z.string().min(1).default('0 1 * * *'),
+  // Jitter máximo (ms) antes de invocar el use case. Default 300000 (5 min) — decisión D2 del
+  // Decision Resolution (jitter ±5min). `0` deshabilita el jitter (útil en tests).
+  JOBS_EXPIRE_QUOTE_REQUESTS_JITTER_MAX_MS: z.coerce.number().int().min(0).max(3_600_000).default(300_000),
+  // Tamaño de batch del loop `SELECT ... FOR UPDATE SKIP LOCKED`. Default 100 (Tech Spec §7).
+  JOBS_EXPIRE_QUOTE_REQUESTS_BATCH_SIZE: z.coerce.number().int().min(1).max(1000).default(100),
+  // Días de antigüedad de `sent_at` (== `created_at`, ver US-049) desde los cuales una QR
+  // activa (`status IN ('sent','viewed')`) pasa a `expired`. Default 30 (decisión D3).
+  QR_EXPIRATION_DAYS: z.coerce.number().int().min(1).max(365).default(30),
 });
 
 /** `Secure` efectivo: explícito si se define; si no, activo en producción (no-local). */

@@ -6,10 +6,11 @@
 // dentro de la misma transacción — si cualquier INSERT falla el batch se revierte y esos Quotes
 // se re-procesan en la siguiente iteración/próximo run (idempotente por AC-03).
 //
-// - Corte de día (AC-04): `valid_until < CURRENT_DATE` en Postgres = "estrictamente antes del
-//   inicio del día actual en UTC" (`CURRENT_DATE` es date, no timestamp). Un Quote con
-//   `valid_until = today 23:59:59Z` sigue vigente porque la comparación `date < date_today` es
-//   falsa cuando el timestamp cae en el mismo día calendario.
+// - Corte de día (AC-04): la query compara `valid_until < clock_now::date` — el `clock_now`
+//   proviene de `ClockPort` (US-055 / BE-003) para que los tests con `FrozenClock` sean
+//   deterministas sin depender de `CURRENT_DATE` del servidor. Semántica intacta: un Quote con
+//   `valid_until = today 23:59:59Z` sigue vigente porque `date < date_today` es falso cuando
+//   el timestamp cae en el mismo día calendario.
 // - Idempotencia (AC-03): `status='sent'` en el WHERE excluye ya-expirados; una segunda corrida
 //   del mismo día procesa 0 Quotes.
 // - Concurrencia (§17): `SKIP LOCKED` deja que otro worker tome los siguientes 100 sin colisión.
@@ -66,6 +67,9 @@ export class ExpireQuotesUs053UseCase {
     const batchSize = input.batchSize ?? DEFAULT_BATCH_SIZE;
     const correlationId = input.correlationId;
     const runId = input.runId;
+    // US-055 (BE-003): resuelve el corte de día una vez por run vía `ClockPort`; deja de
+    // depender del `CURRENT_DATE` del servidor para permitir tests deterministas con FrozenClock.
+    const clockNow = this.clock.now();
 
     let totalExpired = 0;
     let batchCount = 0;
@@ -74,7 +78,7 @@ export class ExpireQuotesUs053UseCase {
     for (let iter = 0; iter < MAX_BATCHES; iter++) {
       let processed: number;
       try {
-        processed = await this.processBatch(batchSize, correlationId, runId, batchCount);
+        processed = await this.processBatch(batchSize, clockNow, correlationId, runId, batchCount);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         errors.push({ batchIndex: batchCount, message });
@@ -107,6 +111,7 @@ export class ExpireQuotesUs053UseCase {
 
   private async processBatch(
     batchSize: number,
+    clockNow: Date,
     correlationId: string | undefined,
     runId: string | undefined,
     batchIndex: number,
@@ -115,7 +120,7 @@ export class ExpireQuotesUs053UseCase {
       const candidates = await tx.$queryRaw<CandidateRow[]>(
         Prisma.sql`SELECT id, quote_request_id, vendor_profile_id, valid_until
                      FROM quotes
-                    WHERE status = 'sent' AND valid_until < CURRENT_DATE
+                    WHERE status = 'sent' AND valid_until < ${clockNow}::date
                     ORDER BY valid_until ASC, id ASC
                     LIMIT ${batchSize}
                     FOR UPDATE SKIP LOCKED`,
@@ -132,9 +137,13 @@ export class ExpireQuotesUs053UseCase {
       });
 
       // Resuelve los `user_id` de los vendors en un solo query.
+      // US-055 (BE-003): `vendor_profiles.id` es `uuid` — el parámetro serializado por
+      // Prisma llega como `text`; sin el cast a `uuid[]` Postgres devuelve 42883 (`operator
+      // does not exist: uuid = text`). Se pasa el array como un solo parámetro y se castea
+      // a `uuid[]` para que `= ANY` compare con el tipo correcto.
       const vpIds = Array.from(new Set(candidates.map((c) => c.vendor_profile_id)));
       const vendorRows = await tx.$queryRaw<VendorUserRow[]>(
-        Prisma.sql`SELECT id, user_id FROM vendor_profiles WHERE id IN (${Prisma.join(vpIds)})`,
+        Prisma.sql`SELECT id, user_id FROM vendor_profiles WHERE id = ANY(${vpIds}::uuid[])`,
       );
       const vendorByVpId = new Map(vendorRows.map((r) => [r.id, r.user_id]));
 

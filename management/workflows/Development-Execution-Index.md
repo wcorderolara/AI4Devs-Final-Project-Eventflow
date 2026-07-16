@@ -92,3 +92,4 @@
 | P1 | PB-P1-031 | US-052 | Vendor responde Quote con desglose | [record](development-execution/P1/PB-P1-031/US-052-execution.md) | 16 | 14 | 0 | 0 | 0 | 0 | `Done` | 2026-07-16 |
 | P1 | PB-P1-031 | US-053 | ValidUntilPicker + ExpireQuotesJob | [record](development-execution/P1/PB-P1-031/US-053-execution.md) | 16 | 13 | 0 | 0 | 0 | 0 | `Done` | 2026-07-16 |
 | P1 | PB-P1-032 | US-054 | Reject Quote + QuoteNotificationService | [record](development-execution/P1/PB-P1-032/US-054-execution.md) | 16 | 14 | 0 | 0 | 0 | 0 | `Done` | 2026-07-16 |
+| P1 | PB-P1-033 | US-055 | ExpireQuoteRequestsJob + ClockPort + reconciliación cron | [record](development-execution/P1/PB-P1-033/US-055-execution.md) | 13 | 13 | 0 | 0 | 0 | 0 | `Done` | 2026-07-16 |
