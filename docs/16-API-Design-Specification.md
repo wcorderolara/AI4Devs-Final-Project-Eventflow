@@ -1907,7 +1907,7 @@ Vendor responde a un quote request creando una `Quote`. Organizer la acepta, rec
 | PATCH | `/quotes/:quoteId` | Sí | vendor | Edita draft. | 200 | 401, 403, 404, 422 |
 | POST | `/quotes/:quoteId/send` | Sí | vendor | Envía al organizer. | 200 | 401, 403, 404, 422 |
 | POST | `/quotes/:quoteId/accept` | Sí | organizer | Acepta. | 200 | 401, 403, 404, 410 (QUOTE_EXPIRED), 422 |
-| POST | `/quotes/:quoteId/reject` | Sí | organizer | Rechaza. | 200 | 401, 403, 404, 422 |
+| POST | `/quotes/:quoteId/reject` | Sí | organizer | Rechaza y emite 2 Notifications al vendor atómicamente. Body opcional `{ reason?: string [0..500] }`. | 200 | 400 (INVALID_REJECTION_REASON), 401, 403, 404 (QUOTE_NOT_FOUND), 409 (QUOTE_NOT_REJECTABLE), 422 |
 | POST | `/quotes/:quoteId/prefer` | Sí | organizer | Marca preferida. | 200 | 401, 403, 404, 422 |
 
 ### 31.3 DTOs
@@ -1935,11 +1935,29 @@ type QuoteResponseDto = {
   sentAt: string | null;
   acceptedAt: string | null;
   rejectedAt: string | null;
+  rejectionReason: string | null; // US-054 (PB-P1-032): motivo opcional del rechazo (0..500).
   expiredAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
+
+// US-054 (PB-P1-032): body opcional del endpoint `POST /quotes/:quoteId/reject`.
+// Longitud validada server-side: > 500 chars ⇒ 400 INVALID_REJECTION_REASON.
+type RejectQuoteBodyDto = {
+  reason?: string; // opcional, 0..500 chars; string vacío se persiste como null.
+};
 ```
+
+**US-054 (PB-P1-032) — reject transaccional.** Dentro de un único `prisma.$transaction` el
+backend hace `SELECT ... FOR UPDATE` de la Quote, verifica ownership del evento (colapsa a
+`404 QUOTE_NOT_FOUND` uniforme si el organizer no es dueño — SEC-03), aplica el guard
+`status='sent'` (`409 QUOTE_NOT_REJECTABLE` en cualquier otro estado, incluido re-rechazo —
+EC-05), persiste `status='rejected' + rejected_at=NOW() + rejection_reason?`, y delega en
+`QuoteNotificationService.emitQuoteStateChange({ eventName: 'quote.rejected', tx })` la
+inserción de las 2 Notifications al vendor (`in_app` delivered + `email_simulated` simulated —
+BR-NOTIF-003). Un fallo en cualquier INSERT revierte la transición completa. El mismo servicio
+lo consume `ExpireQuotesUs053UseCase` (US-053) para emitir `quote.expired` con el mismo
+patrón atómico.
 
 ### 31.4 Reglas enforced
 

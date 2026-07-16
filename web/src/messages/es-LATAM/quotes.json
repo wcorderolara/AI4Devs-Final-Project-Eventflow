@@ -48,5 +48,27 @@
   "limit": {
     "label": "{count}/{limit} cotizaciones activas en esta categoría",
     "reached": "Alcanzaste el máximo de solicitudes activas para esta categoría. Espera a que alguna se responda o cancele para enviar otra."
+  },
+  "reject": {
+    "title": "Rechazar cotización",
+    "description": "Se marcará como rechazada y el proveedor recibirá una notificación. Esta acción no se puede deshacer.",
+    "reasonLabel": "Motivo del rechazo (opcional)",
+    "reasonPlaceholder": "Ej. Precio fuera de presupuesto…",
+    "reasonHint": "Máximo 500 caracteres.",
+    "reasonCounter": "{count}/500",
+    "actions": {
+      "cancel": "Cancelar",
+      "submit": "Rechazar cotización",
+      "submitting": "Rechazando…"
+    },
+    "success": "Cotización rechazada. Notificamos al proveedor.",
+    "errors": {
+      "INVALID_REJECTION_REASON": "El motivo no puede superar 500 caracteres.",
+      "QUOTE_NOT_FOUND": "No encontramos esta cotización o ya no está disponible.",
+      "QUOTE_NOT_REJECTABLE": "Esta cotización ya no puede rechazarse en su estado actual.",
+      "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para rechazar la cotización.",
+      "FORBIDDEN": "Tu rol no puede rechazar cotizaciones.",
+      "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
+    }
   }
 }

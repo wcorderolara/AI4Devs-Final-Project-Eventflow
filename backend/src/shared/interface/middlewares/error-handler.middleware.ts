@@ -42,6 +42,11 @@ import {
   InvalidValidUntilError,
 } from '../../../modules/quote-flow/domain/us052.errors.js';
 import {
+  QuoteNotFoundError,
+  QuoteNotRejectableError,
+  InvalidRejectionReasonError,
+} from '../../../modules/quote-flow/domain/us054.errors.js';
+import {
   MissingInputError,
   AiInvalidBudgetError,
   UnsupportedLanguageError,
@@ -270,6 +275,26 @@ function mapError(err: unknown): MappedError {
       code: ErrorCodes.INVALID_VALID_UNTIL,
       message: err.message,
       details: [{ field: 'valid_until', message: 'out_of_range' }],
+    };
+  }
+  // US-054 (PB-P1-032): rechazo de Quote por organizer.
+  if (err instanceof QuoteNotFoundError) {
+    return { status: 404, code: ErrorCodes.QUOTE_NOT_FOUND, message: 'Quote not found', masked: true };
+  }
+  if (err instanceof QuoteNotRejectableError) {
+    return {
+      status: 409,
+      code: ErrorCodes.QUOTE_NOT_REJECTABLE,
+      message: err.message,
+      details: [{ field: 'current_status', message: err.currentStatus }],
+    };
+  }
+  if (err instanceof InvalidRejectionReasonError) {
+    return {
+      status: 400,
+      code: ErrorCodes.INVALID_REJECTION_REASON,
+      message: err.message,
+      details: [{ field: 'reason', message: 'too_long' }],
     };
   }
   if (err instanceof MissingInputError) {

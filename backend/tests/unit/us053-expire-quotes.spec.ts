@@ -12,6 +12,7 @@ import type {
   NotifyInput,
   QuoteNotificationSenderPort,
 } from '../../src/shared/application/quote-notification-sender.port.js';
+import { QuoteNotificationService } from '../../src/modules/quote-flow/services/quote-notification.service.js';
 import type { DomainEventLogger } from '../../src/shared/observability/domain-event-logger.js';
 import type { ClockPort } from '../../src/shared/domain/clock.port.js';
 
@@ -73,7 +74,10 @@ function makeUc(
     },
   } as unknown as import('@prisma/client').PrismaClient;
 
-  const uc = new ExpireQuotesUs053UseCase(notifications, clock, logger, prismaStub);
+  // US-054 (BE-004): el UC ahora consume `QuoteNotificationService`. Se envuelve el port
+  // fake — la lógica de fan-out (2 notifications por Quote) sigue viviendo en el service.
+  const quoteNotifications = new QuoteNotificationService(notifications, logger);
+  const uc = new ExpireQuotesUs053UseCase(quoteNotifications, clock, logger, prismaStub);
   return { uc, notify, emit, updateManyMock };
 }
 

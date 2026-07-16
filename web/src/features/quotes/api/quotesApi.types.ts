@@ -98,6 +98,48 @@ export function toActiveQrCountView(dto: ActiveQrCountDTO): ActiveQrCountView {
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// US-054 · reject quote (organizer)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface RejectQuoteInput {
+  quoteId: string;
+  reason?: string;
+}
+
+/**
+ * Sub-set del `QuoteResponse` (backend) que el organizer necesita tras un rechazo:
+ * status, timestamps de rechazo y el motivo persistido (null cuando no se envía).
+ * El backend serializa camelCase en el envelope; los mapeos residuales quedan en el toView.
+ */
+export interface RejectQuoteDTO {
+  id: string;
+  status: 'rejected';
+  rejectedAt: string;
+  rejectionReason: string | null;
+}
+
+export interface RejectQuoteEnvelope {
+  data: RejectQuoteDTO;
+  correlationId: string;
+}
+
+export interface RejectQuoteView {
+  id: string;
+  status: 'rejected';
+  rejectedAt: string;
+  rejectionReason: string | null;
+}
+
+export function toRejectQuoteView(dto: RejectQuoteDTO): RejectQuoteView {
+  return {
+    id: dto.id,
+    status: dto.status,
+    rejectedAt: dto.rejectedAt,
+    rejectionReason: dto.rejectionReason,
+  };
+}
+
 export function toCreateQuoteRequestView(dto: CreateQuoteRequestDTO): CreateQuoteRequestView {
   return {
     id: dto.id,

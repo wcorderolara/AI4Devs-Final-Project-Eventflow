@@ -54,6 +54,15 @@ const AC_TRIGGER_FORBIDDEN = 'ffffffff-0000-0000-0050-000000000403';
 const AC_TRIGGER_COUNT_FIVE = 'ffffffff-0000-0000-0050-000000000005';
 const AC_TRIGGER_COUNT_FOUR = 'ffffffff-0000-0000-0050-000000000004';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// US-054 · reject quote triggers (via :quoteId path param).
+// ─────────────────────────────────────────────────────────────────────────────
+const REJECT_TRIGGER_UNAUTH = 'ffffffff-0000-0000-0054-000000000401';
+const REJECT_TRIGGER_FORBIDDEN = 'ffffffff-0000-0000-0054-000000000403';
+const REJECT_TRIGGER_NOT_FOUND = 'ffffffff-0000-0000-0054-000000000404';
+const REJECT_TRIGGER_NOT_REJECTABLE = 'ffffffff-0000-0000-0054-000000000409';
+const REJECT_TRIGGER_INVALID_REASON = 'ffffffff-0000-0000-0054-000000000400';
+
 export const quotesHandlers = [
   http.get('*/api/v1/quote-requests/active-count', ({ request }) => {
     const url = new URL(request.url);
@@ -183,6 +192,56 @@ export const quotesHandlers = [
       { status: 201 },
     );
   }),
+
+  // US-054 · POST /api/v1/quotes/:quoteId/reject (organizer).
+  // Los disparadores viven en el `:quoteId` — el `reason` del body se refleja en la respuesta
+  // 200 para permitir aserciones desde los tests del dialog.
+  http.post('*/api/v1/quotes/:quoteId/reject', async ({ request, params }) => {
+    const quoteId = String(params.quoteId ?? '');
+    const raw = await request.text();
+    const body: { reason?: string } = raw ? JSON.parse(raw) : {};
+
+    if (quoteId === REJECT_TRIGGER_UNAUTH) {
+      return HttpResponse.json(errorEnvelope('AUTHENTICATION_REQUIRED', 'Authentication required'), {
+        status: 401,
+      });
+    }
+    if (quoteId === REJECT_TRIGGER_FORBIDDEN) {
+      return HttpResponse.json(errorEnvelope('FORBIDDEN', 'Only organizers can reject quotes'), {
+        status: 403,
+      });
+    }
+    if (quoteId === REJECT_TRIGGER_NOT_FOUND) {
+      return HttpResponse.json(errorEnvelope('QUOTE_NOT_FOUND', 'Quote not found'), { status: 404 });
+    }
+    if (quoteId === REJECT_TRIGGER_NOT_REJECTABLE) {
+      return HttpResponse.json(
+        errorEnvelope('QUOTE_NOT_REJECTABLE', 'Quote is not rejectable in its current state', [
+          { field: 'current_status', message: 'accepted' },
+        ]),
+        { status: 409 },
+      );
+    }
+    if (quoteId === REJECT_TRIGGER_INVALID_REASON) {
+      return HttpResponse.json(
+        errorEnvelope('INVALID_REJECTION_REASON', 'reason exceeds maximum length of 500 characters', [
+          { field: 'reason', message: 'too_long' },
+        ]),
+        { status: 400 },
+      );
+    }
+
+    const now = new Date('2026-07-16T12:00:00Z').toISOString();
+    return HttpResponse.json(
+      envelope({
+        id: quoteId,
+        status: 'rejected',
+        rejectedAt: now,
+        rejectionReason: body.reason && body.reason.length > 0 ? body.reason : null,
+      }),
+      { status: 200 },
+    );
+  }),
 ];
 
 // Exports para tests que quieran forzar escenarios sin duplicar UUIDs.
@@ -197,6 +256,15 @@ export const quotesMswTriggers = {
   QR_CATEGORY_LIMIT: TRIGGER_QR_CATEGORY_LIMIT,
   RATE_LIMIT: TRIGGER_RATE_LIMIT,
   INVALID_BRIEF: TRIGGER_INVALID_BRIEF,
+} as const;
+
+// US-054 (FE-002) — triggers para el `RejectQuoteDialog` y los tests de mutations.
+export const rejectQuoteMswTriggers = {
+  UNAUTH: REJECT_TRIGGER_UNAUTH,
+  FORBIDDEN: REJECT_TRIGGER_FORBIDDEN,
+  NOT_FOUND: REJECT_TRIGGER_NOT_FOUND,
+  NOT_REJECTABLE: REJECT_TRIGGER_NOT_REJECTABLE,
+  INVALID_REASON: REJECT_TRIGGER_INVALID_REASON,
 } as const;
 
 export const quotesActiveCountMswTriggers = {

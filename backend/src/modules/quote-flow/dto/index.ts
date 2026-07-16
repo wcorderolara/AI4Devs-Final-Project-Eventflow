@@ -7,5 +7,7 @@ export * from './create-quote.request.js';
 export * from './update-quote.request.js';
 export * from './quote-params.js';
 export * from './quote.response.js';
+// US-054 (PB-P1-032 / BE-001): body opcional del endpoint reject.
+export * from './reject-quote.us054.request.js';
 // AI DTO (US-092 / AI-001) — se conserva para ai-output-schemas.spec.
 export * from './quote-brief-ai-output.js';

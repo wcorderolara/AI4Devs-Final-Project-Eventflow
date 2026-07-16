@@ -39,9 +39,15 @@ import {
   UpdateQuoteUseCase,
   SendQuoteUseCase,
   AcceptQuoteUseCase,
-  RejectQuoteUseCase,
   PreferQuoteUseCase,
 } from '../application/quote.use-cases.js';
+// US-054 (PB-P1-032): rechazo transaccional con notifications atómicas (reemplaza el
+// `RejectQuoteUseCase` original de US-096 — ver DEV-02 del execution record).
+import { RejectQuoteUs054UseCase } from '../application/reject-quote.us054.use-case.js';
+import { QuoteNotificationService } from '../services/quote-notification.service.js';
+import { PrismaQuoteNotificationSenderAdapter } from '../../../infrastructure/notifications/prisma-quote-notification-sender.adapter.js';
+import { prisma } from '../../../infrastructure/prisma/client.js';
+import { rejectQuoteBodySchema } from '../dto/reject-quote.us054.request.js';
 import { QuoteRequestsController, QuotesController } from './quote-flow.controllers.js';
 
 const events = new PrismaEventAccessReader();
@@ -60,13 +66,17 @@ const qrController = new QuoteRequestsController({
   markViewed: new MarkQuoteRequestViewedUseCase(quoteRequests, vendors, clock, logger),
 });
 
+// US-054 (PB-P1-032 / BE-002/003): servicio común + adapter Prisma reutilizado desde US-049.
+const notifications = new PrismaQuoteNotificationSenderAdapter(prisma);
+const quoteNotifications = new QuoteNotificationService(notifications, logger);
+
 const quoteController = new QuotesController({
   create: new CreateQuoteUseCase(quotes, quoteRequests, events, vendors, logger),
   getForRequest: new GetQuoteForQuoteRequestUseCase(quotes, quoteRequests, events, vendors),
   update: new UpdateQuoteUseCase(quotes, quoteRequests, events, vendors, logger),
   send: new SendQuoteUseCase(quotes, vendors, clock, logger),
   accept: new AcceptQuoteUseCase(quotes, quoteRequests, events, clock, logger),
-  reject: new RejectQuoteUseCase(quotes, quoteRequests, events, clock, logger),
+  reject: new RejectQuoteUs054UseCase(quoteNotifications, clock, logger, prisma),
   prefer: new PreferQuoteUseCase(quotes, quoteRequests, events, logger),
 });
 
@@ -146,5 +156,12 @@ quoteFlowRouter.patch(
 );
 quoteFlowRouter.post('/quotes/:quoteId/send', sessionAuth, vendor, v(z.object({ params: QuoteIdParamSchema })), asyncHandler(quoteController.send));
 quoteFlowRouter.post('/quotes/:quoteId/accept', sessionAuth, organizer, v(z.object({ params: QuoteIdParamSchema })), asyncHandler(quoteController.accept));
-quoteFlowRouter.post('/quotes/:quoteId/reject', sessionAuth, organizer, v(z.object({ params: QuoteIdParamSchema })), asyncHandler(quoteController.reject));
+// US-054 (PB-P1-032 / BE-005): body opcional `{ reason?: string [0..500] }`.
+quoteFlowRouter.post(
+  '/quotes/:quoteId/reject',
+  sessionAuth,
+  organizer,
+  v(z.object({ params: QuoteIdParamSchema, body: rejectQuoteBodySchema })),
+  asyncHandler(quoteController.reject),
+);
 quoteFlowRouter.post('/quotes/:quoteId/prefer', sessionAuth, organizer, v(z.object({ params: QuoteIdParamSchema })), asyncHandler(quoteController.prefer));

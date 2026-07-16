@@ -28,9 +28,12 @@ import type {
   UpdateQuoteUseCase,
   SendQuoteUseCase,
   AcceptQuoteUseCase,
-  RejectQuoteUseCase,
   PreferQuoteUseCase,
 } from '../application/quote.use-cases.js';
+// US-054 (PB-P1-032 / BE-005): reject transaccional con body opcional (reemplaza el use case
+// original de US-096 en el wiring — ver DEV-02 del execution record).
+import type { RejectQuoteUs054UseCase } from '../application/reject-quote.us054.use-case.js';
+import type { RejectQuoteBody } from '../dto/reject-quote.us054.request.js';
 
 interface Actor {
   id: string;
@@ -103,7 +106,7 @@ export interface QuoteUseCases {
   update: UpdateQuoteUseCase;
   send: SendQuoteUseCase;
   accept: AcceptQuoteUseCase;
-  reject: RejectQuoteUseCase;
+  reject: RejectQuoteUs054UseCase;
   prefer: PreferQuoteUseCase;
 }
 
@@ -145,7 +148,8 @@ export class QuotesController {
 
   reject = async (req: Request, res: Response): Promise<void> => {
     const { quoteId } = req.validated?.params as QuoteIdParam;
-    const view = await this.uc.reject.execute(actor(req).id, quoteId, { correlationId: req.correlationId });
+    const body = (req.validated?.body ?? {}) as RejectQuoteBody;
+    const view = await this.uc.reject.execute(actor(req).id, quoteId, body, { correlationId: req.correlationId });
     res.status(200).json(success(toQuoteResponse(view), req.correlationId ?? ''));
   };
 

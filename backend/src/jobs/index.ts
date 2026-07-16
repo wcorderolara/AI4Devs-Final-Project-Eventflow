@@ -16,6 +16,9 @@ import { AutoCompletePastEventsJob } from './auto-complete-past-events.job.js';
 import { ExpireQuotesJob } from './expire-quotes.job.js';
 import { ExpireQuotesUs053UseCase } from '../modules/quote-flow/application/expire-quotes.us053.use-case.js';
 import { PrismaQuoteNotificationSenderAdapter } from '../infrastructure/notifications/prisma-quote-notification-sender.adapter.js';
+// US-054 (BE-004): el UC de expiración ahora consume `QuoteNotificationService` en lugar de
+// invocar directamente el port de notifications.
+import { QuoteNotificationService } from '../modules/quote-flow/services/quote-notification.service.js';
 import { StructuredDomainEventLogger } from '../infrastructure/observability/structured-domain-event-logger.js';
 import { NodeCronScheduler } from './node-cron-scheduler.js';
 import type { Scheduler, ScheduledTaskHandle } from './scheduler.port.js';
@@ -71,9 +74,13 @@ export function registerJobs(deps: RegisterJobsDeps = {}): JobRegistryHandle {
   // `StructuredDomainEventLogger` para colar los eventos en el canal de dominio (canal `error`
   // para `.failed`).
   const domainLogger = new StructuredDomainEventLogger();
+  const quoteNotifications = new QuoteNotificationService(
+    new PrismaQuoteNotificationSenderAdapter(),
+    domainLogger,
+  );
   const expireQuotesUseCase =
     deps.expireQuotesUseCase ??
-    new ExpireQuotesUs053UseCase(new PrismaQuoteNotificationSenderAdapter(), clock, domainLogger);
+    new ExpireQuotesUs053UseCase(quoteNotifications, clock, domainLogger);
   const expireQuotesJob = new ExpireQuotesJob({
     useCase: expireQuotesUseCase,
     clock,

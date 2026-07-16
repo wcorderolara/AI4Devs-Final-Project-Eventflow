@@ -631,6 +631,9 @@ model Quote {
   sentAt          DateTime?    @map("sent_at") @db.Timestamptz(6)
   acceptedAt      DateTime?    @map("accepted_at") @db.Timestamptz(6)
   rejectedAt      DateTime?    @map("rejected_at") @db.Timestamptz(6)
+  // US-054 (PB-P1-032 / DB-001): motivo opcional del rechazo capturado por el organizer (D4);
+  // NULLABLE — histórico previo a US-054 no lo persiste. Longitud validada en el DTO (0..500).
+  rejectionReason String?      @map("rejection_reason")
   expiredAt       DateTime?    @map("expired_at") @db.Timestamptz(6)
 
   quoteRequest  QuoteRequest  @relation(fields: [quoteRequestId], references: [id], onDelete: Restrict)

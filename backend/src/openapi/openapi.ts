@@ -44,6 +44,8 @@ import {
 import { us051QrIdParamSchema as Us051IdParamSchema } from '../modules/quote-flow/dto/us051-qr-id.param.js';
 // US-052 (PB-P1-031 / BE-003): body schema del endpoint respond.
 import { respondQuoteRequestBodySchema as RespondQuoteRequestBodySchema } from '../modules/quote-flow/dto/respond-quote.us052.request.js';
+// US-054 (PB-P1-032 / BE-001): body opcional `{ reason?: string [0..500] }` del endpoint reject.
+import { rejectQuoteBodySchema as RejectQuoteBodySchema } from '../modules/quote-flow/dto/reject-quote.us054.request.js';
 import {
   CreateBookingIntentRequestSchema,
   CancelBookingIntentRequestSchema,
@@ -260,7 +262,10 @@ op({ method: 'post', path: '/quote-requests/{quoteRequestId}/quote', operationId
 op({ method: 'patch', path: '/quotes/{quoteId}', operationId: 'updateQuote', tags: ['Quotes'], summary: 'Editar Quote draft (vendor)', secured: true, params: QuoteIdParamSchema, body: UpdateQuoteRequestBodySchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404, 422] });
 op({ method: 'post', path: '/quotes/{quoteId}/send', operationId: 'sendQuote', tags: ['Quotes'], summary: 'Enviar Quote (vendor)', secured: true, params: QuoteIdParamSchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404, 422] });
 op({ method: 'post', path: '/quotes/{quoteId}/accept', operationId: 'acceptQuote', tags: ['Quotes'], summary: 'Aceptar Quote (organizer)', secured: true, params: QuoteIdParamSchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404, 410, 422] });
-op({ method: 'post', path: '/quotes/{quoteId}/reject', operationId: 'rejectQuote', tags: ['Quotes'], summary: 'Rechazar Quote (organizer)', secured: true, params: QuoteIdParamSchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404, 422] });
+// US-054 (PB-P1-032 / BE-005): body opcional `{ reason?: string [0..500] }` + emisión de 2
+// Notifications atómicas al vendor por `QuoteNotificationService`. Añade 400 (INVALID_REJECTION_REASON)
+// y 409 (QUOTE_NOT_REJECTABLE) al contrato.
+op({ method: 'post', path: '/quotes/{quoteId}/reject', operationId: 'rejectQuote', tags: ['Quotes'], summary: 'Rechazar Quote (organizer)', secured: true, params: QuoteIdParamSchema, body: RejectQuoteBodySchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [400, 401, 403, 404, 409, 422] });
 op({ method: 'post', path: '/quotes/{quoteId}/prefer', operationId: 'preferQuote', tags: ['Quotes'], summary: 'Marcar Quote como preferido (organizer)', secured: true, params: QuoteIdParamSchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404, 422] });
 
 // ── BOOKING-INTENT ──────────────────────────────────────────────────────────────
