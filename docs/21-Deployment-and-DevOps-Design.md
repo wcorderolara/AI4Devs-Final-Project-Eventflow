@@ -559,9 +559,13 @@ Antes de almacenar:
 | `CAPTCHA_SECRET_KEY` | Secreto | Secrets Manager / SSM | Verificación server-side. |
 | `JOBS_ENABLED` | Config | App Runner env | Habilita el registro de schedulers intra-proceso (US-015 / US-053). Debe estar en `true` en EXACTAMENTE UNA réplica del backend para evitar duplicación multi-instancia. Default `false` en dev/test/QA. |
 | `JOBS_AUTOCOMPLETE_CRON` | Config | App Runner env | Cadencia del `AutoCompletePastEventsJob` (US-015). Default `30 0 * * *` (00:30 UTC diario). |
-| `JOBS_EXPIRE_QUOTES_CRON` | Config | App Runner env | Cadencia del `ExpireQuotesJob` (US-053). Default `5 0 * * *` (00:05 UTC diario). Ver §14bis. |
+| `JOBS_EXPIRE_QUOTES_CRON` | Config | App Runner env | Cadencia del `ExpireQuotesJob` (US-053). Default `0 1 * * *` (01:00 UTC diario, reconciliado por US-055 BE-005). Ver §14bis. |
 | `JOBS_EXPIRE_QUOTES_JITTER_MAX_MS` | Config | App Runner env | Jitter máximo (ms) antes de invocar el `ExpireQuotesUseCase`. Default `600000` (10 min). Pon `0` en tests para determinismo. |
 | `JOBS_EXPIRE_QUOTES_BATCH_SIZE` | Config | App Runner env | Tamaño del batch `LIMIT ? FOR UPDATE SKIP LOCKED` (US-053). Default `100`. |
+| `JOBS_EXPIRE_QUOTE_REQUESTS_CRON` | Config | App Runner env | Cadencia del `ExpireQuoteRequestsJob` (US-055). Default `0 1 * * *` (01:00 UTC diario, D2 — mismo cron que `ExpireQuotesJob`; jitter separa la ejecución real). Ver §14bis. |
+| `JOBS_EXPIRE_QUOTE_REQUESTS_JITTER_MAX_MS` | Config | App Runner env | Jitter máximo (ms) antes de invocar el `ExpireQuoteRequestsUseCase`. Default `300000` (5 min, decisión D2). Pon `0` en tests. |
+| `JOBS_EXPIRE_QUOTE_REQUESTS_BATCH_SIZE` | Config | App Runner env | Tamaño del batch `LIMIT ? FOR UPDATE SKIP LOCKED` (US-055). Default `100`. |
+| `QR_EXPIRATION_DAYS` | Config | App Runner env | Antigüedad mínima de `sent_at` (== `created_at`, US-049) para expirar una QR activa. Default `30` (D3). |
 
 ### 14bis. Cron schedule catalog (jobs intra-proceso)
 
@@ -572,7 +576,8 @@ resto queda con `JOBS_ENABLED=false`.
 | Job | Env cron | Default | Timezone | Trigger interno | Documentación |
 |-----|----------|---------|----------|-----------------|---------------|
 | `AutoCompletePastEventsJob` | `JOBS_AUTOCOMPLETE_CRON` | `30 0 * * *` | UTC | `NodeCronScheduler` (adapter del port `Scheduler`) | `docs/14 §23.2` |
-| `ExpireQuotesJob` | `JOBS_EXPIRE_QUOTES_CRON` | `5 0 * * *` | UTC | Idem. Jitter `[0..JOBS_EXPIRE_QUOTES_JITTER_MAX_MS]` antes de invocar el UC. CLI ad-hoc: `npm run job:expire-quotes` | `docs/14 §23.2` |
+| `ExpireQuotesJob` | `JOBS_EXPIRE_QUOTES_CRON` | `0 1 * * *` | UTC | Idem. Jitter `[0..JOBS_EXPIRE_QUOTES_JITTER_MAX_MS]` antes de invocar el UC. CLI ad-hoc: `npm run job:expire-quotes`. Reconciliado por US-055 al mismo cron que `ExpireQuoteRequestsJob` | `docs/14 §23.2` |
+| `ExpireQuoteRequestsJob` | `JOBS_EXPIRE_QUOTE_REQUESTS_CRON` | `0 1 * * *` | UTC | Idem. Jitter `[0..JOBS_EXPIRE_QUOTE_REQUESTS_JITTER_MAX_MS]` (default 5 min) desincroniza réplicas y separa la ejecución real del `ExpireQuotesJob`. `QR_EXPIRATION_DAYS` controla la ventana. Sin notificaciones (D5) | `docs/14 §23.2` |
 
 Reglas operativas:
 
