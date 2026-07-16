@@ -21,6 +21,7 @@ import {
   locationsRouter,
 } from './modules/event-planning/interface/catalog.routes.js';
 import { quoteFlowRouter } from './modules/quote-flow/interface/quote-flow.routes.js';
+import { us049QuoteRequestsRouter } from './modules/quote-flow/interface/us049-quote-requests.routes.js';
 import { bookingIntentRouter } from './modules/booking-intent/interface/booking-intent.routes.js';
 import { aiAssistanceRouter } from './modules/ai-assistance/interface/ai.routes.js';
 import { bulkConfirmRouter } from './modules/task-management/bulk-confirm/interface/http/bulk-confirm.routes.js';
@@ -74,6 +75,11 @@ export function createApp(): Express {
   // US-096: quote-flow se monta a nivel de `/api/v1` y ANTES de event-planning para capturar
   // `/events/:eventId/quote-requests` (los demás `/events/*` caen a event-planning).
   apiV1.use(quoteFlowRouter);
+  // US-049 (PB-P1-030): endpoint canónico `POST /api/v1/quote-requests` con body `event_id`
+  // (Tech Spec §7/§9). Coexiste con el endpoint bilateral US-096 (`POST /events/:id/quote-requests`)
+  // — ver DEV-03 del execution record. Se monta a nivel `/api/v1` para exponer el path sin prefijo
+  // de recurso padre. Se ubica ANTES de event-planning para preservar el orden global de captura.
+  apiV1.use(us049QuoteRequestsRouter);
   // US-097: ai-assistance también a nivel `/api/v1` y ANTES de event-planning (por `/events/:id/ai/*`).
   apiV1.use(aiAssistanceRouter);
   // US-031 (PB-P1-017): bulk confirm HITL a nivel `/api/v1` y ANTES de event-planning

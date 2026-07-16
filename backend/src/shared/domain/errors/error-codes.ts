@@ -137,6 +137,14 @@ export const ErrorCodes = {
   // US-046 (PB-P1-029): perfil público SEO del vendor (`GET /public/vendors/:slug`).
   VENDOR_NOT_FOUND: 'VENDOR_NOT_FOUND', // 404 — slug inexistente o vendor no `approved` (D6, response uniforme sin information leakage).
   INVALID_SLUG: 'INVALID_SLUG', // 400 — slug no matchea `^[a-z0-9-]+$` o fuera de [1..200] (EC-03, VR-01).
+  // US-049 (PB-P1-030): crear QuoteRequest con brief estructurado. Códigos específicos del contrato
+  // `POST /api/v1/quote-requests` (Tech Spec §7 Error Handling; AC-01..AC-04 / EC-01..EC-06 / AUTH-TS-01..05).
+  EVENT_NOT_FOUND: 'EVENT_NOT_FOUND', // 404 — evento inexistente o ajeno (SEC-05 uniforme).
+  EVENT_NOT_ACTIVE: 'EVENT_NOT_ACTIVE', // 409 — event.status ∉ {active} (EC-02, VR-02).
+  VENDOR_NOT_AVAILABLE: 'VENDOR_NOT_AVAILABLE', // 400 — vendor.status ∉ {approved} o soft-deleted o UUID inexistente (EC-01, VR-03, D4 uniforme).
+  INVALID_BRIEF: 'INVALID_BRIEF', // 400 — brief.budget<0 o brief.message>5000 (EC-03, VR-05/06).
+  QR_ALREADY_ACTIVE: 'QR_ALREADY_ACTIVE', // 409 — QR activa par (event, vendor) (AC-02, VR-07); `details.existing_quote_request_id`.
+  QR_CATEGORY_LIMIT_REACHED: 'QR_CATEGORY_LIMIT_REACHED', // 409 — >=5 QRs activas en (event, category) (EC-05, VR-08); `details.active_count`.
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

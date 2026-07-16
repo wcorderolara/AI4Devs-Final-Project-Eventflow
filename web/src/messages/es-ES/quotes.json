@@ -1,0 +1,48 @@
+{
+  "create": {
+    "title": "Nueva solicitud de presupuesto",
+    "subtitle": "Envía tu brief al proveedor. Recibirás un aviso cuando responda.",
+    "eventSnapshot": {
+      "heading": "Resumen del evento",
+      "titleLabel": "Evento",
+      "typeLabel": "Tipo",
+      "dateLabel": "Fecha",
+      "locationLabel": "Ubicación",
+      "guestsLabel": "Invitados",
+      "currencyLabel": "Moneda"
+    },
+    "vendorSummary": {
+      "heading": "Proveedor",
+      "ratingAria": "Valoración media {rating} sobre 5"
+    },
+    "fields": {
+      "budget": {
+        "label": "Presupuesto estimado",
+        "placeholder": "Por ejemplo: 5000,00"
+      },
+      "message": {
+        "label": "Mensaje para el proveedor",
+        "placeholder": "Explícale al proveedor qué necesitas…"
+      }
+    },
+    "actions": {
+      "submit": "Enviar solicitud",
+      "submitting": "Enviando…"
+    },
+    "errors": {
+      "EVENT_NOT_FOUND": "No hemos encontrado ese evento o no tienes permiso para usarlo.",
+      "EVENT_NOT_ACTIVE": "Solo puedes solicitar presupuestos para eventos activos.",
+      "VENDOR_NOT_AVAILABLE": "Este proveedor ya no está disponible.",
+      "INVALID_BRIEF": "Revisa el brief: hay campos con formato inválido.",
+      "INVALID_BRIEF_BUDGET": "Introduce un presupuesto válido (por ejemplo, 5000.00).",
+      "INVALID_BRIEF_MESSAGE": "El mensaje no puede superar los 5000 caracteres.",
+      "INVALID_CATEGORY": "La categoría de servicio seleccionada no está disponible.",
+      "QR_ALREADY_ACTIVE": "Ya tienes una solicitud activa a este proveedor para este evento.",
+      "QR_CATEGORY_LIMIT_REACHED": "Has alcanzado el máximo de 5 solicitudes activas por categoría.",
+      "RATE_LIMIT_EXCEEDED": "Has hecho demasiadas solicitudes. Prueba dentro de un momento.",
+      "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para enviar la solicitud.",
+      "FORBIDDEN": "Tu rol no puede crear solicitudes de presupuesto.",
+      "UNEXPECTED": "Se ha producido un error inesperado. Inténtalo de nuevo."
+    }
+  }
+}
