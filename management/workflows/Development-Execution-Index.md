@@ -84,3 +84,4 @@
 | P1 | PB-P1-026 | US-043 | Subir hasta 10 imágenes por trabajo del portafolio | [record](development-execution/P1/PB-P1-026/US-043-execution.md) | 23 | 22 | 0 | 0 | 0 | 1 | `Done` | 2026-07-15 |
 | P1 | PB-P1-026 | US-048 | Soft-deletear una imagen del portafolio | [record](development-execution/P1/PB-P1-026/US-048-execution.md) | 14 | 13 | 0 | 0 | 0 | 1 | `Done` | 2026-07-15 |
 | P1 | PB-P1-027 | US-044 | Gestionar mis paquetes / servicios (CRUD VendorService) | [record](development-execution/P1/PB-P1-027/US-044-execution.md) | 19 | 19 | 0 | 0 | 0 | 0 | `Done` | 2026-07-15 |
+| P1 | PB-P1-028 | US-045 | Buscar proveedores en directorio (autenticado) | [record](development-execution/P1/PB-P1-028/US-045-execution.md) | 17 | 17 | 0 | 0 | 0 | 0 | `Done` | 2026-07-16 |

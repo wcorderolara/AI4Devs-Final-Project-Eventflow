@@ -34,6 +34,7 @@ import {
   vendorProfileRouter,
   serviceCategoriesRouter,
   vendorServiceRouter,
+  vendorSearchRouter,
 } from './modules/vendor-management/interface/index.js';
 import { portfolioRouter } from './modules/attachments/interface/index.js';
 
@@ -108,6 +109,11 @@ export function createApp(): Express {
   // captura `/vendors/me`) para que `/vendors/me/services*` tenga match específico primero.
   apiV1.use('/vendors/me/services', vendorServiceRouter);
   apiV1.use('/vendors', vendorProfileRouter);
+  // US-045 (PB-P1-028): directorio autenticado `GET /api/v1/vendors`. Se monta como último
+  // handler bajo `/vendors` porque `vendorProfileRouter` gestiona `/vendors/me[...]`; Express
+  // pasa al siguiente router cuando no hay match dentro de éste (la route del directorio es
+  // `GET /` — sin colisión con `/me` ni `/me/portfolio`).
+  apiV1.use('/vendors', vendorSearchRouter);
   // US-043 (PB-P1-026): upload de imágenes del portafolio del vendor. Contrato
   // `POST /api/v1/vendors/me/portfolio/works/:workLabel/images` (Doc 16 §M07). Sólo rol
   // `vendor` (organizer/admin → 403; sin sesión → 401). Se monta DESPUÉS de

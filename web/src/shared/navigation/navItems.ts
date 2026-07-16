@@ -25,6 +25,7 @@ export interface NavItem {
 
 export const ORGANIZER_NAV_ITEMS: NavItem[] = [
   { href: '/organizer/events', labelKey: 'sidebar.organizer.events', icon: Calendar },
+  { href: '/organizer/vendors', labelKey: 'sidebar.organizer.vendors', icon: Store },
   { href: '/organizer/notifications', labelKey: 'sidebar.organizer.notifications', icon: Bell },
   { href: '/organizer/profile', labelKey: 'sidebar.organizer.profile', icon: User },
 ];

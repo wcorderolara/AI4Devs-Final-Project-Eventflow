@@ -1206,6 +1206,7 @@ Gestionar el perfil del proveedor, aprobación admin, directorio público.
 | POST | `/vendors/me/portfolio/works/:workLabel/images` | Sí | vendor | Sube una imagen al `work_label` del portafolio (US-043). | 201 | 400 `INVALID_MIME`/`INVALID_WORK_LABEL`/`INVALID_IMAGE`, 401, 403, 404 `PROFILE_NOT_FOUND`, 409 `IMAGE_LIMIT_REACHED`/`WORK_LABEL_LIMIT_REACHED`/`PROFILE_HIDDEN`, 413 `FILE_TOO_LARGE` |
 | DELETE | `/vendors/me/portfolio/images/:imageId` | Sí | vendor | Soft delete del attachment del portafolio (US-048). Body opcional `{ deletion_reason? }`. | 204 | 400 `VALIDATION_ERROR`/`INVALID_DELETION_REASON`, 401, 403, 404 `ATTACHMENT_NOT_FOUND`/`PROFILE_NOT_FOUND`, 409 `PROFILE_HIDDEN` |
 | POST | `/vendors/me/submit-approval` | Sí | vendor | Envía perfil a admin. | 200 | 401, 403, 422 |
+| GET | `/vendors` | Sí | organizer, vendor, admin | Directorio autenticado con filtros + cursor pagination (US-045). | 200 | 400 `VALIDATION_ERROR`/`INVALID_FILTERS`/`INVALID_CURSOR`, 401 |
 | GET | `/vendors/:vendorProfileId` | No (público si approved) | anonymous, organizer, admin | Detalle público. | 200 | 404 |
 | GET | `/api/v1/public/vendors` | No | anonymous | Directorio público. | 200 | — |
 | GET | `/api/v1/public/vendors/:vendorSlug` | No | anonymous | Vendor por slug. | 200 | 404 |
@@ -1382,6 +1383,65 @@ type VendorProfileResponseDto = {
 - **BR-VENDOR-004**: máximo **5 cambios acumulados** de categorías, enforced por `POST /vendors/me/categories` (US-042 D1). Excedido → `409 CATEGORY_CHANGE_LIMIT` (código canónico; deprecado `MAX_CATEGORY_CHANGES_EXCEEDED` mencionado en versiones previas).
 - **Toda mutación aplicada** de categorías (US-042 D2) marca `requiresAdminReview=true` y persiste `AdminAction(action='vendor_category_change')`; `noop` (mismo set) no cuenta.
 - Vendors no pueden auto-aprobarse.
+
+### 27.6 Directorio autenticado — `GET /vendors` (US-045)
+
+Directorio server-side con filtros básicos + cursor pagination estable. Devuelve **sólo** vendors con `status='approved'` y `deletedAt IS NULL` (BR-VENDOR-001). Los vendors autenticados **no** se ven a sí mismos (SEC-03).
+
+#### Query params
+
+| Param | Tipo | Requerido | Notas |
+| --- | --- | --- | --- |
+| `categoryCode` | slug (`^[a-z0-9]+(?:-[a-z0-9]+)*$`, 1–64) | No | `service_categories.code`; debe existir y estar activa. |
+| `locationCode` | slug (mismo regex) | No | `locations.code`; ej. `GT-GUA`, `MX-CDMX`, `CO-ANT`. |
+| `priceMin` | string decimal `^\d+(\.\d{1,2})?$` | No (requiere `currency`) | ≥ 0, ≤ 12 dígitos enteros. |
+| `priceMax` | string decimal | No (requiere `currency`) | ≥ `priceMin`. |
+| `currency` | enum `GTQ`\|`EUR`\|`MXN`\|`COP`\|`USD` | Sí si hay `priceMin` o `priceMax` | Sin conversión automática (BR-BUDGET-007). |
+| `cursor` | base64url opaque | No | `{ ratingAvg, createdAt, id }` codificado por el server (D1). |
+| `limit` | int | No | 1..50, default 20. |
+
+#### Response
+
+```json
+{
+  "data": {
+    "items": [
+      {
+        "id": "11111111-2222-3333-4444-555555555555",
+        "slug": "banquetes-el-quetzal",
+        "businessName": "Banquetes El Quetzal",
+        "locationCode": "GT-GUA",
+        "categories": ["catering"],
+        "ratingAvg": 4.60,
+        "reviewsCount": 24,
+        "priceRange": { "min": "150.00", "max": "450.00", "currency": "GTQ" },
+        "thumbnailUrl": null
+      }
+    ],
+    "page": { "cursor": "eyJyIjo0LjYs...", "limit": 20, "hasNext": true }
+  },
+  "meta": { "correlationId": "…", "timestamp": "…" }
+}
+```
+
+- `priceRange` es `null` cuando la búsqueda no incluye `currency` (no se puede agregar sin conversión).
+- `thumbnailUrl` es `null` en MVP; se cubre en US-046 (versión pública).
+- Orden estable: `rating_avg DESC NULLS LAST, created_at DESC, id DESC`.
+
+#### Errores
+
+| Código HTTP | `error.code` | Cuando |
+| --- | --- | --- |
+| 400 | `VALIDATION_ERROR` | Zod: `limit` fuera de rango, `priceMin > priceMax`, `currency_required_with_price`, slug regex, campos extra. |
+| 400 | `INVALID_FILTERS` | Slugs (`categoryCode` / `locationCode`) que no existen en catálogo activo. `details` enumera los inválidos. |
+| 400 | `INVALID_CURSOR` | Cursor que no decodifica base64 válido o cuyo payload no es `{ ratingAvg, createdAt, id }` bien formado. |
+| 401 | `AUTHENTICATION_REQUIRED` | Sin sesión válida. |
+
+#### Notas
+
+- El endpoint reutiliza los índices `idx_vendor_profiles_status_location` + `idx_vendor_services_active` y agrega `idx_vendor_profiles_directory (rating_avg DESC NULLS LAST, created_at DESC, id DESC) WHERE status='approved' AND deleted_at IS NULL` para keyset (US-045 / DB-001).
+- El cursor es opaco: **no** exponer al cliente ninguna dependencia sobre su forma interna.
+- `ratingAvg` / `reviewsCount` viven denormalizados en `vendor_profiles` y se recomputan por US-088 (publicar/moderar review) o por el batch del seed demo (`seed-demo-data.use-case.ts`).
 
 ---
 

@@ -86,6 +86,10 @@ import {
   VendorServiceNotFoundError,
 } from '../../../modules/vendor-management/domain/vendor-service.errors.js';
 import {
+  InvalidCursorError,
+  InvalidFiltersError,
+} from '../../../modules/vendor-management/application/vendor-search.errors.js';
+import {
   AttachmentNotFoundError,
   FileTooLargeError,
   ImageLimitReachedError,
@@ -422,6 +426,18 @@ function mapError(err: unknown): MappedError {
   }
   if (err instanceof VendorServiceNotFoundError) {
     return { status: 404, code: ErrorCodes.SERVICE_NOT_FOUND, message: err.message };
+  }
+  // US-045 (PB-P1-028): directorio autenticado `GET /vendors`.
+  if (err instanceof InvalidFiltersError) {
+    return {
+      status: 400,
+      code: ErrorCodes.INVALID_FILTERS,
+      message: err.message,
+      details: err.invalid.map((field) => ({ field, message: 'invalid' })),
+    };
+  }
+  if (err instanceof InvalidCursorError) {
+    return { status: 400, code: ErrorCodes.INVALID_CURSOR, message: err.message };
   }
   // US-043 (PB-P1-026): upload de imágenes del portafolio del vendor.
   if (err instanceof PortfolioProfileNotFoundError) {

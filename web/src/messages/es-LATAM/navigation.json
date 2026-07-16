@@ -103,6 +103,7 @@
     "organizer": {
       "label": "Navegación de organizador",
       "events": "Eventos",
+      "vendors": "Proveedores",
       "notifications": "Notificaciones",
       "profile": "Perfil"
     },
