@@ -598,8 +598,9 @@ model QuoteRequest {
   @@index([serviceCategoryId])
   @@index([vendorProfileId])
   // US-050 (PB-P1-030 / DB-001): índice `expires_at` acota el filtro lazy del endpoint
-  // `active-count` cuando la cardinalidad de QRs por evento crezca.
-  @@index([expiresAt])
+  // `active-count` cuando la cardinalidad de QRs por evento crezca. `map` conserva el nombre
+  // convencional `idx_*` usado por otras migraciones manuales del módulo.
+  @@index([expiresAt], map: "idx_quote_requests_expires_at")
   @@map("quote_requests")
 }
 
