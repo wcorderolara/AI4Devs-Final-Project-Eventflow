@@ -227,5 +227,73 @@
         "UNEXPECTED": "Something went wrong. Please try again."
       }
     }
+  },
+  "services": {
+    "title": "My packages and services",
+    "subtitle": "Manage your catalog. Active packages appear on your public profile once your profile is approved.",
+    "empty": "You have no packages yet. Create your first one so it shows up on your public profile once approved.",
+    "counter": {
+      "value": "{active} of {max} active packages"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "table": {
+      "caption": "Vendor package list",
+      "loading": "Loading your packages…",
+      "error": "We could not load your packages. Please try again.",
+      "headers": {
+        "packageName": "Package",
+        "basePrice": "Base price",
+        "currency": "Currency",
+        "status": "Status",
+        "actions": "Actions"
+      }
+    },
+    "actions": {
+      "create": "Add package",
+      "deactivate": "Deactivate",
+      "deactivateAria": "Deactivate the package {name}",
+      "reactivate": "Reactivate",
+      "reactivating": "Reactivating…",
+      "reactivateAria": "Reactivate the package {name}"
+    },
+    "create": {
+      "title": "New package",
+      "subtitle": "Fill in the package details. The price is a reference; the final quote is sent per request.",
+      "cancel": "Cancel",
+      "submit": "Create package",
+      "submitting": "Creating…",
+      "fields": {
+        "packageName": { "label": "Package name" },
+        "description": { "label": "Description" },
+        "basePrice": { "label": "Base price" },
+        "currency": { "label": "Currency" },
+        "category": { "label": "Category" }
+      }
+    },
+    "deactivate": {
+      "title": "Deactivate \"{name}\"",
+      "body": "The package will no longer appear on your public profile until you reactivate it. You can reactivate it any time.",
+      "cancel": "Cancel",
+      "confirm": "Deactivate",
+      "submitting": "Deactivating…"
+    },
+    "errors": {
+      "INVALID_PACKAGE_NAME": "The name must be between 2 and 150 characters.",
+      "INVALID_PRICE": "The price must be a non-negative decimal with up to 2 decimals.",
+      "INVALID_CURRENCY": "The selected currency is not valid.",
+      "INVALID_DESCRIPTION": "The description must be between 10 and 2000 characters.",
+      "INVALID_CATEGORY": "That category is no longer available. Refresh and try again.",
+      "SERVICE_LIMIT_REACHED": "You've reached the maximum of 50 active packages. Deactivate one to add another.",
+      "SERVICE_NOT_FOUND": "We couldn't find that package. It may have been removed already.",
+      "PROFILE_HIDDEN": "Your profile is hidden by an administrator. Contact us to reactivate it.",
+      "PROFILE_NOT_FOUND": "You don't have a vendor profile yet.",
+      "AUTHENTICATION_REQUIRED": "Your session expired. Please sign in again.",
+      "FORBIDDEN": "Only vendors can manage the catalog.",
+      "VALIDATION_ERROR": "Please review the details entered.",
+      "UNEXPECTED": "Something went wrong. Please try again."
+    }
   }
 }

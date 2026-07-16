@@ -78,6 +78,14 @@ import {
   InvalidCategoryError,
 } from '../../../modules/vendor-management/domain/vendor-profile.errors.js';
 import {
+  InvalidCurrencyError,
+  InvalidDescriptionError,
+  InvalidPackageNameError,
+  InvalidPriceError,
+  VendorServiceLimitReachedError,
+  VendorServiceNotFoundError,
+} from '../../../modules/vendor-management/domain/vendor-service.errors.js';
+import {
   AttachmentNotFoundError,
   FileTooLargeError,
   ImageLimitReachedError,
@@ -395,6 +403,25 @@ function mapError(err: unknown): MappedError {
       message: err.message,
       details: err.unknownOrInactive.map((id) => ({ field: 'service_category_ids', message: id })),
     };
+  }
+  // US-044 (PB-P1-027): CRUD `VendorService`.
+  if (err instanceof InvalidPackageNameError) {
+    return { status: 400, code: ErrorCodes.INVALID_PACKAGE_NAME, message: err.message };
+  }
+  if (err instanceof InvalidPriceError) {
+    return { status: 400, code: ErrorCodes.INVALID_PRICE, message: err.message };
+  }
+  if (err instanceof InvalidCurrencyError) {
+    return { status: 400, code: ErrorCodes.INVALID_CURRENCY, message: err.message };
+  }
+  if (err instanceof InvalidDescriptionError) {
+    return { status: 400, code: ErrorCodes.INVALID_DESCRIPTION, message: err.message };
+  }
+  if (err instanceof VendorServiceLimitReachedError) {
+    return { status: 409, code: ErrorCodes.SERVICE_LIMIT_REACHED, message: err.message };
+  }
+  if (err instanceof VendorServiceNotFoundError) {
+    return { status: 404, code: ErrorCodes.SERVICE_NOT_FOUND, message: err.message };
   }
   // US-043 (PB-P1-026): upload de imágenes del portafolio del vendor.
   if (err instanceof PortfolioProfileNotFoundError) {

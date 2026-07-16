@@ -81,7 +81,7 @@ describe('QA-005: enums de status por entidad', () => {
     for (const e of STATUS_ENUMS) {
       expect(enumBlock(e), `falta enum ${e}`).not.toBeNull();
     }
-    expect(STATUS_ENUMS).toHaveLength(10);
+    expect(STATUS_ENUMS).toHaveLength(9);
   });
 
   it('NO reutiliza un enum genérico `Status`', () => {
@@ -158,8 +158,7 @@ describe('QA-008: convenciones físicas y tipos PostgreSQL', () => {
   it('campos monetarios con @db.Decimal(14, 2)', () => {
     const money: Array<[string, string]> = [
       ['Quote', 'amount'],
-      ['VendorService', 'priceMin'],
-      ['VendorService', 'priceMax'],
+      ['VendorService', 'basePrice'],
       ['Budget', 'totalPlanned'],
       ['Budget', 'totalCommitted'],
       ['BudgetItem', 'amountPlanned'],

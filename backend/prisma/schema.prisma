@@ -126,11 +126,6 @@ enum VendorProfileStatus {
   hidden
 }
 
-enum VendorServiceStatus {
-  active
-  inactive
-}
-
 // Incluye `edited` requerido por el flujo HITL (US-099 §AI Behavior) además de los
 // valores de Doc 18 (pending, accepted, rejected, discarded, failed, expired).
 enum AIRecommendationStatus {
@@ -355,16 +350,16 @@ model VendorProfileCategory {
 }
 
 model VendorService {
-  id                String              @id @default(uuid()) @db.Uuid
-  vendorProfileId   String              @map("vendor_profile_id") @db.Uuid
-  serviceCategoryId String              @map("service_category_id") @db.Uuid
-  title             String
-  description       String?
-  status            VendorServiceStatus @default(active)
+  id                     String       @id @default(uuid()) @db.Uuid
+  vendorProfileId        String       @map("vendor_profile_id") @db.Uuid
+  serviceCategoryId      String       @map("service_category_id") @db.Uuid
+  packageName            String       @map("package_name")
+  description            String
+  basePrice              Decimal      @map("base_price") @db.Decimal(14, 2)
+  currencyCode           CurrencyCode @default(GTQ) @map("currency_code")
   // is_active: flag booleano de disponibilidad para índice parcial idx_vendor_services_active (US-101 / Doc 18 §25).
-  isActive          Boolean             @default(true) @map("is_active")
-  priceMin          Decimal?            @map("price_min") @db.Decimal(14, 2)
-  priceMax          Decimal?            @map("price_max") @db.Decimal(14, 2)
+  isActive               Boolean      @default(true) @map("is_active")
+  aiGeneratedDescription Boolean      @default(false) @map("ai_generated_description")
 
   vendorProfile   VendorProfile   @relation(fields: [vendorProfileId], references: [id], onDelete: Restrict)
   serviceCategory ServiceCategory @relation(fields: [serviceCategoryId], references: [id], onDelete: Restrict)

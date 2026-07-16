@@ -4,3 +4,4 @@
 # nunca se commitean; sólo el `.gitkeep` que preserva la carpeta base.
 storage/uploads/*
 !storage/uploads/.gitkeep
+node_modules/
