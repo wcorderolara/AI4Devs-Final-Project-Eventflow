@@ -1,8 +1,9 @@
-// Router de endpoints vendor-scoped sobre `QuoteRequest` (US-051 / BE-005):
-//   - `GET  /api/v1/vendor/quote-requests/:id`               → detalle (sin side-effect).
-//   - `POST /api/v1/vendor/quote-requests/:id/mark-viewed`   → transición idempotente `sent → viewed`.
+// Router de endpoints vendor-scoped sobre `QuoteRequest`:
+//   - `GET  /api/v1/vendor/quote-requests/:id`               → detalle (US-051, sin side-effect).
+//   - `POST /api/v1/vendor/quote-requests/:id/mark-viewed`   → transición idempotente `sent → viewed` (US-051).
+//   - `POST /api/v1/vendor/quote-requests/:id/respond`       → respuesta single-shot con Quote + 2 notifications (US-052).
 // Pipeline seguro: sessionAuth → vendorRoleGuard → validate → handler.
-// Uniformidad SEC (D4): QR inexistente/ajena/vendor hidden ⇒ `404 QR_NOT_FOUND`.
+// Uniformidad SEC (D4 US-051 / DEV-03 US-052): QR inexistente/ajena/vendor hidden ⇒ `404 QR_NOT_FOUND`.
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
@@ -18,9 +19,14 @@ import { PrismaVendorProfileReader } from '../../../infrastructure/readers/prism
 import { PrismaQuoteRequestRepository } from '../infrastructure/prisma-quote-request.repository.js';
 import { GetVendorQrDetailUs051UseCase } from '../application/get-vendor-qr-detail.us051.use-case.js';
 import { MarkVendorQrViewedUs051UseCase } from '../application/mark-vendor-qr-viewed.us051.use-case.js';
+import { RespondQuoteRequestUs052UseCase } from '../application/respond-quote-request.us052.use-case.js';
 import { toQuoteRequestResponse } from '../dto/quote-request.response.js';
 import { prisma } from '../../../infrastructure/prisma/client.js';
 import { us051QrIdParamSchema, type Us051QrIdParam } from '../dto/us051-qr-id.param.js';
+import {
+  respondQuoteRequestBodySchema,
+  type RespondQuoteRequestBody,
+} from '../dto/respond-quote.us052.request.js';
 
 // US-051 (BE-001): re-export para compatibilidad con tests y openapi.
 export const qrIdParamSchema = us051QrIdParamSchema;
@@ -37,6 +43,13 @@ const quoteRequests = new PrismaQuoteRequestRepository(prisma);
 
 const getDetailUseCase = new GetVendorQrDetailUs051UseCase(quoteRequests, vendors);
 const markViewedUseCase = new MarkVendorQrViewedUs051UseCase(
+  vendors,
+  notifications,
+  clock,
+  logger,
+  prisma,
+);
+const respondUseCase = new RespondQuoteRequestUs052UseCase(
   vendors,
   notifications,
   clock,
@@ -60,6 +73,17 @@ async function markViewedHandler(req: Request, res: Response): Promise<void> {
   res.status(200).json(success(toQuoteRequestResponse(view), req.correlationId ?? ''));
 }
 
+async function respondHandler(req: Request, res: Response): Promise<void> {
+  const userId = req.user?.id;
+  if (!userId) throw new UnauthorizedError();
+  const { id } = req.validated?.params as QrIdParam;
+  const body = req.validated?.body as RespondQuoteRequestBody;
+  const view = await respondUseCase.execute(userId, id, body, {
+    correlationId: req.correlationId,
+  });
+  res.status(201).json(success(view, req.correlationId ?? ''));
+}
+
 export const us051VendorQuoteRequestsRouter = Router();
 
 us051VendorQuoteRequestsRouter.get(
@@ -76,4 +100,13 @@ us051VendorQuoteRequestsRouter.post(
   vendorOnly,
   validate(z.object({ params: qrIdParamSchema })),
   asyncHandler(markViewedHandler),
+);
+
+// US-052 (PB-P1-031): respuesta single-shot con Quote + 2 notifications atómicas.
+us051VendorQuoteRequestsRouter.post(
+  '/vendor/quote-requests/:id/respond',
+  sessionAuth,
+  vendorOnly,
+  validate(z.object({ params: qrIdParamSchema, body: respondQuoteRequestBodySchema })),
+  asyncHandler(respondHandler),
 );

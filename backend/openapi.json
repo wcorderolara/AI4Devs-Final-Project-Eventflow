@@ -6901,6 +6901,232 @@
         ]
       }
     },
+    "/api/v1/vendor/quote-requests/{id}/respond": {
+      "post": {
+        "operationId": "respondVendorQuoteRequest",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "breakdown": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "amount": {
+                          "pattern": "^\\d+(\\.\\d{1,2})?$",
+                          "type": "string"
+                        },
+                        "label": {
+                          "maxLength": 150,
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "label",
+                        "amount"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 20,
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "conditions": {
+                    "maxLength": 2000,
+                    "type": "string"
+                  },
+                  "currency_code": {
+                    "type": "string"
+                  },
+                  "total_price": {
+                    "pattern": "^\\d+(\\.\\d{1,2})?$",
+                    "type": "string"
+                  },
+                  "valid_until": {
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "total_price",
+                  "breakdown"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "acceptedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "breakdown": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "amount": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "label",
+                              "amount"
+                            ],
+                            "type": "object"
+                          },
+                          "nullable": true,
+                          "type": "array"
+                        },
+                        "conditions": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "currencyCode": {
+                          "enum": [
+                            "GTQ",
+                            "EUR",
+                            "MXN",
+                            "COP",
+                            "USD"
+                          ],
+                          "type": "string"
+                        },
+                        "id": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "isPreferred": {
+                          "type": "boolean"
+                        },
+                        "quoteRequestId": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "rejectedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "sentAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": [
+                            "draft",
+                            "sent",
+                            "accepted",
+                            "rejected",
+                            "expired"
+                          ],
+                          "type": "string"
+                        },
+                        "totalPrice": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "validUntil": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "vendorProfileId": {
+                          "format": "uuid",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "quoteRequestId",
+                        "vendorProfileId",
+                        "totalPrice",
+                        "currencyCode",
+                        "breakdown",
+                        "conditions",
+                        "validUntil",
+                        "status",
+                        "isPreferred",
+                        "sentAt",
+                        "acceptedAt",
+                        "rejectedAt",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "type": "object"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Responder QuoteRequest con Quote (single-shot, vendor)",
+        "tags": [
+          "QuoteRequests"
+        ]
+      }
+    },
     "/api/v1/vendors/me/ai/bio": {
       "post": {
         "operationId": "aiGenerateVendorBio",

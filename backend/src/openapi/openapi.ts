@@ -42,6 +42,8 @@ import {
 } from '../modules/quote-flow/dto/index.js';
 // US-051 (PB-P1-031 / BE-005): path param `{ id: uuid }` para las rutas vendor-scoped.
 import { us051QrIdParamSchema as Us051IdParamSchema } from '../modules/quote-flow/dto/us051-qr-id.param.js';
+// US-052 (PB-P1-031 / BE-003): body schema del endpoint respond.
+import { respondQuoteRequestBodySchema as RespondQuoteRequestBodySchema } from '../modules/quote-flow/dto/respond-quote.us052.request.js';
 import {
   CreateBookingIntentRequestSchema,
   CancelBookingIntentRequestSchema,
@@ -251,6 +253,8 @@ op({ method: 'patch', path: '/quote-requests/{quoteRequestId}/viewed', operation
 // US-051 (PB-P1-031): endpoints vendor-scoped detalle + mark-viewed transaccional.
 op({ method: 'get', path: '/vendor/quote-requests/{id}', operationId: 'getVendorQuoteRequest', tags: ['QuoteRequests'], summary: 'Detalle de QuoteRequest (vendor)', secured: true, params: Us051IdParamSchema, success: { status: 200, schema: envelope(QuoteRequestResponseSchema) }, errors: [400, 401, 403, 404] });
 op({ method: 'post', path: '/vendor/quote-requests/{id}/mark-viewed', operationId: 'markVendorQuoteRequestViewed', tags: ['QuoteRequests'], summary: 'Marcar QuoteRequest como visto transaccional (vendor)', secured: true, params: Us051IdParamSchema, success: { status: 200, schema: envelope(QuoteRequestResponseSchema) }, errors: [400, 401, 403, 404] });
+// US-052 (PB-P1-031): respuesta single-shot con Quote + 2 notifications atómicas.
+op({ method: 'post', path: '/vendor/quote-requests/{id}/respond', operationId: 'respondVendorQuoteRequest', tags: ['QuoteRequests'], summary: 'Responder QuoteRequest con Quote (single-shot, vendor)', secured: true, params: Us051IdParamSchema, body: RespondQuoteRequestBodySchema, success: { status: 201, schema: envelope(QuoteResponseSchema) }, errors: [400, 401, 403, 404, 409] });
 op({ method: 'get', path: '/quote-requests/{quoteRequestId}/quote', operationId: 'getQuoteForRequest', tags: ['Quotes'], summary: 'Obtener el Quote actual del QuoteRequest', secured: true, params: QuoteRequestIdParamSchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404] });
 op({ method: 'post', path: '/quote-requests/{quoteRequestId}/quote', operationId: 'createQuote', tags: ['Quotes'], summary: 'Crear Quote draft (vendor)', secured: true, params: QuoteRequestIdParamSchema, body: CreateQuoteRequestBodySchema, success: { status: 201, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404, 409, 422] });
 op({ method: 'patch', path: '/quotes/{quoteId}', operationId: 'updateQuote', tags: ['Quotes'], summary: 'Editar Quote draft (vendor)', secured: true, params: QuoteIdParamSchema, body: UpdateQuoteRequestBodySchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404, 422] });

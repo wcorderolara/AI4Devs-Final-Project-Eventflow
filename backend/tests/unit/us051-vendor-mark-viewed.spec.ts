@@ -13,7 +13,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { qrIdParamSchema } from '../../src/modules/quote-flow/interface/us051-vendor-quote-requests.routes.js';
 import { GetVendorQrDetailUs051UseCase } from '../../src/modules/quote-flow/application/get-vendor-qr-detail.us051.use-case.js';
 import { MarkVendorQrViewedUs051UseCase } from '../../src/modules/quote-flow/application/mark-vendor-qr-viewed.us051.use-case.js';
-import { NotFoundError } from '../../src/shared/domain/errors/not-found.error.js';
+import { QrNotFoundError } from '../../src/modules/quote-flow/domain/us052.errors.js';
 import type { QuoteRequestRepository } from '../../src/modules/quote-flow/ports/quote-flow.repositories.js';
 import type {
   VendorProfileReader,
@@ -107,17 +107,17 @@ describe('US-051 · GetVendorQrDetailUs051UseCase', () => {
 
   it('lanza 404 uniforme cuando el usuario no tiene vendor profile', async () => {
     const uc = make({ findActive: async () => null });
-    await expect(uc.execute(USER_ID, QR_ID)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(uc.execute(USER_ID, QR_ID)).rejects.toBeInstanceOf(QrNotFoundError);
   });
 
   it('lanza 404 uniforme cuando el vendor profile está `hidden`', async () => {
     const uc = make({ findActive: async () => activeVendorProfile({ status: 'hidden' }) });
-    await expect(uc.execute(USER_ID, QR_ID)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(uc.execute(USER_ID, QR_ID)).rejects.toBeInstanceOf(QrNotFoundError);
   });
 
   it('lanza 404 uniforme cuando el QR no pertenece al vendor', async () => {
     const uc = make({ findQr: async () => null });
-    await expect(uc.execute(USER_ID, QR_ID)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(uc.execute(USER_ID, QR_ID)).rejects.toBeInstanceOf(QrNotFoundError);
   });
 });
 
@@ -267,7 +267,7 @@ describe('US-051 · MarkVendorQrViewedUs051UseCase', () => {
 
   it('lanza 404 uniforme cuando el QR no pertenece al vendor', async () => {
     const { uc } = makeUcWithFakeTx({ qrRow: null });
-    await expect(uc.execute(USER_ID, QR_ID)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(uc.execute(USER_ID, QR_ID)).rejects.toBeInstanceOf(QrNotFoundError);
   });
 
   it('lanza 404 uniforme cuando el vendor profile está `hidden`', async () => {
@@ -275,7 +275,7 @@ describe('US-051 · MarkVendorQrViewedUs051UseCase', () => {
       { qrRow: qrLockRowSent },
       { findActive: async () => activeVendorProfile({ status: 'hidden' }) },
     );
-    await expect(uc.execute(USER_ID, QR_ID)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(uc.execute(USER_ID, QR_ID)).rejects.toBeInstanceOf(QrNotFoundError);
   });
 
   it('lanza 404 uniforme cuando no existe vendor profile para el usuario', async () => {
@@ -283,6 +283,6 @@ describe('US-051 · MarkVendorQrViewedUs051UseCase', () => {
       { qrRow: qrLockRowSent },
       { findActive: async () => null },
     );
-    await expect(uc.execute(USER_ID, QR_ID)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(uc.execute(USER_ID, QR_ID)).rejects.toBeInstanceOf(QrNotFoundError);
   });
 });

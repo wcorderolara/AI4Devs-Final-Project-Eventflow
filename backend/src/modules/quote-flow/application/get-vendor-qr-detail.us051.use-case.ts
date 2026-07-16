@@ -5,7 +5,7 @@
 import type { QuoteRequestRepository } from '../ports/quote-flow.repositories.js';
 import type { VendorProfileReader } from '../../../shared/access/readers.js';
 import type { QuoteRequestView } from '../domain/quote-request.js';
-import { NotFoundError } from '../../../shared/domain/errors/not-found.error.js';
+import { QrNotFoundError } from '../domain/us052.errors.js';
 
 export class GetVendorQrDetailUs051UseCase {
   constructor(
@@ -17,10 +17,10 @@ export class GetVendorQrDetailUs051UseCase {
     const vendorProfile = await this.vendors.findActiveByUserId(currentUserId);
     // D4: colapsar "sin perfil / hidden" en `404` uniforme para no filtrar existencia por reflejo.
     if (!vendorProfile || vendorProfile.status === 'hidden') {
-      throw new NotFoundError('Quote request not found');
+      throw new QrNotFoundError('Quote request not found');
     }
     const qr = await this.quoteRequests.findByIdAndVendorProfile(qrId, vendorProfile.id);
-    if (!qr) throw new NotFoundError('Quote request not found');
+    if (!qr) throw new QrNotFoundError('Quote request not found');
     return qr;
   }
 }

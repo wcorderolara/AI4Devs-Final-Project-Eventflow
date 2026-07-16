@@ -297,6 +297,45 @@
     }
   },
   "qr": {
+    "respond": {
+      "title": "Responder con cotización",
+      "subtitle": "Detalla el precio total y su desglose. La moneda se hereda del evento.",
+      "total": "Precio total ({currency})",
+      "sumIndicator": "Suma del desglose: {sum} / total: {total}",
+      "conditions": "Condiciones (opcional)",
+      "validUntil": "Vigencia hasta",
+      "validUntilHelp": "Por defecto tu cotización vence en 15 días. Rango permitido: hoy a hoy+90.",
+      "submit": "Enviar cotización",
+      "submitting": "Enviando…",
+      "breakdown": {
+        "legend": "Desglose",
+        "help": "Entre 1 y {max} conceptos. La suma debe coincidir con el total (±0.01).",
+        "itemLabel": "Concepto",
+        "itemAmount": "Monto ({currency})",
+        "add": "Agregar concepto",
+        "remove": "Quitar",
+        "removeAria": "Quitar el concepto {index}",
+        "errors": {
+          "INVALID_LABEL": "El concepto debe tener entre 1 y 150 caracteres.",
+          "INVALID_AMOUNT": "El monto debe ser un decimal ≥ 0 con hasta 2 decimales.",
+          "MAX_ITEMS": "Alcanzaste el máximo de {max} conceptos.",
+          "UNKNOWN": "Dato inválido."
+        }
+      },
+      "errors": {
+        "QR_NOT_FOUND": "Esta solicitud ya no está disponible.",
+        "QR_NOT_RESPONDABLE": "Esta solicitud ya no puede responderse.",
+        "QUOTE_ALREADY_EXISTS": "Ya enviaste una cotización para esta solicitud.",
+        "INVALID_TOTAL": "El precio total debe ser un decimal mayor a 0.",
+        "INVALID_BREAKDOWN": "El desglose debe tener entre 1 y 20 conceptos.",
+        "INVALID_BREAKDOWN_ITEM": "Revisa los conceptos: label 1..150, monto ≥ 0.",
+        "INVALID_BREAKDOWN_SUM": "La suma del desglose no coincide con el total.",
+        "INVALID_VALID_UNTIL": "La fecha de vigencia debe estar entre hoy y hoy+90.",
+        "AUTHENTICATION_REQUIRED": "Tu sesión expiró. Inicia sesión nuevamente.",
+        "FORBIDDEN": "Solo los proveedores pueden responder cotizaciones.",
+        "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
+      }
+    },
     "detail": {
       "title": "Detalle de la solicitud",
       "createdAt": "Solicitud recibida el {date}",

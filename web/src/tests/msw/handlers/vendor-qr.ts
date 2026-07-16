@@ -12,6 +12,12 @@ const TRIGGER_NOT_FOUND = 'ffffffff-0000-0000-0051-000000000404';
 // UUIDs que fuerzan estados iniciales específicos para probar la orquestación.
 const TRIGGER_STATUS_VIEWED = 'ffffffff-0000-0000-0051-000000000200';
 const TRIGGER_STATUS_RESPONDED = 'ffffffff-0000-0000-0051-000000000201';
+// US-052 triggers específicos del endpoint respond.
+const TRIGGER_QR_NOT_RESPONDABLE = 'ffffffff-0000-0000-0052-000000000409';
+const TRIGGER_QUOTE_ALREADY_EXISTS = 'ffffffff-0000-0000-0052-000000000410';
+const TRIGGER_INVALID_TOTAL = 'ffffffff-0000-0000-0052-000000000400';
+const TRIGGER_INVALID_BREAKDOWN_SUM = 'ffffffff-0000-0000-0052-000000000401';
+const TRIGGER_INVALID_VALID_UNTIL = 'ffffffff-0000-0000-0052-000000000402';
 
 interface StoredQr {
   id: string;
@@ -96,6 +102,73 @@ export const vendorQrHandlers = [
     return HttpResponse.json(envelope(toDto(currentFor(id))), { status: 200 });
   }),
 
+  http.post('*/api/v1/vendor/quote-requests/:id/respond', async ({ params, request }) => {
+    const id = String(params.id);
+    if (id === TRIGGER_UNAUTH) {
+      return HttpResponse.json(errorEnvelope('AUTHENTICATION_REQUIRED', 'Authentication required'), {
+        status: 401,
+      });
+    }
+    if (id === TRIGGER_FORBIDDEN) {
+      return HttpResponse.json(errorEnvelope('FORBIDDEN', 'Only vendors'), { status: 403 });
+    }
+    if (id === TRIGGER_NOT_FOUND) {
+      return HttpResponse.json(errorEnvelope('QR_NOT_FOUND', 'Quote request not found'), {
+        status: 404,
+      });
+    }
+    if (id === TRIGGER_QR_NOT_RESPONDABLE) {
+      return HttpResponse.json(errorEnvelope('QR_NOT_RESPONDABLE', 'Quote request is not respondable'), {
+        status: 409,
+      });
+    }
+    if (id === TRIGGER_QUOTE_ALREADY_EXISTS) {
+      return HttpResponse.json(
+        errorEnvelope('QUOTE_ALREADY_EXISTS', 'An active quote already exists'),
+        { status: 409 },
+      );
+    }
+    if (id === TRIGGER_INVALID_TOTAL) {
+      return HttpResponse.json(errorEnvelope('INVALID_TOTAL', 'Invalid total'), { status: 400 });
+    }
+    if (id === TRIGGER_INVALID_BREAKDOWN_SUM) {
+      return HttpResponse.json(errorEnvelope('INVALID_BREAKDOWN_SUM', 'Invalid breakdown sum'), {
+        status: 400,
+      });
+    }
+    if (id === TRIGGER_INVALID_VALID_UNTIL) {
+      return HttpResponse.json(errorEnvelope('INVALID_VALID_UNTIL', 'valid_until out of range'), {
+        status: 400,
+      });
+    }
+
+    const body = (await request.json()) as {
+      total_price: string;
+      breakdown: { label: string; amount: string }[];
+      conditions?: string;
+      valid_until?: string;
+    };
+
+    const now = '2026-07-16T12:00:00Z';
+    return HttpResponse.json(
+      envelope({
+        id: '99999999-9999-9999-9999-000000000052',
+        quoteRequestId: id,
+        vendorProfileId: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+        status: 'sent',
+        totalPrice: body.total_price,
+        currencyCode: 'GTQ',
+        breakdown: body.breakdown,
+        conditions: body.conditions ?? null,
+        validUntil: body.valid_until ? `${body.valid_until}T23:59:59Z` : '2026-07-31T23:59:59Z',
+        sentAt: now,
+        createdAt: now,
+        updatedAt: now,
+      }),
+      { status: 201 },
+    );
+  }),
+
   http.post('*/api/v1/vendor/quote-requests/:id/mark-viewed', ({ params }) => {
     const id = String(params.id);
     if (id === TRIGGER_UNAUTH) {
@@ -133,6 +206,11 @@ export const vendorQrMswTriggers = {
   NOT_FOUND: TRIGGER_NOT_FOUND,
   STATUS_VIEWED: TRIGGER_STATUS_VIEWED,
   STATUS_RESPONDED: TRIGGER_STATUS_RESPONDED,
+  QR_NOT_RESPONDABLE: TRIGGER_QR_NOT_RESPONDABLE,
+  QUOTE_ALREADY_EXISTS: TRIGGER_QUOTE_ALREADY_EXISTS,
+  INVALID_TOTAL: TRIGGER_INVALID_TOTAL,
+  INVALID_BREAKDOWN_SUM: TRIGGER_INVALID_BREAKDOWN_SUM,
+  INVALID_VALID_UNTIL: TRIGGER_INVALID_VALID_UNTIL,
 } as const;
 
 export function __resetVendorQrMswState(): void {
