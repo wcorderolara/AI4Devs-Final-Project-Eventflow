@@ -46,6 +46,8 @@ import { us051QrIdParamSchema as Us051IdParamSchema } from '../modules/quote-flo
 import { respondQuoteRequestBodySchema as RespondQuoteRequestBodySchema } from '../modules/quote-flow/dto/respond-quote.us052.request.js';
 // US-054 (PB-P1-032 / BE-001): body opcional `{ reason?: string [0..500] }` del endpoint reject.
 import { rejectQuoteBodySchema as RejectQuoteBodySchema } from '../modules/quote-flow/dto/reject-quote.us054.request.js';
+// US-056 (PB-P1-034 / BE-001): body opcional del endpoint cancel de QuoteRequest.
+import { cancelQuoteRequestBodySchema as CancelQuoteRequestBodySchema } from '../modules/quote-flow/dto/cancel-quote-request.us056.request.js';
 import {
   CreateBookingIntentRequestSchema,
   CancelBookingIntentRequestSchema,
@@ -249,7 +251,10 @@ op({ method: 'delete', path: '/admin/events/{id}', operationId: 'adminEventDelet
 op({ method: 'get', path: '/events/{eventId}/quote-requests', operationId: 'listEventQuoteRequests', tags: ['QuoteRequests'], summary: 'Listar QuoteRequests del evento', secured: true, params: QfEventIdParamSchema, query: ListQuoteRequestsQuerySchema, success: { status: 200, schema: listEnvelope(QuoteRequestResponseSchema) }, errors: [401, 403, 404, 422] });
 op({ method: 'post', path: '/events/{eventId}/quote-requests', operationId: 'createQuoteRequest', tags: ['QuoteRequests'], summary: 'Crear QuoteRequest', secured: true, params: QfEventIdParamSchema, body: CreateQuoteRequestRequestSchema, success: { status: 201, schema: envelope(QuoteRequestResponseSchema) }, errors: [401, 403, 404, 409, 422] });
 op({ method: 'get', path: '/quote-requests/{quoteRequestId}', operationId: 'getQuoteRequest', tags: ['QuoteRequests'], summary: 'Obtener QuoteRequest', secured: true, params: QuoteRequestIdParamSchema, success: { status: 200, schema: envelope(QuoteRequestResponseSchema) }, errors: [401, 403, 404] });
-op({ method: 'patch', path: '/quote-requests/{quoteRequestId}/cancel', operationId: 'cancelQuoteRequest', tags: ['QuoteRequests'], summary: 'Cancelar QuoteRequest', secured: true, params: QuoteRequestIdParamSchema, success: { status: 200, schema: envelope(QuoteRequestResponseSchema) }, errors: [401, 403, 404, 422] });
+// US-056 (PB-P1-034 / BE-005): body opcional `{ reason?: string [0..500] }` + emisión de 2
+// Notifications atómicas al vendor por `QuoteEventNotificationService`. Añade 400
+// (`INVALID_CANCELLATION_REASON`) y 409 (`QR_NOT_CANCELLABLE`, `QR_HAS_CONFIRMED_BOOKING`).
+op({ method: 'patch', path: '/quote-requests/{quoteRequestId}/cancel', operationId: 'cancelQuoteRequest', tags: ['QuoteRequests'], summary: 'Cancelar QuoteRequest (organizer)', secured: true, params: QuoteRequestIdParamSchema, body: CancelQuoteRequestBodySchema, success: { status: 200, schema: envelope(QuoteRequestResponseSchema) }, errors: [400, 401, 403, 404, 409, 422] });
 op({ method: 'get', path: '/vendors/me/quote-requests', operationId: 'listVendorQuoteRequests', tags: ['QuoteRequests'], summary: 'Listar QuoteRequests asignados (vendor)', secured: true, query: ListQuoteRequestsQuerySchema, success: { status: 200, schema: listEnvelope(QuoteRequestResponseSchema) }, errors: [401, 403, 422] });
 op({ method: 'patch', path: '/quote-requests/{quoteRequestId}/viewed', operationId: 'markQuoteRequestViewed', tags: ['QuoteRequests'], summary: 'Marcar QuoteRequest como visto (vendor, legado US-096)', secured: true, params: QuoteRequestIdParamSchema, success: { status: 204 }, errors: [401, 403, 404, 422] });
 // US-051 (PB-P1-031): endpoints vendor-scoped detalle + mark-viewed transaccional.
@@ -263,8 +268,8 @@ op({ method: 'patch', path: '/quotes/{quoteId}', operationId: 'updateQuote', tag
 op({ method: 'post', path: '/quotes/{quoteId}/send', operationId: 'sendQuote', tags: ['Quotes'], summary: 'Enviar Quote (vendor)', secured: true, params: QuoteIdParamSchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404, 422] });
 op({ method: 'post', path: '/quotes/{quoteId}/accept', operationId: 'acceptQuote', tags: ['Quotes'], summary: 'Aceptar Quote (organizer)', secured: true, params: QuoteIdParamSchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404, 410, 422] });
 // US-054 (PB-P1-032 / BE-005): body opcional `{ reason?: string [0..500] }` + emisión de 2
-// Notifications atómicas al vendor por `QuoteNotificationService`. Añade 400 (INVALID_REJECTION_REASON)
-// y 409 (QUOTE_NOT_REJECTABLE) al contrato.
+// Notifications atómicas al vendor por `QuoteEventNotificationService` (refactor US-056).
+// Añade 400 (INVALID_REJECTION_REASON) y 409 (QUOTE_NOT_REJECTABLE) al contrato.
 op({ method: 'post', path: '/quotes/{quoteId}/reject', operationId: 'rejectQuote', tags: ['Quotes'], summary: 'Rechazar Quote (organizer)', secured: true, params: QuoteIdParamSchema, body: RejectQuoteBodySchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [400, 401, 403, 404, 409, 422] });
 op({ method: 'post', path: '/quotes/{quoteId}/prefer', operationId: 'preferQuote', tags: ['Quotes'], summary: 'Marcar Quote como preferido (organizer)', secured: true, params: QuoteIdParamSchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404, 422] });
 

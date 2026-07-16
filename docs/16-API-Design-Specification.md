@@ -1625,7 +1625,7 @@ Organizer solicita cotización a vendor sobre una categoría de servicio dentro 
 | GET | `/events/:eventId/quote-requests` | Sí | organizer | Lista quote requests del evento. | 200 | 401, 403, 404 |
 | POST | `/events/:eventId/quote-requests` | Sí | organizer | Crea quote request. | 201 | 401, 403, 404, 409 (MAX_QUOTE_REQUESTS_EXCEEDED), 422 |
 | GET | `/quote-requests/:quoteRequestId` | Sí | organizer, vendor (asignado), admin | Detalle. | 200 | 401, 403, 404 |
-| PATCH | `/quote-requests/:quoteRequestId/cancel` | Sí | organizer | Cancela. | 200 | 401, 403, 404, 422 |
+| PATCH | `/quote-requests/:quoteRequestId/cancel` | Sí | organizer | Cancela QR activa (body opcional `{ reason? }`) + 2 Notifications atómicas al vendor. Restricción: `409 QR_HAS_CONFIRMED_BOOKING` si existe `BookingIntent.confirmed_intent` asociado. Ver §30.9 (US-056). | 200 | 400 (`INVALID_UUID`, `INVALID_CANCELLATION_REASON`), 401, 403, 404 (`QR_NOT_FOUND` uniforme), 409 (`QR_NOT_CANCELLABLE`, `QR_HAS_CONFIRMED_BOOKING`) |
 | GET | `/vendors/me/quote-requests` | Sí | vendor | Lista asignadas al vendor. | 200 | 401, 403 |
 | PATCH | `/quote-requests/:quoteRequestId/viewed` | Sí | vendor | Marca como vista. | 204 | 401, 403, 404 |
 
@@ -1659,6 +1659,9 @@ type QuoteRequestResponseDto = {
   status: "sent" | "viewed" | "responded" | "expired" | "cancelled";
   viewedAt: string | null;
   cancelledAt: string | null;
+  // US-056 (DB-001): audit fields de la cancelación transaccional. Null si la QR no está cancelada.
+  cancelledBy: string | null;
+  cancellationReason: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -1889,6 +1892,54 @@ Errores (envelope estándar):
 | `QUOTE_ALREADY_EXISTS` | 409 | `[{ field: 'existing_quote_id', message: <uuid> }]` | Respeta `uq_quotes_request_active` (BR-QUOTE-013). |
 
 Observabilidad: log estructurado `quote.sent` (`info`) con `{correlationId, actorId, quoteId, quoteRequestId}`. Notificaciones persistidas: `type='quote.sent'`; `payload` incluye `{channel, deliveryStatus, event, quote_id, quote_request_id, vendor_profile_id, total_price, currency_code, valid_until}`.
+
+### 30.9 US-056 · `PATCH /api/v1/quote-requests/:quoteRequestId/cancel` (cancelación transaccional con restricción)
+
+Extensión del endpoint canónico de cancelación (definido en §30.2). US-056 reemplaza el UseCase legado de US-096 preservando la ruta y el verbo (PATCH) — ver DEV-02 del execution record `management/workflows/development-execution/P1/PB-P1-034/US-056-execution.md`. Añade body opcional con `reason`, check server-side de `BookingIntent.confirmed_intent` (bloqueo si existe), audit fields (`cancelled_by`, `cancellation_reason`) y emisión de 2 Notifications atómicas al vendor asignado vía `QuoteEventNotificationService` (`event='quote_request.cancelled'`).
+
+| Método | Path | Auth | Roles | Propósito | Success | Errores |
+| --- | --- | --- | --- | --- | --- | --- |
+| PATCH | `/api/v1/quote-requests/:quoteRequestId/cancel` | Sí (cookie de sesión) | organizer (dueño del evento) | Cancela QR activa + 2 `Notification` atómicas al vendor. | 200 | 400 (`INVALID_UUID`, `INVALID_CANCELLATION_REASON`), 401, 403, 404 (`QR_NOT_FOUND` uniforme), 409 (`QR_NOT_CANCELLABLE`, `QR_HAS_CONFIRMED_BOOKING`) |
+
+```ts
+// Request body (opcional)
+type CancelQuoteRequestUs056Body = {
+  reason?: string; // 0..500 chars; string vacío se normaliza a null en persistencia
+};
+
+// Response 200 (subset relevante del QuoteRequestResponse)
+type CancelQuoteRequestUs056Response = {
+  id: string;                    // uuid
+  status: 'cancelled';
+  cancelledAt: string;           // ISO-8601 UTC
+  cancelledBy: string;           // uuid del organizer
+  cancellationReason: string | null;
+  // ... resto de campos del QuoteRequestResponse (event_id, vendor_profile_id, etc.)
+};
+```
+
+Detalles de errores (envelope estándar `{ error: { code, message, correlationId, details? } }`):
+
+| Código | HTTP | `details` | Trigger |
+| --- | ---: | --- | --- |
+| `INVALID_UUID` | 400 | — | Path param `:quoteRequestId` no es UUID válido (VR-01). |
+| `INVALID_CANCELLATION_REASON` | 400 | `[{ field: 'reason', message: 'too_long' }]` | `reason.length > 500` (EC-04, VR-02). |
+| `AUTHENTICATION_REQUIRED` | 401 | — | Sin sesión. |
+| `FORBIDDEN` | 403 | — | Rol distinto de `organizer` (vendor / admin). |
+| `QR_NOT_FOUND` | 404 | — | QR inexistente o el organizer no es dueño del evento (SEC-03 uniforme). |
+| `QR_NOT_CANCELLABLE` | 409 | `[{ field: 'current_status', message: <status> }]` | QR.status ∉ `{sent, viewed, responded}` (EC-02) o re-cancelación idempotente (EC-06). |
+| `QR_HAS_CONFIRMED_BOOKING` | 409 | `[{ field: 'booking_intent_id', message: <uuid> }]` | Existe `BookingIntent.confirmed_intent` asociado vía la Quote (EC-01, VR-05). |
+
+Reglas y restricciones enforced:
+
+- **D1 estados activos**: `ACTIVE_QR_STATUSES = {sent, viewed, responded}`. El enum Prisma no incluye `preferred` (documentado como DEV-01 del execution record) — `preferred` es atributo de la Quote (`isPreferred`), no un estado del QR.
+- **D2 restricción confirmed_intent**: EXISTS check server-side (`SELECT 1 FROM booking_intents bi JOIN quotes q ON bi.quote_id = q.id WHERE q.quote_request_id = :qrId AND bi.status='confirmed_intent'`). Índice compuesto `idx_booking_intents_quote_id_status` (DB-001) hace el check O(log n).
+- **D3 Quote intacta**: la Quote asociada (si existe) no se modifica. Su transición a `expired` la asume el job de US-053 cuando aplique.
+- **D5 fan-out**: 2 Notifications al vendor (`in_app` `delivered` + `email_simulated` `simulated`), atómicas en la misma transacción del UPDATE. Un fallo del `NotificationSenderPort` revierte todo (D8 rollback completo).
+- **D7 authorization**: `events.user_id = currentUser.id` requerido. Cualquier otro caso colapsa a `404 QR_NOT_FOUND` uniforme (no filtra existencia ni ownership).
+- **D8 atomicidad**: `prisma.$transaction` con `SELECT ... FOR UPDATE` sobre la QR + guard defensivo `WHERE status IN ACTIVE` en el UPDATE (blindaje contra tx aisladas + idempotencia EC-06).
+
+Observabilidad: log estructurado `quote_request.cancelled` (`info`) con `{correlationId, actorId, quoteRequestId}`. Log agregado del fan-out: `quote.notification.emitted` con `{correlationId, eventName='quote_request.cancelled', vendorUserId}` (sin payload — SEC-09). Notifications persistidas: `type='quote_request.cancelled'`; `payload` incluye `{channel, deliveryStatus, event, quote_request_id, event_id, cancellation_reason}`.
 
 ---
 

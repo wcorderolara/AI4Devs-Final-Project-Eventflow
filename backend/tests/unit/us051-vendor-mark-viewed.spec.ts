@@ -47,6 +47,9 @@ function baseQrView(overrides: Partial<QuoteRequestView> = {}): QuoteRequestView
     viewedAt: null,
     viewedBy: null,
     cancelledAt: null,
+    // US-056 (DB-001): audit fields de cancelación (null en QR no cancelada).
+    cancelledBy: null,
+    cancellationReason: null,
     createdAt: '2026-07-15T09:00:00Z',
     updatedAt: '2026-07-15T09:00:00Z',
     ...overrides,

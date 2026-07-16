@@ -22,6 +22,9 @@ export const QuoteRequestResponseSchema = z
     viewedAt: z.string().nullable(),
     viewedBy: z.string().uuid().nullable(),
     cancelledAt: z.string().nullable(),
+    // US-056 (BE-004): audit fields de la cancelación transaccional. Null si la QR no está cancelada.
+    cancelledBy: z.string().uuid().nullable(),
+    cancellationReason: z.string().nullable(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
   })

@@ -618,6 +618,42 @@ export class SeedDemoDataUseCase {
       );
       quotes.push({ id: quote.id, quoteRequestId: qr.id, vendorProfileId: vendor.id, amount: 5000 + k * 250 });
     }
+
+    // US-056 (BE-007): QR viewed sin Quote para el demo del "cancel válido" (AC-01). El
+    // demo del "cancel bloqueado por confirmed_intent" (EC-01) queda cubierto por los índices
+    // de `bookingPlan` con `kind: 'confirmed'` en `seedBookingsAndReviews` — cancelar los QRs
+    // asociados a esos quotes falla con `QR_HAS_CONFIRMED_BOOKING`.
+    if (events.length > 0 && categories.length > 0 && vendors.length > 0) {
+      const demoEvent = events[0]!;
+      const demoCategory = categories[categories.length - 1]!;
+      const demoVendor = vendors[vendors.length - 1]!;
+      await ensure(
+        () =>
+          tx.quoteRequest.findFirst({
+            where: {
+              eventId: demoEvent.id,
+              serviceCategoryId: demoCategory.id,
+              vendorProfileId: demoVendor.id,
+              status: 'viewed',
+              isSeed: true,
+            },
+          }),
+        () =>
+          tx.quoteRequest.create({
+            data: {
+              eventId: demoEvent.id,
+              serviceCategoryId: demoCategory.id,
+              vendorProfileId: demoVendor.id,
+              status: 'viewed',
+              brief: { summary: 'QR demo cancelable (US-056)', requirements: ['LATAM'] },
+              viewedAt: new Date('2026-05-01T10:00:00Z'),
+              isSeed: true,
+            },
+          }),
+        counts,
+      );
+    }
+
     return { quoteRequests, quotes };
   }
 

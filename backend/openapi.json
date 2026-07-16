@@ -4011,7 +4011,16 @@
                             ],
                             "type": "object"
                           },
+                          "cancellationReason": {
+                            "nullable": true,
+                            "type": "string"
+                          },
                           "cancelledAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "cancelledBy": {
+                            "format": "uuid",
                             "nullable": true,
                             "type": "string"
                           },
@@ -4071,6 +4080,8 @@
                           "viewedAt",
                           "viewedBy",
                           "cancelledAt",
+                          "cancelledBy",
+                          "cancellationReason",
                           "createdAt",
                           "updatedAt"
                         ],
@@ -4250,7 +4261,16 @@
                           ],
                           "type": "object"
                         },
+                        "cancellationReason": {
+                          "nullable": true,
+                          "type": "string"
+                        },
                         "cancelledAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "cancelledBy": {
+                          "format": "uuid",
                           "nullable": true,
                           "type": "string"
                         },
@@ -4310,6 +4330,8 @@
                         "viewedAt",
                         "viewedBy",
                         "cancelledAt",
+                        "cancelledBy",
+                        "cancellationReason",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -4417,7 +4439,16 @@
                           ],
                           "type": "object"
                         },
+                        "cancellationReason": {
+                          "nullable": true,
+                          "type": "string"
+                        },
                         "cancelledAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "cancelledBy": {
+                          "format": "uuid",
                           "nullable": true,
                           "type": "string"
                         },
@@ -4477,6 +4508,8 @@
                         "viewedAt",
                         "viewedBy",
                         "cancelledAt",
+                        "cancelledBy",
+                        "cancellationReason",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -4663,6 +4696,21 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {
@@ -4710,7 +4758,16 @@
                           ],
                           "type": "object"
                         },
+                        "cancellationReason": {
+                          "nullable": true,
+                          "type": "string"
+                        },
                         "cancelledAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "cancelledBy": {
+                          "format": "uuid",
                           "nullable": true,
                           "type": "string"
                         },
@@ -4770,6 +4827,8 @@
                         "viewedAt",
                         "viewedBy",
                         "cancelledAt",
+                        "cancelledBy",
+                        "cancellationReason",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -4789,6 +4848,9 @@
             },
             "description": "OK"
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -4797,6 +4859,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
           },
           "422": {
             "$ref": "#/components/responses/ValidationError"
@@ -4807,7 +4872,7 @@
             "cookieAuth": []
           }
         ],
-        "summary": "Cancelar QuoteRequest",
+        "summary": "Cancelar QuoteRequest (organizer)",
         "tags": [
           "QuoteRequests"
         ]
@@ -6690,7 +6755,16 @@
                           ],
                           "type": "object"
                         },
+                        "cancellationReason": {
+                          "nullable": true,
+                          "type": "string"
+                        },
                         "cancelledAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "cancelledBy": {
+                          "format": "uuid",
                           "nullable": true,
                           "type": "string"
                         },
@@ -6750,6 +6824,8 @@
                         "viewedAt",
                         "viewedBy",
                         "cancelledAt",
+                        "cancelledBy",
+                        "cancellationReason",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -6854,7 +6930,16 @@
                           ],
                           "type": "object"
                         },
+                        "cancellationReason": {
+                          "nullable": true,
+                          "type": "string"
+                        },
                         "cancelledAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "cancelledBy": {
+                          "format": "uuid",
                           "nullable": true,
                           "type": "string"
                         },
@@ -6914,6 +6999,8 @@
                         "viewedAt",
                         "viewedBy",
                         "cancelledAt",
+                        "cancelledBy",
+                        "cancellationReason",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -7398,7 +7485,16 @@
                             ],
                             "type": "object"
                           },
+                          "cancellationReason": {
+                            "nullable": true,
+                            "type": "string"
+                          },
                           "cancelledAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "cancelledBy": {
+                            "format": "uuid",
                             "nullable": true,
                             "type": "string"
                           },
@@ -7458,6 +7554,8 @@
                           "viewedAt",
                           "viewedBy",
                           "cancelledAt",
+                          "cancelledBy",
+                          "cancellationReason",
                           "createdAt",
                           "updatedAt"
                         ],

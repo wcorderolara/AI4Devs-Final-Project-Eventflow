@@ -28,6 +28,8 @@ function toView(qr: PrismaQR): QuoteRequestView {
     viewedAt: qr.viewedAt ? qr.viewedAt.toISOString() : null,
     viewedBy: qr.viewedBy ?? null,
     cancelledAt: qr.cancelledAt ? qr.cancelledAt.toISOString() : null,
+    cancelledBy: qr.cancelledBy ?? null,
+    cancellationReason: qr.cancellationReason ?? null,
     createdAt: qr.createdAt.toISOString(),
     updatedAt: qr.updatedAt.toISOString(),
   };

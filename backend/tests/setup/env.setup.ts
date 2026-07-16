@@ -15,3 +15,7 @@ process.env.CAPTCHA_PROVIDER ??= 'mock';
 // US-110: rate limiting deshabilitado por defecto en la suite (evita contaminación entre specs con
 // el store in-memory proceso-global). Los tests de US-110 lo activan explícitamente por caso.
 process.env.RATE_LIMIT_ENABLED ??= 'false';
+// US-056 (QA-002): el `rateLimitMiddleware` global se registra en `app.ts` sin gate del flag —
+// se eleva el techo por default (10000/60s) para que suites que hacen decenas de request no
+// choquen contra el `100/60s` de producción. Los tests que verifican el 429 real sobrescriben.
+process.env.RATE_LIMIT_MAX ??= '10000';

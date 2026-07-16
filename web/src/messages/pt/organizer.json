@@ -1,0 +1,27 @@
+{
+  "qr": {
+    "cancel": {
+      "title": "Cancelar solicitação de orçamento",
+      "description": "A solicitação será marcada como cancelada e o fornecedor receberá uma notificação. O orçamento associado não é modificado. Esta ação não pode ser desfeita.",
+      "reasonLabel": "Motivo do cancelamento (opcional)",
+      "reasonPlaceholder": "Ex.: Mudança de planos…",
+      "reasonHint": "Máximo 500 caracteres.",
+      "reasonCounter": "{count}/500",
+      "actions": {
+        "cancel": "Voltar",
+        "submit": "Confirmar cancelamento",
+        "submitting": "Cancelando…"
+      },
+      "success": "Solicitação cancelada. Notificamos o fornecedor.",
+      "errors": {
+        "INVALID_CANCELLATION_REASON": "O motivo não pode ultrapassar 500 caracteres.",
+        "QR_NOT_FOUND": "Não encontramos esta solicitação ou ela não está mais disponível.",
+        "QR_NOT_CANCELLABLE": "Esta solicitação não pode mais ser cancelada em seu estado atual.",
+        "QR_HAS_CONFIRMED_BOOKING": "Não é possível cancelar: existe um intento de reserva confirmado associado. Cancele primeiro a reserva.",
+        "AUTHENTICATION_REQUIRED": "Você precisa iniciar sessão para cancelar a solicitação.",
+        "FORBIDDEN": "Sua função não pode cancelar solicitações de orçamento.",
+        "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
+      }
+    }
+  }
+}

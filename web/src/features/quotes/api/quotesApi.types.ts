@@ -140,6 +140,50 @@ export function toRejectQuoteView(dto: RejectQuoteDTO): RejectQuoteView {
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// US-056 · cancel quote request (organizer)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface CancelQrInput {
+  quoteRequestId: string;
+  reason?: string;
+}
+
+/**
+ * Sub-set del `QuoteRequestResponse` (backend) que el organizer necesita tras cancelar:
+ * status, timestamps de cancelación, actor (`cancelledBy`) y motivo (`cancellationReason`).
+ */
+export interface CancelQrDTO {
+  id: string;
+  status: 'cancelled';
+  cancelledAt: string;
+  cancelledBy: string;
+  cancellationReason: string | null;
+}
+
+export interface CancelQrEnvelope {
+  data: CancelQrDTO;
+  correlationId: string;
+}
+
+export interface CancelQrView {
+  id: string;
+  status: 'cancelled';
+  cancelledAt: string;
+  cancelledBy: string;
+  cancellationReason: string | null;
+}
+
+export function toCancelQrView(dto: CancelQrDTO): CancelQrView {
+  return {
+    id: dto.id,
+    status: dto.status,
+    cancelledAt: dto.cancelledAt,
+    cancelledBy: dto.cancelledBy,
+    cancellationReason: dto.cancellationReason,
+  };
+}
+
 export function toCreateQuoteRequestView(dto: CreateQuoteRequestDTO): CreateQuoteRequestView {
   return {
     id: dto.id,

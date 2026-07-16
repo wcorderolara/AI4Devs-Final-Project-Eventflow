@@ -18,10 +18,14 @@ import type {
   ListEventQuoteRequestsUseCase,
   ListVendorQuoteRequestsUseCase,
   GetQuoteRequestUseCase,
-  CancelQuoteRequestUseCase,
   MarkQuoteRequestViewedUseCase,
   ListResult,
 } from '../application/quote-request.use-cases.js';
+// US-056 (PB-P1-034 / BE-005): cancelación transaccional con notifications + check
+// `confirmed_intent` (reemplaza el `CancelQuoteRequestUseCase` original de US-096 en el wiring
+// — ver DEV-02 del execution record).
+import type { CancelQuoteRequestUs056UseCase } from '../application/cancel-quote-request.us056.use-case.js';
+import type { CancelQuoteRequestBody } from '../dto/cancel-quote-request.us056.request.js';
 import type {
   CreateQuoteUseCase,
   GetQuoteForQuoteRequestUseCase,
@@ -53,7 +57,7 @@ export interface QuoteRequestUseCases {
   listByEvent: ListEventQuoteRequestsUseCase;
   listByVendor: ListVendorQuoteRequestsUseCase;
   get: GetQuoteRequestUseCase;
-  cancel: CancelQuoteRequestUseCase;
+  cancel: CancelQuoteRequestUs056UseCase;
   markViewed: MarkQuoteRequestViewedUseCase;
 }
 
@@ -89,7 +93,12 @@ export class QuoteRequestsController {
 
   cancel = async (req: Request, res: Response): Promise<void> => {
     const { quoteRequestId } = req.validated?.params as QuoteRequestIdParam;
-    const view = await this.uc.cancel.execute(actor(req).id, quoteRequestId, { correlationId: req.correlationId });
+    // US-056 (BE-005): body opcional `{ reason?: string [0..500] }`. Ausente en calls
+    // legacy (pre-US-056) — se normaliza a `{}` para preservar compatibilidad.
+    const body = (req.validated?.body ?? {}) as CancelQuoteRequestBody;
+    const view = await this.uc.cancel.execute(actor(req).id, quoteRequestId, body, {
+      correlationId: req.correlationId,
+    });
     res.status(200).json(success(toQuoteRequestResponse(view), req.correlationId ?? ''));
   };
 

@@ -21,7 +21,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import { ExpireQuoteRequestsUs055UseCase } from '../../src/modules/quote-flow/application/expire-quote-requests.us055.use-case.js';
 import { ExpireQuotesUs053UseCase } from '../../src/modules/quote-flow/application/expire-quotes.us053.use-case.js';
-import { QuoteNotificationService } from '../../src/modules/quote-flow/services/quote-notification.service.js';
+import { QuoteEventNotificationService } from '../../src/modules/quote-flow/services/quote-event-notification.service.js';
 import { FrozenClock } from '../../src/infrastructure/time/frozen-clock.js';
 import type { DomainEventLogger } from '../../src/shared/observability/domain-event-logger.js';
 import type { QuoteNotificationSenderPort } from '../../src/shared/application/quote-notification-sender.port.js';
@@ -303,7 +303,7 @@ describe.skipIf(!dbUp)('US-055 integration — Postgres real', () => {
           notifyCalls.push(input.channel);
         },
       };
-      const service = new QuoteNotificationService(notifSender, silentLogger);
+      const service = new QuoteEventNotificationService(notifSender, silentLogger);
       const uc = new ExpireQuotesUs053UseCase(service, clock, silentLogger);
       const r = await uc.execute({ correlationId: 'it-05', runId: 'it-05-run' });
       expect(r.totalExpired).toBe(1);
