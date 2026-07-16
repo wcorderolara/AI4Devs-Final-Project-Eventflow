@@ -297,6 +297,45 @@
     }
   },
   "qr": {
+    "respond": {
+      "title": "Responder com cotação",
+      "subtitle": "Detalhe o preço total e seu desdobramento. A moeda é herdada do evento.",
+      "total": "Preço total ({currency})",
+      "sumIndicator": "Soma do desdobramento: {sum} / total: {total}",
+      "conditions": "Condições (opcional)",
+      "validUntil": "Válido até",
+      "validUntilHelp": "Por padrão sua cotação expira em 15 dias. Faixa permitida: hoje a hoje+90.",
+      "submit": "Enviar cotação",
+      "submitting": "Enviando…",
+      "breakdown": {
+        "legend": "Desdobramento",
+        "help": "Entre 1 e {max} itens. A soma deve coincidir com o total (±0,01).",
+        "itemLabel": "Item",
+        "itemAmount": "Valor ({currency})",
+        "add": "Adicionar item",
+        "remove": "Remover",
+        "removeAria": "Remover o item {index}",
+        "errors": {
+          "INVALID_LABEL": "O item deve ter entre 1 e 150 caracteres.",
+          "INVALID_AMOUNT": "O valor deve ser um decimal ≥ 0 com até 2 casas.",
+          "MAX_ITEMS": "Você atingiu o máximo de {max} itens.",
+          "UNKNOWN": "Dado inválido."
+        }
+      },
+      "errors": {
+        "QR_NOT_FOUND": "Esta solicitação não está mais disponível.",
+        "QR_NOT_RESPONDABLE": "Esta solicitação não pode mais ser respondida.",
+        "QUOTE_ALREADY_EXISTS": "Você já enviou uma cotação para esta solicitação.",
+        "INVALID_TOTAL": "O preço total deve ser um decimal maior que 0.",
+        "INVALID_BREAKDOWN": "O desdobramento deve ter entre 1 e 20 itens.",
+        "INVALID_BREAKDOWN_ITEM": "Verifique os itens: label 1..150, valor ≥ 0.",
+        "INVALID_BREAKDOWN_SUM": "A soma do desdobramento não coincide com o total.",
+        "INVALID_VALID_UNTIL": "A data de validade deve estar entre hoje e hoje+90.",
+        "AUTHENTICATION_REQUIRED": "Sua sessão expirou. Entre novamente.",
+        "FORBIDDEN": "Apenas fornecedores podem responder cotações.",
+        "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
+      }
+    },
     "detail": {
       "title": "Detalhe da solicitação",
       "createdAt": "Solicitação recebida em {date}",

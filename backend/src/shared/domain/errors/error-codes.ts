@@ -145,6 +145,16 @@ export const ErrorCodes = {
   INVALID_BRIEF: 'INVALID_BRIEF', // 400 — brief.budget<0 o brief.message>5000 (EC-03, VR-05/06).
   QR_ALREADY_ACTIVE: 'QR_ALREADY_ACTIVE', // 409 — QR activa par (event, vendor) (AC-02, VR-07); `details.existing_quote_request_id`.
   QR_CATEGORY_LIMIT_REACHED: 'QR_CATEGORY_LIMIT_REACHED', // 409 — >=5 QRs activas en (event, category) (EC-05, VR-08); `details.active_count`.
+  // US-051 (PB-P1-031): 404 uniforme del detalle vendor (QR ajena/inexistente/vendor hidden).
+  QR_NOT_FOUND: 'QR_NOT_FOUND', // 404 — respuesta uniforme (SEC-05).
+  // US-052 (PB-P1-031): respuesta single-shot con Quote. Códigos específicos §7 Tech Spec.
+  QR_NOT_RESPONDABLE: 'QR_NOT_RESPONDABLE', // 409 — QR ∉ {sent, viewed} o expiración lazy (EC-01/02); `details` con reason.
+  QUOTE_ALREADY_EXISTS: 'QUOTE_ALREADY_EXISTS', // 409 — respeta `uq_quotes_request_active` (BR-QUOTE-013); `details.existing_quote_id`.
+  INVALID_BREAKDOWN: 'INVALID_BREAKDOWN', // 400 — cardinalidad fuera de 1..20 o forma inválida (EC-04).
+  INVALID_BREAKDOWN_ITEM: 'INVALID_BREAKDOWN_ITEM', // 400 — label 1..150 / amount>=0 (EC-05).
+  INVALID_BREAKDOWN_SUM: 'INVALID_BREAKDOWN_SUM', // 400 — sum(items.amount) - total > 0.01 (AC-04).
+  INVALID_TOTAL: 'INVALID_TOTAL', // 400 — total_price no es decimal>0 con hasta 2 decimales (EC-03).
+  INVALID_VALID_UNTIL: 'INVALID_VALID_UNTIL', // 400 — valid_until fuera de rango (today..today+90) (EC-06).
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

@@ -36,6 +36,12 @@ import {
   ServiceCategoryUnavailableError,
 } from '../../../modules/quote-flow/domain/us049.errors.js';
 import {
+  QrNotFoundError,
+  QrNotRespondableError,
+  QuoteAlreadyExistsError,
+  InvalidValidUntilError,
+} from '../../../modules/quote-flow/domain/us052.errors.js';
+import {
   MissingInputError,
   AiInvalidBudgetError,
   UnsupportedLanguageError,
@@ -235,6 +241,35 @@ function mapError(err: unknown): MappedError {
       code: ErrorCodes.INVALID_CATEGORY,
       message: err.message,
       details: [{ field: 'service_category_id', message: 'not_available' }],
+    };
+  }
+  // US-051/US-052 (PB-P1-031): 404 uniforme para QR ajena/inexistente/vendor hidden.
+  if (err instanceof QrNotFoundError) {
+    return { status: 404, code: ErrorCodes.QR_NOT_FOUND, message: 'Quote request not found', masked: true };
+  }
+  // US-052 (PB-P1-031): respuesta single-shot del vendor.
+  if (err instanceof QrNotRespondableError) {
+    return {
+      status: 409,
+      code: ErrorCodes.QR_NOT_RESPONDABLE,
+      message: err.message,
+      details: [{ field: err.reason, message: err.detail }],
+    };
+  }
+  if (err instanceof QuoteAlreadyExistsError) {
+    return {
+      status: 409,
+      code: ErrorCodes.QUOTE_ALREADY_EXISTS,
+      message: err.message,
+      details: [{ field: 'existing_quote_id', message: err.existingQuoteId }],
+    };
+  }
+  if (err instanceof InvalidValidUntilError) {
+    return {
+      status: 400,
+      code: ErrorCodes.INVALID_VALID_UNTIL,
+      message: err.message,
+      details: [{ field: 'valid_until', message: 'out_of_range' }],
     };
   }
   if (err instanceof MissingInputError) {

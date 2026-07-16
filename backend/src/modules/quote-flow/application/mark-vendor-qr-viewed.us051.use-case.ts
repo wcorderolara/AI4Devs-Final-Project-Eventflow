@@ -21,7 +21,7 @@ import type { VendorProfileReader } from '../../../shared/access/readers.js';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import type { ClockPort } from '../../../shared/domain/clock.port.js';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
-import { NotFoundError } from '../../../shared/domain/errors/not-found.error.js';
+import { QrNotFoundError } from '../domain/us052.errors.js';
 import type { QuoteRequestView, QuoteRequestStatusValue } from '../domain/quote-request.js';
 
 interface QuoteRequestLockRow {
@@ -80,7 +80,7 @@ export class MarkVendorQrViewedUs051UseCase {
     //    tomar locks innecesarios cuando la autorización fallará.
     const vendorProfile = await this.vendors.findActiveByUserId(currentUserId);
     if (!vendorProfile || vendorProfile.status === 'hidden') {
-      throw new NotFoundError('Quote request not found');
+      throw new QrNotFoundError('Quote request not found');
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -96,7 +96,7 @@ export class MarkVendorQrViewedUs051UseCase {
                     FOR UPDATE`,
       );
       const row = rows[0];
-      if (!row) throw new NotFoundError('Quote request not found');
+      if (!row) throw new QrNotFoundError('Quote request not found');
 
       const now = this.clock.now();
 
@@ -127,7 +127,7 @@ export class MarkVendorQrViewedUs051UseCase {
                       WHERE id = ${qrId}::uuid`,
         );
         const current = currentRows[0];
-        if (!current) throw new NotFoundError('Quote request not found');
+        if (!current) throw new QrNotFoundError('Quote request not found');
         return rowToView(current);
       }
 
@@ -139,7 +139,7 @@ export class MarkVendorQrViewedUs051UseCase {
       if (!organizerUserId) {
         // FK garantiza que el evento existe; si por integridad no lo encuentra, mantenemos
         // el comportamiento uniforme 404 en lugar de exponer una inconsistencia.
-        throw new NotFoundError('Quote request not found');
+        throw new QrNotFoundError('Quote request not found');
       }
 
       // 7) Notificación in_app al organizer (D5) DENTRO de la misma transacción.

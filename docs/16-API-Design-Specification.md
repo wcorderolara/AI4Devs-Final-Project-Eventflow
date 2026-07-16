@@ -1818,6 +1818,78 @@ Observabilidad: log estructurado `quote_request.viewed` (`info`) con `{ correlat
 
 Compatibilidad con la ruta legado `PATCH /quote-requests/:quoteRequestId/viewed` (US-096): se preserva por consumidores existentes. El nuevo endpoint POST bajo `vendor/` es el canónico para MVP y el único que persiste `viewed_by` + Notification atómica al organizer.
 
+### 30.8 US-052 · `POST /api/v1/vendor/quote-requests/:id/respond` (respuesta single-shot con Quote)
+
+Respuesta atómica del vendor a un `QuoteRequest`. En una única transacción:
+
+1. `SELECT ... FOR UPDATE` sobre `quote_requests` filtrado por `vendor_profile_id` (assignment).
+2. Guard `status ∈ {sent, viewed}` + filtro lazy de expiración (`expires_at ≤ NOW()`).
+3. Recheck contra `uq_quotes_request_active`: existente ⇒ `409 QUOTE_ALREADY_EXISTS`.
+4. INSERT `quotes(status='sent', ...)` — la `currency_code` se hereda del `event.currency` (**el `currency_code` del body es ignorado — SEC-04 defense-in-depth**).
+5. UPDATE `quote_requests.status='responded'`.
+6. INSERT 2 `notifications(type='quote.sent')` al organizador (in_app delivered + email_simulated simulated).
+7. Log estructurado `quote.sent` con `{correlationId, actorId, quoteId, quoteRequestId}`.
+
+Un error en cualquier paso revierte la transacción completa. Uniformidad SEC (D4): QR inexistente, ajena, vendor con `status='hidden'` o soft-deleted ⇒ `404 QR_NOT_FOUND`.
+
+| Método | Path | Auth | Roles | Propósito | Success | Errores |
+| --- | --- | --- | --- | --- | --- | --- |
+| POST | `/api/v1/vendor/quote-requests/:id/respond` | Sí (cookie de sesión) | vendor | Crear Quote `sent` + 2 notifications atómicas. | 201 | 400 (`INVALID_UUID`, `INVALID_TOTAL`, `INVALID_BREAKDOWN`, `INVALID_BREAKDOWN_ITEM`, `INVALID_BREAKDOWN_SUM`, `INVALID_VALID_UNTIL`), 401, 403, 404 (`QR_NOT_FOUND`), 409 (`QR_NOT_RESPONDABLE`, `QUOTE_ALREADY_EXISTS`) |
+
+```ts
+// Request body (envelope no-anidado)
+type RespondQuoteRequestBody = {
+  total_price: string;                             // decimal > 0, hasta 2 decimales
+  breakdown: Array<{                                // 1..20 items
+    label: string;                                  // 1..150
+    amount: string;                                 // decimal >= 0, hasta 2 decimales
+  }>;
+  conditions?: string;                              // <= 2000
+  valid_until?: string;                             // YYYY-MM-DD; rango today..today+90 (default +15)
+  currency_code?: string;                           // aceptado por el DTO PERO IGNORADO server-side (SEC-04)
+};
+
+// Response 201 (envelope { data, correlationId })
+type QuoteResponse = {
+  id: string;                                       // uuid del Quote creado
+  quoteRequestId: string;                           // uuid del QR
+  vendorProfileId: string;                          // uuid del vendor
+  status: 'sent';
+  totalPrice: string;                               // decimal string (2 decimales)
+  currencyCode: 'GTQ' | 'EUR' | 'MXN' | 'COP' | 'USD'; // heredada del evento (event.currency)
+  breakdown: Array<{ label: string; amount: string }>;
+  conditions: string | null;
+  validUntil: string;                               // ISO-8601, 23:59:59 UTC del día especificado
+  sentAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+```
+
+Semántica de `valid_until`:
+
+- Formato del body: `YYYY-MM-DD` (día calendario UTC). El backend lo materializa a `23:59:59 UTC` del día.
+- Ausente ⇒ default `clock.now() + 15 días @ 23:59:59 UTC` (BR-QUOTE-015 / C-031).
+- Fuera del rango `today..today+90` (comparado a `23:59:59 UTC`) ⇒ `400 INVALID_VALID_UNTIL`.
+
+Errores (envelope estándar):
+
+| Código | HTTP | `details` | Trigger |
+| --- | ---: | --- | --- |
+| `INVALID_UUID` | 400 | `[{ field: 'id', message: 'invalid' }]` | Path param no es UUID (Zod). |
+| `INVALID_TOTAL` | 400 | Zod refines. | `total_price` ≤ 0 o formato inválido (EC-03). |
+| `INVALID_BREAKDOWN` | 400 | Zod refines. | Cardinalidad fuera de 1..20 (EC-04). |
+| `INVALID_BREAKDOWN_ITEM` | 400 | Zod refines. | `label` 1..150 / `amount` ≥ 0 (EC-05). |
+| `INVALID_BREAKDOWN_SUM` | 400 | Zod refine con tolerancia ±0.01. | `|Σ items.amount − total_price| > 0.01` (AC-04). |
+| `INVALID_VALID_UNTIL` | 400 | `[{ field: 'valid_until', message: 'out_of_range' }]` | Fuera de `today..today+90` (EC-06). |
+| `AUTHENTICATION_REQUIRED` | 401 | — | Sin sesión. |
+| `FORBIDDEN` | 403 | — | Rol distinto de `vendor`. |
+| `QR_NOT_FOUND` | 404 | — | QR inexistente, ajena, vendor con `status='hidden'` o soft-deleted (uniforme; SEC-05). |
+| `QR_NOT_RESPONDABLE` | 409 | `[{ field: 'status'|'expired', message: <detalle> }]` | QR ∉ {sent, viewed} o `expires_at ≤ NOW()` (EC-01/02). |
+| `QUOTE_ALREADY_EXISTS` | 409 | `[{ field: 'existing_quote_id', message: <uuid> }]` | Respeta `uq_quotes_request_active` (BR-QUOTE-013). |
+
+Observabilidad: log estructurado `quote.sent` (`info`) con `{correlationId, actorId, quoteId, quoteRequestId}`. Notificaciones persistidas: `type='quote.sent'`; `payload` incluye `{channel, deliveryStatus, event, quote_id, quote_request_id, vendor_profile_id, total_price, currency_code, valid_until}`.
+
 ---
 
 ## 31. Quotes API

@@ -297,6 +297,45 @@
     }
   },
   "qr": {
+    "respond": {
+      "title": "Respond with a quote",
+      "subtitle": "Provide the total price and its breakdown. Currency is inherited from the event.",
+      "total": "Total price ({currency})",
+      "sumIndicator": "Breakdown sum: {sum} / total: {total}",
+      "conditions": "Conditions (optional)",
+      "validUntil": "Valid until",
+      "validUntilHelp": "By default your quote expires in 15 days. Allowed range: today to today+90.",
+      "submit": "Send quote",
+      "submitting": "Sending…",
+      "breakdown": {
+        "legend": "Breakdown",
+        "help": "Between 1 and {max} items. The sum must match the total (±0.01).",
+        "itemLabel": "Item",
+        "itemAmount": "Amount ({currency})",
+        "add": "Add item",
+        "remove": "Remove",
+        "removeAria": "Remove item {index}",
+        "errors": {
+          "INVALID_LABEL": "Item label must be between 1 and 150 characters.",
+          "INVALID_AMOUNT": "Amount must be a decimal ≥ 0 with up to 2 decimals.",
+          "MAX_ITEMS": "You reached the {max}-item limit.",
+          "UNKNOWN": "Invalid value."
+        }
+      },
+      "errors": {
+        "QR_NOT_FOUND": "This request is no longer available.",
+        "QR_NOT_RESPONDABLE": "This request can no longer be responded to.",
+        "QUOTE_ALREADY_EXISTS": "You already sent a quote for this request.",
+        "INVALID_TOTAL": "Total price must be a decimal greater than 0.",
+        "INVALID_BREAKDOWN": "The breakdown must have between 1 and 20 items.",
+        "INVALID_BREAKDOWN_ITEM": "Check the items: label 1..150, amount ≥ 0.",
+        "INVALID_BREAKDOWN_SUM": "Breakdown sum does not match the total.",
+        "INVALID_VALID_UNTIL": "Valid-until date must be between today and today+90.",
+        "AUTHENTICATION_REQUIRED": "Your session expired. Please sign in again.",
+        "FORBIDDEN": "Only vendors can respond to quotes.",
+        "UNEXPECTED": "An unexpected error occurred. Please try again."
+      }
+    },
     "detail": {
       "title": "Request detail",
       "createdAt": "Request received on {date}",

@@ -49,6 +49,31 @@ interface Envelope<T> {
   correlationId: string;
 }
 
+/** Request body del endpoint respond (US-052). `currency_code` es aceptado pero el backend
+ * lo ignora y usa la moneda del evento (DEV-04 / SEC-04). */
+export interface RespondVendorQrInput {
+  total_price: string;
+  breakdown: { label: string; amount: string }[];
+  conditions?: string;
+  valid_until?: string;
+}
+
+/** Response del endpoint respond (US-052). Shape distinto al detalle (es un `Quote`). */
+export interface VendorQuoteResponseDTO {
+  id: string;
+  quoteRequestId: string;
+  vendorProfileId: string;
+  status: 'sent';
+  totalPrice: string;
+  currencyCode: string;
+  breakdown: { label: string; amount: string }[];
+  conditions: string | null;
+  validUntil: string;
+  sentAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const vendorQrApi = {
   async detail(id: string): Promise<VendorQuoteRequestDTO> {
     const envelope = await httpGet<Envelope<VendorQuoteRequestDTO>>(
@@ -61,6 +86,14 @@ export const vendorQrApi = {
     const envelope = await httpPost<Envelope<VendorQuoteRequestDTO>, undefined>(
       `/vendor/quote-requests/${encodeURIComponent(id)}/mark-viewed`,
       { body: undefined },
+    );
+    return envelope.data;
+  },
+
+  async respond(id: string, input: RespondVendorQrInput): Promise<VendorQuoteResponseDTO> {
+    const envelope = await httpPost<Envelope<VendorQuoteResponseDTO>, RespondVendorQrInput>(
+      `/vendor/quote-requests/${encodeURIComponent(id)}/respond`,
+      { body: input },
     );
     return envelope.data;
   },
