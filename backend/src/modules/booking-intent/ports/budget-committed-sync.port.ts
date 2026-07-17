@@ -14,7 +14,12 @@ import type { Prisma } from '@prisma/client';
 export interface BudgetSyncCancellationInput {
   at: Date;
   by: string;
-  reason: string;
+  /**
+   * US-062 (BE-001): `reason` es `string | null` — AC-03 permite cancelar sin razón. El handler
+   * `revertOnCancel` no persiste el reason (la persistencia sobre `booking_intents.cancellation_reason`
+   * la hace el UC US-062 upstream); el field vive en el port por auditoría transversal.
+   */
+  reason: string | null;
 }
 
 export interface BudgetCommittedSyncPort {

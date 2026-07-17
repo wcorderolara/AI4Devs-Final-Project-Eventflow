@@ -11,9 +11,13 @@
 //
 // US-060: `booking_intent.created` — recipient = vendor asignado al Quote.
 // US-061: `booking_intent.confirmed` — recipient = organizer dueño del evento.
+// US-062: `booking_intent.cancelled` — recipient = contraparte del actor (organizer ⇄ vendor).
 import type { Prisma } from '@prisma/client';
 
-export type BookingIntentEventName = 'booking_intent.created' | 'booking_intent.confirmed';
+export type BookingIntentEventName =
+  | 'booking_intent.created'
+  | 'booking_intent.confirmed'
+  | 'booking_intent.cancelled';
 
 export interface EmitBookingIntentEventInput {
   recipientUserId: string;

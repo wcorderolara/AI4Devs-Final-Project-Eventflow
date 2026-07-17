@@ -148,7 +148,9 @@ describe.skipIf(!dbUp)('US-096 QA-002 — Quote/Booking integration', () => {
 
     // AC-12: retrieve + cancel con reason.
     expect((await organizer.get(`/api/v1/booking-intents/${bookingIntentId}`)).status).toBe(200);
-    const cancelled = await organizer.post(`/api/v1/booking-intents/${bookingIntentId}/cancel`).send({ cancellationReason: 'cambio de planes' });
+    // US-062 (BE-001): el DTO ahora acepta `reason` opcional (max 500). El response DTO
+    // preserva `cancellationReason` (camelCase) desde el mapper legacy.
+    const cancelled = await organizer.post(`/api/v1/booking-intents/${bookingIntentId}/cancel`).send({ reason: 'cambio de planes' });
     expect(cancelled.status).toBe(200);
     expect(cancelled.body.data).toMatchObject({ status: 'cancelled', cancellationReason: 'cambio de planes' });
   });

@@ -22,6 +22,7 @@
 //   - `quote.unmarked_preferred`   (US-058 — organizer desmarca o cambia de Quote preferred).
 //   - `booking_intent.created`     (US-060 — organizer acepta Quote y crea BookingIntent atómicamente).
 //   - `booking_intent.confirmed`   (US-061 — vendor asignado confirma el BookingIntent).
+//   - `booking_intent.cancelled`   (US-062 — organizer o vendor cancela el BookingIntent).
 import type { QuoteNotificationSenderPort } from '../../../shared/application/quote-notification-sender.port.js';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import type { Prisma } from '@prisma/client';
@@ -33,7 +34,8 @@ export type QuoteEventName =
   | 'quote.marked_preferred'
   | 'quote.unmarked_preferred'
   | 'booking_intent.created'
-  | 'booking_intent.confirmed';
+  | 'booking_intent.confirmed'
+  | 'booking_intent.cancelled';
 
 export interface EmitQuoteEventInput {
   /** `users.id` del destinatario resuelto por la use case invocante (usualmente el vendor). */

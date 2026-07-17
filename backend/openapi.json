@@ -1650,15 +1650,11 @@
               "schema": {
                 "additionalProperties": false,
                 "properties": {
-                  "cancellationReason": {
-                    "maxLength": 1000,
-                    "minLength": 1,
+                  "reason": {
+                    "maxLength": 500,
                     "type": "string"
                   }
                 },
-                "required": [
-                  "cancellationReason"
-                ],
                 "type": "object"
               }
             }
@@ -1763,6 +1759,9 @@
             },
             "description": "OK"
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -1772,8 +1771,8 @@
           "404": {
             "$ref": "#/components/responses/NotFound"
           },
-          "422": {
-            "$ref": "#/components/responses/ValidationError"
+          "409": {
+            "$ref": "#/components/responses/Conflict"
           }
         },
         "security": [
@@ -1781,7 +1780,7 @@
             "cookieAuth": []
           }
         ],
-        "summary": "Cancelar BookingIntent",
+        "summary": "US-062 · Cancelar BookingIntent (bilateral) + revert committed condicional",
         "tags": [
           "BookingIntents"
         ]

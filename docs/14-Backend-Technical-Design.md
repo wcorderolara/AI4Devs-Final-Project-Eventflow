@@ -583,7 +583,9 @@ Importante: este listado prohíbe automáticamente crear un controller/repo por 
   atómico), `GetBookingIntentUseCase`, `ConfirmBookingIntentUseCase` (US-061 — 3-step
   transaccional: UPDATE intent + sync committed cross-domain via US-039 + 2 notifs organizer con
   `event='booking_intent.confirmed'`; idempotencia AC-03 + warn `budget.committed_exceeds_planned`),
-  `CancelBookingIntentUseCase`.
+  `CancelBookingIntentUseCase` (US-062 — cancelación bilateral 3-step: UPDATE intent + revert
+  committed condicional via US-039 + 2 notifs a contraparte con `event='booking_intent.cancelled'`;
+  NO idempotente por contrato + warn `budget.committed_underflow_corrected`; `reason` opcional).
 - **Domain services / policies:** `BookingIntentPolicyService` (opcional; transición de estados).
   `QuoteEventNotificationService` (compartido con `quote-flow`) — extendido con
   `booking_intent.created` (6º evento).

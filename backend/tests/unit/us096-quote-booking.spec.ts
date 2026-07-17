@@ -133,9 +133,15 @@ describe('Booking DTOs (AC-10/AC-12, VR-10, EC-08)', () => {
       CreateBookingIntentRequestSchema.safeParse({ quote_id: uuid }).success,
     ).toBe(false);
   });
-  it('cancel exige cancellationReason no vacío (VR-10)', () => {
-    expect(CancelBookingIntentRequestSchema.safeParse({ cancellationReason: 'no disponible' }).success).toBe(true);
-    expect(CancelBookingIntentRequestSchema.safeParse({ cancellationReason: '   ' }).success).toBe(false);
-    expect(CancelBookingIntentRequestSchema.safeParse({}).success).toBe(false);
+  it('US-062 cancel: `reason` opcional trim max 500 (AC-03 permite omitir)', () => {
+    // AC-03 (US-062): cancelar sin razón es válido — body vacío o `reason` omitido.
+    expect(CancelBookingIntentRequestSchema.safeParse({}).success).toBe(true);
+    expect(CancelBookingIntentRequestSchema.safeParse({ reason: 'no disponible' }).success).toBe(true);
+    // `.trim()` normaliza whitespace; el UC decide si persiste null cuando quedaría vacío.
+    expect(CancelBookingIntentRequestSchema.safeParse({ reason: '   ' }).success).toBe(true);
+    // > 500 chars ⇒ 400 INVALID_CANCELLATION_REASON (EC-05, VR-05).
+    expect(CancelBookingIntentRequestSchema.safeParse({ reason: 'x'.repeat(501) }).success).toBe(false);
+    // Field ajeno rechazado por `.strict()`.
+    expect(CancelBookingIntentRequestSchema.safeParse({ reason: 'ok', extra: 1 }).success).toBe(false);
   });
 });

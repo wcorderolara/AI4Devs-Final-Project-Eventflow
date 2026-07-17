@@ -1,0 +1,26 @@
+{
+  "cancel": {
+    "title": "Cancelar intención de booking",
+    "description": "La intención de booking se marcará como cancelada. Si estaba confirmada, revertimos el compromiso en el presupuesto y avisamos a la contraparte. Esta acción no se puede deshacer.",
+    "reasonLabel": "Motivo de la cancelación (opcional)",
+    "reasonPlaceholder": "Ej. Cambio de fecha del evento…",
+    "reasonHint": "Máximo 500 caracteres.",
+    "reasonCounter": "{count}/500",
+    "actions": {
+      "cancel": "Volver",
+      "submit": "Confirmar cancelación",
+      "submitting": "Cancelando…"
+    },
+    "success": "Cancelación aplicada. Notificamos a la contraparte.",
+    "errors": {
+      "VALIDATION_ERROR": "Hubo un problema con la solicitud. Intenta nuevamente.",
+      "INVALID_CANCELLATION_REASON": "El motivo no puede superar 500 caracteres.",
+      "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para cancelar.",
+      "FORBIDDEN": "Tu rol no puede cancelar este booking.",
+      "BOOKING_INTENT_NOT_FOUND": "No encontramos este booking o ya no está disponible.",
+      "BOOKING_INTENT_NOT_CANCELLABLE": "Este booking ya no puede cancelarse en su estado actual.",
+      "RATE_LIMIT_EXCEEDED": "Demasiadas solicitudes. Espera un momento e intenta de nuevo.",
+      "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
+    }
+  }
+}

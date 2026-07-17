@@ -53,9 +53,13 @@ export class BookingIntentsController {
 
   cancel = async (req: Request, res: Response): Promise<void> => {
     const { bookingIntentId } = req.validated?.params as BookingIntentIdParam;
+    // US-062 BE-005: DTO ahora usa `reason` optional; se pasa `null` cuando el body llega vacío
+    // o con `reason` ausente. El UC persiste `cancellation_reason=null` en ese caso (AC-03).
     const body = req.validated?.body as CancelBookingIntentRequest;
     const a = actor(req);
-    const view = await this.uc.cancel.execute(a.id, a.role, bookingIntentId, body.cancellationReason, { correlationId: req.correlationId });
+    const view = await this.uc.cancel.execute(a.id, a.role, bookingIntentId, body.reason ?? null, {
+      correlationId: req.correlationId,
+    });
     res.status(200).json(success(toBookingIntentResponse(view), req.correlationId ?? ''));
   };
 }

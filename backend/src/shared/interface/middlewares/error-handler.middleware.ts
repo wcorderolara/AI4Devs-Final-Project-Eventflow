@@ -80,6 +80,13 @@ import {
   BookingIntentNotFoundError,
   BookingIntentNotConfirmableError,
 } from '../../../modules/booking-intent/domain/us061.errors.js';
+// US-062 (PB-P1-036): cancelación bilateral del BookingIntent + revert atómico.
+// `BookingIntentNotCancellableError` → 409 con `details.current_status`;
+// `InvalidCancellationReasonError` → 400.
+import {
+  BookingIntentNotCancellableError,
+  InvalidCancellationReasonError as Us062InvalidCancellationReasonError,
+} from '../../../modules/booking-intent/domain/us062.errors.js';
 import {
   MissingInputError,
   AiInvalidBudgetError,
@@ -423,6 +430,23 @@ function mapError(err: unknown): MappedError {
       code: ErrorCodes.BOOKING_INTENT_NOT_CONFIRMABLE,
       message: err.message,
       details: [{ field: 'current_status', message: err.currentStatus }],
+    };
+  }
+  // US-062 (PB-P1-036): cancelación bilateral del BookingIntent.
+  if (err instanceof BookingIntentNotCancellableError) {
+    return {
+      status: 409,
+      code: ErrorCodes.BOOKING_INTENT_NOT_CANCELLABLE,
+      message: err.message,
+      details: [{ field: 'current_status', message: err.currentStatus }],
+    };
+  }
+  if (err instanceof Us062InvalidCancellationReasonError) {
+    return {
+      status: 400,
+      code: ErrorCodes.INVALID_CANCELLATION_REASON,
+      message: err.message,
+      details: [{ field: 'reason', message: 'too_long' }],
     };
   }
   if (err instanceof MissingInputError) {

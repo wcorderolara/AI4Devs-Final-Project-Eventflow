@@ -2132,7 +2132,7 @@ Simular la intención de contratar al vendor con una `Quote` aceptada. **Sin pag
 | POST | `/booking-intents` | Sí | organizer | **US-060**: Aceptación atómica de la Quote + creación del intent + 2 Notifications al vendor. Body snake_case con `disclaimer_accepted:true` requerido. Ver §32.6. | 201 | 400 (VALIDATION_ERROR, DISCLAIMER_REQUIRED), 401 (AUTHENTICATION_REQUIRED), 403 (FORBIDDEN), 404 (QUOTE_NOT_FOUND uniforme), 409 (QUOTE_NOT_ACCEPTABLE, QUOTE_EXPIRED, BOOKING_INTENT_ALREADY_EXISTS) |
 | GET | `/booking-intents/:bookingIntentId` | Sí | organizer, vendor (asignado), admin | Detalle. | 200 | 401, 403, 404 |
 | POST | `/booking-intents/:bookingIntentId/confirm` | Sí | vendor (target) | **US-061**: Confirmación atómica del intent + `UPDATE`/auto-create `BudgetItem.committed` (cross-domain via US-039) + 2 Notifications al organizer. Body vacío. Idempotente sobre `status='confirmed_intent'` (AC-03). Ver §32.7. | 200 | 400 (VALIDATION_ERROR), 401, 403, 404 (BOOKING_INTENT_NOT_FOUND uniforme), 409 (BOOKING_INTENT_NOT_CONFIRMABLE) |
-| POST | `/booking-intents/:bookingIntentId/cancel` | Sí | organizer, vendor | Cancela. | 200 | 401, 403, 404, 422 |
+| POST | `/booking-intents/:bookingIntentId/cancel` | Sí | organizer, vendor (bilateral; admin excluido) | **US-062**: Cancelación atómica bilateral + revert condicional de `BudgetItem.committed` (sólo si el previo era `confirmed_intent`) + 2 Notifications a la contraparte con `event='booking_intent.cancelled'`. Body opcional `{reason?:string(0..500)}`. NO idempotente por contrato (segundo POST ⇒ 409). Ver §32.8. | 200 | 400 (VALIDATION_ERROR, INVALID_CANCELLATION_REASON), 401, 403, 404 (BOOKING_INTENT_NOT_FOUND uniforme bilateral), 409 (BOOKING_INTENT_NOT_CANCELLABLE) |
 
 ### 32.3 DTOs
 
@@ -2347,6 +2347,102 @@ vendor_profile_id, total_price, currency_code}`.
 Deviation (DEV-01 del execution record `management/workflows/development-execution/P1/PB-P1-036/US-061-execution.md`):
 la ruta canónica es `/api/v1/booking-intents/:id/confirm` (sin prefijo `/vendor/`) para
 consistencia con el resto de módulos del repo.
+
+### 32.8 US-062 · `POST /api/v1/booking-intents/:id/cancel` (cancelación bilateral + revert atómico condicional)
+
+Endpoint bilateral (organizer O vendor asignado) que cancela un `BookingIntent` en estado
+`pending` o `confirmed_intent`. La transición es una única `prisma.$transaction` que combina:
+
+1. `SELECT cancelled_at, status FROM booking_intents FOR UPDATE` — serializa 2 requests
+   simultáneos. La segunda ve `cancelled_at != null` y devuelve `409 BOOKING_INTENT_NOT_CANCELLABLE`
+   con `current_status='cancelled'` (US-062 D6: cancel NO es idempotente en el contrato §7, a
+   diferencia del confirm US-061).
+2. `UPDATE booking_intents.status='cancelled', cancelled_at=NOW(), cancelled_by=userId,
+   cancellation_reason=<reason>` (persistido como `null` cuando el body llega vacío o `reason`
+   se trimmea a cadena vacía — AC-03).
+3. **Condicional**: si el previo era `confirmed_intent`, ejecuta `budgetSync.revertOnCancel`
+   (US-039 handler) que hace `UPDATE budget_items.amount_committed -= quote.amount` con
+   `MAX(0, ...)` defensivo. Antes del revert, el UC emite warn `budget.committed_underflow_corrected`
+   cuando observa `amountCommitted < syncedAmount`.
+4. Fan-out atómico 2 notifs a la **contraparte** con `event='booking_intent.cancelled'`. El
+   recipient es el organizer cuando cancela el vendor y viceversa.
+
+Body: `{ "reason": "<optional string 0..500 chars>" }` — el field es opcional. `.strict()` rechaza
+cualquier otro field.
+
+Response 200 (mismo shape que §32.6/§32.7):
+
+```json
+{
+  "data": {
+    "id": "<uuid>",
+    "quoteId": "<uuid>",
+    "eventId": "<uuid>",
+    "serviceCategoryId": "<uuid>",
+    "vendorProfileId": "<uuid>",
+    "status": "cancelled",
+    "isSimulated": true,
+    "confirmedAt": null|"2026-…",
+    "cancelledAt": "2026-…",
+    "cancelledBy": "<uuid>",
+    "cancellationReason": null|"<string>",
+    "createdAt": "2026-…",
+    "updatedAt": "2026-…"
+  },
+  "correlationId": "<uuid>"
+}
+```
+
+Errores estables (contrato §7 Tech Spec):
+
+| HTTP | Code | Detalle |
+| --- | --- | --- |
+| 400 | `VALIDATION_ERROR` | Path `:id` no UUID o body inválido. |
+| 400 | `INVALID_CANCELLATION_REASON` | `reason` > 500 chars. `details.field='reason'`. |
+| 401 | `AUTHENTICATION_REQUIRED` | Sin sesión. |
+| 403 | `FORBIDDEN` | Rol `admin` (excluido del cancel bilateral). |
+| 404 | `BOOKING_INTENT_NOT_FOUND` | Intent inexistente, organizer ajeno o vendor no assigned (uniforme bilateral — no filtra ownership). |
+| 409 | `BOOKING_INTENT_NOT_CANCELLABLE` | `status ∉ {pending, confirmed_intent}` (típicamente ya `cancelled`). `details.current_status`. |
+
+**Bilateral con notif contraparte**: el UC determina `cancelled_by_role` a partir del `role` de
+sesión (`organizer` o `vendor`). El payload de la notif incluye `cancelled_by_role`,
+`cancellation_reason` (nullable) y `committed_reverted: boolean` para que la vista pinte el
+resumen sin re-consultar.
+
+Decisiones PO/Tech (§Decision Resolution `US-062-decision-resolution.md`):
+
+- **D1** cancelación transaccional 3-step (UPDATE intent + revert committed condicional +
+  fan-out atómico contraparte). Un fallo revierte todo.
+- **D2** revert condicional: sólo cuando el previo era `confirmed_intent`. Cancel desde
+  `pending` no toca el committed (US-062 AC-02).
+- **D3** `reason` OPCIONAL 0..500 (AC-03 explícitamente permite cancelar sin razón).
+- **D4** `MAX(0, ...)` defensivo en el revert (BR-BUDGET-004 — no permitir underflow físico).
+- **D5** 2 Notifications a la contraparte (`in_app` + `email_simulated`) con
+  `event='booking_intent.cancelled'` — extensión a 8 eventos del `QuoteEventName` común.
+- **D6** cancel NO es idempotente en el contrato: 2º POST sobre `cancelled` ⇒ 409 (a diferencia
+  de US-061 confirm que es idempotente).
+- **D7** authorization bilateral: organizer dueño del evento O vendor assigned al Quote → 404
+  uniforme si no lo es. Admin excluido (403).
+- **D8** sin `disclaimer_accepted` (no aplica a cancel).
+
+Observabilidad:
+- Log estructurado `booking_intent.cancelled` (`info`) con `{correlationId, actorId,
+  bookingIntentId}` (SEC-09 sin payload).
+- Log agregado del fan-out: `quote.notification.emitted` con
+  `eventName='booking_intent.cancelled'`.
+- **US-062 BE-006 (EC-06)**: warn `budget.committed_underflow_corrected` cuando el revert
+  observa `previousCommitted < attemptedSubtraction`. Payload: `{correlationId, budgetId,
+  budgetItemId, bookingIntentId, previousCommitted, attemptedSubtraction}`.
+- Logs cross-domain de US-039 (`budget.committed.synced` action='revert',
+  `budget.committed.skipped_nothing_to_revert`) se emiten desde el mismo `revertOnCancel`.
+
+Notifications persistidas: `type='booking_intent.cancelled'`; `payload` incluye
+`{channel, deliveryStatus, event, booking_intent_id, quote_id, quote_request_id, event_id,
+vendor_profile_id, cancelled_by_role, cancellation_reason, committed_reverted}`.
+
+Deviation (DEV-01 del execution record `management/workflows/development-execution/P1/PB-P1-036/US-062-execution.md`):
+la ruta canónica es `/api/v1/booking-intents/:id/cancel` (sin prefijo `/vendor/` ni `/organizer/`).
+El role guard `organizerOrVendor` ya montado sirve como `BilateralRoleGuard` (DEV-02).
 
 ---
 
