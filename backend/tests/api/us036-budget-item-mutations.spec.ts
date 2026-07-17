@@ -199,6 +199,9 @@ describe.skipIf(!dbUp)('US-036 QA-002 (con BD): CRUD BudgetItem', () => {
       data: {
         quoteRequestId: quoteRequest.id,
         vendorProfileId: vendorProfile.id,
+        // US-058 (PB-P1-035 / DB-002): columnas denormalizadas ahora requeridas.
+        eventId: eventActiveId,
+        serviceCategoryId: catering.id,
         amount: 100,
         currency: 'USD',
         status: 'accepted',

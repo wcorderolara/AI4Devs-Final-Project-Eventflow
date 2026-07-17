@@ -15,14 +15,21 @@
 // para trazar la fan-out sin exponer el payload (SEC-09).
 //
 // Eventos soportados (`QuoteEventName`):
-//   - `quote.rejected`            (US-054 — rechazo del organizer).
-//   - `quote.expired`             (US-053 — expiración por job).
-//   - `quote_request.cancelled`   (US-056 — cancelación por el organizer).
+//   - `quote.rejected`             (US-054 — rechazo del organizer).
+//   - `quote.expired`              (US-053 — expiración por job).
+//   - `quote_request.cancelled`    (US-056 — cancelación por el organizer).
+//   - `quote.marked_preferred`     (US-058 — organizer marca preferred).
+//   - `quote.unmarked_preferred`   (US-058 — organizer desmarca o cambia de Quote preferred).
 import type { QuoteNotificationSenderPort } from '../../../shared/application/quote-notification-sender.port.js';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import type { Prisma } from '@prisma/client';
 
-export type QuoteEventName = 'quote.rejected' | 'quote.expired' | 'quote_request.cancelled';
+export type QuoteEventName =
+  | 'quote.rejected'
+  | 'quote.expired'
+  | 'quote_request.cancelled'
+  | 'quote.marked_preferred'
+  | 'quote.unmarked_preferred';
 
 export interface EmitQuoteEventInput {
   /** `users.id` del destinatario resuelto por la use case invocante (usualmente el vendor). */

@@ -80,6 +80,21 @@
         "EVENT_NOT_FOUND": "We could not find that event or you do not have permission to view it.",
         "UNEXPECTED": "An unexpected error occurred. Please try again."
       }
+    },
+    "preferred": {
+      "mark": "Mark preferred",
+      "unmark": "Unmark preferred",
+      "loading": "Saving…",
+      "markAria": "Mark {vendor}'s quote as preferred",
+      "unmarkAria": "Remove the preferred mark from {vendor}'s quote",
+      "errors": {
+        "QUOTE_NOT_PREFERABLE": "This quote can no longer be marked: it changed state or expired.",
+        "QUOTE_NOT_FOUND": "We could not find this quote or it is no longer available.",
+        "AUTHENTICATION_REQUIRED": "You need to sign in to mark the quote.",
+        "FORBIDDEN": "Your role cannot mark quotes as preferred.",
+        "VALIDATION_ERROR": "There was a problem with your request. Please try again.",
+        "UNEXPECTED": "An unexpected error occurred. Please try again."
+      }
     }
   }
 }

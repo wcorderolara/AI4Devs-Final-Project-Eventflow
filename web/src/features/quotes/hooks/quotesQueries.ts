@@ -13,6 +13,8 @@ import type {
   CompareQuotesView,
   CreateQuoteRequestInput,
   CreateQuoteRequestView,
+  PreferQuoteInput,
+  PreferQuoteView,
 } from '../api/quotesApi.types';
 import type { ApiError } from '@/shared/api-client';
 
@@ -78,5 +80,31 @@ export function useCompareQuotes(
       }),
     enabled,
     staleTime: 30_000,
+  });
+}
+
+/**
+ * US-058 (FE-002): toggle idempotente de `is_preferred` sobre la Quote target. Invalida el
+ * comparador de la `(eventId, categoryCode)` afectada para reflejar el nuevo estado (mark,
+ * unmark o cambio de preferred) sin necesidad de reload. Los códigos de error se propagan
+ * como `ApiError` para que la UI pinte el mensaje i18n correspondiente.
+ */
+export interface PreferMutationContext {
+  eventId?: string;
+  categoryCode?: string;
+}
+export function usePreferQuote(
+  context: PreferMutationContext = {},
+): ReturnType<typeof useMutation<PreferQuoteView, ApiError, PreferQuoteInput>> {
+  const qc = useQueryClient();
+  return useMutation<PreferQuoteView, ApiError, PreferQuoteInput>({
+    mutationFn: (input) => quotesApi.preferred(input),
+    onSuccess: () => {
+      if (context.eventId && context.categoryCode) {
+        void qc.invalidateQueries({
+          queryKey: quotesKeys.compare(context.eventId, context.categoryCode),
+        });
+      }
+    },
   });
 }

@@ -80,6 +80,21 @@
         "EVENT_NOT_FOUND": "Não encontramos esse evento ou você não tem permissão para vê-lo.",
         "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
       }
+    },
+    "preferred": {
+      "mark": "Marcar preferred",
+      "unmark": "Remover preferred",
+      "loading": "Salvando…",
+      "markAria": "Marcar o orçamento de {vendor} como preferred",
+      "unmarkAria": "Remover a marca preferred do orçamento de {vendor}",
+      "errors": {
+        "QUOTE_NOT_PREFERABLE": "Este orçamento não pode mais ser marcado: mudou de estado ou expirou.",
+        "QUOTE_NOT_FOUND": "Não encontramos este orçamento ou ele não está mais disponível.",
+        "AUTHENTICATION_REQUIRED": "Você precisa iniciar sessão para marcar o orçamento.",
+        "FORBIDDEN": "Sua função não pode marcar orçamentos como preferred.",
+        "VALIDATION_ERROR": "Houve um problema com a solicitação. Tente novamente.",
+        "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
+      }
     }
   }
 }

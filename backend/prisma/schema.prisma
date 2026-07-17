@@ -257,12 +257,14 @@ model ServiceCategory {
   // US-102: soporte para chk_service_categories_depth_level (C-026b; BETWEEN 1 AND 2).
   depthLevel  Int     @default(1) @map("depth_level")
 
-  vendorServices VendorService[]
-  vendorProfiles VendorProfileCategory[]
-  quoteRequests  QuoteRequest[]
-  bookingIntents BookingIntent[]
+  vendorServices     VendorService[]
+  vendorProfiles     VendorProfileCategory[]
+  quoteRequests      QuoteRequest[]
+  bookingIntents     BookingIntent[]
   // US-027 (PB-P1-018): relación inversa débil con `event_tasks.category_code`.
-  eventTasks     EventTask[]             @relation("EventTaskServiceCategory")
+  eventTasks         EventTask[]             @relation("EventTaskServiceCategory")
+  // US-058 (PB-P1-035 / DB-002): relación inversa de la denormalización `Quote.service_category_id`.
+  quotesDenormalized Quote[]                 @relation("QuoteDenormalizedServiceCategory")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -453,11 +455,13 @@ model Event {
   eventType EventType @relation(fields: [eventTypeId], references: [id], onDelete: Restrict)
   location  Location? @relation(fields: [locationId], references: [id], onDelete: Restrict)
 
-  tasks             EventTask[]
-  budget            Budget?
-  quoteRequests     QuoteRequest[]
-  aiRecommendations AIRecommendation[]
-  bookingIntents    BookingIntent[]
+  tasks              EventTask[]
+  budget             Budget?
+  quoteRequests      QuoteRequest[]
+  aiRecommendations  AIRecommendation[]
+  bookingIntents     BookingIntent[]
+  // US-058 (PB-P1-035 / DB-002): relación inversa de la denormalización `Quote.event_id`.
+  quotesDenormalized Quote[]            @relation("QuoteDenormalizedEvent")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -630,28 +634,38 @@ model QuoteRequest {
 }
 
 model Quote {
-  id              String       @id @default(uuid()) @db.Uuid
-  quoteRequestId  String       @map("quote_request_id") @db.Uuid
-  vendorProfileId String       @map("vendor_profile_id") @db.Uuid
-  amount          Decimal      @db.Decimal(14, 2)
-  currency        CurrencyCode @default(GTQ)
-  validUntil      DateTime?    @map("valid_until") @db.Timestamptz(6)
-  status          QuoteStatus  @default(draft)
+  id                String       @id @default(uuid()) @db.Uuid
+  quoteRequestId    String       @map("quote_request_id") @db.Uuid
+  vendorProfileId   String       @map("vendor_profile_id") @db.Uuid
+  // US-058 (PB-P1-035 / DB-002): denormalización de `event_id` + `service_category_id` desde
+  // `quote_requests`. Habilitan el UNIQUE parcial nativo `(event_id, service_category_id) WHERE
+  // is_preferred=true` (BR-QUOTE-022) sin depender de un trigger o de la aplicación. Backfill
+  // idempotente en la migración; valores custodiados por FKs a `events`/`service_categories`.
+  eventId           String       @map("event_id") @db.Uuid
+  serviceCategoryId String       @map("service_category_id") @db.Uuid
+  amount            Decimal      @db.Decimal(14, 2)
+  currency          CurrencyCode @default(GTQ)
+  validUntil        DateTime?    @map("valid_until") @db.Timestamptz(6)
+  status            QuoteStatus  @default(draft)
   // US-096 (PB-P0-004): desglose (breakdown JSONB) + condiciones + preferencia + timestamps de
   // lifecycle. `amount` mapea a `totalPrice` del contrato API; `currency` a `currencyCode`.
-  breakdown       Json?        @db.JsonB
-  conditions      String?
-  isPreferred     Boolean      @default(false) @map("is_preferred")
-  sentAt          DateTime?    @map("sent_at") @db.Timestamptz(6)
-  acceptedAt      DateTime?    @map("accepted_at") @db.Timestamptz(6)
-  rejectedAt      DateTime?    @map("rejected_at") @db.Timestamptz(6)
+  breakdown         Json?        @db.JsonB
+  conditions        String?
+  isPreferred       Boolean      @default(false) @map("is_preferred")
+  sentAt            DateTime?    @map("sent_at") @db.Timestamptz(6)
+  acceptedAt        DateTime?    @map("accepted_at") @db.Timestamptz(6)
+  rejectedAt        DateTime?    @map("rejected_at") @db.Timestamptz(6)
   // US-054 (PB-P1-032 / DB-001): motivo opcional del rechazo capturado por el organizer (D4);
   // NULLABLE — histórico previo a US-054 no lo persiste. Longitud validada en el DTO (0..500).
-  rejectionReason String?      @map("rejection_reason")
-  expiredAt       DateTime?    @map("expired_at") @db.Timestamptz(6)
+  rejectionReason   String?      @map("rejection_reason")
+  expiredAt         DateTime?    @map("expired_at") @db.Timestamptz(6)
 
-  quoteRequest  QuoteRequest  @relation(fields: [quoteRequestId], references: [id], onDelete: Restrict)
-  vendorProfile VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Restrict)
+  quoteRequest    QuoteRequest    @relation(fields: [quoteRequestId], references: [id], onDelete: Restrict)
+  vendorProfile   VendorProfile   @relation(fields: [vendorProfileId], references: [id], onDelete: Restrict)
+  // US-058: FKs de las columnas denormalizadas. `onDelete: Restrict` — misma semántica de
+  // `quote_requests.event_id`/`service_category_id`.
+  event           Event           @relation("QuoteDenormalizedEvent", fields: [eventId], references: [id], onDelete: Restrict)
+  serviceCategory ServiceCategory @relation("QuoteDenormalizedServiceCategory", fields: [serviceCategoryId], references: [id], onDelete: Restrict)
 
   bookingIntents BookingIntent[]
 
@@ -661,6 +675,12 @@ model Quote {
 
   @@index([quoteRequestId])
   @@index([vendorProfileId])
+  // US-058 (PB-P1-035 / DB-002): índices de lookup por columnas denormalizadas + UNIQUE parcial
+  // `(event_id, service_category_id) WHERE is_preferred=true` — el índice UNIQUE parcial se
+  // define en SQL raw (`prisma/migrations/.../migration.sql`) porque Prisma <5 no soporta
+  // `WHERE` en `@@unique`. Consulta directa: `uq_quotes_preferred_per_event_category`.
+  @@index([eventId], map: "idx_quotes_event_id")
+  @@index([serviceCategoryId], map: "idx_quotes_service_category_id")
   @@map("quotes")
 }
 

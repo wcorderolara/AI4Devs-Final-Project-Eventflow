@@ -307,6 +307,9 @@ describe.skipIf(!dbUp)('US-056 QA — Cancel QuoteRequest integration', () => {
       data: {
         quoteRequestId: s.quoteRequestId,
         vendorProfileId: s.vendorProfileId,
+        // US-058 (PB-P1-035 / DB-002): columnas denormalizadas ahora requeridas.
+        eventId: s.eventId,
+        serviceCategoryId,
         amount: '1000.00',
         currency: 'GTQ',
         status: 'sent',

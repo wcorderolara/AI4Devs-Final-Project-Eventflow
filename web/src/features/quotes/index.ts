@@ -8,11 +8,14 @@ export { QuoteComparator } from './components/QuoteComparator';
 export { QuoteComparisonTable } from './components/QuoteComparisonTable';
 export { QuoteComparisonCards } from './components/QuoteComparisonCards';
 export { QuoteStatusIndicator } from './components/QuoteStatusIndicator';
+// US-058 (FE-001): toggle accesible del flag `is_preferred`.
+export { PreferredToggleButton } from './components/PreferredToggleButton';
 export { quotesApi } from './api/quotesApi';
 export {
   useCreateQuoteRequest,
   useActiveQrCount,
   useCompareQuotes,
+  usePreferQuote,
   quotesKeys,
 } from './hooks/quotesQueries';
 export type {
@@ -27,4 +30,6 @@ export type {
   CompareQuotesView,
   CompareQuoteItemView,
   ComparableQuoteStatus,
+  PreferQuoteInput,
+  PreferQuoteView,
 } from './api/quotesApi.types';

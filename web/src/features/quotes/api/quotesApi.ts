@@ -16,6 +16,9 @@ import type {
   CreateQuoteRequestEnvelope,
   CreateQuoteRequestInput,
   CreateQuoteRequestView,
+  PreferQuoteEnvelope,
+  PreferQuoteInput,
+  PreferQuoteView,
   RejectQuoteEnvelope,
   RejectQuoteInput,
   RejectQuoteView,
@@ -25,6 +28,7 @@ import {
   toCancelQrView,
   toCompareQuotesView,
   toCreateQuoteRequestView,
+  toPreferQuoteView,
   toRejectQuoteView,
 } from './quotesApi.types';
 
@@ -102,5 +106,21 @@ export const quotesApi = {
       `/events/${encodeURIComponent(input.eventId)}/quotes/compare?${qs}`,
     );
     return toCompareQuotesView(envelope.data);
+  },
+
+  /**
+   * US-058 (FE-002): toggle idempotente de `is_preferred` sobre la Quote target. Body
+   * `{is_preferred: boolean}`. El backend ejecuta la transición atómica + notifs al vendor
+   * target y al vendor previo si aplica. Códigos de error consumibles por la UI:
+   * `QUOTE_NOT_PREFERABLE` (409 — quote ya no está `sent` o venció), `QUOTE_NOT_FOUND` (404
+   * uniforme para ajena/inexistente), `AUTHENTICATION_REQUIRED` (401), `FORBIDDEN` (403),
+   * `VALIDATION_ERROR` (400 — body sin `is_preferred` o UUID malformado).
+   */
+  async preferred(input: PreferQuoteInput): Promise<PreferQuoteView> {
+    const envelope = await httpPatch<PreferQuoteEnvelope, { is_preferred: boolean }>(
+      `/quotes/${encodeURIComponent(input.quoteId)}/preferred`,
+      { body: { is_preferred: input.isPreferred } },
+    );
+    return toPreferQuoteView(envelope.data);
   },
 };

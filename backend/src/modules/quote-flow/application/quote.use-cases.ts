@@ -198,19 +198,6 @@ export class AcceptQuoteUseCase {
 // `RejectQuoteUs054UseCase` (transaccional + notifs atómicas + rejection_reason). Ver DEV-02
 // del execution record `US-054-execution.md`.
 
-export class PreferQuoteUseCase {
-  constructor(
-    private readonly quotes: QuoteRepository,
-    private readonly quoteRequests: QuoteRequestRepository,
-    private readonly events: EventAccessReader,
-    private readonly logger: DomainEventLogger,
-  ) {}
-
-  async execute(userId: string, quoteId: string, ctx: QuoteUseCaseContext = {}): Promise<QuoteView> {
-    const quote = await loadOwnedByOrganizer(this.quotes, this.quoteRequests, this.events, userId, quoteId);
-    if (!canDecideQuote(quote.status)) throw invalidState('Only sent quotes can be preferred', quote.status);
-    const view = await this.quotes.setPreferred(quoteId);
-    this.logger.emit('quote.preferred', { correlationId: ctx.correlationId, actorId: userId, quoteId });
-    return view;
-  }
-}
+// US-058 (PB-P1-035): `PreferQuoteUseCase` original removido. El wiring del controller usa
+// `PreferQuoteUs058UseCase` (transaccional + notifs bilaterales + clear preferred previa +
+// UNIQUE parcial). Ver DEV-01 del execution record `US-058-execution.md`.

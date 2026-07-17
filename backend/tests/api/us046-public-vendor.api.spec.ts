@@ -231,6 +231,9 @@ describe.skipIf(!dbUp)('US-046 QA-002 (con BD): visibilidad + cache headers + wh
       data: {
         quoteRequestId: quoteRequest.id,
         vendorProfileId: approved.vendorProfileId,
+        // US-058 (PB-P1-035 / DB-002): columnas denormalizadas ahora requeridas.
+        eventId: event.id,
+        serviceCategoryId: cat.id,
         amount: '250.00',
         currency: 'GTQ',
         status: 'accepted',

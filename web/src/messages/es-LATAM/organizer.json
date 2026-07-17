@@ -80,6 +80,21 @@
         "EVENT_NOT_FOUND": "No encontramos ese evento o no tienes permiso para verlo.",
         "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
       }
+    },
+    "preferred": {
+      "mark": "Marcar preferred",
+      "unmark": "Quitar preferred",
+      "loading": "Guardando…",
+      "markAria": "Marcar la cotización de {vendor} como preferred",
+      "unmarkAria": "Quitar la marca preferred de la cotización de {vendor}",
+      "errors": {
+        "QUOTE_NOT_PREFERABLE": "Esta cotización ya no puede marcarse: cambió de estado o venció.",
+        "QUOTE_NOT_FOUND": "No encontramos esta cotización o ya no está disponible.",
+        "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para marcar la cotización.",
+        "FORBIDDEN": "Tu rol no puede marcar cotizaciones como preferred.",
+        "VALIDATION_ERROR": "Hubo un problema con la solicitud. Intenta nuevamente.",
+        "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
+      }
     }
   }
 }

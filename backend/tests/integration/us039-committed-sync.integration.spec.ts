@@ -154,6 +154,9 @@ async function makeFixture(opts: {
       data: {
         quoteRequestId: qr.id,
         vendorProfileId: vendorProfile.id,
+        // US-058 (PB-P1-035 / DB-002): columnas denormalizadas ahora requeridas.
+        eventId: event.id,
+        serviceCategoryId: targetCategory.id,
         amount,
         currency,
         status: 'accepted',
@@ -371,6 +374,9 @@ describe.skipIf(!dbUp)('US-039 integration — Postgres real', () => {
         data: {
           quoteRequestId: secondQuoteRequest.id,
           vendorProfileId: secondVendor.id,
+          // US-058 (PB-P1-035 / DB-002): columnas denormalizadas ahora requeridas.
+          eventId: fx1.eventId,
+          serviceCategoryId: fx1.categoryIdCatering,
           amount: 200,
           currency: 'GTQ',
           status: 'accepted',

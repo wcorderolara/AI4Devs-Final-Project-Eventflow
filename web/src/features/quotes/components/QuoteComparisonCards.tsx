@@ -5,9 +5,10 @@
 // apuntando al título del vendor. Los CTAs son idénticos al desktop (deep-links a US-058 / US-022).
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import type { CompareQuoteItemView } from '../api/quotesApi.types';
 import { QuoteStatusIndicator } from './QuoteStatusIndicator';
+import { PreferredToggleButton } from './PreferredToggleButton';
 
 export interface QuoteComparisonCardsProps {
   eventId: string;
@@ -28,13 +29,14 @@ function formatPrice(amount: string, currencyCode: string): string {
 interface QuoteCardProps {
   item: CompareQuoteItemView;
   eventId: string;
+  categoryCode: string;
   currencyCode: string;
+  onError: (message: string) => void;
 }
 
-function QuoteCard({ item, eventId, currencyCode }: QuoteCardProps): JSX.Element {
+function QuoteCard({ item, eventId, categoryCode, currencyCode, onError }: QuoteCardProps): JSX.Element {
   const t = useTranslations('organizer.quote.compare');
   const titleId = useId();
-  const preferHref = `/organizer/events/${encodeURIComponent(eventId)}/quotes/${encodeURIComponent(item.quoteId)}/prefer`;
 
   return (
     <article
@@ -109,13 +111,15 @@ function QuoteCard({ item, eventId, currencyCode }: QuoteCardProps): JSX.Element
 
       <div className="mt-4">
         {isSelectable(item.status) ? (
-          <Link
-            href={preferHref}
-            className="inline-flex w-full items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            aria-label={t('table.preferAria', { vendor: item.vendor.businessName })}
-          >
-            {t('table.preferCta')}
-          </Link>
+          <PreferredToggleButton
+            quoteId={item.quoteId}
+            vendorName={item.vendor.businessName}
+            isPreferred={item.isPreferred}
+            selectable
+            eventId={eventId}
+            categoryCode={categoryCode}
+            onError={onError}
+          />
         ) : (
           <span
             className="inline-flex w-full items-center justify-center rounded-md bg-neutral-100 px-3 py-2 text-sm font-medium text-neutral-500"
@@ -137,14 +141,31 @@ export function QuoteComparisonCards({
   items,
 }: QuoteComparisonCardsProps): JSX.Element {
   const t = useTranslations('organizer.quote.compare');
+  const [error, setError] = useState<string | null>(null);
   const aiSummaryHref = `/organizer/events/${encodeURIComponent(
     eventId,
   )}/quotes/compare/ai-summary?categoryCode=${encodeURIComponent(categoryCode)}`;
   return (
     <div className="space-y-3" data-testid="quote-comparison-cards">
       {items.map((item) => (
-        <QuoteCard key={item.quoteId} item={item} eventId={eventId} currencyCode={currencyCode} />
+        <QuoteCard
+          key={item.quoteId}
+          item={item}
+          eventId={eventId}
+          categoryCode={categoryCode}
+          currencyCode={currencyCode}
+          onError={setError}
+        />
       ))}
+      {error ? (
+        <div
+          role="alert"
+          className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900"
+          data-testid="preferred-toggle-error"
+        >
+          {error}
+        </div>
+      ) : null}
       {items.length >= 2 ? (
         <div className="pt-2">
           <Link

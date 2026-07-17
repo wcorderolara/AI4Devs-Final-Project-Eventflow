@@ -33,6 +33,9 @@ import type { SupportedCurrency } from '../../../shared/constants/currencies.js'
 interface QuoteRequestLockRow {
   id: string;
   event_id: string;
+  // US-058 (PB-P1-035 / DB-002): la Quote persistida en el `respond` copia el
+  // `service_category_id` del QR padre para la denormalización que soporta el UNIQUE parcial.
+  service_category_id: string;
   vendor_profile_id: string | null;
   status: QuoteRequestStatus;
   expires_at: Date | null;
@@ -99,7 +102,7 @@ export class RespondQuoteRequestUs052UseCase {
       return await this.prisma.$transaction(async (tx) => {
         // 1) SELECT ... FOR UPDATE sobre QR filtrado por assignment.
         const qrRows = await tx.$queryRaw<QuoteRequestLockRow[]>(
-          Prisma.sql`SELECT id, event_id, vendor_profile_id, status, expires_at
+          Prisma.sql`SELECT id, event_id, service_category_id, vendor_profile_id, status, expires_at
                        FROM quote_requests
                       WHERE id = ${qrId}::uuid
                         AND vendor_profile_id = ${vendorProfile.id}::uuid
@@ -139,10 +142,15 @@ export class RespondQuoteRequestUs052UseCase {
         }
 
         // 5) INSERT quote (status='sent', currency del evento, breakdown normalizado).
+        // US-058 (PB-P1-035 / DB-002): `event_id` y `service_category_id` viven denormalizados
+        // en `quotes` para soportar el UNIQUE parcial `(event_id, service_category_id) WHERE
+        // is_preferred=true`. Se toman del QR padre (invariante enforced por FKs).
         const quote = await tx.quote.create({
           data: {
             quoteRequestId: qrId,
             vendorProfileId: vendorProfile.id,
+            eventId: qr.event_id,
+            serviceCategoryId: qr.service_category_id,
             status: QuoteStatus.sent,
             amount: new Prisma.Decimal(body.total_price),
             currency: event.currency,

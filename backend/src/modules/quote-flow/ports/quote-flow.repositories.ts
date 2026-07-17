@@ -43,7 +43,6 @@ export interface QuoteRepository {
   send(id: string, sentAt: Date, validUntil: Date): Promise<QuoteView>;
   accept(id: string, now: Date): Promise<QuoteView>;
   reject(id: string, now: Date): Promise<QuoteView>;
-  setPreferred(id: string): Promise<QuoteView>;
   /**
    * US-057 (PB-P1-035 / BE-002): Quotes comparables para `(event_id, service_category_id)` con
    * datos del vendor whitelisted (business_name, slug, rating_avg, reviews_count). Excluye `draft`

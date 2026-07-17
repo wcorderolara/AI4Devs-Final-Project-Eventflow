@@ -607,10 +607,18 @@ export class SeedDemoDataUseCase {
             data: {
               quoteRequestId: qr.id,
               vendorProfileId: vendor.id,
+              // US-058 (PB-P1-035 / DB-002): columnas denormalizadas ahora requeridas.
+              eventId: event.id,
+              serviceCategoryId: category.id,
               amount: 5000 + k * 250,
               currency: 'GTQ',
               status: 'accepted',
-              isPreferred: k % 3 === 0,
+              // US-058: UNIQUE parcial `(event_id, service_category_id) WHERE is_preferred=true`
+              // exige que sólo UNA Quote por (event, category) sea preferred. Se relaja el patrón
+              // `k % 3 === 0` a `k === 0` para garantizar unicidad — cada iteración usa una
+              // combinación distinta de (event, category) por diseño del loop, pero la seguridad
+              // se refuerza con esta simplificación.
+              isPreferred: k === 0,
               isSeed: true,
             },
           }),

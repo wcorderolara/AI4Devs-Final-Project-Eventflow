@@ -37,10 +37,20 @@ export class PrismaQuoteRepository implements QuoteRepository {
 
   async createDraft(data: CreateQuoteData): Promise<QuoteView> {
     try {
+      // US-058 (PB-P1-035 / DB-002): `event_id` + `service_category_id` viven denormalizados en
+      // `quotes` para soportar el UNIQUE parcial nativo `(event_id, service_category_id) WHERE
+      // is_preferred=true`. Se derivan siempre del QuoteRequest padre para mantener el
+      // invariante `quotes.<fk> == quote_requests.<fk>`.
+      const qr = await this.prisma.quoteRequest.findUniqueOrThrow({
+        where: { id: data.quoteRequestId },
+        select: { eventId: true, serviceCategoryId: true },
+      });
       const q = await this.prisma.quote.create({
         data: {
           quoteRequestId: data.quoteRequestId,
           vendorProfileId: data.vendorProfileId,
+          eventId: qr.eventId,
+          serviceCategoryId: qr.serviceCategoryId,
           amount: new Prisma.Decimal(data.totalPrice),
           currency: data.currencyCode,
           breakdown: data.breakdown as unknown as Prisma.InputJsonValue,
@@ -97,11 +107,6 @@ export class PrismaQuoteRepository implements QuoteRepository {
 
   async reject(id: string, now: Date): Promise<QuoteView> {
     const q = await this.prisma.quote.update({ where: { id }, data: { status: 'rejected', rejectedAt: now } });
-    return toView(q);
-  }
-
-  async setPreferred(id: string): Promise<QuoteView> {
-    const q = await this.prisma.quote.update({ where: { id }, data: { isPreferred: true } });
     return toView(q);
   }
 

@@ -6,9 +6,11 @@
 // para la cabecera de vendor, `<th scope="row">` para las etiquetas de fila.
 // Los CTAs "Marcar preferred" y "Resumir con IA" son deep-links (US-058 / US-022 respectivamente).
 import Link from 'next/link';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { CompareQuoteItemView } from '../api/quotesApi.types';
 import { QuoteStatusIndicator } from './QuoteStatusIndicator';
+import { PreferredToggleButton } from './PreferredToggleButton';
 
 export interface QuoteComparisonTableProps {
   eventId: string;
@@ -39,9 +41,8 @@ export function QuoteComparisonTable({
   items,
 }: QuoteComparisonTableProps): JSX.Element {
   const t = useTranslations('organizer.quote.compare');
+  const [error, setError] = useState<string | null>(null);
 
-  const preferHref = (quoteId: string): string =>
-    `/organizer/events/${encodeURIComponent(eventId)}/quotes/${encodeURIComponent(quoteId)}/prefer`;
   const aiSummaryHref = `/organizer/events/${encodeURIComponent(
     eventId,
   )}/quotes/compare/ai-summary?categoryCode=${encodeURIComponent(categoryCode)}`;
@@ -170,13 +171,15 @@ export function QuoteComparisonTable({
             {items.map((item) => (
               <td key={item.quoteId} className="px-3 py-2 align-top">
                 {isSelectable(item.status) ? (
-                  <Link
-                    href={preferHref(item.quoteId)}
-                    className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    aria-label={t('table.preferAria', { vendor: item.vendor.businessName })}
-                  >
-                    {t('table.preferCta')}
-                  </Link>
+                  <PreferredToggleButton
+                    quoteId={item.quoteId}
+                    vendorName={item.vendor.businessName}
+                    isPreferred={item.isPreferred}
+                    selectable
+                    eventId={eventId}
+                    categoryCode={categoryCode}
+                    onError={setError}
+                  />
                 ) : (
                   <span
                     className="inline-flex items-center rounded-md bg-neutral-100 px-3 py-1.5 text-xs font-medium text-neutral-500"
@@ -190,6 +193,16 @@ export function QuoteComparisonTable({
           </tr>
         </tbody>
       </table>
+
+      {error ? (
+        <div
+          role="alert"
+          className="mt-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900"
+          data-testid="preferred-toggle-error"
+        >
+          {error}
+        </div>
+      ) : null}
 
       {items.length >= 2 ? (
         <div className="mt-4 flex justify-end">
