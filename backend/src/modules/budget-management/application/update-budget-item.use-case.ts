@@ -110,6 +110,9 @@ export class UpdateBudgetItemUseCase {
     // US-038 (PB-P1-022 / BE-003): shape extendido forward-compat. La bandera per-item se
     // deriva puntualmente (tolerancia MVP = 0.01, todas las monedas del enum). El GET del
     // summary aplica la tolerancia adaptativa completa.
+    // US-064 (PB-P1-037 / BE-001): agrega `diff` y `auto_created` — la heurística `planned=0
+    // && committed>0` puede coincidir aquí si el organizer actualizó a `planned=0` un ítem
+    // con compromiso. Es información consistente con el next GET del budget.
     const itemDelta = updated.amountCommitted - updated.amountPlanned;
     return {
       id: updated.id,
@@ -119,6 +122,8 @@ export class UpdateBudgetItemUseCase {
       amount_committed: updated.amountCommitted,
       over_committed: itemDelta > 0.01,
       overcommitted_amount: Math.max(0, itemDelta),
+      diff: updated.amountPlanned - updated.amountCommitted,
+      auto_created: updated.amountPlanned === 0 && updated.amountCommitted > 0,
     };
   }
 }

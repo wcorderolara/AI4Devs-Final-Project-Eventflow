@@ -11,7 +11,13 @@
     "planned": "Planificado",
     "committed": "Comprometido",
     "remaining": "Restante",
-    "currency": "Moneda"
+    "currency": "Moneda",
+    "refresh": "Actualizar presupuesto",
+    "refreshing": "Actualizando…",
+    "refreshAria": "Actualizar el resumen del presupuesto",
+    "liveUpdate": "Presupuesto actualizado: {currency} {committed} comprometido de {planned} planificado.",
+    "autoCreatedBadge": "Auto-creado",
+    "autoCreatedAria": "Partida creada automáticamente al confirmar una reserva"
   },
   "overcommit": {
     "title": "Presupuesto sobre-comprometido",

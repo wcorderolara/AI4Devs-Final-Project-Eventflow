@@ -18,4 +18,8 @@ export interface BudgetAggregateView {
   totalCommitted: number;
   currency: CurrencyCode;
   items: BudgetItemView[];
+  // US-064 (PB-P1-037 / BE-001): timestamp del último UPDATE al aggregate (`Budget.updated_at`
+  // vía `@updatedAt` de Prisma). Se expone en el response como `last_updated_at`. `null` es
+  // defensa profunda — el schema garantiza no-null en producción.
+  updatedAt: Date | null;
 }

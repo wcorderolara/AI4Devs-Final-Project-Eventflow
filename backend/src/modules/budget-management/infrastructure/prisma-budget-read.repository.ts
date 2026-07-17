@@ -57,6 +57,9 @@ export class PrismaBudgetReadRepository implements BudgetReadRepository {
       totalCommitted: decimalToNumber(budget.totalCommitted),
       currency: budget.event.currency as CurrencyCode,
       items,
+      // US-064 (BE-001): `Budget.updated_at` maneja el touch automático via `@updatedAt`. Se
+      // expone al mapper para poblar `response.last_updated_at`.
+      updatedAt: budget.updatedAt ?? null,
     };
   }
 }

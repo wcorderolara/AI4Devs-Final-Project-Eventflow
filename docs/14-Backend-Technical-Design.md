@@ -518,6 +518,7 @@ Importante: este listado prohíbe automáticamente crear un controller/repo por 
 - **In-scope:** crear/editar/eliminar ítems, sugerencia IA, confirmación de sugerencias, warnings cuando se supera total objetivo.
 - **Out-of-scope:** conversión automática de monedas, importación de catálogos externos.
 - **Main use cases:** `GetBudgetUseCase`, `CreateBudgetItemUseCase`, `UpdateBudgetItemUseCase`, `DeleteBudgetItemUseCase`, `GenerateBudgetSuggestionUseCase`, `ConfirmAIBudgetSuggestionUseCase`.
+- **US-064 cross-domain refresh (PB-P1-037):** `GetBudgetUseCase` amplía su response con `summary.available`, `items[].diff`, `items[].auto_created` (heurística `planned=0 && committed>0`) y `last_updated_at`. La UI del organizador (`BudgetPage` + `BudgetSummary` con `aria-live`) refresca automáticamente al terminar mutaciones de `BookingIntent` (US-061 confirm / US-062 cancel) — los hooks `useConfirmBookingIntent` y `useCancelBookingIntent` reciben `eventId` opcional para invalidar la queryKey canónica `['event', eventId, 'budget']` compartida con US-035/036/037/038.
 - **Domain services / policies:** validación de currency = currency del evento (immutable).
 - **Repository ports:** `BudgetRepository`, `BudgetItemRepository`.
 - **Prisma adapters:** `PrismaBudgetRepository`, `PrismaBudgetItemRepository`.

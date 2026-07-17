@@ -49,6 +49,7 @@ function view(overrides: Partial<BudgetAggregateView> = {}): BudgetAggregateView
       { id: '00000000-0000-0000-0000-0000000000a1', label: 'Venue', categoryCode: 'venue', amountPlanned: 500, amountCommitted: 800 },
       { id: '00000000-0000-0000-0000-0000000000a2', label: 'Otros', categoryCode: null, amountPlanned: 500, amountCommitted: 450 },
     ],
+    updatedAt: new Date('2026-07-17T21:00:00Z'),
     ...overrides,
   };
 }

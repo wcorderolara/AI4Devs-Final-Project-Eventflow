@@ -35,6 +35,9 @@ export interface GetBudgetInput {
 export interface GetBudgetResult {
   summary: BudgetSummaryDto;
   items: BudgetItemDto[];
+  // US-064 (BE-001) AC-02/AC-04: ISO 8601 del `Budget.updated_at` para triggerear el aria-live
+  // announcement + mostrar "Última actualización" en el frontend.
+  last_updated_at: string | null;
 }
 
 // Fallback defensivo D3 / VR-02: cuando el código no está catalogado, se asume 2 decimales
@@ -96,20 +99,43 @@ export class GetBudgetUseCase {
       over_committed: overCommitted,
       currency_code: aggregate.currency,
       overcommitted_amount: overcommit.summaryOvercommittedAmount,
+      // US-064 (BE-001) AC-02: monto disponible con signo. Cuando `over_committed = true` el
+      // valor es negativo — la UI lo pinta en rojo. Preserva precisión: el cliente formatea con
+      // CLDR según `currency_code`.
+      available: aggregate.totalPlanned - aggregate.totalCommitted,
     };
 
-    const items: BudgetItemDto[] = aggregate.items.map((item, idx) => {
-      const flags = overcommit.itemsOvercommit[idx]!;
-      return {
-        id: item.id,
-        label: item.label,
-        category_code: item.categoryCode,
-        amount_planned: item.amountPlanned,
-        amount_committed: item.amountCommitted,
-        over_committed: flags.over_committed,
-        overcommitted_amount: flags.overcommitted_amount,
-      };
-    });
+    const items: BudgetItemDto[] = aggregate.items
+      .map((item, idx): BudgetItemDto => {
+        const flags = overcommit.itemsOvercommit[idx]!;
+        return {
+          id: item.id,
+          label: item.label,
+          category_code: item.categoryCode,
+          amount_planned: item.amountPlanned,
+          amount_committed: item.amountCommitted,
+          over_committed: flags.over_committed,
+          overcommitted_amount: flags.overcommitted_amount,
+          // US-064 (BE-001) AC-02: `diff = planned - committed`, con signo (negativo en items
+          // excedidos). Complementa `overcommitted_amount` (siempre ≥ 0) para reportar cuánto
+          // queda por comprometer en items sanos.
+          diff: item.amountPlanned - item.amountCommitted,
+          // US-064 (BE-001) EC-02 — heurística `auto_created`: item con `planned = 0` y
+          // `committed > 0`. Detecta ítems creados automáticamente por US-039
+          // `UpdateCommittedFromBookingIntentUseCase` al confirmar un BookingIntent cuando no
+          // existía BudgetItem previo para `(budget, categoryCode)`. Aproximación aceptable en
+          // MVP (Tech Spec §7 admite falsos positivos; una columna explícita `created_via` en
+          // `budget_items` queda como mejora futura).
+          auto_created: item.amountPlanned === 0 && item.amountCommitted > 0,
+        };
+      })
+      // US-064 (BE-001) AC-02: orden por `amount_committed DESC`. Empates se resuelven por
+      // `amount_planned DESC` y luego `id` estable para snapshots deterministas.
+      .sort((a, b) => {
+        if (b.amount_committed !== a.amount_committed) return b.amount_committed - a.amount_committed;
+        if (b.amount_planned !== a.amount_planned) return b.amount_planned - a.amount_planned;
+        return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+      });
 
     const overCommittedItemsCount = items.reduce(
       (acc, item) => (item.over_committed ? acc + 1 : acc),
@@ -130,6 +156,13 @@ export class GetBudgetUseCase {
       overCommittedItemsCount,
     });
 
-    return { summary, items };
+    return {
+      summary,
+      items,
+      // US-064 (BE-001) AC-02/AC-04: timestamp del `Budget.updated_at` en ISO 8601. El frontend
+      // lo compara entre re-fetches para disparar el anuncio aria-live. `null` es defensa
+      // profunda (`@updatedAt` de Prisma garantiza no-null en producción).
+      last_updated_at: aggregate.updatedAt !== null ? aggregate.updatedAt.toISOString() : null,
+    };
   }
 }
