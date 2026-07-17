@@ -74,6 +74,12 @@ import {
   BookingIntentAlreadyExistsError,
   QuoteNotFoundForBookingError,
 } from '../../../modules/booking-intent/domain/us060.errors.js';
+// US-061 (PB-P1-036): confirmación del BookingIntent por el vendor. `BookingIntentNotFoundError`
+// → 404 uniforme; `BookingIntentNotConfirmableError` → 409 con `details.current_status`.
+import {
+  BookingIntentNotFoundError,
+  BookingIntentNotConfirmableError,
+} from '../../../modules/booking-intent/domain/us061.errors.js';
 import {
   MissingInputError,
   AiInvalidBudgetError,
@@ -405,6 +411,18 @@ function mapError(err: unknown): MappedError {
       code: ErrorCodes.BOOKING_INTENT_ALREADY_EXISTS,
       message: err.message,
       details: [{ field: 'booking_intent_id', message: err.bookingIntentId }],
+    };
+  }
+  // US-061 (PB-P1-036): confirmación del BookingIntent por el vendor.
+  if (err instanceof BookingIntentNotFoundError) {
+    return { status: 404, code: ErrorCodes.BOOKING_INTENT_NOT_FOUND, message: 'Booking intent not found', masked: true };
+  }
+  if (err instanceof BookingIntentNotConfirmableError) {
+    return {
+      status: 409,
+      code: ErrorCodes.BOOKING_INTENT_NOT_CONFIRMABLE,
+      message: err.message,
+      details: [{ field: 'current_status', message: err.currentStatus }],
     };
   }
   if (err instanceof MissingInputError) {

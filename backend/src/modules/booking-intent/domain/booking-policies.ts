@@ -6,6 +6,14 @@ export function canConfirmBooking(status: BookingIntentStatusValue): boolean {
   return status === 'pending';
 }
 
+/**
+ * US-061 (PB-P1-036 / BE-002 AC-03): `confirmed_intent` habilita idempotencia — el UC devuelve
+ * el estado actual sin side-effects. Distinto de `canConfirmBooking` que sólo aprueba `pending`.
+ */
+export function isAlreadyConfirmed(status: BookingIntentStatusValue): boolean {
+  return status === 'confirmed_intent';
+}
+
 /** Cancelable en `pending` o `confirmed_intent` (AC-12; sin penalización). No si ya `cancelled`. */
 export function canCancelBooking(status: BookingIntentStatusValue): boolean {
   return status === 'pending' || status === 'confirmed_intent';

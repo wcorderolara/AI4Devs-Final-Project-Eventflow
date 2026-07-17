@@ -406,5 +406,31 @@
       "priceRange": "Rango de precio",
       "ratingAria": "{avg} estrellas, {count} reviews"
     }
+  },
+  "booking": {
+    "confirm": {
+      "title": "Confirmar intención de booking",
+      "description": "Al confirmar, aceptas asumir el compromiso con este evento en la fecha indicada. Este flujo es simulado — sin pagos ni contratos en la plataforma.",
+      "summary": {
+        "event": "Evento",
+        "amount": "Monto acordado"
+      },
+      "disclaimer": "EventFlow no procesa pagos ni contratos. Cualquier acuerdo financiero debe formalizarse por fuera con el organizador.",
+      "actions": {
+        "cancel": "Cancelar",
+        "submit": "Confirmar booking",
+        "submitting": "Confirmando…"
+      },
+      "success": "Booking confirmado. Avisamos al organizador.",
+      "errors": {
+        "VALIDATION_ERROR": "Hubo un problema con la solicitud. Intenta nuevamente.",
+        "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para confirmar el booking.",
+        "FORBIDDEN": "Solo el proveedor asignado puede confirmar este booking.",
+        "BOOKING_INTENT_NOT_FOUND": "No encontramos este booking o ya no está disponible.",
+        "BOOKING_INTENT_NOT_CONFIRMABLE": "Este booking ya no puede confirmarse en su estado actual.",
+        "RATE_LIMIT_EXCEEDED": "Demasiadas solicitudes. Espera un momento e intenta de nuevo.",
+        "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
+      }
+    }
   }
 }

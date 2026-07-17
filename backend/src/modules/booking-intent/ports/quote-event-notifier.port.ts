@@ -1,19 +1,23 @@
 // Puerto (consumer-owned interface) para emitir notificaciones del lifecycle Booking/Quote
-// desde el use case atómico de US-060. Preserva el import boundary de ADR-ARCH-001: la
-// definición vive en `booking-intent`; el adapter concreto (`QuoteEventNotificationService`
+// desde los use cases del módulo booking-intent. Preserva el import boundary de ADR-ARCH-001:
+// la definición vive en `booking-intent`; el adapter concreto (`QuoteEventNotificationService`
 // del módulo `quote-flow`) se inyecta desde el composition root del router — patrón idéntico
 // al que US-039 aplicó para `BudgetCommittedSyncPort`.
 //
 // El shape es un subset del `EmitQuoteEventInput` del service común — sólo los campos que
-// necesita el path US-060 (`recipientUserId`, `eventName`, `payload`, `tx`, `quoteId`,
-// `correlationId`). El eventName acepta `'booking_intent.created'` explícitamente para acotar
-// el contrato consumido por este módulo (los demás nombres del type quedan encapsulados en
-// `quote-flow`).
+// necesitan los paths US-060 (create) y US-061 (confirm): `recipientUserId`, `eventName`,
+// `payload`, `tx`, `quoteId`, `correlationId`. El eventName acota los nombres consumidos por
+// este módulo (los demás nombres del type quedan encapsulados en `quote-flow`).
+//
+// US-060: `booking_intent.created` — recipient = vendor asignado al Quote.
+// US-061: `booking_intent.confirmed` — recipient = organizer dueño del evento.
 import type { Prisma } from '@prisma/client';
 
-export interface EmitBookingIntentCreatedInput {
+export type BookingIntentEventName = 'booking_intent.created' | 'booking_intent.confirmed';
+
+export interface EmitBookingIntentEventInput {
   recipientUserId: string;
-  eventName: 'booking_intent.created';
+  eventName: BookingIntentEventName;
   payload: Record<string, unknown>;
   tx?: Prisma.TransactionClient;
   quoteId?: string;
@@ -21,5 +25,13 @@ export interface EmitBookingIntentCreatedInput {
 }
 
 export interface BookingEventNotifierPort {
-  emit(input: EmitBookingIntentCreatedInput): Promise<void>;
+  emit(input: EmitBookingIntentEventInput): Promise<void>;
 }
+
+/**
+ * @deprecated Preservado para compatibilidad con imports existentes de US-060. Usar
+ * `EmitBookingIntentEventInput` (que acepta también `booking_intent.confirmed`).
+ */
+export type EmitBookingIntentCreatedInput = EmitBookingIntentEventInput & {
+  eventName: 'booking_intent.created';
+};

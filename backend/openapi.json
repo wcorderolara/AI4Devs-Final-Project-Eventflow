@@ -1900,6 +1900,9 @@
             },
             "description": "OK"
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -1909,8 +1912,8 @@
           "404": {
             "$ref": "#/components/responses/NotFound"
           },
-          "422": {
-            "$ref": "#/components/responses/ValidationError"
+          "409": {
+            "$ref": "#/components/responses/Conflict"
           }
         },
         "security": [
@@ -1918,7 +1921,7 @@
             "cookieAuth": []
           }
         ],
-        "summary": "Confirmar BookingIntent (vendor)",
+        "summary": "US-061 · Confirmar BookingIntent (vendor asignado) + UPDATE committed",
         "tags": [
           "BookingIntents"
         ]

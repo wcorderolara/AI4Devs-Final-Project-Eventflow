@@ -64,9 +64,12 @@ const transactionRunner = {
 const controller = new BookingIntentsController({
   create: new CreateBookingIntentUs060UseCase(quoteEvents, clock, logger, prisma),
   get: new GetBookingIntentUseCase(bookingIntents, events, vendors),
+  // US-061 (BE-002/003): inyecta el `BookingEventNotifierPort` para emitir 2 notifs al
+  // organizer con `event='booking_intent.confirmed'` dentro de la misma tx del `applyOnConfirm`.
   confirm: new ConfirmBookingIntentUseCase(bookingIntents, vendors, clock, logger, {
     budgetSync: budgetSyncAdapter,
     transactionRunner,
+    bookingEvents: quoteEvents,
   }),
   cancel: new CancelBookingIntentUseCase(bookingIntents, events, vendors, clock, logger, {
     budgetSync: budgetSyncAdapter,
