@@ -177,7 +177,7 @@ describe.skipIf(!dbUp)('US-102 integración: constraints físicos', () => {
       expect(rows.length).toBe(16);
     });
 
-    it('los 4 unique parciales existen con WHERE', async () => {
+    it('los 5 unique parciales existen con WHERE (incluye US-058 preferred)', async () => {
       const rows = await q<{ indexname: string; indexdef: string }>(
         `SELECT indexname, indexdef FROM pg_indexes WHERE indexname LIKE 'uq_%' AND indexdef ILIKE '%where%'`,
       );
@@ -188,6 +188,8 @@ describe.skipIf(!dbUp)('US-102 integración: constraints físicos', () => {
           'uq_prompt_versions_active',
           'uq_quote_requests_event_vendor_active',
           'uq_quotes_request_active',
+          // US-058 (PB-P1-035 / DB-002): UNIQUE parcial nativo del toggle preferred.
+          'uq_quotes_preferred_per_event_category',
         ].sort(),
       );
     });
