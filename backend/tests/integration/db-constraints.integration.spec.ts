@@ -56,7 +56,9 @@ describe.skipIf(!dbUp)('US-102 integración: constraints físicos', () => {
     ID.event = await row(`INSERT INTO events (id,user_id,event_type_id,title,updated_at) VALUES (gen_random_uuid(),'${ID.user}','${ID.etype}','E',now()) RETURNING id`);
     ID.budget = await row(`INSERT INTO budgets (id,event_id,updated_at) VALUES (gen_random_uuid(),'${ID.event}',now()) RETURNING id`);
     ID.qreq = await row(`INSERT INTO quote_requests (id,event_id,service_category_id,updated_at) VALUES (gen_random_uuid(),'${ID.event}','${ID.scat}',now()) RETURNING id`);
-    ID.quote = await row(`INSERT INTO quotes (id,quote_request_id,vendor_profile_id,amount,updated_at) VALUES (gen_random_uuid(),'${ID.qreq}','${ID.vprofile}',100,now()) RETURNING id`);
+    // US-058 (PB-P1-035 / DB-002): columnas denormalizadas `event_id`/`service_category_id`
+    // ahora son `NOT NULL` en `quotes` y sostienen el UNIQUE parcial de preferred.
+    ID.quote = await row(`INSERT INTO quotes (id,quote_request_id,vendor_profile_id,event_id,service_category_id,amount,updated_at) VALUES (gen_random_uuid(),'${ID.qreq}','${ID.vprofile}','${ID.event}','${ID.scat}',100,now()) RETURNING id`);
     ID.booking = await row(`INSERT INTO booking_intents (id,quote_id,event_id,service_category_id,updated_at) VALUES (gen_random_uuid(),'${ID.quote}','${ID.event}','${ID.scat}',now()) RETURNING id`);
     ID.apv = await row(`INSERT INTO ai_prompt_versions (id,prompt_id,prompt_key,version,provider,template_checksum,status,updated_at) VALUES (gen_random_uuid(),gen_random_uuid(),'qa102_k','1','mock','x','active',now()) RETURNING id`);
   });
@@ -78,7 +80,7 @@ describe.skipIf(!dbUp)('US-102 integración: constraints físicos', () => {
       { name: 'chk_vendor_profiles_languages_not_empty', sql: () => `INSERT INTO vendor_profiles (id,user_id,business_name,category_change_count,languages_supported,updated_at) VALUES (gen_random_uuid(),'${ID.author}','VP2',0,ARRAY[]::text[],now())` },
       { name: 'chk_vendor_services_base_price_nonneg', sql: () => `INSERT INTO vendor_services (id,vendor_profile_id,service_category_id,package_name,description,base_price,updated_at) VALUES (gen_random_uuid(),'${ID.vprofile}','${ID.scat}','x','descripción demo con longitud',-1,now())` },
       { name: 'chk_service_categories_depth_level', sql: () => `INSERT INTO service_categories (id,code,label,depth_level,updated_at) VALUES (gen_random_uuid(),'qa102_sc3','x',3,now())` },
-      { name: 'chk_quotes_total_price_nonneg', sql: () => `INSERT INTO quotes (id,quote_request_id,vendor_profile_id,amount,updated_at) VALUES (gen_random_uuid(),'${ID.qreq}','${ID.vprofile}',-1,now())` },
+      { name: 'chk_quotes_total_price_nonneg', sql: () => `INSERT INTO quotes (id,quote_request_id,vendor_profile_id,event_id,service_category_id,amount,updated_at) VALUES (gen_random_uuid(),'${ID.qreq}','${ID.vprofile}','${ID.event}','${ID.scat}',-1,now())` },
       { name: 'chk_booking_intents_is_simulated', sql: () => `INSERT INTO booking_intents (id,quote_id,event_id,service_category_id,is_simulated,updated_at) VALUES (gen_random_uuid(),'${ID.quote}','${ID.event}','${ID.scat}',false,now())` },
       { name: 'chk_reviews_rating_range', sql: () => `INSERT INTO reviews (id,booking_intent_id,vendor_profile_id,author_id,rating,comment,updated_at) VALUES (gen_random_uuid(),'${ID.booking}','${ID.vprofile}','${ID.author}',6,'qa102',now())` },
       { name: 'chk_attachments_size_bytes_nonneg', sql: () => `INSERT INTO attachments (id,owner_type,owner_id,url,size_bytes,updated_at) VALUES (gen_random_uuid(),'vendor_work','${ID.vprofile}','http://x',-1,now())` },
@@ -116,7 +118,7 @@ describe.skipIf(!dbUp)('US-102 integración: constraints físicos', () => {
     it('uq_quotes_request_active: 2ª quote vigente misma request → 23505; permitida si la previa está rejected', async () => {
       // La quote base (ID.quote) ya está 'draft' (dentro del predicado NOT IN expired/rejected).
       const dup = await violation(
-        `INSERT INTO quotes (id,quote_request_id,vendor_profile_id,amount,updated_at) VALUES (gen_random_uuid(),'${ID.qreq}','${ID.vprofile}',50,now())`,
+        `INSERT INTO quotes (id,quote_request_id,vendor_profile_id,event_id,service_category_id,amount,updated_at) VALUES (gen_random_uuid(),'${ID.qreq}','${ID.vprofile}','${ID.event}','${ID.scat}',50,now())`,
       );
       // Postgres reporta las columnas del índice único, no su nombre.
       expect(dup).toMatch(/23505/);
@@ -125,7 +127,7 @@ describe.skipIf(!dbUp)('US-102 integración: constraints físicos', () => {
       // (rejected/expired), una nueva vigente SÍ entra.
       await prisma.$executeRawUnsafe(`UPDATE quotes SET status = 'rejected' WHERE quote_request_id = '${ID.qreq}'`);
       const ok = await violation(
-        `INSERT INTO quotes (id,quote_request_id,vendor_profile_id,amount,status,updated_at) VALUES (gen_random_uuid(),'${ID.qreq}','${ID.vprofile}',60,'draft',now())`,
+        `INSERT INTO quotes (id,quote_request_id,vendor_profile_id,event_id,service_category_id,amount,status,updated_at) VALUES (gen_random_uuid(),'${ID.qreq}','${ID.vprofile}','${ID.event}','${ID.scat}',60,'draft',now())`,
       );
       expect(ok, `coexistencia histórica debería permitirse: ${ok}`).toBe('');
     });
