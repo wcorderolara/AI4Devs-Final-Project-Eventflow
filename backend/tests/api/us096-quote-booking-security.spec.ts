@@ -33,7 +33,11 @@ async function registerLogin(role: 'organizer' | 'vendor'): Promise<{ agent: Age
 describe('QA-003 (sin BD): anonymous y rutas fuera de scope', () => {
   it('NT-01: anonymous → 401', async () => {
     expect((await request(app).get('/api/v1/vendors/me/quote-requests')).status).toBe(401);
-    expect((await request(app).post('/api/v1/booking-intents').send({ quoteId: UUID })).status).toBe(401);
+    // US-060: el body cambió a snake_case + disclaimer; el guard `sessionAuth` responde 401
+    // antes de validar el body, así que el envío es equivalente al legacy en este NT.
+    expect(
+      (await request(app).post('/api/v1/booking-intents').send({ quote_id: UUID, disclaimer_accepted: true })).status,
+    ).toBe(401);
     expect((await request(app).get(`/api/v1/quote-requests/${UUID}`)).status).toBe(401);
   });
 

@@ -96,5 +96,37 @@
         "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
       }
     }
+  },
+  "booking": {
+    "create": {
+      "title": "Crear intención de booking",
+      "description": "Al confirmar, aceptamos esta cotización y avisamos al proveedor. Este flujo no incluye pagos ni contratos digitales.",
+      "summary": {
+        "vendor": "Proveedor",
+        "amount": "Monto de la cotización"
+      },
+      "disclaimer": {
+        "label": "Entiendo que esto es una intención de reserva simulada.",
+        "hint": "EventFlow no procesa pagos ni contratos. Cualquier acuerdo económico o legal debe formalizarse por fuera con el proveedor."
+      },
+      "actions": {
+        "cancel": "Cancelar",
+        "submit": "Crear intención de booking",
+        "submitting": "Creando…"
+      },
+      "success": "Intención de booking creada. Avisamos al proveedor.",
+      "errors": {
+        "DISCLAIMER_REQUIRED": "Debes aceptar el aviso para continuar.",
+        "VALIDATION_ERROR": "Hubo un problema con la solicitud. Intenta nuevamente.",
+        "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para crear la intención.",
+        "FORBIDDEN": "Tu rol no puede crear intenciones de booking.",
+        "QUOTE_NOT_FOUND": "No encontramos esta cotización o ya no está disponible.",
+        "QUOTE_NOT_ACCEPTABLE": "Esta cotización ya no puede aceptarse en su estado actual.",
+        "QUOTE_EXPIRED": "Esta cotización venció y ya no puede aceptarse.",
+        "BOOKING_INTENT_ALREADY_EXISTS": "Ya existe un intento de booking activo para esta cotización.",
+        "RATE_LIMIT_EXCEEDED": "Demasiadas solicitudes. Espera un momento e intenta de nuevo.",
+        "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
+      }
+    }
   }
 }

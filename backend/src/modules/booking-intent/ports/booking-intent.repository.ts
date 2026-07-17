@@ -7,6 +7,10 @@ export interface CreateBookingIntentData {
   eventId: string;
   serviceCategoryId: string;
   vendorProfileId: string;
+  // US-060 (PB-P1-036 / BE-003): organizer creador del intent — persistido en
+  // `booking_intents.created_by` para auditoría directa sin depender del join
+  // `quotes → quote_requests → events`.
+  createdBy: string;
 }
 
 /**
@@ -27,7 +31,12 @@ export interface BookingIntentSyncSnapshot {
 }
 
 export interface BookingIntentRepository {
-  create(data: CreateBookingIntentData): Promise<BookingIntentView>;
+  /**
+   * Crea un `BookingIntent` con `status='pending'`. Si se provee `tx`, la escritura participa
+   * en esa transacción (US-060: atomicidad accept-quote + insert-booking-intent + fan-out de
+   * notificaciones dentro de un único `prisma.$transaction`).
+   */
+  create(data: CreateBookingIntentData, tx?: Prisma.TransactionClient): Promise<BookingIntentView>;
   findById(id: string): Promise<BookingIntentView | null>;
   /**
    * Cambia el estado a `confirmed_intent`. Si se provee `tx`, la escritura participa en esa

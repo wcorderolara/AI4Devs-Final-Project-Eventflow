@@ -96,5 +96,37 @@
         "UNEXPECTED": "An unexpected error occurred. Please try again."
       }
     }
+  },
+  "booking": {
+    "create": {
+      "title": "Create booking intent",
+      "description": "Confirming accepts this quote and notifies the vendor. This flow does not include payments or digital contracts.",
+      "summary": {
+        "vendor": "Vendor",
+        "amount": "Quote amount"
+      },
+      "disclaimer": {
+        "label": "I understand this is a simulated booking intent.",
+        "hint": "EventFlow does not process payments or contracts. Any financial or legal agreement must be formalized off-platform with the vendor."
+      },
+      "actions": {
+        "cancel": "Cancel",
+        "submit": "Create booking intent",
+        "submitting": "Creating…"
+      },
+      "success": "Booking intent created. We notified the vendor.",
+      "errors": {
+        "DISCLAIMER_REQUIRED": "You must accept the disclaimer to continue.",
+        "VALIDATION_ERROR": "There was a problem with your request. Please try again.",
+        "AUTHENTICATION_REQUIRED": "You need to sign in to create the intent.",
+        "FORBIDDEN": "Your role cannot create booking intents.",
+        "QUOTE_NOT_FOUND": "We could not find this quote or it is no longer available.",
+        "QUOTE_NOT_ACCEPTABLE": "This quote cannot be accepted in its current state.",
+        "QUOTE_EXPIRED": "This quote expired and can no longer be accepted.",
+        "BOOKING_INTENT_ALREADY_EXISTS": "An active booking intent already exists for this quote.",
+        "RATE_LIMIT_EXCEEDED": "Too many requests. Wait a moment and try again.",
+        "UNEXPECTED": "An unexpected error occurred. Please try again."
+      }
+    }
   }
 }

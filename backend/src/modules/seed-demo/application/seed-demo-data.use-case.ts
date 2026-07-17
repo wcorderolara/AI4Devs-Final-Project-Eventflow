@@ -164,6 +164,7 @@ export class SeedDemoDataUseCase {
           catalogs.categories,
           identities.organizers,
           identities.admin,
+          events,
         );
         if (this.hooks.extendBookingsAndReviews) {
           await this.hooks.extendBookingsAndReviews(tx, {
@@ -676,7 +677,12 @@ export class SeedDemoDataUseCase {
     _categories: { id: string }[],
     organizers: { id: string }[],
     admin: { id: string },
+    events: { id: string; userId: string }[],
   ) {
+    // US-060 (PB-P1-036 / DB-002): `booking_intents.created_by` es `NOT NULL`. Se resuelve por
+    // `eventId → event.userId` (organizer dueño del evento — semántica de la creación real vía
+    // POST /booking-intents). Fallback defensivo a `organizers[0]` si el mapeo faltara.
+    const eventOwnerByEventId = new Map(events.map((e) => [e.id, e.userId]));
     const reviewCounts = report.domains.reviews ?? emptyCounts();
     report.domains.reviews = reviewCounts;
 
@@ -712,6 +718,7 @@ export class SeedDemoDataUseCase {
               eventId: qr.eventId,
               serviceCategoryId: qr.serviceCategoryId,
               vendorProfileId: qr.vendorProfileId,
+              createdBy: eventOwnerByEventId.get(qr.eventId) ?? organizers[0]!.id,
               status,
               isSimulated: true,
               confirmedAt,

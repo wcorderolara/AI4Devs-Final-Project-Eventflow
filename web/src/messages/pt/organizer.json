@@ -96,5 +96,37 @@
         "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
       }
     }
+  },
+  "booking": {
+    "create": {
+      "title": "Criar intenção de reserva",
+      "description": "Ao confirmar, aceitamos este orçamento e notificamos o fornecedor. Este fluxo não inclui pagamentos nem contratos digitais.",
+      "summary": {
+        "vendor": "Fornecedor",
+        "amount": "Valor do orçamento"
+      },
+      "disclaimer": {
+        "label": "Entendo que esta é uma intenção de reserva simulada.",
+        "hint": "O EventFlow não processa pagamentos nem contratos. Qualquer acordo financeiro ou legal deve ser formalizado fora da plataforma com o fornecedor."
+      },
+      "actions": {
+        "cancel": "Cancelar",
+        "submit": "Criar intenção de reserva",
+        "submitting": "Criando…"
+      },
+      "success": "Intenção de reserva criada. Notificamos o fornecedor.",
+      "errors": {
+        "DISCLAIMER_REQUIRED": "Você precisa aceitar o aviso para continuar.",
+        "VALIDATION_ERROR": "Houve um problema com a solicitação. Tente novamente.",
+        "AUTHENTICATION_REQUIRED": "Você precisa iniciar sessão para criar a intenção.",
+        "FORBIDDEN": "Sua função não pode criar intenções de reserva.",
+        "QUOTE_NOT_FOUND": "Não encontramos este orçamento ou ele não está mais disponível.",
+        "QUOTE_NOT_ACCEPTABLE": "Este orçamento não pode ser aceito no estado atual.",
+        "QUOTE_EXPIRED": "Este orçamento expirou e não pode mais ser aceito.",
+        "BOOKING_INTENT_ALREADY_EXISTS": "Já existe uma intenção de reserva ativa para este orçamento.",
+        "RATE_LIMIT_EXCEEDED": "Muitas solicitações. Aguarde um momento e tente novamente.",
+        "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
+      }
+    }
   }
 }

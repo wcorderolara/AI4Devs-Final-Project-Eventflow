@@ -1353,13 +1353,17 @@
               "schema": {
                 "additionalProperties": false,
                 "properties": {
-                  "quoteId": {
+                  "disclaimer_accepted": {
+                    "type": "boolean"
+                  },
+                  "quote_id": {
                     "format": "uuid",
                     "type": "string"
                   }
                 },
                 "required": [
-                  "quoteId"
+                  "quote_id",
+                  "disclaimer_accepted"
                 ],
                 "type": "object"
               }
@@ -1465,6 +1469,9 @@
             },
             "description": "OK"
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -1474,11 +1481,8 @@
           "404": {
             "$ref": "#/components/responses/NotFound"
           },
-          "410": {
-            "$ref": "#/components/responses/Gone"
-          },
-          "422": {
-            "$ref": "#/components/responses/ValidationError"
+          "409": {
+            "$ref": "#/components/responses/Conflict"
           }
         },
         "security": [
@@ -1486,7 +1490,7 @@
             "cookieAuth": []
           }
         ],
-        "summary": "Crear BookingIntent (simulado)",
+        "summary": "US-060 · Aceptar Quote + crear BookingIntent atómicamente (organizer)",
         "tags": [
           "BookingIntents"
         ]

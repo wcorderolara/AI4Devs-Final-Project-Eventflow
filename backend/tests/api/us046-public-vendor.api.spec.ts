@@ -246,6 +246,7 @@ describe.skipIf(!dbUp)('US-046 QA-002 (con BD): visibilidad + cache headers + wh
         eventId: event.id,
         serviceCategoryId: cat.id,
         vendorProfileId: approved.vendorProfileId,
+        createdBy: author.id,
         status: 'confirmed_intent',
         confirmedAt: new Date(),
       },

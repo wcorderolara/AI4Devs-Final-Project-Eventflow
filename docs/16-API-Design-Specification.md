@@ -2129,7 +2129,7 @@ Simular la intención de contratar al vendor con una `Quote` aceptada. **Sin pag
 
 | Método | Path | Auth | Roles | Propósito | Success | Errores |
 | --- | --- | --- | --- | --- | --- | --- |
-| POST | `/booking-intents` | Sí | organizer | Crea intent desde quote aceptada. | 201 | 401, 403, 404, 422 |
+| POST | `/booking-intents` | Sí | organizer | **US-060**: Aceptación atómica de la Quote + creación del intent + 2 Notifications al vendor. Body snake_case con `disclaimer_accepted:true` requerido. Ver §32.6. | 201 | 400 (VALIDATION_ERROR, DISCLAIMER_REQUIRED), 401 (AUTHENTICATION_REQUIRED), 403 (FORBIDDEN), 404 (QUOTE_NOT_FOUND uniforme), 409 (QUOTE_NOT_ACCEPTABLE, QUOTE_EXPIRED, BOOKING_INTENT_ALREADY_EXISTS) |
 | GET | `/booking-intents/:bookingIntentId` | Sí | organizer, vendor (asignado), admin | Detalle. | 200 | 401, 403, 404 |
 | POST | `/booking-intents/:bookingIntentId/confirm` | Sí | vendor | Confirma la intención. | 200 | 401, 403, 404, 422 |
 | POST | `/booking-intents/:bookingIntentId/cancel` | Sí | organizer, vendor | Cancela. | 200 | 401, 403, 404, 422 |
@@ -2137,8 +2137,11 @@ Simular la intención de contratar al vendor con una `Quote` aceptada. **Sin pag
 ### 32.3 DTOs
 
 ```ts
+// US-060 (PB-P1-036 / BE-001): body atómico snake_case con disclaimer enforcement server-side y
+// `.strict()` que rechaza cualquier campo de pago (FR-BOOKING-007).
 type CreateBookingIntentRequestDto = {
-  quoteId: string;
+  quote_id: string;               // uuid
+  disclaimer_accepted: boolean;   // debe ser `true` en el UC — false ⇒ 400 DISCLAIMER_REQUIRED
 };
 
 type CancelBookingIntentRequestDto = {
@@ -2162,10 +2165,87 @@ type BookingIntentResponseDto = {
 
 ### 32.4 Reglas enforced
 
-- **BR-BOOKING-001**: solo desde quote aceptada y vigente.
+- **BR-BOOKING-001**: solo desde quote aceptable (`status='sent'`) y vigente. La aceptación y la
+  creación del BookingIntent son una única transacción atómica (US-060 D1).
 - **BR-BOOKING-002**: confirmación bilateral (organizer crea, vendor confirma).
-- **BR-BOOKING-004**: NO se procesa pago real.
+- **BR-BOOKING-004**: NO se procesa pago real. Enforced por DTO `.strict()` que rechaza cualquier
+  campo de pago (`payment_method`, `card_token`, `card_number`, `amount_paid`, `payment_intent_id`, …).
+- **BR-BOOKING-006/007**: disclaimer server-side enforcement — `disclaimer_accepted:true` requerido.
 - **BR-BOOKING-009**: cancelable incluso desde `confirmed_intent` sin penalización. Requiere `cancellationReason`.
+- **UNIQUE parcial** `uq_booking_intents_active_per_quote (quote_id) WHERE status IN ('pending','confirmed_intent')`
+  — a lo sumo un BookingIntent activo por Quote (EC-03, VR-07).
+
+### 32.6 US-060 · `POST /api/v1/booking-intents` (aceptación atómica + creación)
+
+Endpoint canónico del organizer dueño del evento para aceptar una Quote vigente y crear
+atómicamente su `BookingIntent` `pending`. La transición es una única `prisma.$transaction` con
+`SELECT ... FOR UPDATE` sobre la Quote target y sobre cualquier BookingIntent activo previo — un
+fallo en cualquier paso (UPDATE Quote → `accepted`, INSERT BookingIntent, INSERT ×2
+Notifications) revierte todo el cambio. Las notificaciones se emiten vía el
+`QuoteEventNotificationService` común (US-054 / US-056 / US-058) con el nuevo `eventName =
+'booking_intent.created'`.
+
+DTO request (body):
+```json
+{ "quote_id": "<uuid>", "disclaimer_accepted": true }
+```
+
+Response 201:
+```json
+{
+  "data": {
+    "id": "<uuid>",
+    "quoteId": "<uuid>",
+    "eventId": "<uuid>",
+    "serviceCategoryId": "<uuid>",
+    "vendorProfileId": "<uuid>",
+    "status": "pending",
+    "isSimulated": true,
+    "confirmedAt": null,
+    "cancelledAt": null,
+    "cancelledBy": null,
+    "cancellationReason": null,
+    "createdAt": "2026-…",
+    "updatedAt": "2026-…"
+  },
+  "correlationId": "<uuid>"
+}
+```
+
+Errores estables (contrato §7 Tech Spec):
+
+| HTTP | Code | Detalle |
+| --- | --- | --- |
+| 400 | `VALIDATION_ERROR` | Body inválido (UUID malformado, `disclaimer_accepted` no booleano, `.strict()` rechaza campos de pago FR-BOOKING-007). |
+| 400 | `DISCLAIMER_REQUIRED` | `disclaimer_accepted` no es `true`. `details.field='disclaimer_accepted'`. |
+| 401 | `AUTHENTICATION_REQUIRED` | Sin sesión. |
+| 403 | `FORBIDDEN` | Rol distinto de `organizer` (vendor/admin). |
+| 404 | `QUOTE_NOT_FOUND` | Quote inexistente o de evento no propio (uniforme — no filtra existencia). |
+| 409 | `QUOTE_NOT_ACCEPTABLE` | `Quote.status ≠ 'sent'`. `details.current_status`. |
+| 409 | `QUOTE_EXPIRED` | `Quote.valid_until < now`. |
+| 409 | `BOOKING_INTENT_ALREADY_EXISTS` | Existe intent `pending`/`confirmed_intent` para la Quote. `details.booking_intent_id`. UNIQUE parcial DB actúa como último tapón. |
+
+Decisiones PO/Tech (§Decision Resolution `US-060-decision-resolution.md`):
+
+- **D1** endpoint atómico (no hay endpoint separado de "accept Quote" en MVP).
+- **D2** disclaimer server-side enforcement (no confiar en frontend).
+- **D3** `prisma.$transaction` con `SELECT FOR UPDATE` — atomicidad + prevención de race.
+- **D4** UNIQUE parcial `booking_intents (quote_id) WHERE status IN ('pending','confirmed_intent')`.
+- **D5** 2 Notifications atómicas (`in_app` + `email_simulated`) con `event='booking_intent.created'`.
+- **D6** Quote origen permitida: `status='sent'` no vencida (DEV-02: enum sin `responded`).
+- **D7** authorization: organizer dueño del evento → 404 uniforme si no lo es.
+- **D8** DTO `.strict()` rechaza cualquier campo de pago (FR-BOOKING-007).
+
+Observabilidad: log estructurado `booking_intent.created` (`info`) con `{correlationId, actorId,
+bookingIntentId, quoteId, quoteRequestId}` (sin payload — SEC-09). Log agregado del fan-out:
+`quote.notification.emitted` con `{correlationId, eventName='booking_intent.created',
+vendorUserId}`. Notifications persistidas: `type='booking_intent.created'`; `payload` incluye
+`{channel, deliveryStatus, event, booking_intent_id, quote_id, quote_request_id, event_id,
+service_category_id}`.
+
+Deviation (DEV-01 del execution record `management/workflows/development-execution/P1/PB-P1-036/US-060-execution.md`):
+la ruta canónica es `/api/v1/booking-intents` (sin prefijo `/organizer/`) para consistencia con
+`quote-flow` y el resto de módulos del repo.
 
 ### 32.5 Structured logs — sync `BudgetItem.committed` (US-039 / PB-P1-023)
 

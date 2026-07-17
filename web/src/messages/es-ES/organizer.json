@@ -96,5 +96,37 @@
         "UNEXPECTED": "Se ha producido un error inesperado. Inténtalo de nuevo."
       }
     }
+  },
+  "booking": {
+    "create": {
+      "title": "Crear intención de reserva",
+      "description": "Al confirmar, aceptamos este presupuesto y avisamos al proveedor. Este flujo no incluye pagos ni contratos digitales.",
+      "summary": {
+        "vendor": "Proveedor",
+        "amount": "Importe del presupuesto"
+      },
+      "disclaimer": {
+        "label": "Entiendo que esto es una intención de reserva simulada.",
+        "hint": "EventFlow no procesa pagos ni contratos. Cualquier acuerdo económico o legal debe formalizarse fuera de la plataforma con el proveedor."
+      },
+      "actions": {
+        "cancel": "Cancelar",
+        "submit": "Crear intención de reserva",
+        "submitting": "Creando…"
+      },
+      "success": "Intención de reserva creada. Avisamos al proveedor.",
+      "errors": {
+        "DISCLAIMER_REQUIRED": "Debes aceptar el aviso para continuar.",
+        "VALIDATION_ERROR": "Hubo un problema con la solicitud. Inténtalo de nuevo.",
+        "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para crear la intención.",
+        "FORBIDDEN": "Tu rol no puede crear intenciones de reserva.",
+        "QUOTE_NOT_FOUND": "No encontramos este presupuesto o ya no está disponible.",
+        "QUOTE_NOT_ACCEPTABLE": "Este presupuesto ya no puede aceptarse en su estado actual.",
+        "QUOTE_EXPIRED": "Este presupuesto ha caducado y ya no puede aceptarse.",
+        "BOOKING_INTENT_ALREADY_EXISTS": "Ya existe una intención de reserva activa para este presupuesto.",
+        "RATE_LIMIT_EXCEEDED": "Demasiadas solicitudes. Espera un momento e inténtalo de nuevo.",
+        "UNEXPECTED": "Se ha producido un error inesperado. Inténtalo de nuevo."
+      }
+    }
   }
 }

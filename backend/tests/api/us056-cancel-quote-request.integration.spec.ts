@@ -321,6 +321,7 @@ describe.skipIf(!dbUp)('US-056 QA — Cancel QuoteRequest integration', () => {
         eventId: s.eventId,
         serviceCategoryId,
         vendorProfileId: s.vendorProfileId,
+        createdBy: s.organizerId,
         status: 'confirmed_intent',
         isSimulated: true,
         confirmedAt: new Date('2026-05-10T00:00:00Z'),

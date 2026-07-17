@@ -570,16 +570,35 @@ Importante: este listado prohíbe automáticamente crear un controller/repo por 
 
 ### 10.9 Booking Intent
 
-- **Responsabilidad:** booking simulado sin pago.
-- **In-scope:** crear booking desde un `Quote` aceptado, confirmar por proveedor, cancelar (incluso confirmados).
-- **Out-of-scope:** pagos, captura de medios de pago, contratos firmados.
-- **Main use cases:** `CreateBookingIntentUseCase`, `ConfirmBookingIntentUseCase`, `CancelBookingIntentUseCase`.
+- **Responsabilidad:** booking simulado sin pago. Aceptación de Quote atómica con la creación
+  del intent (US-060). Confirmación por el vendor asignado. Cancelación bilateral sin penalización.
+- **In-scope:** aceptación atómica de un `Quote` vigente → crear `BookingIntent` `pending` + 2
+  Notifications al vendor (`booking_intent.created`) en una única `prisma.$transaction` (US-060
+  D1..D5); confirmar por el vendor (US-061); cancelar por organizer o vendor incluso desde
+  `confirmed_intent` (US-062).
+- **Out-of-scope:** pagos reales, captura/almacenamiento de medios de pago (FR-BOOKING-007),
+  contratos firmados. El DTO Zod `.strict()` de `POST /booking-intents` rechaza cualquier campo
+  de pago; los tests QA-005 lo verifican explícitamente.
+- **Main use cases:** `CreateBookingIntentUs060UseCase` (US-060 — transaccional + fan-out
+  atómico), `GetBookingIntentUseCase`, `ConfirmBookingIntentUseCase`, `CancelBookingIntentUseCase`.
 - **Domain services / policies:** `BookingIntentPolicyService` (opcional; transición de estados).
-- **Repository ports:** `BookingIntentRepository`.
-- **Validaciones:** estado coherente (`created → confirmed_intent` / `cancelled`); cancelación sin penalización del lado plataforma.
-- **Authorization:** organizer crea/cancela; vendor confirma/cancela; ambos pueden ver el booking.
-- **Eventos/notificaciones:** ambos notificados en cada transición.
-- **Testing focus:** transiciones, ownership doble (vendor + organizer).
+  `QuoteEventNotificationService` (compartido con `quote-flow`) — extendido con
+  `booking_intent.created` (6º evento).
+- **Repository ports:** `BookingIntentRepository` (extendido con `createdBy`).
+- **Validaciones:** disclaimer server-side enforcement (`disclaimer_accepted:true`, US-060 D2);
+  Quote `status='sent'` y no vencida (US-060 D6); UNIQUE parcial DB
+  `uq_booking_intents_active_per_quote (quote_id) WHERE status IN ('pending','confirmed_intent')`
+  (US-060 D4).
+- **Authorization:** organizer dueño del evento crea (`404 QUOTE_NOT_FOUND` uniforme si ajeno,
+  US-060 D7 / SEC-03); vendor asignado confirma; organizer o vendor asignado cancela.
+- **Eventos/notificaciones:** 2 notifs bilaterales por transición vía `QuoteEventNotificationService`
+  común (`in_app` + `email_simulated`); log estructurado `booking_intent.created` /
+  `booking_intent.confirmed` / `booking_intent.cancelled` con `{correlationId, actorId,
+  bookingIntentId, quoteId, quoteRequestId?}` (sin payload — SEC-09).
+- **Testing focus:** transiciones, ownership doble (vendor + organizer), atomicidad del path
+  US-060 (Quote+BookingIntent+2 notifs en una tx; fallo revierte todo), UNIQUE parcial bajo
+  concurrencia (2 POST simultáneos ⇒ uno gana, otro `409 BOOKING_INTENT_ALREADY_EXISTS`),
+  disclaimer/no-pagos security tests (QA-005).
 
 ### 10.10 Reviews & Moderation
 
