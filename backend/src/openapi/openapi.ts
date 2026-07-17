@@ -54,6 +54,8 @@ import {
   CompareQuotesQuerySchema,
 } from '../modules/quote-flow/dto/compare-quotes.us057.query.js';
 import { CompareQuotesResponseSchema } from '../modules/quote-flow/dto/compare-quotes.us057.response.js';
+// US-058 (PB-P1-035 / BE-001): body del endpoint toggle preferred.
+import { preferQuoteBodySchema as PreferQuoteBodySchema } from '../modules/quote-flow/dto/prefer-quote.us058.request.js';
 import {
   CreateBookingIntentRequestSchema,
   CancelBookingIntentRequestSchema,
@@ -279,7 +281,13 @@ op({ method: 'post', path: '/quotes/{quoteId}/accept', operationId: 'acceptQuote
 // Notifications atómicas al vendor por `QuoteEventNotificationService` (refactor US-056).
 // Añade 400 (INVALID_REJECTION_REASON) y 409 (QUOTE_NOT_REJECTABLE) al contrato.
 op({ method: 'post', path: '/quotes/{quoteId}/reject', operationId: 'rejectQuote', tags: ['Quotes'], summary: 'Rechazar Quote (organizer)', secured: true, params: QuoteIdParamSchema, body: RejectQuoteBodySchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [400, 401, 403, 404, 409, 422] });
-op({ method: 'post', path: '/quotes/{quoteId}/prefer', operationId: 'preferQuote', tags: ['Quotes'], summary: 'Marcar Quote como preferido (organizer)', secured: true, params: QuoteIdParamSchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404, 422] });
+// US-058 (PB-P1-035 / BE-004): endpoint legacy — delega en el nuevo UC transaccional con
+// `{is_preferred: true}` (DEV-01 del execution record). Reajusta la lista de errores para
+// incluir 409 QUOTE_NOT_PREFERABLE que ahora sí puede emitir.
+op({ method: 'post', path: '/quotes/{quoteId}/prefer', operationId: 'preferQuote', tags: ['Quotes'], summary: 'Marcar Quote como preferido (organizer, legacy)', secured: true, params: QuoteIdParamSchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [401, 403, 404, 409, 422] });
+// US-058 (PB-P1-035 / BE-004): endpoint canónico — body `{is_preferred: boolean}` para toggle
+// idempotente (AC-01..04) + notifs bilaterales + UNIQUE parcial DB.
+op({ method: 'patch', path: '/quotes/{quoteId}/preferred', operationId: 'preferredQuote', tags: ['Quotes'], summary: 'Toggle Quote.is_preferred (organizer)', secured: true, params: QuoteIdParamSchema, body: PreferQuoteBodySchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [400, 401, 403, 404, 409] });
 
 // ── BOOKING-INTENT ──────────────────────────────────────────────────────────────
 op({ method: 'post', path: '/booking-intents', operationId: 'createBookingIntent', tags: ['BookingIntents'], summary: 'Crear BookingIntent (simulado)', secured: true, body: CreateBookingIntentRequestSchema, success: { status: 201, schema: envelope(BookingIntentResponseSchema) }, errors: [401, 403, 404, 410, 422] });

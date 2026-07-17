@@ -2015,7 +2015,8 @@ Vendor responde a un quote request creando una `Quote`. Organizer la acepta, rec
 | POST | `/quotes/:quoteId/send` | Sí | vendor | Envía al organizer. | 200 | 401, 403, 404, 422 |
 | POST | `/quotes/:quoteId/accept` | Sí | organizer | Acepta. | 200 | 401, 403, 404, 410 (QUOTE_EXPIRED), 422 |
 | POST | `/quotes/:quoteId/reject` | Sí | organizer | Rechaza y emite 2 Notifications al vendor atómicamente. Body opcional `{ reason?: string [0..500] }`. | 200 | 400 (INVALID_REJECTION_REASON), 401, 403, 404 (QUOTE_NOT_FOUND), 409 (QUOTE_NOT_REJECTABLE), 422 |
-| POST | `/quotes/:quoteId/prefer` | Sí | organizer | Marca preferida. | 200 | 401, 403, 404, 422 |
+| POST | `/quotes/:quoteId/prefer` | Sí | organizer | Legacy: marca preferida (equivalente a `PATCH /quotes/:quoteId/preferred` con `{is_preferred: true}` — ver §31.5 US-058). | 200 | 401, 403, 404, 409 (QUOTE_NOT_PREFERABLE), 422 |
+| PATCH | `/quotes/:quoteId/preferred` | Sí | organizer | Toggle idempotente `is_preferred` con notifs bilaterales + UNIQUE parcial `(event, category) WHERE is_preferred=true`. Body `{is_preferred: boolean}`. Ver §31.5 (US-058). | 200 | 400 (VALIDATION_ERROR), 401, 403, 404 (QUOTE_NOT_FOUND uniforme), 409 (QUOTE_NOT_PREFERABLE) |
 
 ### 31.3 DTOs
 
@@ -2072,7 +2073,49 @@ patrón atómico.
 - **BR-QUOTE-015**: si `validUntil` se omite, default `createdAt + 15 días calendario`.
 - **BR-QUOTE-016**: job de expiración corre periódicamente y mueve a `expired`.
 - **BR-QUOTE-017**: solo `draft` editable.
+- **BR-QUOTE-022** (US-058): sólo una `Quote` con `is_preferred=true` por `(event_id, service_category_id)` — enforced por UNIQUE parcial nativo.
 - Aceptar quote expirada → `410 QUOTE_EXPIRED`.
+
+### 31.5 US-058 · `PATCH /api/v1/quotes/:quoteId/preferred` (toggle idempotente + notifs bilaterales)
+
+Endpoint canónico del organizer dueño del evento para marcar/desmarcar una `Quote` como preferred. La transición es atómica (`prisma.$transaction` con `SELECT ... FOR UPDATE` sobre la Quote target y sobre la preferida previa cuando aplica); la nueva `Quote` preferred desmarca automáticamente cualquier otra Quote preferida en el mismo `(event_id, service_category_id)`. Las notificaciones se emiten vía el `QuoteEventNotificationService` común (US-054 / US-056) — 2 al vendor target y 2 al vendor previo cuando hubo cambio de preferred. El endpoint legacy `POST /quotes/:quoteId/prefer` (US-096) preserva su contrato delegando al mismo UC con `{is_preferred: true}` — DEV-01 del execution record `management/workflows/development-execution/P1/PB-P1-035/US-058-execution.md`.
+
+La migración menor `20260717150000_us058_quotes_denormalize_and_preferred_unique` habilita el UNIQUE parcial nativo: denormaliza `event_id` + `service_category_id` en `quotes` (backfill desde `quote_requests`) y crea `uq_quotes_preferred_per_event_category ON quotes (event_id, service_category_id) WHERE is_preferred = true`.
+
+| Método | Path | Auth | Roles | Propósito | Success | Errores |
+| --- | --- | --- | --- | --- | --- | --- |
+| PATCH | `/api/v1/quotes/:quoteId/preferred` | Sí (cookie de sesión) | organizer (dueño del evento) | Toggle idempotente de `is_preferred`; emite notifs al vendor target y al vendor previo cuando aplica. | 200 | 400 (`VALIDATION_ERROR` — UUID malformado o `is_preferred` ausente/no-booleano), 401, 403, 404 (`QUOTE_NOT_FOUND` uniforme), 409 (`QUOTE_NOT_PREFERABLE`) |
+
+```ts
+// Request body (obligatorio)
+type PreferQuoteUs058Body = {
+  is_preferred: boolean; // toggle idempotente; `.strict()` bloquea campos ajenos
+};
+
+// Response 200 — Quote completa (`QuoteResponseDto`). Los campos relevantes tras el toggle:
+// `{ id, status, isPreferred, quoteRequestId, ... }`.
+```
+
+Detalles de errores (envelope estándar `{ error: { code, message, correlationId, details? } }`):
+
+| Código | HTTP | `details` | Trigger |
+| --- | ---: | --- | --- |
+| `VALIDATION_ERROR` | 400 | `[{ field, message }]` | UUID malformado en `:quoteId` o body sin `is_preferred: boolean` (Zod `.strict()`). |
+| `AUTHENTICATION_REQUIRED` | 401 | — | Sin sesión. |
+| `FORBIDDEN` | 403 | — | Rol distinto de `organizer` (vendor / admin). |
+| `QUOTE_NOT_FOUND` | 404 | — | Quote inexistente o el organizer no es dueño (SEC-02 uniforme). |
+| `QUOTE_NOT_PREFERABLE` | 409 | `[{ field: 'current_status', message: <status \| 'expired'> }]` | `Quote.status ≠ 'sent'` (EC-01) o `valid_until < clock.now()` (D3, VR-03). |
+
+Reglas y restricciones enforced:
+
+- **D1 body idempotente**: `{is_preferred: boolean}` — mismo valor que el actual ⇒ 200 sin side-effects (AC-04).
+- **D2 atomicidad**: dentro de la transacción se toma `SELECT FOR UPDATE` sobre la Quote target y sobre la preferida previa (si existe) en `(event, category)` — evita race entre 2 PATCH concurrentes. La `UNIQUE PARTIAL` `(event_id, service_category_id) WHERE is_preferred=true` actúa como último tapón del DB.
+- **D3 estados preferables**: sólo `Quote.status='sent'` y no vencida por `valid_until`. Nota (DEV-02): el enum `QuoteStatus` en Prisma no contiene `responded` (ese status pertenece al `QuoteRequest`), por lo que la lista efectiva se reduce a `{sent}`.
+- **D4 fan-out bilateral**: `quote.marked_preferred` / `quote.unmarked_preferred` según toggle. Cuando cambia la preferida entre dos Quotes distintas del mismo `(event, category)`, se emiten 2 notifs al vendor de la nueva + 2 al vendor de la previa. El servicio común es el mismo que US-053/054/056 (`QuoteEventNotificationService`).
+- **D5 UNIQUE parcial DB**: `uq_quotes_preferred_per_event_category` (schema denormalizado — ver §Migración). El mapper de `PrismaClientKnownRequestError.P2002` colapsa la violación a `ConflictError` cuando surge por race directo en el path de creación (US-096); en el path US-058 la SELECT FOR UPDATE previene el conflicto antes de UPDATE.
+- **D7 authorization**: `events.user_id = currentUser.id` requerido. Cualquier otro caso colapsa a `404 QUOTE_NOT_FOUND` uniforme (no filtra existencia ni ownership).
+
+Observabilidad: log estructurado `quote.preferred.toggled` (`info`) con `{correlationId, actorId, quoteId, quoteRequestId, previousValue, newValue, unmarkedQuoteId?}` (sin payload — SEC-09). Log agregado del fan-out: `quote.notification.emitted` con `{correlationId, eventName='quote.marked_preferred' \| 'quote.unmarked_preferred', vendorUserId}`. Notifications persistidas: `type='quote.marked_preferred'` o `quote.unmarked_preferred`; `payload` incluye `{channel, deliveryStatus, event, quote_id, quote_request_id, event_id, service_category_id, unmarked_by_quote_id?}`.
 
 ---
 

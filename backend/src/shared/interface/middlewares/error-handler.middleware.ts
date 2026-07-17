@@ -62,6 +62,9 @@ import {
   CompareQuotesCategoryRequiredError,
   CompareQuotesInvalidCategoryError,
 } from '../../../modules/quote-flow/domain/us057.errors.js';
+// US-058 (PB-P1-035): endpoint `PATCH /api/v1/quotes/:quoteId/preferred`. `QuoteNotPreferableError`
+// mapea a `409 QUOTE_NOT_PREFERABLE` con `details.current_status`.
+import { QuoteNotPreferableError } from '../../../modules/quote-flow/domain/us058.errors.js';
 import {
   MissingInputError,
   AiInvalidBudgetError,
@@ -356,6 +359,15 @@ function mapError(err: unknown): MappedError {
       code: ErrorCodes.INVALID_CATEGORY,
       message: err.message,
       details: [{ field: 'categoryCode', message: err.categoryCode }],
+    };
+  }
+  // US-058 (PB-P1-035): toggle preferred de Quote.
+  if (err instanceof QuoteNotPreferableError) {
+    return {
+      status: 409,
+      code: ErrorCodes.QUOTE_NOT_PREFERABLE,
+      message: err.message,
+      details: [{ field: 'current_status', message: err.currentStatus }],
     };
   }
   if (err instanceof MissingInputError) {

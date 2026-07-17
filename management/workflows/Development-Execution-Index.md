@@ -95,3 +95,4 @@
 | P1 | PB-P1-033 | US-055 | ExpireQuoteRequestsJob + ClockPort + reconciliación cron | [record](development-execution/P1/PB-P1-033/US-055-execution.md) | 13 | 13 | 0 | 0 | 0 | 0 | `Done` | 2026-07-16 |
 | P1 | PB-P1-034 | US-056 | Cancel QuoteRequest activa (con restricción confirmed_intent) + refactor QuoteEventNotificationService | [record](development-execution/P1/PB-P1-034/US-056-execution.md) | 17 | 17 | 0 | 0 | 0 | 0 | `Done` | 2026-07-16 |
 | P1 | PB-P1-035 | US-057 | Comparador de Quotes lado a lado (por categoría) | [record](development-execution/P1/PB-P1-035/US-057-execution.md) | 16 | 16 | 0 | 0 | 0 | 0 | `Done` | 2026-07-17 |
+| P1 | PB-P1-035 | US-058 | Toggle Quote.is_preferred (transaccional + notifs bilaterales + UNIQUE parcial) | [record](development-execution/P1/PB-P1-035/US-058-execution.md) | 16 | 16 | 0 | 0 | 0 | 0 | `Done` | 2026-07-17 |

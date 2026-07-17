@@ -174,7 +174,6 @@ function makeDeps(overrides?: {
     send: vi.fn(),
     accept: vi.fn(),
     reject: vi.fn(),
-    setPreferred: vi.fn(),
     findComparableByEventAndCategory: findComparable,
   };
 

@@ -262,6 +262,48 @@ export interface CompareQuotesView {
   items: CompareQuoteItemView[];
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// US-058 · toggle Quote.is_preferred (organizer)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface PreferQuoteInput {
+  quoteId: string;
+  isPreferred: boolean;
+}
+
+/**
+ * Sub-set del `QuoteResponse` (backend) — el organizer sólo necesita el nuevo estado del
+ * flag y el status/id para invalidar caches locales tras el toggle. El backend responde con
+ * la Quote completa; aquí sólo tipamos lo consumido por la UI.
+ */
+export interface PreferQuoteDTO {
+  id: string;
+  status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired';
+  isPreferred: boolean;
+  quoteRequestId: string;
+}
+
+export interface PreferQuoteEnvelope {
+  data: PreferQuoteDTO;
+  correlationId: string;
+}
+
+export interface PreferQuoteView {
+  id: string;
+  status: PreferQuoteDTO['status'];
+  isPreferred: boolean;
+  quoteRequestId: string;
+}
+
+export function toPreferQuoteView(dto: PreferQuoteDTO): PreferQuoteView {
+  return {
+    id: dto.id,
+    status: dto.status,
+    isPreferred: dto.isPreferred,
+    quoteRequestId: dto.quoteRequestId,
+  };
+}
+
 export function toCompareQuotesView(dto: CompareQuotesDTO): CompareQuotesView {
   return {
     category: { code: dto.category.code, name: dto.category.name },

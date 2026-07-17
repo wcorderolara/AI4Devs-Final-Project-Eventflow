@@ -163,6 +163,8 @@ export const ErrorCodes = {
   QR_NOT_CANCELLABLE: 'QR_NOT_CANCELLABLE', // 409 — QR.status ∉ ACTIVE_STATES (EC-02/06, VR-04); `details.current_status`.
   QR_HAS_CONFIRMED_BOOKING: 'QR_HAS_CONFIRMED_BOOKING', // 409 — existe BookingIntent confirmed_intent (EC-01, VR-05); `details.booking_intent_id`.
   INVALID_CANCELLATION_REASON: 'INVALID_CANCELLATION_REASON', // 400 — body.reason > 500 chars (EC-04, VR-02).
+  // US-058 (PB-P1-035): toggle Quote.is_preferred. Código específico §7 Tech Spec.
+  QUOTE_NOT_PREFERABLE: 'QUOTE_NOT_PREFERABLE', // 409 — Quote.status ≠ 'sent' o expirada por valid_until (EC-01, VR-03); `details.current_status`.
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

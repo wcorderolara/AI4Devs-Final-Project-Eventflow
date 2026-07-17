@@ -6101,6 +6101,9 @@
           "404": {
             "$ref": "#/components/responses/NotFound"
           },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
           "422": {
             "$ref": "#/components/responses/ValidationError"
           }
@@ -6110,7 +6113,201 @@
             "cookieAuth": []
           }
         ],
-        "summary": "Marcar Quote como preferido (organizer)",
+        "summary": "Marcar Quote como preferido (organizer, legacy)",
+        "tags": [
+          "Quotes"
+        ]
+      }
+    },
+    "/api/v1/quotes/{quoteId}/preferred": {
+      "patch": {
+        "operationId": "preferredQuote",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quoteId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "is_preferred": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "is_preferred"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "acceptedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "breakdown": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "amount": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "label",
+                              "amount"
+                            ],
+                            "type": "object"
+                          },
+                          "nullable": true,
+                          "type": "array"
+                        },
+                        "conditions": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "currencyCode": {
+                          "enum": [
+                            "GTQ",
+                            "EUR",
+                            "MXN",
+                            "COP",
+                            "USD"
+                          ],
+                          "type": "string"
+                        },
+                        "id": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "isPreferred": {
+                          "type": "boolean"
+                        },
+                        "quoteRequestId": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "rejectedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "rejectionReason": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "sentAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": [
+                            "draft",
+                            "sent",
+                            "accepted",
+                            "rejected",
+                            "expired"
+                          ],
+                          "type": "string"
+                        },
+                        "totalPrice": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "validUntil": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "vendorProfileId": {
+                          "format": "uuid",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "quoteRequestId",
+                        "vendorProfileId",
+                        "totalPrice",
+                        "currencyCode",
+                        "breakdown",
+                        "conditions",
+                        "validUntil",
+                        "status",
+                        "isPreferred",
+                        "sentAt",
+                        "acceptedAt",
+                        "rejectedAt",
+                        "rejectionReason",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "type": "object"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Toggle Quote.is_preferred (organizer)",
         "tags": [
           "Quotes"
         ]

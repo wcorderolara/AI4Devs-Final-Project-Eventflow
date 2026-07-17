@@ -38,12 +38,17 @@ import type {
   UpdateQuoteUseCase,
   SendQuoteUseCase,
   AcceptQuoteUseCase,
-  PreferQuoteUseCase,
 } from '../application/quote.use-cases.js';
 // US-054 (PB-P1-032 / BE-005): reject transaccional con body opcional (reemplaza el use case
 // original de US-096 en el wiring — ver DEV-02 del execution record).
 import type { RejectQuoteUs054UseCase } from '../application/reject-quote.us054.use-case.js';
 import type { RejectQuoteBody } from '../dto/reject-quote.us054.request.js';
+// US-058 (PB-P1-035 / BE-003/004): toggle preferred transaccional con notifs bilaterales
+// (reemplaza el `PreferQuoteUseCase` original de US-096 en el wiring — DEV-01 del execution
+// record). El endpoint canónico es `PATCH /quotes/:quoteId/preferred`; el legacy POST `/prefer`
+// se preserva delegando al mismo UC con `{is_preferred: true}`.
+import type { PreferQuoteUs058UseCase } from '../application/prefer-quote.us058.use-case.js';
+import type { PreferQuoteBody } from '../dto/prefer-quote.us058.request.js';
 
 interface Actor {
   id: string;
@@ -134,7 +139,9 @@ export interface QuoteUseCases {
   send: SendQuoteUseCase;
   accept: AcceptQuoteUseCase;
   reject: RejectQuoteUs054UseCase;
-  prefer: PreferQuoteUseCase;
+  // US-058 (BE-004): el UC transaccional cubre ambas rutas — el legacy POST /prefer se resuelve
+  // como `{is_preferred: true}` (DEV-01), el nuevo PATCH /preferred recibe el body real.
+  prefer: PreferQuoteUs058UseCase;
 }
 
 export class QuotesController {
@@ -180,9 +187,28 @@ export class QuotesController {
     res.status(200).json(success(toQuoteResponse(view), req.correlationId ?? ''));
   };
 
+  // US-058 (BE-004): legacy POST /quotes/:quoteId/prefer. Preservamos el contrato existente
+  // (sin body) delegando al mismo UC transaccional con `{is_preferred: true}` — DEV-01.
   prefer = async (req: Request, res: Response): Promise<void> => {
     const { quoteId } = req.validated?.params as QuoteIdParam;
-    const view = await this.uc.prefer.execute(actor(req).id, quoteId, { correlationId: req.correlationId });
+    const view = await this.uc.prefer.execute(
+      actor(req).id,
+      quoteId,
+      { is_preferred: true },
+      { correlationId: req.correlationId },
+    );
+    res.status(200).json(success(toQuoteResponse(view), req.correlationId ?? ''));
+  };
+
+  // US-058 (BE-004): endpoint canónico `PATCH /quotes/:quoteId/preferred`. Body
+  // `{is_preferred: boolean}` valida idempotencia (AC-04), unmark (AC-03), y cambio de
+  // preferida (AC-02). Delega en `PreferQuoteUs058UseCase`.
+  preferred = async (req: Request, res: Response): Promise<void> => {
+    const { quoteId } = req.validated?.params as QuoteIdParam;
+    const body = req.validated?.body as PreferQuoteBody;
+    const view = await this.uc.prefer.execute(actor(req).id, quoteId, body, {
+      correlationId: req.correlationId,
+    });
     res.status(200).json(success(toQuoteResponse(view), req.correlationId ?? ''));
   };
 }

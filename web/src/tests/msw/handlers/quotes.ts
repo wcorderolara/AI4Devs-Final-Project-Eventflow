@@ -83,6 +83,14 @@ const COMPARE_TRIGGER_EMPTY = 'ffffffff-0000-0000-0057-000000000010';
 const COMPARE_TRIGGER_SINGLE = 'ffffffff-0000-0000-0057-000000000011';
 const COMPARE_CATEGORY_INVALID = 'category-invalid-trigger';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// US-058 · prefer quote triggers (via :quoteId path param).
+// ─────────────────────────────────────────────────────────────────────────────
+const PREFER_TRIGGER_UNAUTH = 'ffffffff-0000-0000-0058-000000000401';
+const PREFER_TRIGGER_FORBIDDEN = 'ffffffff-0000-0000-0058-000000000403';
+const PREFER_TRIGGER_NOT_FOUND = 'ffffffff-0000-0000-0058-000000000404';
+const PREFER_TRIGGER_NOT_PREFERABLE = 'ffffffff-0000-0000-0058-000000000409';
+
 export const quotesHandlers = [
   http.get('*/api/v1/quote-requests/active-count', ({ request }) => {
     const url = new URL(request.url);
@@ -448,6 +456,54 @@ export const quotesHandlers = [
       { status: 200 },
     );
   }),
+
+  // US-058 · PATCH /api/v1/quotes/:quoteId/preferred (organizer).
+  // Triggers viven en el `:quoteId`. El body debe traer `is_preferred: boolean`; el response
+  // refleja el nuevo valor para permitir aserciones desde tests del botón.
+  http.patch('*/api/v1/quotes/:quoteId/preferred', async ({ request, params }) => {
+    const quoteId = String(params.quoteId ?? '');
+    const raw = await request.text();
+    const body = raw ? (JSON.parse(raw) as { is_preferred?: boolean }) : {};
+
+    if (quoteId === PREFER_TRIGGER_UNAUTH) {
+      return HttpResponse.json(errorEnvelope('AUTHENTICATION_REQUIRED', 'Authentication required'), {
+        status: 401,
+      });
+    }
+    if (quoteId === PREFER_TRIGGER_FORBIDDEN) {
+      return HttpResponse.json(errorEnvelope('FORBIDDEN', 'Only organizers can prefer quotes'), {
+        status: 403,
+      });
+    }
+    if (quoteId === PREFER_TRIGGER_NOT_FOUND) {
+      return HttpResponse.json(errorEnvelope('QUOTE_NOT_FOUND', 'Quote not found'), { status: 404 });
+    }
+    if (quoteId === PREFER_TRIGGER_NOT_PREFERABLE) {
+      return HttpResponse.json(
+        errorEnvelope('QUOTE_NOT_PREFERABLE', 'Quote cannot be preferred in its current state', [
+          { field: 'current_status', message: 'expired' },
+        ]),
+        { status: 409 },
+      );
+    }
+    if (typeof body.is_preferred !== 'boolean') {
+      return HttpResponse.json(
+        errorEnvelope('VALIDATION_ERROR', 'Invalid body', [
+          { field: 'is_preferred', message: 'required' },
+        ]),
+        { status: 400 },
+      );
+    }
+    return HttpResponse.json(
+      envelope({
+        id: quoteId,
+        status: 'sent',
+        isPreferred: body.is_preferred,
+        quoteRequestId: 'qr111111-1111-1111-1111-111111111111',
+      }),
+      { status: 200 },
+    );
+  }),
 ];
 
 // Exports para tests que quieran forzar escenarios sin duplicar UUIDs.
@@ -491,6 +547,14 @@ export const compareQuotesMswTriggers = {
   EMPTY: COMPARE_TRIGGER_EMPTY,
   SINGLE: COMPARE_TRIGGER_SINGLE,
   CATEGORY_INVALID: COMPARE_CATEGORY_INVALID,
+} as const;
+
+// US-058 (FE-002) — triggers para el `PreferredToggleButton` y los tests de mutations.
+export const preferQuoteMswTriggers = {
+  UNAUTH: PREFER_TRIGGER_UNAUTH,
+  FORBIDDEN: PREFER_TRIGGER_FORBIDDEN,
+  NOT_FOUND: PREFER_TRIGGER_NOT_FOUND,
+  NOT_PREFERABLE: PREFER_TRIGGER_NOT_PREFERABLE,
 } as const;
 
 export const quotesActiveCountMswTriggers = {

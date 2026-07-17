@@ -288,6 +288,9 @@ describe.skipIf(!dbUp)('US-055 integration — Postgres real', () => {
         data: {
           quoteRequestId: qrId,
           vendorProfileId: refs.vendorProfileId,
+          // US-058 (PB-P1-035 / DB-002): columnas denormalizadas ahora requeridas.
+          eventId: refs.eventId,
+          serviceCategoryId: refs.categoryId,
           amount: '1000.00',
           currency: 'GTQ',
           status: 'sent',

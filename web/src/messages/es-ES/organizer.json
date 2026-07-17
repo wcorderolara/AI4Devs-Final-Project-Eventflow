@@ -80,6 +80,21 @@
         "EVENT_NOT_FOUND": "No encontramos ese evento o no tienes permiso para verlo.",
         "UNEXPECTED": "Se ha producido un error inesperado. Inténtalo de nuevo."
       }
+    },
+    "preferred": {
+      "mark": "Marcar preferred",
+      "unmark": "Quitar preferred",
+      "loading": "Guardando…",
+      "markAria": "Marcar el presupuesto de {vendor} como preferred",
+      "unmarkAria": "Quitar la marca preferred del presupuesto de {vendor}",
+      "errors": {
+        "QUOTE_NOT_PREFERABLE": "Este presupuesto ya no puede marcarse: cambió de estado o caducó.",
+        "QUOTE_NOT_FOUND": "No encontramos este presupuesto o ya no está disponible.",
+        "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para marcar el presupuesto.",
+        "FORBIDDEN": "Tu rol no puede marcar presupuestos como preferred.",
+        "VALIDATION_ERROR": "Hubo un problema con la solicitud. Inténtalo de nuevo.",
+        "UNEXPECTED": "Se ha producido un error inesperado. Inténtalo de nuevo."
+      }
     }
   }
 }

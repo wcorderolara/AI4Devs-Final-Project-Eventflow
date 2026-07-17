@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { NextIntlClientProvider } from 'next-intl';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import esLatamOrganizer from '@/messages/es-LATAM/organizer.json';
 import {
   QuoteComparisonTable,
@@ -24,12 +25,24 @@ expect.extend(toHaveNoViolations);
 
 const messages = { organizer: esLatamOrganizer };
 
-function withIntl(children: React.ReactNode): React.ReactElement {
+// US-058 (FE-001): el `PreferredToggleButton` embebido en la tabla/cards usa `useMutation`,
+// por eso el harness de test requiere un `QueryClientProvider`. Los tests siguen siendo unitarios
+// (no golpean red) — MSW se activa vía `vitest.setup.ts` cuando la mutación se dispara.
+function withProviders(children: React.ReactNode): React.ReactElement {
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
   return (
-    <NextIntlClientProvider locale="es-LATAM" messages={messages} timeZone="UTC">
-      {children}
-    </NextIntlClientProvider>
+    <QueryClientProvider client={qc}>
+      <NextIntlClientProvider locale="es-LATAM" messages={messages} timeZone="UTC">
+        {children}
+      </NextIntlClientProvider>
+    </QueryClientProvider>
   );
+}
+
+function withIntl(children: React.ReactNode): React.ReactElement {
+  return withProviders(children);
 }
 
 const EVENT_ID = 'ffffffff-ffff-ffff-ffff-ffffffffffff';
@@ -172,13 +185,20 @@ describe('US-057 · QuoteComparisonTable', () => {
         />,
       ),
     );
-    // El aria-label incluye el status → 3 quotes: q1(sent), q2(sent) tienen "Marcar preferred";
-    // q3(expired) tiene "No seleccionable".
+    // El aria-label incluye el status → 3 quotes: q1(sent, preferred), q2(sent) tienen
+    // `PreferredToggleButton` interactivo; q3(expired) tiene "No seleccionable" (aria-label).
     const notSelectable = screen.getByLabelText(/no seleccionable/i);
     expect(notSelectable).toHaveTextContent('No seleccionable');
-    // Los 2 activos exponen link "Marcar preferred".
-    const preferCtas = screen.getAllByRole('link', { name: /Marcar la cotización de/i });
-    expect(preferCtas).toHaveLength(2);
+    // Los 2 activos exponen `<button>` accesible con `aria-pressed` (US-058 FE-001).
+    // q1 (preferred) → aria-label "Quitar…"; q2 (no preferred) → aria-label "Marcar…".
+    const unmarkBtn = screen.getByRole('button', {
+      name: /Quitar la marca preferred de la cotización de/i,
+    });
+    const markBtn = screen.getByRole('button', {
+      name: /Marcar la cotización de/i,
+    });
+    expect(unmarkBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(markBtn).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('AC-04: CTA "Resumir con IA" presente con ≥2 quotes', () => {
@@ -215,7 +235,7 @@ describe('US-057 · QuoteComparisonTable', () => {
     expect(screen.queryByRole('link', { name: 'Resumir con IA' })).toBeNull();
   });
 
-  it('CTA "Marcar preferred" enlaza a la ruta de US-058', () => {
+  it('CTA "Marcar preferred" (US-058 button) es interactivo y refleja isPreferred=true de la quote preferred', () => {
     render(
       withIntl(
         <QuoteComparisonTable
@@ -227,10 +247,11 @@ describe('US-057 · QuoteComparisonTable', () => {
         />,
       ),
     );
-    const link = screen.getByRole('link', {
-      name: 'Marcar la cotización de Catering Aurora como preferred',
+    // La preferred (q1) expone aria-label de "unmark" y `aria-pressed=true`.
+    const unmarkBtn = screen.getByRole('button', {
+      name: 'Quitar la marca preferred de la cotización de Catering Aurora',
     });
-    expect(link).toHaveAttribute('href', `/organizer/events/${EVENT_ID}/quotes/q1/prefer`);
+    expect(unmarkBtn).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('axe: 0 violaciones serias en la tabla desktop', async () => {

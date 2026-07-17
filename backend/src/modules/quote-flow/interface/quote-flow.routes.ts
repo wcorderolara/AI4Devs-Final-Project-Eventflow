@@ -48,8 +48,11 @@ import {
   UpdateQuoteUseCase,
   SendQuoteUseCase,
   AcceptQuoteUseCase,
-  PreferQuoteUseCase,
 } from '../application/quote.use-cases.js';
+// US-058 (PB-P1-035 / BE-003): toggle preferred transaccional con notifs bilaterales — reemplaza
+// el `PreferQuoteUseCase` original de US-096 en el wiring (DEV-01 del execution record).
+import { PreferQuoteUs058UseCase } from '../application/prefer-quote.us058.use-case.js';
+import { preferQuoteBodySchema } from '../dto/prefer-quote.us058.request.js';
 // US-054 (PB-P1-032): rechazo transaccional con notifications atómicas (reemplaza el
 // `RejectQuoteUseCase` original de US-096 — ver DEV-02 del execution record).
 import { RejectQuoteUs054UseCase } from '../application/reject-quote.us054.use-case.js';
@@ -91,7 +94,9 @@ const quoteController = new QuotesController({
   send: new SendQuoteUseCase(quotes, vendors, clock, logger),
   accept: new AcceptQuoteUseCase(quotes, quoteRequests, events, clock, logger),
   reject: new RejectQuoteUs054UseCase(quoteEvents, clock, logger, prisma),
-  prefer: new PreferQuoteUseCase(quotes, quoteRequests, events, logger),
+  // US-058: transaccional + notifs bilaterales + clear preferred previa + UNIQUE parcial
+  // enforced. Cubre tanto el nuevo PATCH /preferred como el legacy POST /prefer (DEV-01).
+  prefer: new PreferQuoteUs058UseCase(quoteEvents, clock, logger, prisma),
 });
 
 const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
@@ -191,3 +196,13 @@ quoteFlowRouter.post(
   asyncHandler(quoteController.reject),
 );
 quoteFlowRouter.post('/quotes/:quoteId/prefer', sessionAuth, organizer, v(z.object({ params: QuoteIdParamSchema })), asyncHandler(quoteController.prefer));
+// US-058 (PB-P1-035 / BE-004): endpoint canónico del toggle preferred. Body
+// `{is_preferred: boolean}` habilita mark (AC-01), unmark (AC-03) e idempotencia (AC-04) sobre
+// la misma ruta. El legacy POST /prefer sigue disponible y delega al mismo UC con `true` (DEV-01).
+quoteFlowRouter.patch(
+  '/quotes/:quoteId/preferred',
+  sessionAuth,
+  organizer,
+  v(z.object({ params: QuoteIdParamSchema, body: preferQuoteBodySchema })),
+  asyncHandler(quoteController.preferred),
+);
