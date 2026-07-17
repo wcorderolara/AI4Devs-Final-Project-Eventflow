@@ -1113,9 +1113,20 @@ Diferencias con el draft §26.3:
 Respuesta canónica:
 
 ```ts
-// GET /events/:eventId/budget  (US-035, extendido por US-038)
+// GET /events/:eventId/budget  (US-035, extendido por US-038 y US-064)
 // US-038 (PB-P1-022) — extensión forward-compat del contrato: campos siempre presentes;
 // clientes de US-035 que ignoran los campos nuevos siguen funcionales.
+// US-064 (PB-P1-037) — extensión aditiva:
+//   - `summary.available`: monto disponible con signo (`total_planned - total_committed`).
+//     Negativo cuando `over_committed = true`.
+//   - `items[].diff`: delta con signo por partida (`amount_planned - amount_committed`).
+//   - `items[].auto_created`: heurística `planned=0 && committed>0` — detecta partidas
+//     creadas automáticamente por `UpdateCommittedFromBookingIntentUseCase` (US-039 apply)
+//     al confirmar un BookingIntent sin BudgetItem previo.
+//   - `last_updated_at`: ISO 8601 del `Budget.updated_at`; los clientes lo usan para disparar
+//     el anuncio aria-live cuando cambia entre re-fetches (cross-domain refresh Booking → Budget).
+//   - Ordenamiento: `items` se retornan ordenados por `amount_committed DESC`
+//     (empates: `amount_planned DESC` → `id ASC`).
 type GetBudgetResponse = {
   data: {
     summary: {
@@ -1124,6 +1135,7 @@ type GetBudgetResponse = {
       total_committed: number;
       over_committed: boolean; // committed > planned (estricto)
       overcommitted_amount: number; // US-038 AC-01: max(0, total_committed - total_planned)
+      available: number; // US-064 AC-02: total_planned - total_committed (con signo)
     };
     items: Array<{
       id: string;
@@ -1133,7 +1145,10 @@ type GetBudgetResponse = {
       amount_committed: number;
       over_committed: boolean; // US-038 AC-03/D4: (committed - planned) > tolerance
       overcommitted_amount: number; // US-038 AC-03/VR-03: max(0, committed - planned)
+      diff: number; // US-064 AC-02: amount_planned - amount_committed (con signo)
+      auto_created: boolean; // US-064 EC-02: heurística planned=0 && committed>0
     }>;
+    last_updated_at: string | null; // US-064 AC-02: ISO 8601 del Budget.updated_at
   };
   meta: { correlationId: string; timestamp: string };
 };

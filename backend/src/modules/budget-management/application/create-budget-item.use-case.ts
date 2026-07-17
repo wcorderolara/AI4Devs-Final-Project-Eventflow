@@ -84,6 +84,9 @@ export class CreateBudgetItemUseCase {
     // US-038 (PB-P1-022 / BE-003): shape extendido forward-compat. Ítem recién creado no
     // tiene contexto de la tolerancia adaptativa del summary; se retornan los defaults del
     // shape (`false`, `0`) y el próximo GET del summary refleja el estado agregado real.
+    // US-064 (PB-P1-037 / BE-001): agrega `diff` (planned - committed, con signo) y
+    // `auto_created` (heurística `planned=0 && committed>0`, falsa aquí porque el ítem
+    // se crea explícitamente por el organizer via CRUD — no proviene del apply US-039).
     const itemDelta = created.amountCommitted - created.amountPlanned;
     return {
       id: created.id,
@@ -93,6 +96,8 @@ export class CreateBudgetItemUseCase {
       amount_committed: created.amountCommitted,
       over_committed: itemDelta > 0.01,
       overcommitted_amount: Math.max(0, itemDelta),
+      diff: created.amountPlanned - created.amountCommitted,
+      auto_created: false,
     };
   }
 }

@@ -15,6 +15,13 @@ export const budgetSummaryDto = z.object({
   // US-038 (PB-P1-022 / BE-003) AC-01: monto bruto del exceso a nivel evento. Siempre presente
   // (0 cuando no hay exceso). VR-03: garantizado ≥ 0 por construcción (Math.max(0, ...)).
   overcommitted_amount: z.number().nonnegative(),
+  // US-064 (PB-P1-037 / BE-001) — AC-02: monto disponible del presupuesto (`planned - committed`).
+  // Puede ser NEGATIVO cuando `over_committed = true` (el frontend renderiza en rojo para el
+  // organizer). Semántica distinta a `overcommitted_amount` (siempre ≥ 0): `available` es un
+  // valor con signo — puede ser útil para "cuánto queda o cuánto excede" en la UI. Marcado
+  // `.optional()` para no romper contract con los DTOs de test heredados de US-035/US-038 que
+  // validan el shape base sin este campo — el producer siempre lo incluye.
+  available: z.number().optional(),
 });
 
 export type BudgetSummaryDto = z.infer<typeof budgetSummaryDto>;

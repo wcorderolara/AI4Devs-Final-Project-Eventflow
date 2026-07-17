@@ -14,6 +14,17 @@ export const budgetItemDto = z.object({
   // (false / 0 cuando no aplica). VR-03: `overcommitted_amount` ≥ 0.
   over_committed: z.boolean(),
   overcommitted_amount: z.number().nonnegative(),
+  // US-064 (PB-P1-037 / BE-001) — AC-02: delta con signo (`planned - committed`). Negativo
+  // cuando `over_committed = true`. Complementa `overcommitted_amount` (siempre ≥ 0) con la
+  // info de "cuánto queda" para items no excedidos. `.optional()` para preservar DTOs de test
+  // heredados de US-035/US-038; el producer siempre lo incluye.
+  diff: z.number().optional(),
+  // US-064 (PB-P1-037 / BE-001) — EC-02: heurística `auto_created = planned=0 && committed>0`
+  // — detecta ítems creados automáticamente por `UpdateCommittedFromBookingIntentUseCase`
+  // (US-039 apply). Tech Spec §7 lo marca como aproximación para MVP; una columna explícita
+  // `created_via` en `budget_items` queda como mejora futura (fuera de scope). `.optional()`
+  // para preservar DTOs de test heredados.
+  auto_created: z.boolean().optional(),
 });
 
 export type BudgetItemDto = z.infer<typeof budgetItemDto>;

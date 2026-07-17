@@ -179,6 +179,8 @@ describe.skipIf(!dbUp)('US-035 QA-002 (con BD): vista del presupuesto', () => {
       currency_code: 'USD',
       // US-038 (BE-003) AC-01: campo siempre presente en el shape extendido.
       overcommitted_amount: 0,
+      // US-064 (BE-001) AC-02: `available = planned - committed`.
+      available: 4000,
     });
     expect(res.body.data.items).toHaveLength(2);
     for (const item of res.body.data.items) {
@@ -206,6 +208,7 @@ describe.skipIf(!dbUp)('US-035 QA-002 (con BD): vista del presupuesto', () => {
       over_committed: false,
       currency_code: 'GTQ',
       overcommitted_amount: 0,
+      available: 0,
     });
   });
 

@@ -2,6 +2,10 @@
 // US-038 AC-03/AC-07: renderiza badge accesible cuando `item.over_committed = true`, con
 // `aria-label` localizado interpolando el delta y la moneda. Añade `data-overcommit="true"`
 // e `id="item-row-<id>"` a las filas para que `useOvercommitFocus` pueda anclar el CTA.
+// US-064 (PB-P1-037 / FE-002) — EC-02: badge accesible "Auto-creado" cuando `item.auto_created`.
+// Indica ítems creados automáticamente por el `UpdateCommittedFromBookingIntentUseCase`
+// (US-039 apply) al confirmar un `BookingIntent` sin `BudgetItem` previo — el organizer los
+// reconoce sin ambigüedad.
 import { useTranslations } from 'next-intl';
 import type { BudgetItemDto } from '../api/budgetApi';
 
@@ -32,6 +36,7 @@ export function BudgetItemsTable({
 }: BudgetItemsTableProps): React.JSX.Element {
   const t = useTranslations('budget.table');
   const tOver = useTranslations('budget.overcommit');
+  const tSummary = useTranslations('budget.summary');
   const showActions = !readOnly && (onEdit || onDelete);
   return (
     <table
@@ -79,6 +84,16 @@ export function BudgetItemsTable({
                       className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800"
                     >
                       {tOver('item_badge')}
+                    </span>
+                  ) : null}
+                  {it.auto_created ? (
+                    <span
+                      role="img"
+                      aria-label={tSummary('autoCreatedAria')}
+                      data-testid={`budget-item-auto-created-${it.id}`}
+                      className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900"
+                    >
+                      {tSummary('autoCreatedBadge')}
                     </span>
                   ) : null}
                 </div>

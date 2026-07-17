@@ -74,7 +74,16 @@ export function BudgetPage({ eventId, readOnly = false }: BudgetPageProps): Reac
 
       {query.data ? (
         <>
-          <BudgetSummary summary={query.data.summary} locale={locale} />
+          <BudgetSummary
+            summary={query.data.summary}
+            locale={locale}
+            // US-064 (FE-002 / AC-05): botón manual "Actualizar presupuesto" — safety net
+            // independiente de las invalidaciones automáticas por confirm/cancel de BookingIntent.
+            onRefresh={() => {
+              void query.refetch();
+            }}
+            isRefreshing={query.isFetching}
+          />
           <OvercommitWarning
             visible={query.data.summary.over_committed}
             summary={query.data.summary}

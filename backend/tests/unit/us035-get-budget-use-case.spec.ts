@@ -48,6 +48,7 @@ function view(overrides: Partial<BudgetAggregateView> = {}): BudgetAggregateView
         amountCommitted: 4800,
       },
     ],
+    updatedAt: new Date('2026-07-17T21:00:00Z'),
     ...overrides,
   };
 }
@@ -99,13 +100,16 @@ describe('US-035 GetBudgetUseCase (BE-003, R1) — shape y mapping', () => {
       currency_code: 'EUR',
       // US-038 (BE-003) AC-01: campo siempre presente. Sin exceso ⇒ 0.
       overcommitted_amount: 0,
+      // US-064 (BE-001) AC-02: `available = planned - committed`, con signo.
+      available: 50,
     });
   });
 
-  it('mapea items al shape R1 (label, category_code, amount_planned, amount_committed)', async () => {
+  it('mapea items al shape R1 (label, category_code, amount_planned, amount_committed) + US-064 sort DESC', async () => {
     const repo = buildRepo({ getByEventId: async () => view() });
     const uc = new GetBudgetUseCase(repo, new StaticCurrencyReadAdapter());
     const result = await uc.execute({ actorId: OWNER, eventId: EVENT, correlationId: CORRELATION });
+    // US-064 (BE-001) AC-02: orden por `amount_committed DESC` — Catering (5000) primero.
     expect(result.items).toEqual([
       {
         id: '00000000-0000-0000-0000-0000000000a1',
@@ -113,9 +117,12 @@ describe('US-035 GetBudgetUseCase (BE-003, R1) — shape y mapping', () => {
         category_code: 'catering',
         amount_planned: 6000,
         amount_committed: 5000,
-        // US-038 (BE-003) AC-03/VR-03: campos siempre presentes; committed < planned ⇒ sin exceso.
         over_committed: false,
         overcommitted_amount: 0,
+        // US-064 (BE-001) AC-02: `diff = planned - committed` con signo.
+        diff: 1000,
+        // US-064 (BE-001) EC-02: heurística `auto_created`.
+        auto_created: false,
       },
       {
         id: '00000000-0000-0000-0000-0000000000a2',
@@ -125,6 +132,8 @@ describe('US-035 GetBudgetUseCase (BE-003, R1) — shape y mapping', () => {
         amount_committed: 4800,
         over_committed: false,
         overcommitted_amount: 0,
+        diff: 1700,
+        auto_created: false,
       },
     ]);
   });
@@ -143,6 +152,7 @@ describe('US-035 GetBudgetUseCase (BE-003, R1) — shape y mapping', () => {
       over_committed: false,
       currency_code: 'USD',
       overcommitted_amount: 0,
+      available: 0,
     });
   });
 });

@@ -11,7 +11,13 @@
     "planned": "Planned",
     "committed": "Committed",
     "remaining": "Remaining",
-    "currency": "Currency"
+    "currency": "Currency",
+    "refresh": "Refresh budget",
+    "refreshing": "Refreshing…",
+    "refreshAria": "Refresh the budget summary",
+    "liveUpdate": "Budget updated: {currency} {committed} committed out of {planned} planned.",
+    "autoCreatedBadge": "Auto-created",
+    "autoCreatedAria": "Item automatically created when confirming a booking"
   },
   "overcommit": {
     "title": "Budget over-committed",
