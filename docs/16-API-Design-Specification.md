@@ -1628,6 +1628,7 @@ Organizer solicita cotización a vendor sobre una categoría de servicio dentro 
 | PATCH | `/quote-requests/:quoteRequestId/cancel` | Sí | organizer | Cancela QR activa (body opcional `{ reason? }`) + 2 Notifications atómicas al vendor. Restricción: `409 QR_HAS_CONFIRMED_BOOKING` si existe `BookingIntent.confirmed_intent` asociado. Ver §30.9 (US-056). | 200 | 400 (`INVALID_UUID`, `INVALID_CANCELLATION_REASON`), 401, 403, 404 (`QR_NOT_FOUND` uniforme), 409 (`QR_NOT_CANCELLABLE`, `QR_HAS_CONFIRMED_BOOKING`) |
 | GET | `/vendors/me/quote-requests` | Sí | vendor | Lista asignadas al vendor. | 200 | 401, 403 |
 | PATCH | `/quote-requests/:quoteRequestId/viewed` | Sí | vendor | Marca como vista. | 204 | 401, 403, 404 |
+| GET | `/events/:id/quotes/compare?categoryCode=<slug>` | Sí | organizer | Comparador side-by-side por categoría (whitelist vendor + breakdown + estado, orden estable). Ver §30.10 (US-057). | 200 | 400 (`INVALID_FILTERS`, `INVALID_CATEGORY`), 401, 403, 404 (`EVENT_NOT_FOUND` uniforme) |
 
 ### 30.3 DTOs
 
@@ -1940,6 +1941,61 @@ Reglas y restricciones enforced:
 - **D8 atomicidad**: `prisma.$transaction` con `SELECT ... FOR UPDATE` sobre la QR + guard defensivo `WHERE status IN ACTIVE` en el UPDATE (blindaje contra tx aisladas + idempotencia EC-06).
 
 Observabilidad: log estructurado `quote_request.cancelled` (`info`) con `{correlationId, actorId, quoteRequestId}`. Log agregado del fan-out: `quote.notification.emitted` con `{correlationId, eventName='quote_request.cancelled', vendorUserId}` (sin payload — SEC-09). Notifications persistidas: `type='quote_request.cancelled'`; `payload` incluye `{channel, deliveryStatus, event, quote_request_id, event_id, cancellation_reason}`.
+
+### 30.10 US-057 · `GET /api/v1/events/:id/quotes/compare` (comparador de Quotes por categoría)
+
+Endpoint sólo lectura del organizer dueño del evento para comparar Quotes de una misma categoría lado a lado. Devuelve todas las Quotes con status ∈ `{sent, accepted, rejected, expired}` (excluye `draft`) para `(event_id, service_category_id)`, con datos whitelisted del vendor (`business_name`, `slug`, `rating_avg`, `reviews_count`), desglose (`breakdown`) y estado (`is_preferred` como indicador visual). El frontend cubre 3 UIs progresivas: empty state (0 Quotes), detalle simple (1 Quote), tabla/cards responsive (≥2 Quotes). Ver DEV-01/DEV-02 del execution record `management/workflows/development-execution/P1/PB-P1-035/US-057-execution.md`.
+
+| Método | Path | Auth | Roles | Propósito | Success | Errores |
+| --- | --- | --- | --- | --- | --- | --- |
+| GET | `/api/v1/events/:id/quotes/compare?categoryCode=<slug>` | Sí (cookie de sesión) | organizer (dueño del evento) | Datos comparativos por categoría. Sin side-effects. | 200 | 400 (`INVALID_FILTERS` — `categoryCode` ausente; `INVALID_CATEGORY` — slug inexistente o inactivo), 401, 403, 404 (`EVENT_NOT_FOUND` uniforme) |
+
+```ts
+// Response 200
+type CompareQuotesUs057Response = {
+  category: { code: string; name: string };  // slug + label del ServiceCategory
+  currency_code: string;                      // heredada del evento (BR-QUOTE-019)
+  items: Array<{
+    quote_id: string;                         // uuid
+    vendor: {
+      profile_id: string;                     // uuid
+      business_name: string;
+      slug: string | null;
+      rating_avg: number | null;              // Decimal(3,2) → number
+      reviews_count: number;                  // no-negativo
+    };
+    status: 'sent' | 'accepted' | 'rejected' | 'expired';
+    total_price: string;                      // Decimal(14,2) como string
+    breakdown: Array<{ label: string; amount: string }> | null;
+    valid_until: string | null;               // ISO-8601 UTC
+    conditions: string | null;
+    is_preferred: boolean;                    // indicador visual (dominante en el orden)
+    created_at: string;                       // ISO-8601 UTC
+  }>;
+};
+```
+
+Detalles de errores (envelope estándar `{ error: { code, message, correlationId, details? } }`):
+
+| Código | HTTP | `details` | Trigger |
+| --- | ---: | --- | --- |
+| `INVALID_FILTERS` | 400 | `[{ field: 'categoryCode', message: 'required' }]` | Query param `categoryCode` ausente o vacío (D1 / EC-01). |
+| `INVALID_CATEGORY` | 400 | `[{ field: 'categoryCode', message: <slug> }]` | `categoryCode` no existe o `is_active=false` (EC-02, VR-03). |
+| `AUTHENTICATION_REQUIRED` | 401 | — | Sin sesión. |
+| `FORBIDDEN` | 403 | — | Rol distinto de `organizer` (vendor / admin). |
+| `EVENT_NOT_FOUND` | 404 | — | Evento inexistente o el organizer no es dueño (SEC-03 uniforme). |
+
+Reglas y restricciones enforced:
+
+- **D1 `categoryCode` requerido**: validado en el UseCase antes de cualquier lookup (evita leak de existencia de evento por latencia). Zod schema deja el campo opcional para preservar el código estable `INVALID_FILTERS` (una schema `.strict()` requerida emitiría `VALIDATION_ERROR` genérico).
+- **D2 filtro de estados**: `status IN ('sent','accepted','rejected','expired')` — excluye `draft` (no entregadas). Nota (DEV-01): el enum Prisma `QuoteStatus` no incluye `responded` (es status del `QuoteRequest`) ni `preferred` (que es `Quote.isPreferred boolean`).
+- **D3 empty state uniforme**: 0 Quotes → `items: []` con `category` y `currency_code` presentes. 1 Quote → response idéntico con `items.length=1` (el frontend renderiza vista detalle). ≥2 → vista comparativa.
+- **D4 AI deep-link**: US-057 NO genera resumen IA. El frontend muestra CTA "Resumir con IA" sólo con `items.length >= 2`, deep-link a `/organizer/events/:id/quotes/compare/ai-summary?categoryCode=...` (US-022).
+- **D5 shape whitelisted (SEC-09)**: sólo campos públicos del vendor (`business_name`, `slug`, `rating_avg`, `reviews_count`). No expone email, phone ni currencies ajenas.
+- **D7 ordering estable (AC-01)**: `is_preferred DESC, activos primero ({sent, accepted}), total_price ASC`. El orden se aplica post-fetch en JS (`Prisma.Decimal.cmp` preserva precisión) porque Prisma no soporta `ORDER BY CASE` sin `queryRaw`.
+- **DEV-02 lookup por slug**: extiende `ServiceCategoryReader` con `findActiveByCode(code)` para resolver `serviceCategoryId` desde el slug sin romper boundaries (no import cross-módulo desde quote-flow a vendor-management).
+
+Observabilidad: log estructurado `quote_compare.requested` (`info`) con `{correlationId, actorId, eventId, serviceCategoryId, count}`.
 
 ---
 

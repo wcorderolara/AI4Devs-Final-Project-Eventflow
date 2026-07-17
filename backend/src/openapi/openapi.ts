@@ -48,6 +48,12 @@ import { respondQuoteRequestBodySchema as RespondQuoteRequestBodySchema } from '
 import { rejectQuoteBodySchema as RejectQuoteBodySchema } from '../modules/quote-flow/dto/reject-quote.us054.request.js';
 // US-056 (PB-P1-034 / BE-001): body opcional del endpoint cancel de QuoteRequest.
 import { cancelQuoteRequestBodySchema as CancelQuoteRequestBodySchema } from '../modules/quote-flow/dto/cancel-quote-request.us056.request.js';
+// US-057 (PB-P1-035 / BE-001/003): query DTO + response shape del comparador de Quotes.
+import {
+  CompareQuotesEventIdParamSchema,
+  CompareQuotesQuerySchema,
+} from '../modules/quote-flow/dto/compare-quotes.us057.query.js';
+import { CompareQuotesResponseSchema } from '../modules/quote-flow/dto/compare-quotes.us057.response.js';
 import {
   CreateBookingIntentRequestSchema,
   CancelBookingIntentRequestSchema,
@@ -255,6 +261,8 @@ op({ method: 'get', path: '/quote-requests/{quoteRequestId}', operationId: 'getQ
 // Notifications atómicas al vendor por `QuoteEventNotificationService`. Añade 400
 // (`INVALID_CANCELLATION_REASON`) y 409 (`QR_NOT_CANCELLABLE`, `QR_HAS_CONFIRMED_BOOKING`).
 op({ method: 'patch', path: '/quote-requests/{quoteRequestId}/cancel', operationId: 'cancelQuoteRequest', tags: ['QuoteRequests'], summary: 'Cancelar QuoteRequest (organizer)', secured: true, params: QuoteRequestIdParamSchema, body: CancelQuoteRequestBodySchema, success: { status: 200, schema: envelope(QuoteRequestResponseSchema) }, errors: [400, 401, 403, 404, 409, 422] });
+// US-057 (PB-P1-035 / BE-005): comparador de Quotes por categoría (organizer, sólo lectura).
+op({ method: 'get', path: '/events/{id}/quotes/compare', operationId: 'compareQuotes', tags: ['QuoteRequests'], summary: 'Comparar Quotes por categoría (organizer)', secured: true, params: CompareQuotesEventIdParamSchema, query: CompareQuotesQuerySchema, success: { status: 200, schema: envelope(CompareQuotesResponseSchema) }, errors: [400, 401, 403, 404] });
 op({ method: 'get', path: '/vendors/me/quote-requests', operationId: 'listVendorQuoteRequests', tags: ['QuoteRequests'], summary: 'Listar QuoteRequests asignados (vendor)', secured: true, query: ListQuoteRequestsQuerySchema, success: { status: 200, schema: listEnvelope(QuoteRequestResponseSchema) }, errors: [401, 403, 422] });
 op({ method: 'patch', path: '/quote-requests/{quoteRequestId}/viewed', operationId: 'markQuoteRequestViewed', tags: ['QuoteRequests'], summary: 'Marcar QuoteRequest como visto (vendor, legado US-096)', secured: true, params: QuoteRequestIdParamSchema, success: { status: 204 }, errors: [401, 403, 404, 422] });
 // US-051 (PB-P1-031): endpoints vendor-scoped detalle + mark-viewed transaccional.

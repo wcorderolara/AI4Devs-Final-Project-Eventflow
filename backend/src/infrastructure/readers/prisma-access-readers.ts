@@ -7,6 +7,7 @@ import type {
   VendorProfileReader,
   ActiveVendorProfile,
   ServiceCategoryReader,
+  ActiveServiceCategory,
   QuoteRequestEventReader,
 } from '../../shared/access/readers.js';
 import type { SupportedCurrency } from '../../shared/constants/currencies.js';
@@ -71,6 +72,14 @@ export class PrismaServiceCategoryReader implements ServiceCategoryReader {
       select: { id: true },
     });
     return sc !== null;
+  }
+
+  async findActiveByCode(code: string): Promise<ActiveServiceCategory | null> {
+    const sc = await this.prisma.serviceCategory.findFirst({
+      where: { code, isActive: true, deletedAt: null },
+      select: { id: true, code: true, label: true },
+    });
+    return sc ? { id: sc.id, code: sc.code, label: sc.label } : null;
   }
 }
 

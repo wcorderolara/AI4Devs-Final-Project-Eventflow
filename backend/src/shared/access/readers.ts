@@ -36,8 +36,17 @@ export interface VendorProfileReader {
   findActiveByUserId(userId: string): Promise<ActiveVendorProfile | null>;
 }
 
+export interface ActiveServiceCategory {
+  id: string;
+  code: string;
+  label: string;
+}
+
 export interface ServiceCategoryReader {
   existsActive(id: string): Promise<boolean>;
+  // US-057 (PB-P1-035 / BE-004): lookup por slug (`code`) para el endpoint compare. Devuelve
+  // sólo si `is_active=true` y `deleted_at IS NULL`; null en cualquier otro caso.
+  findActiveByCode(code: string): Promise<ActiveServiceCategory | null>;
 }
 
 export interface QuoteRequestEventReader {

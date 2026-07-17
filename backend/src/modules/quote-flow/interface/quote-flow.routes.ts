@@ -36,6 +36,12 @@ import {
 // `confirmed_intent` (reemplaza `CancelQuoteRequestUseCase` de US-096 en el wiring — DEV-02).
 import { CancelQuoteRequestUs056UseCase } from '../application/cancel-quote-request.us056.use-case.js';
 import { cancelQuoteRequestBodySchema } from '../dto/cancel-quote-request.us056.request.js';
+// US-057 (PB-P1-035 / BE-004/005): comparador de Quotes por categoría (sólo lectura).
+import { CompareQuotesUseCase } from '../application/compare-quotes.us057.use-case.js';
+import {
+  CompareQuotesEventIdParamSchema,
+  CompareQuotesQuerySchema,
+} from '../dto/compare-quotes.us057.query.js';
 import {
   CreateQuoteUseCase,
   GetQuoteForQuoteRequestUseCase,
@@ -75,6 +81,7 @@ const qrController = new QuoteRequestsController({
   get: new GetQuoteRequestUseCase(quoteRequests, events, vendors),
   cancel: new CancelQuoteRequestUs056UseCase(quoteEvents, clock, logger, prisma),
   markViewed: new MarkQuoteRequestViewedUseCase(quoteRequests, vendors, clock, logger),
+  compareQuotes: new CompareQuotesUseCase(quotes, events, categories, logger),
 });
 
 const quoteController = new QuotesController({
@@ -139,6 +146,16 @@ quoteFlowRouter.patch(
   vendor,
   v(z.object({ params: QuoteRequestIdParamSchema })),
   asyncHandler(qrController.markViewed),
+);
+// US-057 (PB-P1-035 / BE-005): comparador de Quotes por categoría. Sólo organizer dueño del
+// evento (ownership dentro del use case → `404 EVENT_NOT_FOUND` uniforme). El param canónico
+// es `:id` (no `:eventId`) según §7 del Tech Spec.
+quoteFlowRouter.get(
+  '/events/:id/quotes/compare',
+  sessionAuth,
+  organizer,
+  v(z.object({ params: CompareQuotesEventIdParamSchema, query: CompareQuotesQuerySchema })),
+  asyncHandler(qrController.compareQuotes),
 );
 
 // ── Quote ─────────────────────────────────────────────────────────────────

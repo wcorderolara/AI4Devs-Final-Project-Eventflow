@@ -26,6 +26,12 @@ import type {
 // — ver DEV-02 del execution record).
 import type { CancelQuoteRequestUs056UseCase } from '../application/cancel-quote-request.us056.use-case.js';
 import type { CancelQuoteRequestBody } from '../dto/cancel-quote-request.us056.request.js';
+// US-057 (PB-P1-035 / BE-005): comparador de Quotes por categoría.
+import type { CompareQuotesUseCase } from '../application/compare-quotes.us057.use-case.js';
+import type {
+  CompareQuotesEventIdParam,
+  CompareQuotesQuery,
+} from '../dto/compare-quotes.us057.query.js';
 import type {
   CreateQuoteUseCase,
   GetQuoteForQuoteRequestUseCase,
@@ -59,6 +65,7 @@ export interface QuoteRequestUseCases {
   get: GetQuoteRequestUseCase;
   cancel: CancelQuoteRequestUs056UseCase;
   markViewed: MarkQuoteRequestViewedUseCase;
+  compareQuotes: CompareQuotesUseCase;
 }
 
 export class QuoteRequestsController {
@@ -106,6 +113,17 @@ export class QuoteRequestsController {
     const { quoteRequestId } = req.validated?.params as QuoteRequestIdParam;
     await this.uc.markViewed.execute(actor(req).id, quoteRequestId, { correlationId: req.correlationId });
     res.status(204).end();
+  };
+
+  // US-057 (PB-P1-035 / BE-005): endpoint sólo-lectura del comparador de Quotes.
+  // El param canonical es `:id` (no `:eventId`) según §7 del Tech Spec.
+  compareQuotes = async (req: Request, res: Response): Promise<void> => {
+    const { id: eventId } = req.validated?.params as CompareQuotesEventIdParam;
+    const query = (req.validated?.query ?? {}) as CompareQuotesQuery;
+    const view = await this.uc.compareQuotes.execute(actor(req).id, eventId, query, {
+      correlationId: req.correlationId,
+    });
+    res.status(200).json(success(view, req.correlationId ?? ''));
   };
 }
 

@@ -23,5 +23,63 @@
         "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
       }
     }
+  },
+  "quote": {
+    "compare": {
+      "page": {
+        "title": "Comparar orçamentos",
+        "subtitle": "Revise os orçamentos recebidos para esta categoria e decida qual marcar como preferido."
+      },
+      "loading": "Carregando comparador…",
+      "preferredBadge": "Orçamento preferido",
+      "status": {
+        "sent": "Enviado",
+        "accepted": "Aceito",
+        "expired": "Expirado",
+        "rejected": "Rejeitado"
+      },
+      "empty": {
+        "title": "Você ainda não recebeu orçamentos nesta categoria",
+        "description": "Quando os fornecedores responderem suas solicitações, você verá os orçamentos aqui para comparar.",
+        "backCta": "Voltar ao evento"
+      },
+      "single": {
+        "title": "Orçamento recebido ({category})"
+      },
+      "multi": {
+        "title": "{count} orçamentos em {category}"
+      },
+      "table": {
+        "caption": "Orçamentos recebidos na categoria {category}",
+        "viewProfile": "Ver perfil",
+        "ratingAria": "Avaliação média {rating} de 5, com {reviews} avaliações",
+        "noRating": "Sem avaliações ainda",
+        "noBreakdown": "Sem detalhamento",
+        "noValidUntil": "Sem data limite",
+        "noConditions": "Sem condições adicionais",
+        "preferCta": "Marcar preferred",
+        "preferAria": "Marcar o orçamento de {vendor} como preferred",
+        "notSelectable": "Não selecionável",
+        "notSelectableAria": "Orçamento com estado {status}, não selecionável",
+        "aiSummaryCta": "Resumir com IA",
+        "rowLabels": {
+          "vendor": "Fornecedor",
+          "rating": "Avaliação",
+          "totalPrice": "Preço total",
+          "breakdown": "Detalhamento",
+          "validUntil": "Válido até",
+          "conditions": "Condições",
+          "actions": "Ações"
+        }
+      },
+      "errors": {
+        "INVALID_FILTERS": "Selecione uma categoria para comparar orçamentos.",
+        "INVALID_CATEGORY": "A categoria selecionada não está disponível.",
+        "AUTHENTICATION_REQUIRED": "Você precisa iniciar sessão para ver o comparador.",
+        "FORBIDDEN": "Sua função não pode comparar orçamentos.",
+        "EVENT_NOT_FOUND": "Não encontramos esse evento ou você não tem permissão para vê-lo.",
+        "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
+      }
+    }
   }
 }

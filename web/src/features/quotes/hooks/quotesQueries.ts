@@ -9,6 +9,8 @@ import { quotesApi } from '../api/quotesApi';
 import type {
   ActiveQrCountInput,
   ActiveQrCountView,
+  CompareQuotesInput,
+  CompareQuotesView,
   CreateQuoteRequestInput,
   CreateQuoteRequestView,
 } from '../api/quotesApi.types';
@@ -19,6 +21,9 @@ export const quotesKeys = {
   requestsByEvent: (eventId: string) => [...quotesKeys.all, 'requests', 'by-event', eventId] as const,
   activeCount: (eventId: string, serviceCategoryId: string) =>
     [...quotesKeys.all, 'active-count', eventId, serviceCategoryId] as const,
+  // US-057 (FE-003): comparador por (event, categoryCode).
+  compare: (eventId: string, categoryCode: string) =>
+    [...quotesKeys.all, 'compare', eventId, categoryCode] as const,
 };
 
 export function useCreateQuoteRequest(): ReturnType<
@@ -52,5 +57,26 @@ export function useActiveQrCount(
       }),
     enabled,
     staleTime: 10_000, // consistente con Cache-Control corto sugerido por Tech Spec §5 API.
+  });
+}
+
+/**
+ * US-057 (FE-003): comparador de Quotes por `(eventId, categoryCode)`. Sólo dispara la query
+ * cuando ambos parámetros están presentes; el `categoryCode` vacío provocaría `400 INVALID_FILTERS`
+ * server-side (defensa en profundidad).
+ */
+export function useCompareQuotes(
+  input: Partial<CompareQuotesInput>,
+): ReturnType<typeof useQuery<CompareQuotesView, ApiError>> {
+  const enabled = Boolean(input.eventId && input.categoryCode);
+  return useQuery<CompareQuotesView, ApiError>({
+    queryKey: quotesKeys.compare(input.eventId ?? '__no_event__', input.categoryCode ?? '__no_cat__'),
+    queryFn: () =>
+      quotesApi.compare({
+        eventId: input.eventId as string,
+        categoryCode: input.categoryCode as string,
+      }),
+    enabled,
+    staleTime: 30_000,
   });
 }
