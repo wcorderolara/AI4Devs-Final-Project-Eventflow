@@ -10,7 +10,11 @@ import {
   canCancelQuoteRequest,
   QUOTE_VALIDITY_DAYS,
 } from '../../src/modules/quote-flow/domain/quote-policies.js';
-import { canConfirmBooking, canCancelBooking } from '../../src/modules/booking-intent/domain/booking-policies.js';
+import {
+  canConfirmBooking,
+  canCancelBooking,
+  isAlreadyConfirmed,
+} from '../../src/modules/booking-intent/domain/booking-policies.js';
 import {
   CreateQuoteRequestRequestSchema,
   CreateQuoteRequestBodySchema,
@@ -55,13 +59,18 @@ describe('Quote policies (AC-08/AC-09, EC-06/EC-07)', () => {
   });
 });
 
-describe('Booking policies (AC-11/AC-12)', () => {
+describe('Booking policies (AC-11/AC-12; US-061 AC-03)', () => {
   it('confirm solo pending; cancel pending/confirmed_intent', () => {
     expect(canConfirmBooking('pending')).toBe(true);
     expect(canConfirmBooking('confirmed_intent')).toBe(false);
     expect(canCancelBooking('pending')).toBe(true);
     expect(canCancelBooking('confirmed_intent')).toBe(true);
     expect(canCancelBooking('cancelled')).toBe(false);
+  });
+  it('US-061 AC-03: isAlreadyConfirmed sólo true para confirmed_intent (idempotencia)', () => {
+    expect(isAlreadyConfirmed('confirmed_intent')).toBe(true);
+    expect(isAlreadyConfirmed('pending')).toBe(false);
+    expect(isAlreadyConfirmed('cancelled')).toBe(false);
   });
 });
 

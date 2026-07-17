@@ -2131,7 +2131,7 @@ Simular la intención de contratar al vendor con una `Quote` aceptada. **Sin pag
 | --- | --- | --- | --- | --- | --- | --- |
 | POST | `/booking-intents` | Sí | organizer | **US-060**: Aceptación atómica de la Quote + creación del intent + 2 Notifications al vendor. Body snake_case con `disclaimer_accepted:true` requerido. Ver §32.6. | 201 | 400 (VALIDATION_ERROR, DISCLAIMER_REQUIRED), 401 (AUTHENTICATION_REQUIRED), 403 (FORBIDDEN), 404 (QUOTE_NOT_FOUND uniforme), 409 (QUOTE_NOT_ACCEPTABLE, QUOTE_EXPIRED, BOOKING_INTENT_ALREADY_EXISTS) |
 | GET | `/booking-intents/:bookingIntentId` | Sí | organizer, vendor (asignado), admin | Detalle. | 200 | 401, 403, 404 |
-| POST | `/booking-intents/:bookingIntentId/confirm` | Sí | vendor | Confirma la intención. | 200 | 401, 403, 404, 422 |
+| POST | `/booking-intents/:bookingIntentId/confirm` | Sí | vendor (target) | **US-061**: Confirmación atómica del intent + `UPDATE`/auto-create `BudgetItem.committed` (cross-domain via US-039) + 2 Notifications al organizer. Body vacío. Idempotente sobre `status='confirmed_intent'` (AC-03). Ver §32.7. | 200 | 400 (VALIDATION_ERROR), 401, 403, 404 (BOOKING_INTENT_NOT_FOUND uniforme), 409 (BOOKING_INTENT_NOT_CONFIRMABLE) |
 | POST | `/booking-intents/:bookingIntentId/cancel` | Sí | organizer, vendor | Cancela. | 200 | 401, 403, 404, 422 |
 
 ### 32.3 DTOs
@@ -2261,6 +2261,92 @@ Emitidos por el handler `UpdateCommittedFromBookingIntent` durante `POST /bookin
 | `budget.committed.currency_mismatch` | error | `quote.currency` distinto de `event.currency` (defensa profunda AC-05) — rollback total | `bookingIntentId`, `eventId`, `intentCurrency`, `eventCurrency`, `correlationId` |
 
 Fuente: `backend/src/shared/logging/budget-sync-events.ts`.
+
+### 32.7 US-061 · `POST /api/v1/booking-intents/:id/confirm` (confirmación atómica + UPDATE committed + notifs organizer)
+
+Endpoint canónico del vendor **asignado** para confirmar un `BookingIntent` `pending` que el
+organizer creó en US-060. La transición es una única `prisma.$transaction` que combina el
+`UPDATE booking_intents.status='confirmed_intent'` con la sincronización cross-domain de
+`BudgetItem.committed` (US-039 handler dentro de la misma tx) y el fan-out de 2 Notifications al
+organizer con `event='booking_intent.confirmed'`. Un fallo en cualquiera de los pasos revierte
+todo — incluyendo el estado del intent, el `committed_synced_at` y las notificaciones.
+
+Body: `(vacío)`.
+
+Response 200 (mismo shape que §32.6):
+
+```json
+{
+  "data": {
+    "id": "<uuid>",
+    "quoteId": "<uuid>",
+    "eventId": "<uuid>",
+    "serviceCategoryId": "<uuid>",
+    "vendorProfileId": "<uuid>",
+    "status": "confirmed_intent",
+    "isSimulated": true,
+    "confirmedAt": "2026-…",
+    "cancelledAt": null,
+    "cancelledBy": null,
+    "cancellationReason": null,
+    "createdAt": "2026-…",
+    "updatedAt": "2026-…"
+  },
+  "correlationId": "<uuid>"
+}
+```
+
+Errores estables (contrato §7 Tech Spec):
+
+| HTTP | Code | Detalle |
+| --- | --- | --- |
+| 400 | `VALIDATION_ERROR` | Path `:id` no es UUID. |
+| 401 | `AUTHENTICATION_REQUIRED` | Sin sesión. |
+| 403 | `FORBIDDEN` | Rol distinto de `vendor` (organizer/admin). |
+| 404 | `BOOKING_INTENT_NOT_FOUND` | Intent inexistente o vendor ajeno (uniforme — no filtra assignment). |
+| 409 | `BOOKING_INTENT_NOT_CONFIRMABLE` | `status='cancelled'`. `details.current_status`. |
+
+**Idempotencia (AC-03)**: cuando el intent ya está en `status='confirmed_intent'`, el UC hace
+early return con `200 OK` y el shape actual — sin re-actualizar `committed`, sin emitir notifs
+duplicadas. El handler US-039 tiene un guard de idempotencia adicional (`committed_synced_at`
+no-null ⇒ skip) que cubre el path concurrente.
+
+Decisiones PO/Tech (§Decision Resolution `US-061-decision-resolution.md`):
+
+- **D1** confirmación transaccional 3-step (UPDATE intent + apply committed + fan-out atómico
+  al organizer). Un fallo revierte todo (`prisma.$transaction`).
+- **D2** auto-create de `BudgetItem` cuando falta para `(budget, categoryCode)`. Delegado al
+  handler US-039 (`applyOnConfirm` → `UpdateCommittedFromBookingIntentUseCase`).
+- **D3** idempotencia sobre `status='confirmed_intent'` — early return 200 sin side-effects.
+- **D4** UNIQUE parcial ya enforced por US-060 (`uq_booking_intents_active_per_quote`).
+- **D5** 2 Notifications al organizer (`in_app` + `email_simulated`) con
+  `event='booking_intent.created'` — extensión a 7 eventos del `QuoteEventName` común.
+- **D6** currency guard defensivo: `Quote.currency ≠ Event.currency` ⇒ el sync handler US-039
+  arroja `BookingSyncCurrencyMismatchError` (DEV-02 US-061 — throw en lugar de warn+continue;
+  imposible en producción por BR-QUOTE-019 tras US-058 denormalización).
+- **D7** authorization: vendor assigned al Quote → 404 uniforme si no lo es.
+- **D8** sin `disclaimer_accepted` en este endpoint (el disclaimer se enforced una sola vez en
+  US-060 create; la confirmación del vendor no lo requiere nuevamente).
+
+Observabilidad:
+- Log estructurado `booking_intent.confirmed` (`info`) con `{correlationId, actorId,
+  bookingIntentId}` (SEC-09 sin payload).
+- Log agregado del fan-out: `quote.notification.emitted` con
+  `eventName='booking_intent.confirmed'`.
+- **US-061 BE-004**: warn `budget.committed_exceeds_planned` cuando la suma de
+  `sum(BudgetItem.committed)` supera `Budget.totalPlanned` tras el sync (BR-BUDGET-004 no
+  bloqueante). Payload: `{correlationId, budgetId, bookingIntentId, eventId, totalCommitted,
+  totalPlanned}`.
+- Logs cross-domain de US-039 (`budget.committed.synced`, `budget.item.auto_created_by_booking`,
+  `budget.committed.currency_mismatch`, etc.) se emiten desde el mismo `applyOnConfirm`.
+
+Notifications persistidas: `type='booking_intent.confirmed'`; `payload` incluye
+`{channel, deliveryStatus, event, booking_intent_id, quote_id, quote_request_id, event_id,
+vendor_profile_id, total_price, currency_code}`.
+
+Deviation (DEV-01 del execution record `management/workflows/development-execution/P1/PB-P1-036/US-061-execution.md`):
+la ruta canónica es `/api/v1/booking-intents/:id/confirm` (sin prefijo `/vendor/`) para
+consistencia con el resto de módulos del repo.
 
 ---
 

@@ -154,3 +154,79 @@ export const createBookingIntentMswTriggers = {
   ALREADY_EXISTS: CREATE_TRIGGER_ALREADY_EXISTS,
   RATE_LIMIT: CREATE_TRIGGER_RATE_LIMIT,
 } as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// US-061 · POST /api/v1/booking-intents/:id/confirm (vendor).
+// Triggers viven en el `:bookingIntentId` del path. Body vacío (sin disclaimer server-side).
+// ─────────────────────────────────────────────────────────────────────────────
+const CONFIRM_TRIGGER_UNAUTH = 'ffffffff-0000-0000-0061-000000000401';
+const CONFIRM_TRIGGER_FORBIDDEN = 'ffffffff-0000-0000-0061-000000000403';
+const CONFIRM_TRIGGER_NOT_FOUND = 'ffffffff-0000-0000-0061-000000000404';
+const CONFIRM_TRIGGER_NOT_CONFIRMABLE = 'ffffffff-0000-0000-0061-000000000409';
+const CONFIRM_TRIGGER_RATE_LIMIT = 'ffffffff-0000-0000-0061-000000000429';
+// Trigger que fuerza el response idempotente: el intent ya está `confirmed_intent` — el backend
+// responde 200 con el mismo shape del confirm exitoso (AC-03).
+const CONFIRM_TRIGGER_IDEMPOTENT = 'ffffffff-0000-0000-0061-000000000200';
+
+bookingIntentsHandlers.push(
+  http.post('*/api/v1/booking-intents/:bookingIntentId/confirm', ({ params }) => {
+    const id = String(params.bookingIntentId ?? '');
+    if (id === CONFIRM_TRIGGER_UNAUTH) {
+      return HttpResponse.json(errorEnvelope('AUTHENTICATION_REQUIRED', 'Authentication required'), {
+        status: 401,
+      });
+    }
+    if (id === CONFIRM_TRIGGER_FORBIDDEN) {
+      return HttpResponse.json(errorEnvelope('FORBIDDEN', 'Only the assigned vendor can confirm'), {
+        status: 403,
+      });
+    }
+    if (id === CONFIRM_TRIGGER_NOT_FOUND) {
+      return HttpResponse.json(errorEnvelope('BOOKING_INTENT_NOT_FOUND', 'Booking intent not found'), {
+        status: 404,
+      });
+    }
+    if (id === CONFIRM_TRIGGER_NOT_CONFIRMABLE) {
+      return HttpResponse.json(
+        errorEnvelope('BOOKING_INTENT_NOT_CONFIRMABLE', 'Booking intent cannot be confirmed in its current state', [
+          { field: 'current_status', message: 'cancelled' },
+        ]),
+        { status: 409 },
+      );
+    }
+    if (id === CONFIRM_TRIGGER_RATE_LIMIT) {
+      return HttpResponse.json(errorEnvelope('RATE_LIMIT_EXCEEDED', 'Too many requests'), { status: 429 });
+    }
+    // Happy path (200): confirm exitoso — incluye AC-03 idempotencia, dado que el backend
+    // devuelve el mismo shape para ambos casos.
+    const isIdempotent = id === CONFIRM_TRIGGER_IDEMPOTENT;
+    const now = new Date('2026-07-17T18:00:00Z').toISOString();
+    return HttpResponse.json(
+      envelope({
+        id,
+        quoteId: '22222222-2222-4222-8222-222222222222',
+        eventId: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
+        serviceCategoryId: '99999999-9999-9999-9999-999999999999',
+        vendorProfileId: 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
+        status: 'confirmed_intent' as const,
+        isSimulated: true,
+        confirmedAt: isIdempotent ? '2026-07-16T00:00:00Z' : now,
+        cancelledAt: null,
+        cancelledBy: null,
+        cancellationReason: null,
+        createdAt: '2026-07-15T00:00:00Z',
+        updatedAt: now,
+      }),
+      { status: 200 },
+    );
+  }),
+);
+
+export const confirmBookingIntentMswTriggers = {
+  UNAUTH: CONFIRM_TRIGGER_UNAUTH,
+  FORBIDDEN: CONFIRM_TRIGGER_FORBIDDEN,
+  NOT_FOUND: CONFIRM_TRIGGER_NOT_FOUND,
+  NOT_CONFIRMABLE: CONFIRM_TRIGGER_NOT_CONFIRMABLE,
+  RATE_LIMIT: CONFIRM_TRIGGER_RATE_LIMIT,
+  IDEMPOTENT: CONFIRM_TRIGGER_IDEMPOTENT,
+} as const;

@@ -39,6 +39,12 @@ export interface DomainEventLogger {
       previousValue?: boolean;
       newValue?: boolean;
       unmarkedQuoteId?: string;
+      // US-061 (BE-004): `budget.committed_exceeds_planned` warn cuando la suma agregada de
+      // `BudgetItem.committed` supera `Budget.totalPlanned` tras el confirm del BookingIntent
+      // (BR-BUDGET-004 — no bloqueante). Montos como string para preservar precisión decimal.
+      budgetId?: string;
+      totalCommitted?: string;
+      totalPlanned?: string;
     },
   ): void;
 }

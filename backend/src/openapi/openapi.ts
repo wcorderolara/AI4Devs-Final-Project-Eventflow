@@ -297,7 +297,10 @@ op({ method: 'patch', path: '/quotes/{quoteId}/preferred', operationId: 'preferr
 // BOOKING_INTENT_ALREADY_EXISTS).
 op({ method: 'post', path: '/booking-intents', operationId: 'createBookingIntent', tags: ['BookingIntents'], summary: 'US-060 · Aceptar Quote + crear BookingIntent atómicamente (organizer)', secured: true, body: CreateBookingIntentRequestSchema, success: { status: 201, schema: envelope(BookingIntentResponseSchema) }, errors: [400, 401, 403, 404, 409] });
 op({ method: 'get', path: '/booking-intents/{bookingIntentId}', operationId: 'getBookingIntent', tags: ['BookingIntents'], summary: 'Obtener BookingIntent', secured: true, params: BookingIntentIdParamSchema, success: { status: 200, schema: envelope(BookingIntentResponseSchema) }, errors: [401, 403, 404] });
-op({ method: 'post', path: '/booking-intents/{bookingIntentId}/confirm', operationId: 'confirmBookingIntent', tags: ['BookingIntents'], summary: 'Confirmar BookingIntent (vendor)', secured: true, params: BookingIntentIdParamSchema, success: { status: 200, schema: envelope(BookingIntentResponseSchema) }, errors: [401, 403, 404, 422] });
+// US-061 (PB-P1-036 / BE-003): confirm atómico + sync cross-domain BudgetItem.committed
+// (US-039) + fan-out de 2 notifs al organizer con `event='booking_intent.confirmed'`.
+// Idempotente sobre `status='confirmed_intent'` (AC-03).
+op({ method: 'post', path: '/booking-intents/{bookingIntentId}/confirm', operationId: 'confirmBookingIntent', tags: ['BookingIntents'], summary: 'US-061 · Confirmar BookingIntent (vendor asignado) + UPDATE committed', secured: true, params: BookingIntentIdParamSchema, success: { status: 200, schema: envelope(BookingIntentResponseSchema) }, errors: [400, 401, 403, 404, 409] });
 op({ method: 'post', path: '/booking-intents/{bookingIntentId}/cancel', operationId: 'cancelBookingIntent', tags: ['BookingIntents'], summary: 'Cancelar BookingIntent', secured: true, params: BookingIntentIdParamSchema, body: CancelBookingIntentRequestSchema, success: { status: 200, schema: envelope(BookingIntentResponseSchema) }, errors: [401, 403, 404, 422] });
 
 // ── AI ASSISTANCE ────────────────────────────────────────────────────────────────

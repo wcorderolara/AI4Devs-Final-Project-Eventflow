@@ -170,6 +170,10 @@ export const ErrorCodes = {
   DISCLAIMER_REQUIRED: 'DISCLAIMER_REQUIRED', // 400 — body sin `disclaimer_accepted:true` (AC-02, VR-02).
   QUOTE_NOT_ACCEPTABLE: 'QUOTE_NOT_ACCEPTABLE', // 409 — Quote.status ∉ {sent} (EC-02, VR-05); `details.current_status`.
   BOOKING_INTENT_ALREADY_EXISTS: 'BOOKING_INTENT_ALREADY_EXISTS', // 409 — Quote ya tiene BookingIntent activo (EC-03, VR-07); `details.booking_intent_id`.
+  // US-061 (PB-P1-036): confirmación del BookingIntent por el vendor + UPDATE cross-domain
+  // `BudgetItem.committed`. Códigos específicos §7 Tech Spec.
+  BOOKING_INTENT_NOT_FOUND: 'BOOKING_INTENT_NOT_FOUND', // 404 — BookingIntent inexistente o vendor ajeno (SEC-03 uniforme).
+  BOOKING_INTENT_NOT_CONFIRMABLE: 'BOOKING_INTENT_NOT_CONFIRMABLE', // 409 — BookingIntent.status ∉ {pending, confirmed_intent} (EC-01, VR-03); `details.current_status`.
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

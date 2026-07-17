@@ -406,5 +406,31 @@
       "priceRange": "Price range",
       "ratingAria": "{avg} stars, {count} reviews"
     }
+  },
+  "booking": {
+    "confirm": {
+      "title": "Confirm booking intent",
+      "description": "Confirming accepts the commitment for this event on the agreed date. This flow is simulated — no payments or contracts on the platform.",
+      "summary": {
+        "event": "Event",
+        "amount": "Agreed amount"
+      },
+      "disclaimer": "EventFlow does not process payments or contracts. Any financial agreement must be formalized off-platform with the organizer.",
+      "actions": {
+        "cancel": "Cancel",
+        "submit": "Confirm booking",
+        "submitting": "Confirming…"
+      },
+      "success": "Booking confirmed. We notified the organizer.",
+      "errors": {
+        "VALIDATION_ERROR": "There was a problem with your request. Please try again.",
+        "AUTHENTICATION_REQUIRED": "You need to sign in to confirm the booking.",
+        "FORBIDDEN": "Only the assigned vendor can confirm this booking.",
+        "BOOKING_INTENT_NOT_FOUND": "We could not find this booking or it is no longer available.",
+        "BOOKING_INTENT_NOT_CONFIRMABLE": "This booking cannot be confirmed in its current state.",
+        "RATE_LIMIT_EXCEEDED": "Too many requests. Wait a moment and try again.",
+        "UNEXPECTED": "An unexpected error occurred. Please try again."
+      }
+    }
   }
 }

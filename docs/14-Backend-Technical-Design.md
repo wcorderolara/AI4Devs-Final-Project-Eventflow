@@ -580,7 +580,10 @@ Importante: este listado prohíbe automáticamente crear un controller/repo por 
   contratos firmados. El DTO Zod `.strict()` de `POST /booking-intents` rechaza cualquier campo
   de pago; los tests QA-005 lo verifican explícitamente.
 - **Main use cases:** `CreateBookingIntentUs060UseCase` (US-060 — transaccional + fan-out
-  atómico), `GetBookingIntentUseCase`, `ConfirmBookingIntentUseCase`, `CancelBookingIntentUseCase`.
+  atómico), `GetBookingIntentUseCase`, `ConfirmBookingIntentUseCase` (US-061 — 3-step
+  transaccional: UPDATE intent + sync committed cross-domain via US-039 + 2 notifs organizer con
+  `event='booking_intent.confirmed'`; idempotencia AC-03 + warn `budget.committed_exceeds_planned`),
+  `CancelBookingIntentUseCase`.
 - **Domain services / policies:** `BookingIntentPolicyService` (opcional; transición de estados).
   `QuoteEventNotificationService` (compartido con `quote-flow`) — extendido con
   `booking_intent.created` (6º evento).
