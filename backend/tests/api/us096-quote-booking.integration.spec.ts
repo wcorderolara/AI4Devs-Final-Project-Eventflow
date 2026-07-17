@@ -123,17 +123,23 @@ describe.skipIf(!dbUp)('US-096 QA-002 — Quote/Booking integration', () => {
     expect(sent.body.data.status).toBe('sent');
     expect(sent.body.data.validUntil).not.toBeNull();
 
-    // AC-09: organizer prefiere y acepta.
+    // AC-09: organizer marca preferred.
     expect((await organizer.post(`/api/v1/quotes/${quoteId}/prefer`)).body.data.isPreferred).toBe(true);
-    const accepted = await organizer.post(`/api/v1/quotes/${quoteId}/accept`);
-    expect(accepted.status).toBe(200);
-    expect(accepted.body.data.status).toBe('accepted');
 
-    // AC-10: organizer crea BookingIntent.
-    const biRes = await organizer.post('/api/v1/booking-intents').send({ quoteId });
+    // AC-10: organizer crea BookingIntent — US-060 (PB-P1-036) hace la aceptación atómica de la
+    // Quote dentro del mismo endpoint (D1) requiriendo `disclaimer_accepted:true` (D2). La
+    // llamada previa a `POST /quotes/:id/accept` (US-096) ya no aplica — DEV-03 del execution
+    // record de US-060.
+    const biRes = await organizer
+      .post('/api/v1/booking-intents')
+      .send({ quote_id: quoteId, disclaimer_accepted: true });
     expect(biRes.status).toBe(201);
     expect(biRes.body.data).toMatchObject({ status: 'pending', isSimulated: true });
     const bookingIntentId = biRes.body.data.id as string;
+    // La Quote quedó `accepted` como side-effect atómico de la creación del intent.
+    const q = await prisma.quote.findUnique({ where: { id: quoteId }, select: { status: true, acceptedAt: true } });
+    expect(q?.status).toBe('accepted');
+    expect(q?.acceptedAt).not.toBeNull();
 
     // AC-11: vendor confirma.
     const confirmed = await vendorAgent.post(`/api/v1/booking-intents/${bookingIntentId}/confirm`);

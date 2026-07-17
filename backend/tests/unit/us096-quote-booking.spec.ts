@@ -107,9 +107,22 @@ describe('CreateQuoteRequestBodySchema / Update (AC-07/08, VR-06)', () => {
 });
 
 describe('Booking DTOs (AC-10/AC-12, VR-10, EC-08)', () => {
-  it('create exige quoteId uuid', () => {
-    expect(CreateBookingIntentRequestSchema.safeParse({ quoteId: uuid }).success).toBe(true);
-    expect(CreateBookingIntentRequestSchema.safeParse({ quoteId: 'x' }).success).toBe(false);
+  // US-060 (PB-P1-036 / BE-001): el DTO original camelCase (`{quoteId}`) fue reemplazado por
+  // el body snake_case con disclaimer (`{quote_id, disclaimer_accepted:true}`). El schema legacy
+  // se re-exporta como alias del nuevo — DEV-03 del execution record de US-060.
+  it('create exige quote_id uuid + disclaimer_accepted booleano', () => {
+    expect(
+      CreateBookingIntentRequestSchema.safeParse({ quote_id: uuid, disclaimer_accepted: true }).success,
+    ).toBe(true);
+    expect(
+      CreateBookingIntentRequestSchema.safeParse({ quote_id: uuid, disclaimer_accepted: false }).success,
+    ).toBe(true);
+    expect(
+      CreateBookingIntentRequestSchema.safeParse({ quote_id: 'x', disclaimer_accepted: true }).success,
+    ).toBe(false);
+    expect(
+      CreateBookingIntentRequestSchema.safeParse({ quote_id: uuid }).success,
+    ).toBe(false);
   });
   it('cancel exige cancellationReason no vacío (VR-10)', () => {
     expect(CancelBookingIntentRequestSchema.safeParse({ cancellationReason: 'no disponible' }).success).toBe(true);

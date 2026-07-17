@@ -1,19 +1,20 @@
-// Controlador de booking-intent (US-096 / BE-007). Delgado; delega a use cases.
+// Controlador de booking-intent — delegación a use cases (US-096 lectura/confirm/cancel;
+// US-060 creación atómica). Se mantiene delgado y sin lógica de negocio.
 import type { Request, Response } from 'express';
 import { success } from '../../../shared/response/index.js';
 import { UnauthorizedError } from '../../../shared/domain/errors/unauthorized.error.js';
 import { toBookingIntentResponse } from '../dto/index.js';
 import type {
-  CreateBookingIntentRequest,
   CancelBookingIntentRequest,
   BookingIntentIdParam,
 } from '../dto/index.js';
+import type { CreateBookingIntentUs060Body } from '../dto/create-booking-intent.request.js';
 import type {
-  CreateBookingIntentUseCase,
   GetBookingIntentUseCase,
   ConfirmBookingIntentUseCase,
   CancelBookingIntentUseCase,
 } from '../application/booking-intent.use-cases.js';
+import type { CreateBookingIntentUs060UseCase } from '../application/create-booking-intent.us060.use-case.js';
 
 function actor(req: Request): { id: string; role: string } {
   const u = req.user;
@@ -22,7 +23,7 @@ function actor(req: Request): { id: string; role: string } {
 }
 
 export interface BookingIntentUseCases {
-  create: CreateBookingIntentUseCase;
+  create: CreateBookingIntentUs060UseCase;
   get: GetBookingIntentUseCase;
   confirm: ConfirmBookingIntentUseCase;
   cancel: CancelBookingIntentUseCase;
@@ -32,8 +33,8 @@ export class BookingIntentsController {
   constructor(private readonly uc: BookingIntentUseCases) {}
 
   create = async (req: Request, res: Response): Promise<void> => {
-    const body = req.validated?.body as CreateBookingIntentRequest;
-    const view = await this.uc.create.execute(actor(req).id, body.quoteId, { correlationId: req.correlationId });
+    const body = req.validated?.body as CreateBookingIntentUs060Body;
+    const view = await this.uc.create.execute(actor(req).id, body, { correlationId: req.correlationId });
     res.status(201).json(success(toBookingIntentResponse(view), req.correlationId ?? ''));
   };
 

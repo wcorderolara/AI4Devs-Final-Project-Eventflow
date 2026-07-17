@@ -213,6 +213,7 @@ describe.skipIf(!dbUp)('US-036 QA-002 (con BD): CRUD BudgetItem', () => {
         quoteId: quote.id,
         eventId: eventActiveId,
         serviceCategoryId: catering.id,
+        createdBy: organizerId,
         status: 'pending',
         isSimulated: true,
       },

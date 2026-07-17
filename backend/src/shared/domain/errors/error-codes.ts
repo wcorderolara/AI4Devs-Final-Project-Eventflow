@@ -165,6 +165,11 @@ export const ErrorCodes = {
   INVALID_CANCELLATION_REASON: 'INVALID_CANCELLATION_REASON', // 400 — body.reason > 500 chars (EC-04, VR-02).
   // US-058 (PB-P1-035): toggle Quote.is_preferred. Código específico §7 Tech Spec.
   QUOTE_NOT_PREFERABLE: 'QUOTE_NOT_PREFERABLE', // 409 — Quote.status ≠ 'sent' o expirada por valid_until (EC-01, VR-03); `details.current_status`.
+  // US-060 (PB-P1-036): creación atómica de BookingIntent (aceptación de Quote + INSERT). Códigos
+  // específicos §7 Tech Spec.
+  DISCLAIMER_REQUIRED: 'DISCLAIMER_REQUIRED', // 400 — body sin `disclaimer_accepted:true` (AC-02, VR-02).
+  QUOTE_NOT_ACCEPTABLE: 'QUOTE_NOT_ACCEPTABLE', // 409 — Quote.status ∉ {sent} (EC-02, VR-05); `details.current_status`.
+  BOOKING_INTENT_ALREADY_EXISTS: 'BOOKING_INTENT_ALREADY_EXISTS', // 409 — Quote ya tiene BookingIntent activo (EC-03, VR-07); `details.booking_intent_id`.
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

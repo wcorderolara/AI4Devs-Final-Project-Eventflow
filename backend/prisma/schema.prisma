@@ -179,6 +179,9 @@ model User {
   // US-056 (PB-P1-034 / DB-001): relación inversa de auditoría de la cancelación
   // de un QuoteRequest por el organizer. `cancelled_by` identifica al actor de la transición.
   quoteRequestsCancelled QuoteRequest[]       @relation("QuoteRequestCancelledBy")
+  // US-060 (PB-P1-036 / DB-002): relación inversa de auditoría de la creación del BookingIntent
+  // por el organizer (`booking_intents.created_by`).
+  bookingIntentsCreated  BookingIntent[]      @relation("BookingIntentCreatedBy")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -700,6 +703,11 @@ model BookingIntent {
   cancelledAt           DateTime?           @map("cancelled_at") @db.Timestamptz(6)
   cancelledBy           String?             @map("cancelled_by") @db.Uuid
   cancellationReason    String?             @map("cancellation_reason")
+  // US-060 (PB-P1-036 / DB-002): auditoría del organizer que originó el intent. `NOT NULL` con FK
+  // a `users.id` (`ON DELETE RESTRICT`) — permite trazabilidad por actor sin depender del join
+  // `booking_intents → quotes → quote_requests → events → users`. Backfill idempotente desde ese
+  // join en la migración.
+  createdBy             String              @map("created_by") @db.Uuid
   // US-039 (PB-P1-023 / D1): idempotencia del sync de `BudgetItem.committed`. Ambos NULL cuando
   // el intent no está sincronizado; `committedSyncedAmount` preserva el monto original para una
   // reversa exacta independiente de cambios posteriores en `Quote.amount`.
@@ -710,6 +718,7 @@ model BookingIntent {
   event           Event           @relation(fields: [eventId], references: [id], onDelete: Restrict)
   serviceCategory ServiceCategory @relation(fields: [serviceCategoryId], references: [id], onDelete: Restrict)
   vendorProfile   VendorProfile?  @relation(fields: [vendorProfileId], references: [id], onDelete: Restrict)
+  createdByUser   User            @relation("BookingIntentCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
   reviews         Review[]
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -720,9 +729,13 @@ model BookingIntent {
   @@index([eventId])
   @@index([serviceCategoryId])
   @@index([vendorProfileId])
+  @@index([createdBy], map: "idx_booking_intents_created_by")
   // US-056 (PB-P1-034 / DB-001): índice compuesto usado por el EXISTS del `CancelQuoteRequestUseCase`
   // para restringir la cancelación si alguna Quote asociada tiene un BookingIntent `confirmed_intent`.
   @@index([quoteId, status], map: "idx_booking_intents_quote_id_status")
+  // US-060 (PB-P1-036 / DB-002): UNIQUE parcial nativo — a lo sumo un BookingIntent `pending` o
+  // `confirmed_intent` por `quote_id` (EC-03, VR-07). Se define en SQL raw en la migración porque
+  // Prisma <5 no soporta `WHERE` en `@@unique`. Consulta directa: `uq_booking_intents_active_per_quote`.
   @@map("booking_intents")
 }
 

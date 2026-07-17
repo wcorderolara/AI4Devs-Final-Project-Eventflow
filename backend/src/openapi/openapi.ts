@@ -290,7 +290,12 @@ op({ method: 'post', path: '/quotes/{quoteId}/prefer', operationId: 'preferQuote
 op({ method: 'patch', path: '/quotes/{quoteId}/preferred', operationId: 'preferredQuote', tags: ['Quotes'], summary: 'Toggle Quote.is_preferred (organizer)', secured: true, params: QuoteIdParamSchema, body: PreferQuoteBodySchema, success: { status: 200, schema: envelope(QuoteResponseSchema) }, errors: [400, 401, 403, 404, 409] });
 
 // ── BOOKING-INTENT ──────────────────────────────────────────────────────────────
-op({ method: 'post', path: '/booking-intents', operationId: 'createBookingIntent', tags: ['BookingIntents'], summary: 'Crear BookingIntent (simulado)', secured: true, body: CreateBookingIntentRequestSchema, success: { status: 201, schema: envelope(BookingIntentResponseSchema) }, errors: [401, 403, 404, 410, 422] });
+// US-060 (PB-P1-036 / BE-004): endpoint atómico — aceptación de Quote + INSERT BookingIntent +
+// 2 Notifications al vendor dentro de una única `prisma.$transaction`. Body snake_case con
+// `disclaimer_accepted:true` requerido. Errores: 400 (VALIDATION_ERROR/DISCLAIMER_REQUIRED),
+// 401, 403, 404 (QUOTE_NOT_FOUND uniforme), 409 (QUOTE_NOT_ACCEPTABLE/QUOTE_EXPIRED/
+// BOOKING_INTENT_ALREADY_EXISTS).
+op({ method: 'post', path: '/booking-intents', operationId: 'createBookingIntent', tags: ['BookingIntents'], summary: 'US-060 · Aceptar Quote + crear BookingIntent atómicamente (organizer)', secured: true, body: CreateBookingIntentRequestSchema, success: { status: 201, schema: envelope(BookingIntentResponseSchema) }, errors: [400, 401, 403, 404, 409] });
 op({ method: 'get', path: '/booking-intents/{bookingIntentId}', operationId: 'getBookingIntent', tags: ['BookingIntents'], summary: 'Obtener BookingIntent', secured: true, params: BookingIntentIdParamSchema, success: { status: 200, schema: envelope(BookingIntentResponseSchema) }, errors: [401, 403, 404] });
 op({ method: 'post', path: '/booking-intents/{bookingIntentId}/confirm', operationId: 'confirmBookingIntent', tags: ['BookingIntents'], summary: 'Confirmar BookingIntent (vendor)', secured: true, params: BookingIntentIdParamSchema, success: { status: 200, schema: envelope(BookingIntentResponseSchema) }, errors: [401, 403, 404, 422] });
 op({ method: 'post', path: '/booking-intents/{bookingIntentId}/cancel', operationId: 'cancelBookingIntent', tags: ['BookingIntents'], summary: 'Cancelar BookingIntent', secured: true, params: BookingIntentIdParamSchema, body: CancelBookingIntentRequestSchema, success: { status: 200, schema: envelope(BookingIntentResponseSchema) }, errors: [401, 403, 404, 422] });

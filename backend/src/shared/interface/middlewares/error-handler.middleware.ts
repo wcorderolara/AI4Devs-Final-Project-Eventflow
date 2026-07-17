@@ -65,6 +65,15 @@ import {
 // US-058 (PB-P1-035): endpoint `PATCH /api/v1/quotes/:quoteId/preferred`. `QuoteNotPreferableError`
 // mapea a `409 QUOTE_NOT_PREFERABLE` con `details.current_status`.
 import { QuoteNotPreferableError } from '../../../modules/quote-flow/domain/us058.errors.js';
+// US-060 (PB-P1-036): creación atómica de BookingIntent. `DisclaimerRequiredError` → 400,
+// `QuoteNotAcceptableError` → 409 con `details.current_status`, `BookingIntentAlreadyExistsError`
+// → 409 con `details.booking_intent_id`.
+import {
+  DisclaimerRequiredError,
+  QuoteNotAcceptableError,
+  BookingIntentAlreadyExistsError,
+  QuoteNotFoundForBookingError,
+} from '../../../modules/booking-intent/domain/us060.errors.js';
 import {
   MissingInputError,
   AiInvalidBudgetError,
@@ -368,6 +377,34 @@ function mapError(err: unknown): MappedError {
       code: ErrorCodes.QUOTE_NOT_PREFERABLE,
       message: err.message,
       details: [{ field: 'current_status', message: err.currentStatus }],
+    };
+  }
+  // US-060 (PB-P1-036): creación atómica de BookingIntent.
+  if (err instanceof QuoteNotFoundForBookingError) {
+    return { status: 404, code: ErrorCodes.QUOTE_NOT_FOUND, message: 'Quote not found', masked: true };
+  }
+  if (err instanceof DisclaimerRequiredError) {
+    return {
+      status: 400,
+      code: ErrorCodes.DISCLAIMER_REQUIRED,
+      message: err.message,
+      details: [{ field: 'disclaimer_accepted', message: 'required' }],
+    };
+  }
+  if (err instanceof QuoteNotAcceptableError) {
+    return {
+      status: 409,
+      code: ErrorCodes.QUOTE_NOT_ACCEPTABLE,
+      message: err.message,
+      details: [{ field: 'current_status', message: err.currentStatus }],
+    };
+  }
+  if (err instanceof BookingIntentAlreadyExistsError) {
+    return {
+      status: 409,
+      code: ErrorCodes.BOOKING_INTENT_ALREADY_EXISTS,
+      message: err.message,
+      details: [{ field: 'booking_intent_id', message: err.bookingIntentId }],
     };
   }
   if (err instanceof MissingInputError) {

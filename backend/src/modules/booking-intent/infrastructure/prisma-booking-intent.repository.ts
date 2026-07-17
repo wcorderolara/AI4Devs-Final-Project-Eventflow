@@ -30,13 +30,15 @@ function toView(b: PrismaBI): BookingIntentView {
 export class PrismaBookingIntentRepository implements BookingIntentRepository {
   constructor(private readonly prisma: PrismaClient = defaultPrisma) {}
 
-  async create(data: CreateBookingIntentData): Promise<BookingIntentView> {
-    const b = await this.prisma.bookingIntent.create({
+  async create(data: CreateBookingIntentData, tx?: Prisma.TransactionClient): Promise<BookingIntentView> {
+    const client = tx ?? this.prisma;
+    const b = await client.bookingIntent.create({
       data: {
         quoteId: data.quoteId,
         eventId: data.eventId,
         serviceCategoryId: data.serviceCategoryId,
         vendorProfileId: data.vendorProfileId,
+        createdBy: data.createdBy,
         status: 'pending',
         isSimulated: true,
       },
