@@ -10,6 +10,9 @@ import type {
   CancelQrEnvelope,
   CancelQrInput,
   CancelQrView,
+  CompareQuotesEnvelope,
+  CompareQuotesInput,
+  CompareQuotesView,
   CreateQuoteRequestEnvelope,
   CreateQuoteRequestInput,
   CreateQuoteRequestView,
@@ -20,6 +23,7 @@ import type {
 import {
   toActiveQrCountView,
   toCancelQrView,
+  toCompareQuotesView,
   toCreateQuoteRequestView,
   toRejectQuoteView,
 } from './quotesApi.types';
@@ -83,5 +87,20 @@ export const quotesApi = {
       { body },
     );
     return toCancelQrView(envelope.data);
+  },
+
+  /**
+   * US-057 (FE-003): comparador de Quotes por categoría. `categoryCode` es requerido — el
+   * backend responde `400 INVALID_FILTERS` cuando el query param está ausente.
+   * Códigos de error consumibles por la UI: `INVALID_FILTERS` (400 — falta categoryCode),
+   * `INVALID_CATEGORY` (400 — slug inexistente o inactivo), `AUTHENTICATION_REQUIRED` (401),
+   * `FORBIDDEN` (403), `EVENT_NOT_FOUND` (404).
+   */
+  async compare(input: CompareQuotesInput): Promise<CompareQuotesView> {
+    const qs = new URLSearchParams({ categoryCode: input.categoryCode }).toString();
+    const envelope = await httpGet<CompareQuotesEnvelope>(
+      `/events/${encodeURIComponent(input.eventId)}/quotes/compare?${qs}`,
+    );
+    return toCompareQuotesView(envelope.data);
   },
 };

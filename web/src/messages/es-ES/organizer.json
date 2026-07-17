@@ -23,5 +23,63 @@
         "UNEXPECTED": "Se ha producido un error inesperado. Inténtalo de nuevo."
       }
     }
+  },
+  "quote": {
+    "compare": {
+      "page": {
+        "title": "Comparar presupuestos",
+        "subtitle": "Revisa los presupuestos recibidos para esta categoría y decide cuál marcar como preferido."
+      },
+      "loading": "Cargando comparador…",
+      "preferredBadge": "Presupuesto preferido",
+      "status": {
+        "sent": "Enviado",
+        "accepted": "Aceptado",
+        "expired": "Caducado",
+        "rejected": "Rechazado"
+      },
+      "empty": {
+        "title": "Aún no has recibido presupuestos en esta categoría",
+        "description": "Cuando los proveedores respondan tus solicitudes, verás los presupuestos aquí para compararlos.",
+        "backCta": "Volver al evento"
+      },
+      "single": {
+        "title": "Presupuesto recibido ({category})"
+      },
+      "multi": {
+        "title": "{count} presupuestos en {category}"
+      },
+      "table": {
+        "caption": "Presupuestos recibidos en la categoría {category}",
+        "viewProfile": "Ver perfil",
+        "ratingAria": "Valoración media {rating} sobre 5, con {reviews} reseñas",
+        "noRating": "Sin reseñas todavía",
+        "noBreakdown": "Sin desglose",
+        "noValidUntil": "Sin fecha límite",
+        "noConditions": "Sin condiciones adicionales",
+        "preferCta": "Marcar preferred",
+        "preferAria": "Marcar el presupuesto de {vendor} como preferred",
+        "notSelectable": "No seleccionable",
+        "notSelectableAria": "Presupuesto con estado {status}, no seleccionable",
+        "aiSummaryCta": "Resumir con IA",
+        "rowLabels": {
+          "vendor": "Proveedor",
+          "rating": "Valoración",
+          "totalPrice": "Precio total",
+          "breakdown": "Desglose",
+          "validUntil": "Válido hasta",
+          "conditions": "Condiciones",
+          "actions": "Acciones"
+        }
+      },
+      "errors": {
+        "INVALID_FILTERS": "Selecciona una categoría para comparar presupuestos.",
+        "INVALID_CATEGORY": "La categoría seleccionada no está disponible.",
+        "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para ver el comparador.",
+        "FORBIDDEN": "Tu rol no puede comparar presupuestos.",
+        "EVENT_NOT_FOUND": "No encontramos ese evento o no tienes permiso para verlo.",
+        "UNEXPECTED": "Se ha producido un error inesperado. Inténtalo de nuevo."
+      }
+    }
   }
 }

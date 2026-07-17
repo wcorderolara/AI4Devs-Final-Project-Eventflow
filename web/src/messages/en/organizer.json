@@ -23,5 +23,63 @@
         "UNEXPECTED": "An unexpected error occurred. Please try again."
       }
     }
+  },
+  "quote": {
+    "compare": {
+      "page": {
+        "title": "Compare quotes",
+        "subtitle": "Review the quotes received for this category and decide which to mark as preferred."
+      },
+      "loading": "Loading comparator…",
+      "preferredBadge": "Preferred quote",
+      "status": {
+        "sent": "Sent",
+        "accepted": "Accepted",
+        "expired": "Expired",
+        "rejected": "Rejected"
+      },
+      "empty": {
+        "title": "You have not received quotes in this category yet",
+        "description": "As vendors respond to your requests, quotes will appear here for comparison.",
+        "backCta": "Back to event"
+      },
+      "single": {
+        "title": "Quote received ({category})"
+      },
+      "multi": {
+        "title": "{count} quotes in {category}"
+      },
+      "table": {
+        "caption": "Quotes received in the {category} category",
+        "viewProfile": "View profile",
+        "ratingAria": "Average rating {rating} out of 5, with {reviews} reviews",
+        "noRating": "No reviews yet",
+        "noBreakdown": "No breakdown",
+        "noValidUntil": "No expiry date",
+        "noConditions": "No additional conditions",
+        "preferCta": "Mark preferred",
+        "preferAria": "Mark {vendor}'s quote as preferred",
+        "notSelectable": "Not selectable",
+        "notSelectableAria": "Quote with status {status}, not selectable",
+        "aiSummaryCta": "Summarize with AI",
+        "rowLabels": {
+          "vendor": "Vendor",
+          "rating": "Rating",
+          "totalPrice": "Total price",
+          "breakdown": "Breakdown",
+          "validUntil": "Valid until",
+          "conditions": "Conditions",
+          "actions": "Actions"
+        }
+      },
+      "errors": {
+        "INVALID_FILTERS": "Select a category to compare quotes.",
+        "INVALID_CATEGORY": "The selected category is not available.",
+        "AUTHENTICATION_REQUIRED": "You need to sign in to view the comparator.",
+        "FORBIDDEN": "Your role cannot compare quotes.",
+        "EVENT_NOT_FOUND": "We could not find that event or you do not have permission to view it.",
+        "UNEXPECTED": "An unexpected error occurred. Please try again."
+      }
+    }
   }
 }

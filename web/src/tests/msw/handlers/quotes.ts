@@ -73,6 +73,16 @@ const CANCEL_QR_TRIGGER_NOT_CANCELLABLE = 'ffffffff-0000-0000-0056-000000000409'
 const CANCEL_QR_TRIGGER_HAS_CONFIRMED = 'ffffffff-0000-0000-0056-000000000410';
 const CANCEL_QR_TRIGGER_INVALID_REASON = 'ffffffff-0000-0000-0056-000000000400';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// US-057 · compare quotes triggers (via :id event path param and categoryCode).
+// ─────────────────────────────────────────────────────────────────────────────
+const COMPARE_TRIGGER_UNAUTH = 'ffffffff-0000-0000-0057-000000000401';
+const COMPARE_TRIGGER_FORBIDDEN = 'ffffffff-0000-0000-0057-000000000403';
+const COMPARE_TRIGGER_EVENT_NOT_FOUND = 'ffffffff-0000-0000-0057-000000000404';
+const COMPARE_TRIGGER_EMPTY = 'ffffffff-0000-0000-0057-000000000010';
+const COMPARE_TRIGGER_SINGLE = 'ffffffff-0000-0000-0057-000000000011';
+const COMPARE_CATEGORY_INVALID = 'category-invalid-trigger';
+
 export const quotesHandlers = [
   http.get('*/api/v1/quote-requests/active-count', ({ request }) => {
     const url = new URL(request.url);
@@ -314,6 +324,130 @@ export const quotesHandlers = [
       { status: 200 },
     );
   }),
+
+  // US-057 · GET /api/v1/events/:id/quotes/compare?categoryCode=<slug> (organizer).
+  // Triggers viven en el `:id` para 4xx; el `categoryCode` puede forzar 400 INVALID_CATEGORY.
+  // Payload happy: 3 quotes ordenados por `is_preferred DESC, activos primero, total_price ASC`.
+  http.get('*/api/v1/events/:id/quotes/compare', ({ request, params }) => {
+    const url = new URL(request.url);
+    const eventId = String(params.id ?? '');
+    const categoryCode = url.searchParams.get('categoryCode') ?? '';
+
+    if (categoryCode === '') {
+      return HttpResponse.json(
+        errorEnvelope('INVALID_FILTERS', 'categoryCode is required', [
+          { field: 'categoryCode', message: 'required' },
+        ]),
+        { status: 400 },
+      );
+    }
+    if (categoryCode === COMPARE_CATEGORY_INVALID) {
+      return HttpResponse.json(
+        errorEnvelope('INVALID_CATEGORY', 'Service category is not available', [
+          { field: 'categoryCode', message: categoryCode },
+        ]),
+        { status: 400 },
+      );
+    }
+    if (eventId === COMPARE_TRIGGER_UNAUTH) {
+      return HttpResponse.json(errorEnvelope('AUTHENTICATION_REQUIRED', 'Authentication required'), {
+        status: 401,
+      });
+    }
+    if (eventId === COMPARE_TRIGGER_FORBIDDEN) {
+      return HttpResponse.json(errorEnvelope('FORBIDDEN', 'Only organizers can compare quotes'), {
+        status: 403,
+      });
+    }
+    if (eventId === COMPARE_TRIGGER_EVENT_NOT_FOUND) {
+      return HttpResponse.json(errorEnvelope('EVENT_NOT_FOUND', 'Event not found'), { status: 404 });
+    }
+
+    const emptyPayload = {
+      category: { code: categoryCode, name: 'Catering' },
+      currency_code: 'GTQ',
+      items: [] as unknown[],
+    };
+    if (eventId === COMPARE_TRIGGER_EMPTY) {
+      return HttpResponse.json(envelope(emptyPayload), { status: 200 });
+    }
+
+    const singleItem = {
+      quote_id: 'q1111111-1111-1111-1111-111111111111',
+      vendor: {
+        profile_id: 'v1111111-1111-1111-1111-111111111111',
+        business_name: 'Catering Aurora',
+        slug: 'catering-aurora',
+        rating_avg: 4.6,
+        reviews_count: 24,
+      },
+      status: 'sent' as const,
+      total_price: '5000.00',
+      breakdown: [{ label: 'Menú por persona', amount: '5000.00' }],
+      valid_until: '2026-08-01T00:00:00.000Z',
+      conditions: 'Requiere 50% de anticipo.',
+      is_preferred: false,
+      created_at: '2026-07-01T12:00:00.000Z',
+    };
+    if (eventId === COMPARE_TRIGGER_SINGLE) {
+      return HttpResponse.json(
+        envelope({
+          category: { code: categoryCode, name: 'Catering' },
+          currency_code: 'GTQ',
+          items: [singleItem],
+        }),
+        { status: 200 },
+      );
+    }
+
+    // Happy path (≥2 quotes). Orden: preferred primero, luego activos ASC, luego expired/rejected.
+    const items = [
+      {
+        quote_id: 'q2222222-2222-2222-2222-222222222222',
+        vendor: {
+          profile_id: 'v2222222-2222-2222-2222-222222222222',
+          business_name: 'Catering Bellavista',
+          slug: 'catering-bellavista',
+          rating_avg: 4.8,
+          reviews_count: 42,
+        },
+        status: 'sent' as const,
+        total_price: '4500.00',
+        breakdown: [{ label: 'Menú por persona', amount: '4500.00' }],
+        valid_until: '2026-08-05T00:00:00.000Z',
+        conditions: null,
+        is_preferred: true,
+        created_at: '2026-07-02T09:00:00.000Z',
+      },
+      singleItem,
+      {
+        quote_id: 'q3333333-3333-3333-3333-333333333333',
+        vendor: {
+          profile_id: 'v3333333-3333-3333-3333-333333333333',
+          business_name: 'Catering Cielo',
+          slug: 'catering-cielo',
+          rating_avg: null,
+          reviews_count: 0,
+        },
+        status: 'expired' as const,
+        total_price: '3500.00',
+        breakdown: null,
+        valid_until: '2026-07-10T00:00:00.000Z',
+        conditions: null,
+        is_preferred: false,
+        created_at: '2026-06-25T15:00:00.000Z',
+      },
+    ];
+
+    return HttpResponse.json(
+      envelope({
+        category: { code: categoryCode, name: 'Catering' },
+        currency_code: 'GTQ',
+        items,
+      }),
+      { status: 200 },
+    );
+  }),
 ];
 
 // Exports para tests que quieran forzar escenarios sin duplicar UUIDs.
@@ -347,6 +481,16 @@ export const cancelQrMswTriggers = {
   NOT_CANCELLABLE: CANCEL_QR_TRIGGER_NOT_CANCELLABLE,
   HAS_CONFIRMED_BOOKING: CANCEL_QR_TRIGGER_HAS_CONFIRMED,
   INVALID_REASON: CANCEL_QR_TRIGGER_INVALID_REASON,
+} as const;
+
+// US-057 (FE-003) — triggers para el `QuoteComparator` y los tests de queries.
+export const compareQuotesMswTriggers = {
+  UNAUTH: COMPARE_TRIGGER_UNAUTH,
+  FORBIDDEN: COMPARE_TRIGGER_FORBIDDEN,
+  EVENT_NOT_FOUND: COMPARE_TRIGGER_EVENT_NOT_FOUND,
+  EMPTY: COMPARE_TRIGGER_EMPTY,
+  SINGLE: COMPARE_TRIGGER_SINGLE,
+  CATEGORY_INVALID: COMPARE_CATEGORY_INVALID,
 } as const;
 
 export const quotesActiveCountMswTriggers = {

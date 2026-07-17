@@ -23,5 +23,63 @@
         "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
       }
     }
+  },
+  "quote": {
+    "compare": {
+      "page": {
+        "title": "Comparar cotizaciones",
+        "subtitle": "Revisa las cotizaciones recibidas para esta categoría y decide cuál marcar como preferida."
+      },
+      "loading": "Cargando comparador…",
+      "preferredBadge": "Cotización preferida",
+      "status": {
+        "sent": "Enviada",
+        "accepted": "Aceptada",
+        "expired": "Vencida",
+        "rejected": "Rechazada"
+      },
+      "empty": {
+        "title": "Aún no has recibido cotizaciones en esta categoría",
+        "description": "Cuando los proveedores respondan tus solicitudes, verás las cotizaciones aquí para compararlas.",
+        "backCta": "Volver al evento"
+      },
+      "single": {
+        "title": "Cotización recibida ({category})"
+      },
+      "multi": {
+        "title": "{count} cotizaciones en {category}"
+      },
+      "table": {
+        "caption": "Cotizaciones recibidas en la categoría {category}",
+        "viewProfile": "Ver perfil",
+        "ratingAria": "Calificación promedio {rating} sobre 5, con {reviews} reseñas",
+        "noRating": "Sin reseñas aún",
+        "noBreakdown": "Sin desglose",
+        "noValidUntil": "Sin fecha límite",
+        "noConditions": "Sin condiciones adicionales",
+        "preferCta": "Marcar preferred",
+        "preferAria": "Marcar la cotización de {vendor} como preferred",
+        "notSelectable": "No seleccionable",
+        "notSelectableAria": "Cotización con estado {status}, no seleccionable",
+        "aiSummaryCta": "Resumir con IA",
+        "rowLabels": {
+          "vendor": "Proveedor",
+          "rating": "Calificación",
+          "totalPrice": "Precio total",
+          "breakdown": "Desglose",
+          "validUntil": "Válida hasta",
+          "conditions": "Condiciones",
+          "actions": "Acciones"
+        }
+      },
+      "errors": {
+        "INVALID_FILTERS": "Selecciona una categoría para comparar cotizaciones.",
+        "INVALID_CATEGORY": "La categoría seleccionada no está disponible.",
+        "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para ver el comparador.",
+        "FORBIDDEN": "Tu rol no puede comparar cotizaciones.",
+        "EVENT_NOT_FOUND": "No encontramos ese evento o no tienes permiso para verlo.",
+        "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
+      }
+    }
   }
 }

@@ -56,6 +56,12 @@ import {
   QrHasConfirmedBookingError,
   InvalidCancellationReasonError,
 } from '../../../modules/quote-flow/domain/us056.errors.js';
+// US-057 (PB-P1-035): endpoint `GET /api/v1/events/:id/quotes/compare`. `CompareQuotesCategoryRequiredError`
+// mapea a `400 INVALID_FILTERS`; `CompareQuotesInvalidCategoryError` a `400 INVALID_CATEGORY`.
+import {
+  CompareQuotesCategoryRequiredError,
+  CompareQuotesInvalidCategoryError,
+} from '../../../modules/quote-flow/domain/us057.errors.js';
 import {
   MissingInputError,
   AiInvalidBudgetError,
@@ -333,6 +339,23 @@ function mapError(err: unknown): MappedError {
       code: ErrorCodes.INVALID_CANCELLATION_REASON,
       message: err.message,
       details: [{ field: 'reason', message: 'too_long' }],
+    };
+  }
+  // US-057 (PB-P1-035): endpoint comparador de Quotes.
+  if (err instanceof CompareQuotesCategoryRequiredError) {
+    return {
+      status: 400,
+      code: ErrorCodes.INVALID_FILTERS,
+      message: err.message,
+      details: [{ field: 'categoryCode', message: 'required' }],
+    };
+  }
+  if (err instanceof CompareQuotesInvalidCategoryError) {
+    return {
+      status: 400,
+      code: ErrorCodes.INVALID_CATEGORY,
+      message: err.message,
+      details: [{ field: 'categoryCode', message: err.categoryCode }],
     };
   }
   if (err instanceof MissingInputError) {

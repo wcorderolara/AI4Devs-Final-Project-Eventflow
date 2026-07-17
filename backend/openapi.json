@@ -4378,6 +4378,214 @@
         ]
       }
     },
+    "/api/v1/events/{id}/quotes/compare": {
+      "get": {
+        "operationId": "compareQuotes",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "categoryCode",
+            "required": false,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "category": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "code": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "code",
+                            "name"
+                          ],
+                          "type": "object"
+                        },
+                        "currency_code": {
+                          "enum": [
+                            "GTQ",
+                            "EUR",
+                            "MXN",
+                            "COP",
+                            "USD"
+                          ],
+                          "type": "string"
+                        },
+                        "items": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "breakdown": {
+                                "items": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "amount": {
+                                      "type": "string"
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "label",
+                                    "amount"
+                                  ],
+                                  "type": "object"
+                                },
+                                "nullable": true,
+                                "type": "array"
+                              },
+                              "conditions": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "created_at": {
+                                "type": "string"
+                              },
+                              "is_preferred": {
+                                "type": "boolean"
+                              },
+                              "quote_id": {
+                                "format": "uuid",
+                                "type": "string"
+                              },
+                              "status": {
+                                "enum": [
+                                  "sent",
+                                  "accepted",
+                                  "rejected",
+                                  "expired"
+                                ],
+                                "type": "string"
+                              },
+                              "total_price": {
+                                "type": "string"
+                              },
+                              "valid_until": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "vendor": {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "business_name": {
+                                    "type": "string"
+                                  },
+                                  "profile_id": {
+                                    "format": "uuid",
+                                    "type": "string"
+                                  },
+                                  "rating_avg": {
+                                    "nullable": true,
+                                    "type": "number"
+                                  },
+                                  "reviews_count": {
+                                    "minimum": 0,
+                                    "type": "integer"
+                                  },
+                                  "slug": {
+                                    "nullable": true,
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "profile_id",
+                                  "business_name",
+                                  "slug",
+                                  "rating_avg",
+                                  "reviews_count"
+                                ],
+                                "type": "object"
+                              }
+                            },
+                            "required": [
+                              "quote_id",
+                              "vendor",
+                              "status",
+                              "total_price",
+                              "breakdown",
+                              "valid_until",
+                              "conditions",
+                              "is_preferred",
+                              "created_at"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "required": [
+                        "category",
+                        "currency_code",
+                        "items"
+                      ],
+                      "type": "object"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Comparar Quotes por categoría (organizer)",
+        "tags": [
+          "QuoteRequests"
+        ]
+      }
+    },
     "/api/v1/quote-requests/{quoteRequestId}": {
       "get": {
         "operationId": "getQuoteRequest",

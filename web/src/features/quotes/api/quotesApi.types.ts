@@ -184,6 +184,108 @@ export function toCancelQrView(dto: CancelQrDTO): CancelQrView {
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// US-057 · compare quotes side-by-side (organizer)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type ComparableQuoteStatus = 'sent' | 'accepted' | 'rejected' | 'expired';
+
+export interface CompareQuotesInput {
+  eventId: string;
+  categoryCode: string;
+}
+
+export interface CompareQuoteVendorDTO {
+  profile_id: string;
+  business_name: string;
+  slug: string | null;
+  rating_avg: number | null;
+  reviews_count: number;
+}
+
+export interface CompareQuoteBreakdownItemDTO {
+  label: string;
+  amount: string;
+}
+
+export interface CompareQuoteItemDTO {
+  quote_id: string;
+  vendor: CompareQuoteVendorDTO;
+  status: ComparableQuoteStatus;
+  total_price: string;
+  breakdown: CompareQuoteBreakdownItemDTO[] | null;
+  valid_until: string | null;
+  conditions: string | null;
+  is_preferred: boolean;
+  created_at: string;
+}
+
+export interface CompareQuotesDTO {
+  category: { code: string; name: string };
+  currency_code: string;
+  items: CompareQuoteItemDTO[];
+}
+
+export interface CompareQuotesEnvelope {
+  data: CompareQuotesDTO;
+  correlationId: string;
+}
+
+export interface CompareQuoteVendorView {
+  profileId: string;
+  businessName: string;
+  slug: string | null;
+  ratingAvg: number | null;
+  reviewsCount: number;
+}
+
+export interface CompareQuoteBreakdownItemView {
+  label: string;
+  amount: string;
+}
+
+export interface CompareQuoteItemView {
+  quoteId: string;
+  vendor: CompareQuoteVendorView;
+  status: ComparableQuoteStatus;
+  totalPrice: string;
+  breakdown: CompareQuoteBreakdownItemView[] | null;
+  validUntil: string | null;
+  conditions: string | null;
+  isPreferred: boolean;
+  createdAt: string;
+}
+
+export interface CompareQuotesView {
+  category: { code: string; name: string };
+  currencyCode: string;
+  items: CompareQuoteItemView[];
+}
+
+export function toCompareQuotesView(dto: CompareQuotesDTO): CompareQuotesView {
+  return {
+    category: { code: dto.category.code, name: dto.category.name },
+    currencyCode: dto.currency_code,
+    items: dto.items.map((it) => ({
+      quoteId: it.quote_id,
+      vendor: {
+        profileId: it.vendor.profile_id,
+        businessName: it.vendor.business_name,
+        slug: it.vendor.slug,
+        ratingAvg: it.vendor.rating_avg,
+        reviewsCount: it.vendor.reviews_count,
+      },
+      status: it.status,
+      totalPrice: it.total_price,
+      breakdown: it.breakdown,
+      validUntil: it.valid_until,
+      conditions: it.conditions,
+      isPreferred: it.is_preferred,
+      createdAt: it.created_at,
+    })),
+  };
+}
+
 export function toCreateQuoteRequestView(dto: CreateQuoteRequestDTO): CreateQuoteRequestView {
   return {
     id: dto.id,

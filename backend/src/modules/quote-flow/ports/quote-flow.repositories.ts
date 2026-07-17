@@ -44,4 +44,32 @@ export interface QuoteRepository {
   accept(id: string, now: Date): Promise<QuoteView>;
   reject(id: string, now: Date): Promise<QuoteView>;
   setPreferred(id: string): Promise<QuoteView>;
+  /**
+   * US-057 (PB-P1-035 / BE-002): Quotes comparables para `(event_id, service_category_id)` con
+   * datos del vendor whitelisted (business_name, slug, rating_avg, reviews_count). Excluye `draft`
+   * (no entregadas). Orden estable requerido por AC-01:
+   *   `is_preferred DESC, activos primero (sent, accepted), total_price ASC`.
+   */
+  findComparableByEventAndCategory(input: {
+    eventId: string;
+    serviceCategoryId: string;
+  }): Promise<ComparableQuoteRow[]>;
+}
+
+export interface ComparableQuoteRow {
+  quoteId: string;
+  vendor: {
+    profileId: string;
+    businessName: string;
+    slug: string | null;
+    ratingAvg: number | null;
+    reviewsCount: number;
+  };
+  status: 'sent' | 'accepted' | 'rejected' | 'expired';
+  totalPrice: string;
+  breakdown: Array<{ label: string; amount: string }> | null;
+  validUntil: string | null;
+  conditions: string | null;
+  isPreferred: boolean;
+  createdAt: string;
 }
