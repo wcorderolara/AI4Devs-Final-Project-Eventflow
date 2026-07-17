@@ -157,7 +157,9 @@ export const createBookingIntentMswTriggers = {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // US-061 · POST /api/v1/booking-intents/:id/confirm (vendor).
-// Triggers viven en el `:bookingIntentId` del path. Body vacío (sin disclaimer server-side).
+// US-063 (FE-003 / D1): el body ahora exige `{ disclaimer_accepted: true }` — bypass ⇒ 400
+// `DISCLAIMER_REQUIRED` (paridad con US-060). Los triggers de path se mantienen para los otros
+// códigos de error.
 // ─────────────────────────────────────────────────────────────────────────────
 const CONFIRM_TRIGGER_UNAUTH = 'ffffffff-0000-0000-0061-000000000401';
 const CONFIRM_TRIGGER_FORBIDDEN = 'ffffffff-0000-0000-0061-000000000403';
@@ -169,8 +171,24 @@ const CONFIRM_TRIGGER_RATE_LIMIT = 'ffffffff-0000-0000-0061-000000000429';
 const CONFIRM_TRIGGER_IDEMPOTENT = 'ffffffff-0000-0000-0061-000000000200';
 
 bookingIntentsHandlers.push(
-  http.post('*/api/v1/booking-intents/:bookingIntentId/confirm', ({ params }) => {
+  http.post('*/api/v1/booking-intents/:bookingIntentId/confirm', async ({ params, request }) => {
     const id = String(params.bookingIntentId ?? '');
+    // US-063 (FE-003 / EC-02): bypass del disclaimer server-side ⇒ 400 DISCLAIMER_REQUIRED.
+    // Body ausente o `disclaimer_accepted !== true` dispara el mismo código que emite el backend.
+    let body: { disclaimer_accepted?: unknown } = {};
+    try {
+      body = (await request.json()) as { disclaimer_accepted?: unknown };
+    } catch {
+      body = {};
+    }
+    if (body.disclaimer_accepted !== true) {
+      return HttpResponse.json(
+        errorEnvelope('DISCLAIMER_REQUIRED', 'Disclaimer acceptance required', [
+          { field: 'disclaimer_accepted', message: 'must be true' },
+        ]),
+        { status: 400 },
+      );
+    }
     if (id === CONFIRM_TRIGGER_UNAUTH) {
       return HttpResponse.json(errorEnvelope('AUTHENTICATION_REQUIRED', 'Authentication required'), {
         status: 401,

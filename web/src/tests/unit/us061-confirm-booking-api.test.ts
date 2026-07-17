@@ -9,7 +9,7 @@ const HAPPY_INTENT_ID = '99999999-9999-9999-9999-000000000061';
 
 describe('US-061 · vendorBookingsApi.confirm (MSW)', () => {
   it('AC-01 200 happy: devuelve view con status=confirmed_intent + confirmedAt', async () => {
-    const view = await vendorBookingsApi.confirm({ bookingIntentId: HAPPY_INTENT_ID });
+    const view = await vendorBookingsApi.confirm({ bookingIntentId: HAPPY_INTENT_ID, disclaimerAccepted: true });
     expect(view.status).toBe('confirmed_intent');
     expect(view.bookingIntentId).toBe(HAPPY_INTENT_ID);
     expect(typeof view.confirmedAt).toBe('string');
@@ -17,7 +17,7 @@ describe('US-061 · vendorBookingsApi.confirm (MSW)', () => {
 
   it('AC-03 200 idempotente: intent ya confirmed_intent devuelve mismo shape (confirmedAt preexistente)', async () => {
     const view = await vendorBookingsApi.confirm({
-      bookingIntentId: confirmBookingIntentMswTriggers.IDEMPOTENT,
+      bookingIntentId: confirmBookingIntentMswTriggers.IDEMPOTENT, disclaimerAccepted: true,
     });
     expect(view.status).toBe('confirmed_intent');
     expect(view.confirmedAt).toBe('2026-07-16T00:00:00Z');
@@ -25,7 +25,7 @@ describe('US-061 · vendorBookingsApi.confirm (MSW)', () => {
 
   it('AUTH-TS-05 401 AUTHENTICATION_REQUIRED', async () => {
     try {
-      await vendorBookingsApi.confirm({ bookingIntentId: confirmBookingIntentMswTriggers.UNAUTH });
+      await vendorBookingsApi.confirm({ bookingIntentId: confirmBookingIntentMswTriggers.UNAUTH, disclaimerAccepted: true});
       throw new Error('should have thrown');
     } catch (err) {
       const e = err as ApiError;
@@ -36,7 +36,7 @@ describe('US-061 · vendorBookingsApi.confirm (MSW)', () => {
 
   it('AUTH-TS-03/04 403 FORBIDDEN', async () => {
     try {
-      await vendorBookingsApi.confirm({ bookingIntentId: confirmBookingIntentMswTriggers.FORBIDDEN });
+      await vendorBookingsApi.confirm({ bookingIntentId: confirmBookingIntentMswTriggers.FORBIDDEN, disclaimerAccepted: true});
       throw new Error('should have thrown');
     } catch (err) {
       const e = err as ApiError;
@@ -47,7 +47,7 @@ describe('US-061 · vendorBookingsApi.confirm (MSW)', () => {
 
   it('EC-02/EC-03 404 BOOKING_INTENT_NOT_FOUND (uniforme)', async () => {
     try {
-      await vendorBookingsApi.confirm({ bookingIntentId: confirmBookingIntentMswTriggers.NOT_FOUND });
+      await vendorBookingsApi.confirm({ bookingIntentId: confirmBookingIntentMswTriggers.NOT_FOUND, disclaimerAccepted: true});
       throw new Error('should have thrown');
     } catch (err) {
       const e = err as ApiError;
@@ -58,7 +58,7 @@ describe('US-061 · vendorBookingsApi.confirm (MSW)', () => {
 
   it('EC-01 409 BOOKING_INTENT_NOT_CONFIRMABLE', async () => {
     try {
-      await vendorBookingsApi.confirm({ bookingIntentId: confirmBookingIntentMswTriggers.NOT_CONFIRMABLE });
+      await vendorBookingsApi.confirm({ bookingIntentId: confirmBookingIntentMswTriggers.NOT_CONFIRMABLE, disclaimerAccepted: true});
       throw new Error('should have thrown');
     } catch (err) {
       const e = err as ApiError;
@@ -69,7 +69,7 @@ describe('US-061 · vendorBookingsApi.confirm (MSW)', () => {
 
   it('429 RATE_LIMIT_EXCEEDED', async () => {
     try {
-      await vendorBookingsApi.confirm({ bookingIntentId: confirmBookingIntentMswTriggers.RATE_LIMIT });
+      await vendorBookingsApi.confirm({ bookingIntentId: confirmBookingIntentMswTriggers.RATE_LIMIT, disclaimerAccepted: true});
       throw new Error('should have thrown');
     } catch (err) {
       const e = err as ApiError;

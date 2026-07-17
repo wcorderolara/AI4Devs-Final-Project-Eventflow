@@ -423,6 +423,7 @@
       },
       "success": "Booking confirmado. Avisamos al organizador.",
       "errors": {
+        "DISCLAIMER_REQUIRED": "Debes aceptar el aviso para confirmar.",
         "VALIDATION_ERROR": "Hubo un problema con la solicitud. Intenta nuevamente.",
         "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para confirmar el booking.",
         "FORBIDDEN": "Solo el proveedor asignado puede confirmar este booking.",

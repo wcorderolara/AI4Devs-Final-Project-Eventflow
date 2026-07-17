@@ -52,6 +52,15 @@ export interface DomainEventLogger {
       budgetItemId?: string;
       previousCommitted?: string;
       attemptedSubtraction?: string;
+      // US-063 (BE-002/BE-004): `disclaimer.accepted` con `userId` (semánticamente igual a
+      // `actorId`, se preserva por compatibilidad con auditores externos que buscan el campo
+      // literal del contrato §Observability), `action` = 'create' | 'confirm',
+      // `agreementCopyVersion` = versión del copy legal aceptado (BOOKING_DISCLAIMER_COPY_VERSION),
+      // y `acceptedAt` en ISO 8601 UTC. Persiste el audit trail legal exigido por FR-BOOKING-006.
+      userId?: string;
+      action?: string;
+      agreementCopyVersion?: string;
+      acceptedAt?: string;
     },
   ): void;
 }

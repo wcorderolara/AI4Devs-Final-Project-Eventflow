@@ -29,6 +29,7 @@ import {
   CreateBookingIntentRequestSchema,
   CancelBookingIntentRequestSchema,
   BookingIntentIdParamSchema,
+  ConfirmBookingIntentBodySchema,
 } from '../dto/index.js';
 import {
   GetBookingIntentUseCase,
@@ -106,7 +107,12 @@ bookingIntentRouter.post(
   '/:bookingIntentId/confirm',
   sessionAuth,
   vendor,
-  validateRequestMiddleware(z.object({ params: BookingIntentIdParamSchema })),
+  // US-063 (BE-005 / D1): el body ahora es obligatorio con `{ disclaimer_accepted: true }` para
+  // paridad de enforcement server-side con US-060 (create). Bypass en el body ⇒
+  // `400 VALIDATION_ERROR` (Zod) o `400 DISCLAIMER_REQUIRED` (use case) según el fallo real.
+  validateRequestMiddleware(
+    z.object({ params: BookingIntentIdParamSchema, body: ConfirmBookingIntentBodySchema }),
+  ),
   asyncHandler(controller.confirm),
 );
 bookingIntentRouter.post(

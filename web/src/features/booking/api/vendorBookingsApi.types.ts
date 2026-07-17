@@ -5,6 +5,21 @@
 
 export interface ConfirmBookingIntentInput {
   bookingIntentId: string;
+  /**
+   * US-063 (FE-003 / D1): enforcement server-side bilateral del disclaimer. El dialog padre
+   * siempre pasa `true` porque el checkbox del `BookingDisclaimer` ya bloqueó la CTA cuando
+   * `false`. Se preserva como campo del input para que el mock de tests pueda inyectar
+   * `false` y verificar el mapeo del código estable `DISCLAIMER_REQUIRED` del backend.
+   */
+  disclaimerAccepted: boolean;
+}
+
+/**
+ * US-063 (FE-003 / D1): body del request — snake_case por contrato del endpoint
+ * `POST /api/v1/booking-intents/:id/confirm`.
+ */
+export interface ConfirmBookingIntentRequestBody {
+  disclaimer_accepted: boolean;
 }
 
 export interface ConfirmBookingIntentDTO {
@@ -51,6 +66,7 @@ export function toConfirmBookingIntentView(dto: ConfirmBookingIntentDTO): Confir
  * Cualquier otro código cae al key genérico `UNEXPECTED`.
  */
 export type ConfirmBookingIntentErrorCode =
+  | 'DISCLAIMER_REQUIRED'
   | 'VALIDATION_ERROR'
   | 'AUTHENTICATION_REQUIRED'
   | 'FORBIDDEN'

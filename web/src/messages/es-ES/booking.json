@@ -1,4 +1,12 @@
 {
+  "disclaimer": {
+    "v1": {
+      "title": "Aviso importante antes de continuar",
+      "body": "El acuerdo final, el pago y cualquier contrato tienen lugar fuera de EventFlow. La plataforma no procesa pagos ni cobra penalizaciones. Al continuar, confirmas que entiendes y aceptas estas condiciones.",
+      "checkbox": "Entiendo y acepto estas condiciones.",
+      "versionBadge": "Versión {version}"
+    }
+  },
   "cancel": {
     "title": "Cancelar intención de reserva",
     "description": "La intención de reserva se marcará como cancelada. Si estaba confirmada, revertimos el compromiso en el presupuesto y avisamos a la contraparte. Esta acción no se puede deshacer.",

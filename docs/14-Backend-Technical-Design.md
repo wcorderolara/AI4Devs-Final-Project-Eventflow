@@ -1192,8 +1192,8 @@ Patrón recomendado:
 | `CreateQuoteRequestUseCase` | `QuoteRequest`, `AIRecommendation?` | Límite atómico de 5 activos | `$transaction(SERIALIZABLE)` o conteo + check + insert dentro de tx | Automático | Para MVP, REPEATABLE READ + recount es suficiente |
 | `RespondToQuoteRequestUseCase` | `QuoteRequest`, `Quote`, `Notification` | Estado coherente + notif | `$transaction` | Automático | Notif se inserta junto |
 | `RejectQuoteUseCase` | `Quote`, `Notification` | Estado + notif | `$transaction` | Automático | |
-| `CreateBookingIntentUseCase` | `Quote`, `BookingIntent`, `Notification` | Estado coherente | `$transaction` | Automático | |
-| `ConfirmBookingIntentUseCase` | `BookingIntent`, `Notification` | Transición + notif | `$transaction` | Automático | |
+| `CreateBookingIntentUseCase` | `Quote`, `BookingIntent`, `Notification` | Estado coherente + audit disclaimer (US-063) | `$transaction` | Automático | Persiste `disclaimer_accepted_at_create` + `disclaimer_copy_version_create='v1'` + emite log `disclaimer.accepted action=create` (FR-BOOKING-006) |
+| `ConfirmBookingIntentUseCase` | `BookingIntent`, `Notification` | Transición + notif + audit disclaimer bilateral (US-063 D1) | `$transaction` | Automático | Body exige `disclaimer_accepted:true`; persiste `disclaimer_accepted_at_confirm` + `disclaimer_copy_version_confirm='v1'` + emite log `disclaimer.accepted action=confirm`. Bypass ⇒ 400 DISCLAIMER_REQUIRED (paridad server-side con create) |
 | `CreateReviewUseCase` | `Review`, `BookingIntent` (lectura), `Notification` | Atomicidad + elegibilidad | `$transaction` | Automático | |
 | `HideReviewUseCase` | `Review`, `AdminAction` | Soft delete + auditoría | `$transaction` | Automático | |
 | `SoftDeleteAttachmentUseCase` | `Attachment` | Atomicidad simple | Single-statement | — | Puede no necesitar `$transaction` explícita |

@@ -59,6 +59,7 @@ import { preferQuoteBodySchema as PreferQuoteBodySchema } from '../modules/quote
 import {
   CreateBookingIntentRequestSchema,
   CancelBookingIntentRequestSchema,
+  ConfirmBookingIntentBodySchema,
   BookingIntentResponseSchema,
   BookingIntentIdParamSchema,
 } from '../modules/booking-intent/dto/index.js';
@@ -300,7 +301,11 @@ op({ method: 'get', path: '/booking-intents/{bookingIntentId}', operationId: 'ge
 // US-061 (PB-P1-036 / BE-003): confirm atómico + sync cross-domain BudgetItem.committed
 // (US-039) + fan-out de 2 notifs al organizer con `event='booking_intent.confirmed'`.
 // Idempotente sobre `status='confirmed_intent'` (AC-03).
-op({ method: 'post', path: '/booking-intents/{bookingIntentId}/confirm', operationId: 'confirmBookingIntent', tags: ['BookingIntents'], summary: 'US-061 · Confirmar BookingIntent (vendor asignado) + UPDATE committed', secured: true, params: BookingIntentIdParamSchema, success: { status: 200, schema: envelope(BookingIntentResponseSchema) }, errors: [400, 401, 403, 404, 409] });
+// US-063 (PB-P1-037 / BE-005 / D1): el body pasa a exigir `{disclaimer_accepted:true}` para paridad
+// de enforcement server-side con US-060 (create). Bypass o `false` ⇒ `400 DISCLAIMER_REQUIRED`.
+// La UPDATE persiste `disclaimer_accepted_at_confirm` + `disclaimer_copy_version_confirm` como
+// audit legal bilateral (Decisiones D2 + D7).
+op({ method: 'post', path: '/booking-intents/{bookingIntentId}/confirm', operationId: 'confirmBookingIntent', tags: ['BookingIntents'], summary: 'US-061/US-063 · Confirmar BookingIntent (vendor asignado) + UPDATE committed + disclaimer audit bilateral', secured: true, params: BookingIntentIdParamSchema, body: ConfirmBookingIntentBodySchema, success: { status: 200, schema: envelope(BookingIntentResponseSchema) }, errors: [400, 401, 403, 404, 409] });
 // US-062 (PB-P1-036 / BE-003+005): cancel bilateral (organizer o vendor) + revert atómico
 // condicional del `BudgetItem.committed` (US-039 revert) + fan-out de 2 notifs a la contraparte
 // con `event='booking_intent.cancelled'`. Body opcional `{reason?:string(0..500)}`.

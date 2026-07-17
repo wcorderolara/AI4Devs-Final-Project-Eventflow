@@ -29,6 +29,8 @@ import {
   BookingIntentNotConfirmableError,
 } from '../domain/us061.errors.js';
 import { BookingIntentNotCancellableError } from '../domain/us062.errors.js';
+import { DisclaimerRequiredError } from '../domain/us060.errors.js';
+import { BOOKING_DISCLAIMER_COPY_VERSION } from '../../../shared/booking/disclaimer.js';
 
 export interface BookingUseCaseContext {
   correlationId?: string;
@@ -102,7 +104,19 @@ export class ConfirmBookingIntentUseCase {
     this.bookingEvents = options.bookingEvents ?? null;
   }
 
-  async execute(userId: string, bookingIntentId: string, ctx: BookingUseCaseContext = {}): Promise<BookingIntentView> {
+  async execute(
+    userId: string,
+    bookingIntentId: string,
+    input: { disclaimerAccepted: boolean },
+    ctx: BookingUseCaseContext = {},
+  ): Promise<BookingIntentView> {
+    // US-063 (BE-004 / D1): enforcement server-side bilateral del disclaimer. Paridad con
+    // `CreateBookingIntentUs060UseCase` — cualquier valor distinto de `true` (incluye `false`,
+    // `undefined` post-DTO en el path legacy sin refactor) ⇒ `400 DISCLAIMER_REQUIRED`. Se valida
+    // ANTES del lookup del intent para no filtrar existencia por diferencia de códigos de error.
+    if (input.disclaimerAccepted !== true) {
+      throw new DisclaimerRequiredError();
+    }
     const bi = await this.bookingIntents.findById(bookingIntentId);
     if (!bi) throw new BookingIntentNotFoundError();
     const vpId = await requireVendorProfileId(this.vendors, userId);
@@ -139,7 +153,12 @@ export class ConfirmBookingIntentUseCase {
             return already ?? bi;
           }
 
-          const v = await this.bookingIntents.confirm(bookingIntentId, this.clock.now(), tx);
+          // US-063 (BE-004): la UPDATE del intent persiste el audit del disclaimer aceptado por
+          // el vendor — `disclaimer_accepted_at_confirm = now` + version del copy (Decisión D2).
+          const confirmNow = this.clock.now();
+          const v = await this.bookingIntents.confirm(bookingIntentId, confirmNow, tx, {
+            copyVersion: BOOKING_DISCLAIMER_COPY_VERSION,
+          });
           await this.budgetSync.applyOnConfirm({ bookingIntentId, tx, correlationId: ctx.correlationId });
 
           // US-061 BE-002: fan-out atómico de 2 notifs al organizer + warn `budget.committed_exceeds_planned`
@@ -161,9 +180,37 @@ export class ConfirmBookingIntentUseCase {
             logger: this.logger,
             correlationId: ctx.correlationId,
           });
+          // US-063 (BE-004 / D5): log audit del disclaimer aceptado por el vendor. Se emite
+          // DENTRO de la tx (junto al fan-out y el warn) para que un rollback upstream borre
+          // también el rastro del log — el logger de dominio es sincronic (no bufferiza).
+          this.logger.emit('disclaimer.accepted', {
+            correlationId: ctx.correlationId,
+            actorId: userId,
+            userId,
+            bookingIntentId,
+            action: 'confirm',
+            agreementCopyVersion: BOOKING_DISCLAIMER_COPY_VERSION,
+            acceptedAt: confirmNow.toISOString(),
+          });
           return v;
         })
-      : await this.bookingIntents.confirm(bookingIntentId, this.clock.now());
+      : await this.bookingIntents.confirm(bookingIntentId, this.clock.now(), undefined, {
+          copyVersion: BOOKING_DISCLAIMER_COPY_VERSION,
+        });
+    // El path legacy (sin transactionRunner) también emite el log del disclaimer para audit —
+    // se ejecuta después del `confirm` para que sólo se registre cuando la UPDATE persistió el
+    // audit correctamente (`disclaimer_accepted_at_confirm` NOT NULL).
+    if (!this.tx) {
+      this.logger.emit('disclaimer.accepted', {
+        correlationId: ctx.correlationId,
+        actorId: userId,
+        userId,
+        bookingIntentId,
+        action: 'confirm',
+        agreementCopyVersion: BOOKING_DISCLAIMER_COPY_VERSION,
+        acceptedAt: this.clock.now().toISOString(),
+      });
+    }
     this.logger.emit('booking_intent.confirmed', { correlationId: ctx.correlationId, actorId: userId, bookingIntentId });
     return view;
   }

@@ -18,12 +18,15 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { NextIntlClientProvider } from 'next-intl';
 import esLatamOrganizer from '@/messages/es-LATAM/organizer.json';
+import esLatamBooking from '@/messages/es-LATAM/booking.json';
 import { CreateBookingDialog } from '@/features/booking/components/CreateBookingDialog';
 import { ApiError } from '@/shared/api-client';
 
 expect.extend(toHaveNoViolations);
 
-const messages = { organizer: esLatamOrganizer };
+// US-063 (FE-004): el shared `BookingDisclaimer` usa el namespace `booking.disclaimer.v1.*`.
+// Debe cargarse junto al `organizer` para que el copy legal se renderice en los tests.
+const messages = { organizer: esLatamOrganizer, booking: esLatamBooking };
 
 function withIntl(children: React.ReactNode): React.ReactElement {
   return (
@@ -58,7 +61,7 @@ describe('US-060 · CreateBookingDialog', () => {
 
   it('AC-01 foco inicial en el checkbox del disclaimer', async () => {
     render(withIntl(<CreateBookingDialog quoteId={QUOTE_ID} onClose={() => {}} />));
-    const cb = screen.getByLabelText('Entiendo que esto es una intención de reserva simulada.');
+    const cb = screen.getByLabelText('Entiendo y acepto estas condiciones.');
     await waitFor(() => expect(document.activeElement).toBe(cb));
   });
 
@@ -71,17 +74,17 @@ describe('US-060 · CreateBookingDialog', () => {
 
   it('AC-02 checkbox disclaimer con label + aria-describedby → hint legal', () => {
     render(withIntl(<CreateBookingDialog quoteId={QUOTE_ID} onClose={() => {}} />));
-    const cb = screen.getByLabelText('Entiendo que esto es una intención de reserva simulada.') as HTMLInputElement;
+    const cb = screen.getByLabelText('Entiendo y acepto estas condiciones.') as HTMLInputElement;
     expect(cb).toHaveAttribute('aria-describedby');
     const hintId = cb.getAttribute('aria-describedby');
-    expect(hintId && document.getElementById(hintId)?.textContent).toMatch(/EventFlow no procesa pagos/);
+    expect(hintId && document.getElementById(hintId)?.textContent).toMatch(/EventFlow/);
   });
 
   it('AC-02 CTA aria-disabled cuando disclaimer no aceptado; se habilita al marcar', () => {
     render(withIntl(<CreateBookingDialog quoteId={QUOTE_ID} onClose={() => {}} />));
     const submit = screen.getByRole('button', { name: 'Crear intención de booking' });
     expect(submit).toHaveAttribute('aria-disabled', 'true');
-    const cb = screen.getByLabelText('Entiendo que esto es una intención de reserva simulada.');
+    const cb = screen.getByLabelText('Entiendo y acepto estas condiciones.');
     fireEvent.click(cb);
     expect(submit).toHaveAttribute('aria-disabled', 'false');
   });
@@ -111,7 +114,7 @@ describe('US-060 · CreateBookingDialog', () => {
         />,
       ),
     );
-    fireEvent.click(screen.getByLabelText('Entiendo que esto es una intención de reserva simulada.'));
+    fireEvent.click(screen.getByLabelText('Entiendo y acepto estas condiciones.'));
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Crear intención de booking' }));
     });
@@ -146,7 +149,7 @@ describe('US-060 · CreateBookingDialog', () => {
       });
     });
     render(withIntl(<CreateBookingDialog quoteId={QUOTE_ID} onClose={() => {}} createFn={createFn} />));
-    fireEvent.click(screen.getByLabelText('Entiendo que esto es una intención de reserva simulada.'));
+    fireEvent.click(screen.getByLabelText('Entiendo y acepto estas condiciones.'));
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Crear intención de booking' }));
     });
@@ -164,7 +167,7 @@ describe('US-060 · CreateBookingDialog', () => {
       });
     });
     render(withIntl(<CreateBookingDialog quoteId={QUOTE_ID} onClose={() => {}} createFn={createFn} />));
-    fireEvent.click(screen.getByLabelText('Entiendo que esto es una intención de reserva simulada.'));
+    fireEvent.click(screen.getByLabelText('Entiendo y acepto estas condiciones.'));
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Crear intención de booking' }));
     });
@@ -178,7 +181,7 @@ describe('US-060 · CreateBookingDialog', () => {
       throw new ApiError({ code: 'QUOTE_EXPIRED', message: 'ignored', status: 409, correlationId: 'c' });
     });
     render(withIntl(<CreateBookingDialog quoteId={QUOTE_ID} onClose={() => {}} createFn={createFn} />));
-    fireEvent.click(screen.getByLabelText('Entiendo que esto es una intención de reserva simulada.'));
+    fireEvent.click(screen.getByLabelText('Entiendo y acepto estas condiciones.'));
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Crear intención de booking' }));
     });
@@ -190,7 +193,7 @@ describe('US-060 · CreateBookingDialog', () => {
       throw new ApiError({ code: 'DISCLAIMER_REQUIRED', message: 'ignored', status: 400, correlationId: 'c' });
     });
     render(withIntl(<CreateBookingDialog quoteId={QUOTE_ID} onClose={() => {}} createFn={createFn} />));
-    fireEvent.click(screen.getByLabelText('Entiendo que esto es una intención de reserva simulada.'));
+    fireEvent.click(screen.getByLabelText('Entiendo y acepto estas condiciones.'));
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Crear intención de booking' }));
     });
@@ -202,7 +205,7 @@ describe('US-060 · CreateBookingDialog', () => {
       throw new Error('boom');
     });
     render(withIntl(<CreateBookingDialog quoteId={QUOTE_ID} onClose={() => {}} createFn={createFn} />));
-    fireEvent.click(screen.getByLabelText('Entiendo que esto es una intención de reserva simulada.'));
+    fireEvent.click(screen.getByLabelText('Entiendo y acepto estas condiciones.'));
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Crear intención de booking' }));
     });
@@ -222,7 +225,7 @@ describe('US-060 · CreateBookingDialog', () => {
     const { container } = render(
       withIntl(<CreateBookingDialog quoteId={QUOTE_ID} onClose={() => {}} createFn={createFn} />),
     );
-    fireEvent.click(screen.getByLabelText('Entiendo que esto es una intención de reserva simulada.'));
+    fireEvent.click(screen.getByLabelText('Entiendo y acepto estas condiciones.'));
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Crear intención de booking' }));
     });

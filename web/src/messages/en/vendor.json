@@ -425,6 +425,7 @@
       "errors": {
         "VALIDATION_ERROR": "There was a problem with your request. Please try again.",
         "AUTHENTICATION_REQUIRED": "You need to sign in to confirm the booking.",
+        "DISCLAIMER_REQUIRED": "You must accept the notice to confirm.",
         "FORBIDDEN": "Only the assigned vendor can confirm this booking.",
         "BOOKING_INTENT_NOT_FOUND": "We could not find this booking or it is no longer available.",
         "BOOKING_INTENT_NOT_CONFIRMABLE": "This booking cannot be confirmed in its current state.",

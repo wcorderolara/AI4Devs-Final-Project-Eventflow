@@ -163,7 +163,7 @@ function build(opts: BuildOpts = {}) {
 describe('US-061 · ConfirmBookingIntentUseCase.execute', () => {
   it('AC-01 happy path: confirm + applyOnConfirm + 1 emit organizer + log', async () => {
     const { uc, emitSpy, logSpy, applySpy } = build();
-    const view = await uc.execute(VENDOR_USER_ID, INTENT_ID, { correlationId: 'cid-1' });
+    const view = await uc.execute(VENDOR_USER_ID, INTENT_ID, { disclaimerAccepted: true }, { correlationId: 'cid-1' });
     expect(view.status).toBe(BookingIntentStatus.confirmed_intent);
     expect(applySpy).toHaveBeenCalledTimes(1);
     expect(applySpy).toHaveBeenCalledWith(
@@ -191,7 +191,7 @@ describe('US-061 · ConfirmBookingIntentUseCase.execute', () => {
 
   it('AC-03 idempotencia: status=confirmed_intent ⇒ early return sin emit, sin applyOnConfirm', async () => {
     const { uc, emitSpy, applySpy, logSpy } = build({ intentStatus: 'confirmed_intent' });
-    const view = await uc.execute(VENDOR_USER_ID, INTENT_ID);
+    const view = await uc.execute(VENDOR_USER_ID, INTENT_ID, { disclaimerAccepted: true });
     expect(view.status).toBe('confirmed_intent');
     expect(applySpy).not.toHaveBeenCalled();
     expect(emitSpy).not.toHaveBeenCalled();
@@ -200,7 +200,7 @@ describe('US-061 · ConfirmBookingIntentUseCase.execute', () => {
 
   it('EC-01 status=cancelled ⇒ BookingIntentNotConfirmableError con currentStatus=cancelled', async () => {
     const { uc, emitSpy, applySpy } = build({ intentStatus: 'cancelled' });
-    const err = await uc.execute(VENDOR_USER_ID, INTENT_ID).catch((e: unknown) => e);
+    const err = await uc.execute(VENDOR_USER_ID, INTENT_ID, { disclaimerAccepted: true }).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(BookingIntentNotConfirmableError);
     expect((err as BookingIntentNotConfirmableError).currentStatus).toBe('cancelled');
     expect(applySpy).not.toHaveBeenCalled();
@@ -209,20 +209,20 @@ describe('US-061 · ConfirmBookingIntentUseCase.execute', () => {
 
   it('EC-02 vendor ajeno ⇒ BookingIntentNotFoundError (uniforme)', async () => {
     const { uc, emitSpy } = build({ callerVendorProfileId: OTHER_VENDOR_PROFILE_ID });
-    await expect(uc.execute(VENDOR_USER_ID, INTENT_ID)).rejects.toBeInstanceOf(BookingIntentNotFoundError);
+    await expect(uc.execute(VENDOR_USER_ID, INTENT_ID, { disclaimerAccepted: true })).rejects.toBeInstanceOf(BookingIntentNotFoundError);
     expect(emitSpy).not.toHaveBeenCalled();
   });
 
   it('EC-03 BookingIntent inexistente ⇒ BookingIntentNotFoundError', async () => {
     const { uc } = build();
-    await expect(uc.execute(VENDOR_USER_ID, '99999999-9999-4999-8999-999999999999')).rejects.toBeInstanceOf(
-      BookingIntentNotFoundError,
-    );
+    await expect(
+      uc.execute(VENDOR_USER_ID, '99999999-9999-4999-8999-999999999999', { disclaimerAccepted: true }),
+    ).rejects.toBeInstanceOf(BookingIntentNotFoundError);
   });
 
   it('BE-004 EC-04: committed_after > totalPlanned ⇒ warn budget.committed_exceeds_planned', async () => {
     const { uc, logSpy } = build({ totalPlanned: 100, committedAfter: 500 });
-    await uc.execute(VENDOR_USER_ID, INTENT_ID);
+    await uc.execute(VENDOR_USER_ID, INTENT_ID, { disclaimerAccepted: true });
     // Verifica que se emitió el warn con los campos correctos.
     const warnCall = logSpy.mock.calls.find(
       (args) => args[0] === 'budget.committed_exceeds_planned',
@@ -239,7 +239,7 @@ describe('US-061 · ConfirmBookingIntentUseCase.execute', () => {
 
   it('BE-004 EC-04: committed_after ≤ totalPlanned ⇒ NO emite warn', async () => {
     const { uc, logSpy } = build({ totalPlanned: 10000, committedAfter: 500 });
-    await uc.execute(VENDOR_USER_ID, INTENT_ID);
+    await uc.execute(VENDOR_USER_ID, INTENT_ID, { disclaimerAccepted: true });
     const warnCall = logSpy.mock.calls.find(
       (args) => args[0] === 'budget.committed_exceeds_planned',
     );
@@ -248,7 +248,7 @@ describe('US-061 · ConfirmBookingIntentUseCase.execute', () => {
 
   it('path legacy US-096 (sin bookingEvents adapter): no emite notifs — preserva compat', async () => {
     const { uc, emitSpy, applySpy } = build({ omitBookingEvents: true });
-    await uc.execute(VENDOR_USER_ID, INTENT_ID);
+    await uc.execute(VENDOR_USER_ID, INTENT_ID, { disclaimerAccepted: true });
     expect(applySpy).toHaveBeenCalledTimes(1);
     expect(emitSpy).not.toHaveBeenCalled();
   });

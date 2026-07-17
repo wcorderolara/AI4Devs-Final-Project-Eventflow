@@ -126,7 +126,11 @@ async function scenarioIntent(confirm: boolean): Promise<{
     .post('/api/v1/booking-intents')
     .send({ quote_id: quoteRes.body.data.id, disclaimer_accepted: true });
   if (confirm) {
-    await vendorAgent.post(`/api/v1/booking-intents/${bi.body.data.id}/confirm`);
+    // US-063 (BE-005 / D1): el confirm ahora exige `{disclaimer_accepted:true}` como paridad
+    // bilateral con el create de US-060.
+    await vendorAgent
+      .post(`/api/v1/booking-intents/${bi.body.data.id}/confirm`)
+      .send({ disclaimer_accepted: true });
   }
   return {
     organizer,

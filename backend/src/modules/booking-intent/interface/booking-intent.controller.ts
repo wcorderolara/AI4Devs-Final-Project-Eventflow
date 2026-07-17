@@ -9,6 +9,7 @@ import type {
   BookingIntentIdParam,
 } from '../dto/index.js';
 import type { CreateBookingIntentUs060Body } from '../dto/create-booking-intent.request.js';
+import type { ConfirmBookingIntentBody } from '../dto/confirm-booking-intent.request.js';
 import type {
   GetBookingIntentUseCase,
   ConfirmBookingIntentUseCase,
@@ -47,7 +48,17 @@ export class BookingIntentsController {
 
   confirm = async (req: Request, res: Response): Promise<void> => {
     const { bookingIntentId } = req.validated?.params as BookingIntentIdParam;
-    const view = await this.uc.confirm.execute(actor(req).id, bookingIntentId, { correlationId: req.correlationId });
+    // US-063 (BE-005): el body ahora exige `{ disclaimer_accepted: true }` (Decisión D1). El DTO
+    // Zod (`ConfirmBookingIntentBodySchema`) rechaza claves extra y no-booleanos con
+    // `400 VALIDATION_ERROR`; el use case aplica el enforcement bilateral
+    // (`disclaimer_accepted !== true ⇒ 400 DISCLAIMER_REQUIRED`).
+    const body = req.validated?.body as ConfirmBookingIntentBody;
+    const view = await this.uc.confirm.execute(
+      actor(req).id,
+      bookingIntentId,
+      { disclaimerAccepted: body.disclaimer_accepted },
+      { correlationId: req.correlationId },
+    );
     res.status(200).json(success(toBookingIntentResponse(view), req.correlationId ?? ''));
   };
 

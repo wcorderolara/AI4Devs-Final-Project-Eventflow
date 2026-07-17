@@ -425,6 +425,7 @@
       "errors": {
         "VALIDATION_ERROR": "Hubo un problema con la solicitud. Inténtalo de nuevo.",
         "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para confirmar la reserva.",
+        "DISCLAIMER_REQUIRED": "Debes aceptar el aviso para confirmar.",
         "FORBIDDEN": "Solo el proveedor asignado puede confirmar esta reserva.",
         "BOOKING_INTENT_NOT_FOUND": "No encontramos esta reserva o ya no está disponible.",
         "BOOKING_INTENT_NOT_CONFIRMABLE": "Esta reserva ya no puede confirmarse en su estado actual.",
