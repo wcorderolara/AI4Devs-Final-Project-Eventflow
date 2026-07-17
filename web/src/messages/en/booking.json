@@ -1,0 +1,26 @@
+{
+  "cancel": {
+    "title": "Cancel booking intent",
+    "description": "The booking intent will be marked as cancelled. If it was confirmed, we revert the commitment in the budget and notify the counterpart. This action cannot be undone.",
+    "reasonLabel": "Cancellation reason (optional)",
+    "reasonPlaceholder": "e.g. Event date change…",
+    "reasonHint": "Maximum 500 characters.",
+    "reasonCounter": "{count}/500",
+    "actions": {
+      "cancel": "Back",
+      "submit": "Confirm cancellation",
+      "submitting": "Cancelling…"
+    },
+    "success": "Cancellation applied. We notified the counterpart.",
+    "errors": {
+      "VALIDATION_ERROR": "There was a problem with your request. Please try again.",
+      "INVALID_CANCELLATION_REASON": "Reason must not exceed 500 characters.",
+      "AUTHENTICATION_REQUIRED": "You need to sign in to cancel.",
+      "FORBIDDEN": "Your role cannot cancel this booking.",
+      "BOOKING_INTENT_NOT_FOUND": "We could not find this booking or it is no longer available.",
+      "BOOKING_INTENT_NOT_CANCELLABLE": "This booking cannot be cancelled in its current state.",
+      "RATE_LIMIT_EXCEEDED": "Too many requests. Wait a moment and try again.",
+      "UNEXPECTED": "An unexpected error occurred. Please try again."
+    }
+  }
+}

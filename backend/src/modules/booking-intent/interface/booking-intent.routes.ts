@@ -71,9 +71,13 @@ const controller = new BookingIntentsController({
     transactionRunner,
     bookingEvents: quoteEvents,
   }),
+  // US-062 (BE-002/003): inyecta el `BookingEventNotifierPort` para emitir 2 notifs a la
+  // contraparte (organizer ⇄ vendor) con `event='booking_intent.cancelled'` dentro de la misma
+  // tx del `revertOnCancel`.
   cancel: new CancelBookingIntentUseCase(bookingIntents, events, vendors, clock, logger, {
     budgetSync: budgetSyncAdapter,
     transactionRunner,
+    bookingEvents: quoteEvents,
   }),
 });
 

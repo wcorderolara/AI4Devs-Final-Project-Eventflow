@@ -45,6 +45,13 @@ export interface DomainEventLogger {
       budgetId?: string;
       totalCommitted?: string;
       totalPlanned?: string;
+      // US-062 (BE-003/BE-006): `budget.committed_underflow_corrected` warn cuando el revert
+      // observaría un `committed_before < synced_amount` (situación imposible con integridad
+      // presupuestaria normal, pero defensa profunda ante estados corruptos). El `MAX(0, ...)`
+      // se aplica sin bloquear. `previousCommitted`/`attemptedSubtraction` como string.
+      budgetItemId?: string;
+      previousCommitted?: string;
+      attemptedSubtraction?: string;
     },
   ): void;
 }

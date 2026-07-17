@@ -44,7 +44,13 @@ export interface BookingIntentRepository {
    */
   confirm(id: string, now: Date, tx?: Prisma.TransactionClient): Promise<BookingIntentView>;
   cancel(
-    input: { id: string; now: Date; cancelledBy: string; reason: string },
+    /**
+     * US-062 (BE-001): `reason` es `string | null` para permitir cancelar sin razón (AC-03).
+     * El adapter Prisma persiste `null` cuando llega `null`, o el string trimmed cuando llega
+     * texto. Legacy US-096 pasaba string requerido — se mantiene compat en el UC US-062 que
+     * normaliza el trim y null-coalescing.
+     */
+    input: { id: string; now: Date; cancelledBy: string; reason: string | null },
     tx?: Prisma.TransactionClient,
   ): Promise<BookingIntentView>;
 

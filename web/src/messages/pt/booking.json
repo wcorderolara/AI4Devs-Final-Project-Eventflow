@@ -1,0 +1,26 @@
+{
+  "cancel": {
+    "title": "Cancelar intenção de reserva",
+    "description": "A intenção de reserva será marcada como cancelada. Se estava confirmada, revertemos o compromisso no orçamento e notificamos a contraparte. Esta ação não pode ser desfeita.",
+    "reasonLabel": "Motivo do cancelamento (opcional)",
+    "reasonPlaceholder": "Ex.: Mudança de data do evento…",
+    "reasonHint": "Máximo 500 caracteres.",
+    "reasonCounter": "{count}/500",
+    "actions": {
+      "cancel": "Voltar",
+      "submit": "Confirmar cancelamento",
+      "submitting": "Cancelando…"
+    },
+    "success": "Cancelamento aplicado. Notificamos a contraparte.",
+    "errors": {
+      "VALIDATION_ERROR": "Houve um problema com a solicitação. Tente novamente.",
+      "INVALID_CANCELLATION_REASON": "O motivo não pode exceder 500 caracteres.",
+      "AUTHENTICATION_REQUIRED": "Você precisa iniciar sessão para cancelar.",
+      "FORBIDDEN": "Sua função não pode cancelar esta reserva.",
+      "BOOKING_INTENT_NOT_FOUND": "Não encontramos esta reserva ou ela não está mais disponível.",
+      "BOOKING_INTENT_NOT_CANCELLABLE": "Esta reserva não pode ser cancelada no estado atual.",
+      "RATE_LIMIT_EXCEEDED": "Muitas solicitações. Aguarde um momento e tente novamente.",
+      "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
+    }
+  }
+}

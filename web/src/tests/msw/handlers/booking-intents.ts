@@ -230,3 +230,93 @@ export const confirmBookingIntentMswTriggers = {
   RATE_LIMIT: CONFIRM_TRIGGER_RATE_LIMIT,
   IDEMPOTENT: CONFIRM_TRIGGER_IDEMPOTENT,
 } as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// US-062 · POST /api/v1/booking-intents/:id/cancel (organizer o vendor bilateral).
+// Triggers viven en el `:bookingIntentId`. Body opcional `{reason?:string}` — AC-03 permite
+// cancelar sin razón. `reason` > 500 chars ⇒ 400 INVALID_CANCELLATION_REASON.
+// ─────────────────────────────────────────────────────────────────────────────
+const CANCEL_TRIGGER_UNAUTH = 'ffffffff-0000-0000-0062-000000000401';
+const CANCEL_TRIGGER_FORBIDDEN = 'ffffffff-0000-0000-0062-000000000403';
+const CANCEL_TRIGGER_NOT_FOUND = 'ffffffff-0000-0000-0062-000000000404';
+const CANCEL_TRIGGER_NOT_CANCELLABLE = 'ffffffff-0000-0000-0062-000000000409';
+const CANCEL_TRIGGER_RATE_LIMIT = 'ffffffff-0000-0000-0062-000000000429';
+
+interface CancelBody {
+  reason?: unknown;
+}
+
+bookingIntentsHandlers.push(
+  http.post('*/api/v1/booking-intents/:bookingIntentId/cancel', async ({ request, params }) => {
+    const id = String(params.bookingIntentId ?? '');
+    const raw = await request.text();
+    const body = raw ? (JSON.parse(raw) as CancelBody) : {};
+
+    if (id === CANCEL_TRIGGER_UNAUTH) {
+      return HttpResponse.json(errorEnvelope('AUTHENTICATION_REQUIRED', 'Authentication required'), {
+        status: 401,
+      });
+    }
+    if (id === CANCEL_TRIGGER_FORBIDDEN) {
+      return HttpResponse.json(errorEnvelope('FORBIDDEN', 'Admin cannot cancel bookings'), {
+        status: 403,
+      });
+    }
+    if (id === CANCEL_TRIGGER_NOT_FOUND) {
+      return HttpResponse.json(errorEnvelope('BOOKING_INTENT_NOT_FOUND', 'Booking intent not found'), {
+        status: 404,
+      });
+    }
+    if (id === CANCEL_TRIGGER_NOT_CANCELLABLE) {
+      return HttpResponse.json(
+        errorEnvelope('BOOKING_INTENT_NOT_CANCELLABLE', 'Booking intent cannot be cancelled in its current state', [
+          { field: 'current_status', message: 'cancelled' },
+        ]),
+        { status: 409 },
+      );
+    }
+    if (id === CANCEL_TRIGGER_RATE_LIMIT) {
+      return HttpResponse.json(errorEnvelope('RATE_LIMIT_EXCEEDED', 'Too many requests'), { status: 429 });
+    }
+    // Defensa: `reason` > 500 chars ⇒ 400 INVALID_CANCELLATION_REASON.
+    if (typeof body.reason === 'string' && body.reason.length > 500) {
+      return HttpResponse.json(
+        errorEnvelope('INVALID_CANCELLATION_REASON', 'Cancellation reason must not exceed 500 characters', [
+          { field: 'reason', message: 'too_long' },
+        ]),
+        { status: 400 },
+      );
+    }
+    // Happy path (200) — devuelve el shape del BookingIntent con `status='cancelled'`.
+    const now = new Date('2026-07-17T19:00:00Z').toISOString();
+    const reason = typeof body.reason === 'string' && body.reason.trim().length > 0
+      ? body.reason.trim()
+      : null;
+    return HttpResponse.json(
+      envelope({
+        id,
+        quoteId: '22222222-2222-4222-8222-222222222222',
+        eventId: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
+        serviceCategoryId: '99999999-9999-9999-9999-999999999999',
+        vendorProfileId: 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
+        status: 'cancelled' as const,
+        isSimulated: true,
+        confirmedAt: null,
+        cancelledAt: now,
+        cancelledBy: '88888888-8888-4888-8888-888888888888',
+        cancellationReason: reason,
+        createdAt: '2026-07-15T00:00:00Z',
+        updatedAt: now,
+      }),
+      { status: 200 },
+    );
+  }),
+);
+
+export const cancelBookingIntentMswTriggers = {
+  UNAUTH: CANCEL_TRIGGER_UNAUTH,
+  FORBIDDEN: CANCEL_TRIGGER_FORBIDDEN,
+  NOT_FOUND: CANCEL_TRIGGER_NOT_FOUND,
+  NOT_CANCELLABLE: CANCEL_TRIGGER_NOT_CANCELLABLE,
+  RATE_LIMIT: CANCEL_TRIGGER_RATE_LIMIT,
+} as const;

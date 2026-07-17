@@ -301,7 +301,10 @@ op({ method: 'get', path: '/booking-intents/{bookingIntentId}', operationId: 'ge
 // (US-039) + fan-out de 2 notifs al organizer con `event='booking_intent.confirmed'`.
 // Idempotente sobre `status='confirmed_intent'` (AC-03).
 op({ method: 'post', path: '/booking-intents/{bookingIntentId}/confirm', operationId: 'confirmBookingIntent', tags: ['BookingIntents'], summary: 'US-061 · Confirmar BookingIntent (vendor asignado) + UPDATE committed', secured: true, params: BookingIntentIdParamSchema, success: { status: 200, schema: envelope(BookingIntentResponseSchema) }, errors: [400, 401, 403, 404, 409] });
-op({ method: 'post', path: '/booking-intents/{bookingIntentId}/cancel', operationId: 'cancelBookingIntent', tags: ['BookingIntents'], summary: 'Cancelar BookingIntent', secured: true, params: BookingIntentIdParamSchema, body: CancelBookingIntentRequestSchema, success: { status: 200, schema: envelope(BookingIntentResponseSchema) }, errors: [401, 403, 404, 422] });
+// US-062 (PB-P1-036 / BE-003+005): cancel bilateral (organizer o vendor) + revert atómico
+// condicional del `BudgetItem.committed` (US-039 revert) + fan-out de 2 notifs a la contraparte
+// con `event='booking_intent.cancelled'`. Body opcional `{reason?:string(0..500)}`.
+op({ method: 'post', path: '/booking-intents/{bookingIntentId}/cancel', operationId: 'cancelBookingIntent', tags: ['BookingIntents'], summary: 'US-062 · Cancelar BookingIntent (bilateral) + revert committed condicional', secured: true, params: BookingIntentIdParamSchema, body: CancelBookingIntentRequestSchema, success: { status: 200, schema: envelope(BookingIntentResponseSchema) }, errors: [400, 401, 403, 404, 409] });
 
 // ── AI ASSISTANCE ────────────────────────────────────────────────────────────────
 const AiGenerationResponse = envelope(

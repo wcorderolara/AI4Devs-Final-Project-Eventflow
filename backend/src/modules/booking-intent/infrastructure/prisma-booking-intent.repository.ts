@@ -61,7 +61,7 @@ export class PrismaBookingIntentRepository implements BookingIntentRepository {
   }
 
   async cancel(
-    input: { id: string; now: Date; cancelledBy: string; reason: string },
+    input: { id: string; now: Date; cancelledBy: string; reason: string | null },
     tx?: Prisma.TransactionClient,
   ): Promise<BookingIntentView> {
     const client = tx ?? this.prisma;

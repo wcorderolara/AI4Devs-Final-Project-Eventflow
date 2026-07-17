@@ -174,6 +174,9 @@ export const ErrorCodes = {
   // `BudgetItem.committed`. Códigos específicos §7 Tech Spec.
   BOOKING_INTENT_NOT_FOUND: 'BOOKING_INTENT_NOT_FOUND', // 404 — BookingIntent inexistente o vendor ajeno (SEC-03 uniforme).
   BOOKING_INTENT_NOT_CONFIRMABLE: 'BOOKING_INTENT_NOT_CONFIRMABLE', // 409 — BookingIntent.status ∉ {pending, confirmed_intent} (EC-01, VR-03); `details.current_status`.
+  // US-062 (PB-P1-036): cancelación bilateral del BookingIntent + revert atómico condicional
+  // del `BudgetItem.committed`. Códigos específicos §7 Tech Spec.
+  BOOKING_INTENT_NOT_CANCELLABLE: 'BOOKING_INTENT_NOT_CANCELLABLE', // 409 — BookingIntent.status ∉ {pending, confirmed_intent} (EC-01, VR-05); `details.current_status`.
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
