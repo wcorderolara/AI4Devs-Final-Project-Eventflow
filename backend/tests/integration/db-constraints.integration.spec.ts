@@ -59,7 +59,8 @@ describe.skipIf(!dbUp)('US-102 integración: constraints físicos', () => {
     // US-058 (PB-P1-035 / DB-002): columnas denormalizadas `event_id`/`service_category_id`
     // ahora son `NOT NULL` en `quotes` y sostienen el UNIQUE parcial de preferred.
     ID.quote = await row(`INSERT INTO quotes (id,quote_request_id,vendor_profile_id,event_id,service_category_id,amount,updated_at) VALUES (gen_random_uuid(),'${ID.qreq}','${ID.vprofile}','${ID.event}','${ID.scat}',100,now()) RETURNING id`);
-    ID.booking = await row(`INSERT INTO booking_intents (id,quote_id,event_id,service_category_id,updated_at) VALUES (gen_random_uuid(),'${ID.quote}','${ID.event}','${ID.scat}',now()) RETURNING id`);
+    // US-060 (PB-P1-036 / DB-002): `created_by` es NOT NULL con FK a users.id.
+    ID.booking = await row(`INSERT INTO booking_intents (id,quote_id,event_id,service_category_id,created_by,updated_at) VALUES (gen_random_uuid(),'${ID.quote}','${ID.event}','${ID.scat}','${ID.user}',now()) RETURNING id`);
     ID.apv = await row(`INSERT INTO ai_prompt_versions (id,prompt_id,prompt_key,version,provider,template_checksum,status,updated_at) VALUES (gen_random_uuid(),gen_random_uuid(),'qa102_k','1','mock','x','active',now()) RETURNING id`);
   });
 
@@ -81,7 +82,7 @@ describe.skipIf(!dbUp)('US-102 integración: constraints físicos', () => {
       { name: 'chk_vendor_services_base_price_nonneg', sql: () => `INSERT INTO vendor_services (id,vendor_profile_id,service_category_id,package_name,description,base_price,updated_at) VALUES (gen_random_uuid(),'${ID.vprofile}','${ID.scat}','x','descripción demo con longitud',-1,now())` },
       { name: 'chk_service_categories_depth_level', sql: () => `INSERT INTO service_categories (id,code,label,depth_level,updated_at) VALUES (gen_random_uuid(),'qa102_sc3','x',3,now())` },
       { name: 'chk_quotes_total_price_nonneg', sql: () => `INSERT INTO quotes (id,quote_request_id,vendor_profile_id,event_id,service_category_id,amount,updated_at) VALUES (gen_random_uuid(),'${ID.qreq}','${ID.vprofile}','${ID.event}','${ID.scat}',-1,now())` },
-      { name: 'chk_booking_intents_is_simulated', sql: () => `INSERT INTO booking_intents (id,quote_id,event_id,service_category_id,is_simulated,updated_at) VALUES (gen_random_uuid(),'${ID.quote}','${ID.event}','${ID.scat}',false,now())` },
+      { name: 'chk_booking_intents_is_simulated', sql: () => `INSERT INTO booking_intents (id,quote_id,event_id,service_category_id,created_by,is_simulated,updated_at) VALUES (gen_random_uuid(),'${ID.quote}','${ID.event}','${ID.scat}','${ID.user}',false,now())` },
       { name: 'chk_reviews_rating_range', sql: () => `INSERT INTO reviews (id,booking_intent_id,vendor_profile_id,author_id,rating,comment,updated_at) VALUES (gen_random_uuid(),'${ID.booking}','${ID.vprofile}','${ID.author}',6,'qa102',now())` },
       { name: 'chk_attachments_size_bytes_nonneg', sql: () => `INSERT INTO attachments (id,owner_type,owner_id,url,size_bytes,updated_at) VALUES (gen_random_uuid(),'vendor_work','${ID.vprofile}','http://x',-1,now())` },
       { name: 'chk_ai_recommendations_timeout_positive', sql: () => `INSERT INTO ai_recommendations (id,event_id,ai_prompt_version_id,requested_by_user_id,kind,input_payload,output_payload,timeout_ms,updated_at) VALUES (gen_random_uuid(),'${ID.event}','${ID.apv}','${ID.user}','qa102','{}','{}',0,now())` },
@@ -160,7 +161,7 @@ describe.skipIf(!dbUp)('US-102 integración: constraints físicos', () => {
     it('uq_booking_intents_event_category_confirmed: 2º confirmed_intent mismo (event,category) → 23505', async () => {
       await prisma.$executeRawUnsafe(`UPDATE booking_intents SET status = 'confirmed_intent' WHERE id = '${ID.booking}'`);
       const dup = await violation(
-        `INSERT INTO booking_intents (id,quote_id,event_id,service_category_id,status,updated_at) VALUES (gen_random_uuid(),'${ID.quote}','${ID.event}','${ID.scat}','confirmed_intent',now())`,
+        `INSERT INTO booking_intents (id,quote_id,event_id,service_category_id,created_by,status,updated_at) VALUES (gen_random_uuid(),'${ID.quote}','${ID.event}','${ID.scat}','${ID.user}','confirmed_intent',now())`,
       );
       expect(dup).toMatch(/23505/);
       expect(dup).toContain('service_category_id');
@@ -177,7 +178,7 @@ describe.skipIf(!dbUp)('US-102 integración: constraints físicos', () => {
       expect(rows.length).toBe(16);
     });
 
-    it('los 5 unique parciales existen con WHERE (incluye US-058 preferred)', async () => {
+    it('los 6 unique parciales existen con WHERE (incluye US-060 active_per_quote)', async () => {
       const rows = await q<{ indexname: string; indexdef: string }>(
         `SELECT indexname, indexdef FROM pg_indexes WHERE indexname LIKE 'uq_%' AND indexdef ILIKE '%where%'`,
       );
@@ -190,6 +191,9 @@ describe.skipIf(!dbUp)('US-102 integración: constraints físicos', () => {
           'uq_quotes_request_active',
           // US-058 (PB-P1-035 / DB-002): UNIQUE parcial nativo del toggle preferred.
           'uq_quotes_preferred_per_event_category',
+          // US-060 (PB-P1-036 / DB-002): UNIQUE parcial `(quote_id) WHERE status IN
+          // ('pending','confirmed_intent')` — a lo sumo un BookingIntent activo por Quote.
+          'uq_booking_intents_active_per_quote',
         ].sort(),
       );
     });
