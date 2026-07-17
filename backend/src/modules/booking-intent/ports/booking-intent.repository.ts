@@ -41,8 +41,19 @@ export interface BookingIntentRepository {
   /**
    * Cambia el estado a `confirmed_intent`. Si se provee `tx`, la escritura participa en esa
    * transacción (US-039: sync de committed en la misma tx del invocador).
+   *
+   * US-063 (PB-P1-037 / BE-004): `disclaimer` opcional. Cuando se provee, persiste
+   * `disclaimer_accepted_at_confirm` + `disclaimer_copy_version_confirm` en la misma UPDATE
+   * (audit bilateral — Decisión D2 + D7). Sin el argumento (path legacy US-096) el UPDATE no
+   * toca esas columnas y su valor se preserva NULL — usado por tests unitarios que no ejercen
+   * el flujo bilateral completo.
    */
-  confirm(id: string, now: Date, tx?: Prisma.TransactionClient): Promise<BookingIntentView>;
+  confirm(
+    id: string,
+    now: Date,
+    tx?: Prisma.TransactionClient,
+    disclaimer?: { copyVersion: string },
+  ): Promise<BookingIntentView>;
   cancel(
     /**
      * US-062 (BE-001): `reason` es `string | null` para permitir cancelar sin razón (AC-03).

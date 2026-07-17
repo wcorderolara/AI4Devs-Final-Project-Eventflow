@@ -51,11 +51,29 @@ export class PrismaBookingIntentRepository implements BookingIntentRepository {
     return b ? toView(b) : null;
   }
 
-  async confirm(id: string, now: Date, tx?: Prisma.TransactionClient): Promise<BookingIntentView> {
+  async confirm(
+    id: string,
+    now: Date,
+    tx?: Prisma.TransactionClient,
+    disclaimer?: { copyVersion: string },
+  ): Promise<BookingIntentView> {
     const client = tx ?? this.prisma;
+    // US-063 (BE-004): audit bilateral del disclaimer aceptado por el vendor. El use case pasa
+    // `disclaimer.copyVersion = BOOKING_DISCLAIMER_COPY_VERSION` cuando el body incluye
+    // `disclaimer_accepted:true`. El path legacy (sin argumento) preserva `NULL` en las columnas
+    // — usado por tests unitarios que no ejercen el enforcement bilateral.
     const b = await client.bookingIntent.update({
       where: { id },
-      data: { status: 'confirmed_intent', confirmedAt: now },
+      data: {
+        status: 'confirmed_intent',
+        confirmedAt: now,
+        ...(disclaimer
+          ? {
+              disclaimerAcceptedAtConfirm: now,
+              disclaimerCopyVersionConfirm: disclaimer.copyVersion,
+            }
+          : {}),
+      },
     });
     return toView(b);
   }

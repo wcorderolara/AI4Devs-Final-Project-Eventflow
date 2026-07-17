@@ -1800,6 +1800,24 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "disclaimer_accepted": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "disclaimer_accepted"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {
@@ -1920,7 +1938,7 @@
             "cookieAuth": []
           }
         ],
-        "summary": "US-061 · Confirmar BookingIntent (vendor asignado) + UPDATE committed",
+        "summary": "US-061/US-063 · Confirmar BookingIntent (vendor asignado) + UPDATE committed + disclaimer audit bilateral",
         "tags": [
           "BookingIntents"
         ]

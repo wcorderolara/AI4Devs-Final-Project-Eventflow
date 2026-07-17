@@ -23,6 +23,7 @@ import { useTranslations } from 'next-intl';
 import { ApiError } from '@/shared/api-client';
 import { organizerBookingsApi } from '../api/organizerBookingsApi';
 import type { CreateBookingIntentView } from '../api/organizerBookingsApi.types';
+import { BookingDisclaimer } from './BookingDisclaimer';
 
 const KNOWN_ERROR_CODES = [
   'DISCLAIMER_REQUIRED',
@@ -67,8 +68,6 @@ export function CreateBookingDialog(props: CreateBookingDialogProps): JSX.Elemen
 
   const titleId = useId();
   const descId = useId();
-  const disclaimerId = useId();
-  const disclaimerHintId = useId();
   const summaryId = useId();
   const bannerId = useId();
 
@@ -78,6 +77,11 @@ export function CreateBookingDialog(props: CreateBookingDialogProps): JSX.Elemen
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverErrorCode, setServerErrorCode] = useState<string | null>(null);
+  // US-063 (FE-002): id del párrafo del copy legal publicado por `BookingDisclaimer`. Se agrega
+  // al `aria-describedby` del `<div role="dialog">` para que el screen reader anuncie el copy al
+  // abrir el modal (paridad con la implementación inline previa). Se guarda en state (no ref)
+  // para forzar re-render y recomponer `describedBy` en cuanto el shared component monte.
+  const [disclaimerBodyId, setDisclaimerBodyId] = useState<string | null>(null);
 
   // Foco inicial en el checkbox del disclaimer (es el primer control obligatorio del flujo).
   // ESC cierra; Tab/Shift+Tab acotados a los focusables del dialog (focus trap básico).
@@ -138,7 +142,9 @@ export function CreateBookingDialog(props: CreateBookingDialogProps): JSX.Elemen
       : tError('UNEXPECTED')
     : null;
 
-  const describedBy = [descId, summaryId, bannerMessage ? bannerId : null].filter(Boolean).join(' ');
+  const describedBy = [descId, summaryId, disclaimerBodyId, bannerMessage ? bannerId : null]
+    .filter(Boolean)
+    .join(' ');
 
   const hasSummary = quoteAmount != null || vendorName != null;
 
@@ -190,24 +196,15 @@ export function CreateBookingDialog(props: CreateBookingDialogProps): JSX.Elemen
           </div>
         )}
 
-        <div className="mt-4 flex items-start gap-2">
-          <input
+        <div className="mt-4">
+          <BookingDisclaimer
             ref={disclaimerRef}
-            id={disclaimerId}
-            type="checkbox"
-            checked={disclaimerAccepted}
-            onChange={(e) => setDisclaimerAccepted(e.target.checked)}
-            aria-describedby={disclaimerHintId}
-            className="mt-1 h-4 w-4"
+            mode="create"
+            accepted={disclaimerAccepted}
+            onAcceptedChange={setDisclaimerAccepted}
+            disabled={isSubmitting}
+            bodyIdRef={setDisclaimerBodyId}
           />
-          <div className="flex-1 text-sm">
-            <label htmlFor={disclaimerId} className="font-medium text-neutral-900">
-              {t('disclaimer.label')}
-            </label>
-            <p id={disclaimerHintId} className="mt-1 text-xs text-neutral-600">
-              {t('disclaimer.hint')}
-            </p>
-          </div>
         </div>
 
         <div className="mt-6 flex justify-end gap-2">

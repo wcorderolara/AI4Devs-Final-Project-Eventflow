@@ -2131,7 +2131,7 @@ Simular la intención de contratar al vendor con una `Quote` aceptada. **Sin pag
 | --- | --- | --- | --- | --- | --- | --- |
 | POST | `/booking-intents` | Sí | organizer | **US-060**: Aceptación atómica de la Quote + creación del intent + 2 Notifications al vendor. Body snake_case con `disclaimer_accepted:true` requerido. Ver §32.6. | 201 | 400 (VALIDATION_ERROR, DISCLAIMER_REQUIRED), 401 (AUTHENTICATION_REQUIRED), 403 (FORBIDDEN), 404 (QUOTE_NOT_FOUND uniforme), 409 (QUOTE_NOT_ACCEPTABLE, QUOTE_EXPIRED, BOOKING_INTENT_ALREADY_EXISTS) |
 | GET | `/booking-intents/:bookingIntentId` | Sí | organizer, vendor (asignado), admin | Detalle. | 200 | 401, 403, 404 |
-| POST | `/booking-intents/:bookingIntentId/confirm` | Sí | vendor (target) | **US-061**: Confirmación atómica del intent + `UPDATE`/auto-create `BudgetItem.committed` (cross-domain via US-039) + 2 Notifications al organizer. Body vacío. Idempotente sobre `status='confirmed_intent'` (AC-03). Ver §32.7. | 200 | 400 (VALIDATION_ERROR), 401, 403, 404 (BOOKING_INTENT_NOT_FOUND uniforme), 409 (BOOKING_INTENT_NOT_CONFIRMABLE) |
+| POST | `/booking-intents/:bookingIntentId/confirm` | Sí | vendor (target) | **US-061 + US-063 (PB-P1-037)**: Confirmación atómica del intent + `UPDATE`/auto-create `BudgetItem.committed` (cross-domain via US-039) + 2 Notifications al organizer. Body: `{disclaimer_accepted:true}` (US-063 D1 — paridad server-side bilateral con US-060 create). Persiste audit bilateral (`disclaimer_accepted_at_confirm` + `disclaimer_copy_version_confirm='v1'`). Idempotente sobre `status='confirmed_intent'` (AC-03) sin re-sobreescribir el audit legal del primer confirm. Ver §32.7. | 200 | 400 (VALIDATION_ERROR / **DISCLAIMER_REQUIRED**), 401, 403, 404 (BOOKING_INTENT_NOT_FOUND uniforme), 409 (BOOKING_INTENT_NOT_CONFIRMABLE) |
 | POST | `/booking-intents/:bookingIntentId/cancel` | Sí | organizer, vendor (bilateral; admin excluido) | **US-062**: Cancelación atómica bilateral + revert condicional de `BudgetItem.committed` (sólo si el previo era `confirmed_intent`) + 2 Notifications a la contraparte con `event='booking_intent.cancelled'`. Body opcional `{reason?:string(0..500)}`. NO idempotente por contrato (segundo POST ⇒ 409). Ver §32.8. | 200 | 400 (VALIDATION_ERROR, INVALID_CANCELLATION_REASON), 401, 403, 404 (BOOKING_INTENT_NOT_FOUND uniforme bilateral), 409 (BOOKING_INTENT_NOT_CANCELLABLE) |
 
 ### 32.3 DTOs
@@ -2271,7 +2271,19 @@ organizer creó en US-060. La transición es una única `prisma.$transaction` qu
 organizer con `event='booking_intent.confirmed'`. Un fallo en cualquiera de los pasos revierte
 todo — incluyendo el estado del intent, el `committed_synced_at` y las notificaciones.
 
-Body: `(vacío)`.
+Body (US-063 PB-P1-037 refactor — D1 paridad bilateral):
+
+```json
+{
+  "disclaimer_accepted": true
+}
+```
+
+- `disclaimer_accepted` DEBE ser `true`. Cualquier `false`, ausencia o no-booleano ⇒
+  `400 DISCLAIMER_REQUIRED` (paridad con US-060 create). `.strict()` rechaza cualquier campo
+  adicional (FR-BOOKING-007). El backend persiste `booking_intents.disclaimer_accepted_at_confirm`
+  = timestamp actual y `booking_intents.disclaimer_copy_version_confirm = 'v1'`
+  (`BOOKING_DISCLAIMER_COPY_VERSION`).
 
 Response 200 (mismo shape que §32.6):
 
@@ -2300,7 +2312,8 @@ Errores estables (contrato §7 Tech Spec):
 
 | HTTP | Code | Detalle |
 | --- | --- | --- |
-| 400 | `VALIDATION_ERROR` | Path `:id` no es UUID. |
+| 400 | `DISCLAIMER_REQUIRED` | US-063 (D1): body sin `disclaimer_accepted:true`. `details.field='disclaimer_accepted'`. |
+| 400 | `VALIDATION_ERROR` | Path `:id` no es UUID, body no es objeto válido, campos extras (`.strict()`). |
 | 401 | `AUTHENTICATION_REQUIRED` | Sin sesión. |
 | 403 | `FORBIDDEN` | Rol distinto de `vendor` (organizer/admin). |
 | 404 | `BOOKING_INTENT_NOT_FOUND` | Intent inexistente o vendor ajeno (uniforme — no filtra assignment). |
@@ -2325,8 +2338,12 @@ Decisiones PO/Tech (§Decision Resolution `US-061-decision-resolution.md`):
   arroja `BookingSyncCurrencyMismatchError` (DEV-02 US-061 — throw en lugar de warn+continue;
   imposible en producción por BR-QUOTE-019 tras US-058 denormalización).
 - **D7** authorization: vendor assigned al Quote → 404 uniforme si no lo es.
-- **D8** sin `disclaimer_accepted` en este endpoint (el disclaimer se enforced una sola vez en
-  US-060 create; la confirmación del vendor no lo requiere nuevamente).
+- **D8** ~~sin `disclaimer_accepted` en este endpoint~~. **Reemplazada por US-063 D1 (PB-P1-037)**:
+  el body pasa a exigir `disclaimer_accepted:true` para paridad server-side bilateral con US-060
+  (create). El backend persiste el audit `disclaimer_accepted_at_confirm` +
+  `disclaimer_copy_version_confirm='v1'` en la misma UPDATE que el `confirmedAt`, y emite el log
+  estructurado `disclaimer.accepted` (`info`) con `action='confirm'`, `agreementCopyVersion='v1'`,
+  `acceptedAt=<iso8601>`, `userId` y `bookingIntentId`.
 
 Observabilidad:
 - Log estructurado `booking_intent.confirmed` (`info`) con `{correlationId, actorId,

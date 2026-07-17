@@ -713,6 +713,18 @@ model BookingIntent {
   // reversa exacta independiente de cambios posteriores en `Quote.amount`.
   committedSyncedAt     DateTime?           @map("committed_synced_at") @db.Timestamptz(6)
   committedSyncedAmount Decimal?            @map("committed_synced_amount") @db.Decimal(14, 2)
+  // US-063 (PB-P1-037 / DB-002): auditoría bilateral del disclaimer aceptado (D2 + D7).
+  // `disclaimerAcceptedAtCreate` se captura en la creación del intent (US-060 refactor BE-002);
+  // `disclaimerAcceptedAtConfirm` en la confirmación (US-061 refactor BE-004). Las columnas
+  // `disclaimerCopyVersion*` guardan la versión del copy que aceptó cada actor (constante
+  // `BOOKING_DISCLAIMER_COPY_VERSION` en `src/shared/booking/disclaimer.ts`). Backfill idempotente
+  // en la migración: `create` desde `created_at`, `confirm` desde `confirmed_at` sólo si
+  // `status='confirmed_intent'`. Los DEFAULT del ADD COLUMN se conservan como safety net para
+  // rutas de escritura raw SQL (tests) — el use case aplicativo siempre pasa el valor explícito.
+  disclaimerAcceptedAtCreate  DateTime  @default(now()) @map("disclaimer_accepted_at_create") @db.Timestamptz(6)
+  disclaimerAcceptedAtConfirm DateTime? @map("disclaimer_accepted_at_confirm") @db.Timestamptz(6)
+  disclaimerCopyVersionCreate  String   @default("v1") @map("disclaimer_copy_version_create")
+  disclaimerCopyVersionConfirm String?  @map("disclaimer_copy_version_confirm")
 
   quote           Quote           @relation(fields: [quoteId], references: [id], onDelete: Restrict)
   event           Event           @relation(fields: [eventId], references: [id], onDelete: Restrict)

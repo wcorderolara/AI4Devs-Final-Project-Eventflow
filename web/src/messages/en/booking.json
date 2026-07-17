@@ -1,4 +1,12 @@
 {
+  "disclaimer": {
+    "v1": {
+      "title": "Important notice before you continue",
+      "body": "The final agreement, payment, and any contract take place outside EventFlow. The platform does not process payments or charge penalties. By continuing, you confirm that you understand and accept these conditions.",
+      "checkbox": "I understand and accept these conditions.",
+      "versionBadge": "Version {version}"
+    }
+  },
   "cancel": {
     "title": "Cancel booking intent",
     "description": "The booking intent will be marked as cancelled. If it was confirmed, we revert the commitment in the budget and notify the counterpart. This action cannot be undone.",

@@ -1,16 +1,19 @@
 'use client';
 
-// ConfirmBookingDialog (US-061 / PB-P1-036 / FE-001). Modal accesible para que el vendor
-// confirme un `BookingIntent`:
+// ConfirmBookingDialog (US-061 / PB-P1-036 / FE-001; refactor US-063 / PB-P1-037 / FE-003).
+// Modal accesible para que el vendor confirme un `BookingIntent`:
 //   - `role="dialog"` + `aria-modal="true"` + `aria-labelledby` / `aria-describedby`.
 //   - Focus trap básico (foco inicial en "Cancelar" — patrón destructive-safe: el default no
 //     dispara la mutación), Tab/Shift+Tab acotados a los focusables del dialog, ESC cierra.
-//   - Texto disclaimer FR-BOOKING-006 con `aria-describedby` (no requiere checkbox — el vendor
-//     confirma explícitamente vía la CTA "Confirmar"). El backend NO valida disclaimer server-side
-//     en este endpoint (D8) porque la aceptación ya fue formalizada en US-060 por el organizer.
+//   - US-063 (D1 + D4): el shared component `BookingDisclaimer mode='confirm'` reemplaza al
+//     párrafo inline previo. Ahora requiere checkbox marcado — la CTA queda `aria-disabled` hasta
+//     que el vendor acepta explícitamente. El backend refactoriza el endpoint para exigir
+//     `{disclaimer_accepted:true}` en el body (paridad server-side con US-060 create) y persiste
+//     `disclaimer_accepted_at_confirm` + `disclaimer_copy_version_confirm` como audit legal.
 //   - Banner de error accesible (`role="alert"`) con mapeo i18n por código estable del backend
-//     (`BOOKING_INTENT_NOT_FOUND`, `BOOKING_INTENT_NOT_CONFIRMABLE`, `AUTHENTICATION_REQUIRED`,
-//     `FORBIDDEN`, `VALIDATION_ERROR`, `RATE_LIMIT_EXCEEDED`, `UNEXPECTED`).
+//     (`DISCLAIMER_REQUIRED`, `BOOKING_INTENT_NOT_FOUND`, `BOOKING_INTENT_NOT_CONFIRMABLE`,
+//     `AUTHENTICATION_REQUIRED`, `FORBIDDEN`, `VALIDATION_ERROR`, `RATE_LIMIT_EXCEEDED`,
+//     `UNEXPECTED`).
 //
 // La vista que lo consume (detalle del BookingIntent del vendor) es responsable del disparador
 // (CTA "Confirmar BookingIntent") y de propagar `onSuccess` para refrescar sus queries.
@@ -22,8 +25,10 @@ import { useTranslations } from 'next-intl';
 import { ApiError } from '@/shared/api-client';
 import { vendorBookingsApi } from '../api/vendorBookingsApi';
 import type { ConfirmBookingIntentView } from '../api/vendorBookingsApi.types';
+import { BookingDisclaimer } from './BookingDisclaimer';
 
 const KNOWN_ERROR_CODES = [
+  'DISCLAIMER_REQUIRED',
   'VALIDATION_ERROR',
   'AUTHENTICATION_REQUIRED',
   'FORBIDDEN',
@@ -51,9 +56,14 @@ export interface ConfirmBookingDialogProps {
   onSuccess?: (view: ConfirmBookingIntentView) => void;
   /**
    * Adapter opcional del cliente de API — permite inyectar un mock en tests unitarios sin
-   * levantar MSW. En producción usa `vendorBookingsApi.confirm` por default.
+   * levantar MSW. En producción usa `vendorBookingsApi.confirm` por default. US-063 (FE-003):
+   * ahora acepta `disclaimerAccepted` en el input — el dialog padre siempre pasa `true` porque
+   * el checkbox del `BookingDisclaimer` ya bloqueó la CTA cuando `false`.
    */
-  confirmFn?: (input: { bookingIntentId: string }) => Promise<ConfirmBookingIntentView>;
+  confirmFn?: (input: {
+    bookingIntentId: string;
+    disclaimerAccepted: boolean;
+  }) => Promise<ConfirmBookingIntentView>;
 }
 
 export function ConfirmBookingDialog(props: ConfirmBookingDialogProps): JSX.Element {
@@ -63,15 +73,18 @@ export function ConfirmBookingDialog(props: ConfirmBookingDialogProps): JSX.Elem
 
   const titleId = useId();
   const descId = useId();
-  const disclaimerId = useId();
   const summaryId = useId();
   const bannerId = useId();
 
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const cancelBtnRef = useRef<HTMLButtonElement | null>(null);
 
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverErrorCode, setServerErrorCode] = useState<string | null>(null);
+  // US-063 (FE-003): id del párrafo del copy legal publicado por `BookingDisclaimer` — se agrega
+  // al `aria-describedby` del `<div role="dialog">`.
+  const [disclaimerBodyId, setDisclaimerBodyId] = useState<string | null>(null);
 
   // Foco inicial en "Cancelar" (destructive-safe). ESC cierra; focus trap Tab/Shift+Tab.
   useEffect(() => {
@@ -106,11 +119,15 @@ export function ConfirmBookingDialog(props: ConfirmBookingDialogProps): JSX.Elem
 
   const onSubmit = useCallback(async (): Promise<void> => {
     if (isSubmitting) return;
+    // US-063 (FE-003 / D1): defensa cliente — la CTA ya está `aria-disabled` cuando `false`,
+    // pero prevenimos también un submit programático accidental. El backend responde
+    // `400 DISCLAIMER_REQUIRED` si el bypass ocurre por API directo (paridad con US-060).
+    if (!disclaimerAccepted) return;
     setServerErrorCode(null);
     setIsSubmitting(true);
     try {
       const fn = confirmFn ?? vendorBookingsApi.confirm;
-      const view = await fn({ bookingIntentId });
+      const view = await fn({ bookingIntentId, disclaimerAccepted: true });
       onSuccess?.(view);
       onClose();
     } catch (err) {
@@ -122,7 +139,7 @@ export function ConfirmBookingDialog(props: ConfirmBookingDialogProps): JSX.Elem
     } finally {
       setIsSubmitting(false);
     }
-  }, [isSubmitting, bookingIntentId, confirmFn, onSuccess, onClose]);
+  }, [isSubmitting, disclaimerAccepted, bookingIntentId, confirmFn, onSuccess, onClose]);
 
   const bannerMessage = serverErrorCode
     ? isKnownErrorCode(serverErrorCode)
@@ -130,7 +147,7 @@ export function ConfirmBookingDialog(props: ConfirmBookingDialogProps): JSX.Elem
       : tError('UNEXPECTED')
     : null;
 
-  const describedBy = [descId, summaryId, disclaimerId, bannerMessage ? bannerId : null]
+  const describedBy = [descId, summaryId, disclaimerBodyId, bannerMessage ? bannerId : null]
     .filter(Boolean)
     .join(' ');
 
@@ -173,9 +190,15 @@ export function ConfirmBookingDialog(props: ConfirmBookingDialogProps): JSX.Elem
           </dl>
         )}
 
-        <p id={disclaimerId} className="mt-3 rounded-md border border-neutral-200 bg-amber-50 p-3 text-xs text-amber-900">
-          {t('disclaimer')}
-        </p>
+        <div className="mt-3">
+          <BookingDisclaimer
+            mode="confirm"
+            accepted={disclaimerAccepted}
+            onAcceptedChange={setDisclaimerAccepted}
+            disabled={isSubmitting}
+            bodyIdRef={setDisclaimerBodyId}
+          />
+        </div>
 
         {bannerMessage != null && (
           <div
@@ -201,7 +224,8 @@ export function ConfirmBookingDialog(props: ConfirmBookingDialogProps): JSX.Elem
             type="button"
             onClick={onSubmit}
             disabled={isSubmitting}
-            className="rounded bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+            aria-disabled={!disclaimerAccepted || isSubmitting}
+            className="rounded bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50 aria-disabled:opacity-50 aria-disabled:cursor-not-allowed"
           >
             {isSubmitting ? t('actions.submitting') : t('actions.submit')}
           </button>

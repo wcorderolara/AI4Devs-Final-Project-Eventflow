@@ -49,6 +49,7 @@ import {
 import type { ClockPort } from '../../../shared/domain/clock.port.js';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
+import { BOOKING_DISCLAIMER_COPY_VERSION } from '../../../shared/booking/disclaimer.js';
 import type { BookingEventNotifierPort } from '../ports/quote-event-notifier.port.js';
 import { QuoteNotFoundForBookingError } from '../domain/us060.errors.js';
 import { QuoteExpiredError } from '../../../shared/domain/errors/quote-flow.errors.js';
@@ -162,7 +163,11 @@ export class CreateBookingIntentUs060UseCase {
           data: { status: QuoteStatus.accepted, acceptedAt: now },
         });
 
-        // 7) INSERT BookingIntent → pending.
+        // 7) INSERT BookingIntent → pending. US-063 (BE-002): persiste auditoría del disclaimer
+        //    aceptado por el organizer — `disclaimerAcceptedAtCreate = now` + version del copy
+        //    vigente (Decisión D2 + D7). El backfill de la migración preserva `created_at` para
+        //    filas históricas; el use case captura el timestamp explícito del `clock.now()` para
+        //    trazabilidad legal precisa (SEC-03).
         const intent = await tx.bookingIntent.create({
           data: {
             quoteId: body.quote_id,
@@ -172,6 +177,8 @@ export class CreateBookingIntentUs060UseCase {
             createdBy: currentUserId,
             status: BookingIntentStatus.pending,
             isSimulated: true,
+            disclaimerAcceptedAtCreate: now,
+            disclaimerCopyVersionCreate: BOOKING_DISCLAIMER_COPY_VERSION,
           },
         });
 
@@ -203,7 +210,18 @@ export class CreateBookingIntentUs060UseCase {
           correlationId: ctx.correlationId,
         });
 
-        // 9) Log del evento de dominio.
+        // 9) Logs de dominio — US-063 (BE-002 / D5): emite `disclaimer.accepted` con `action='create'`
+        //    para audit legal (evidencia externa del click-through). El log de intent creado se
+        //    mantiene por compatibilidad con consumidores upstream. Ambos comparten `correlationId`.
+        this.logger.emit('disclaimer.accepted', {
+          correlationId: ctx.correlationId,
+          actorId: currentUserId,
+          userId: currentUserId,
+          bookingIntentId: intent.id,
+          action: 'create',
+          agreementCopyVersion: BOOKING_DISCLAIMER_COPY_VERSION,
+          acceptedAt: now.toISOString(),
+        });
         this.logger.emit('booking_intent.created', {
           correlationId: ctx.correlationId,
           actorId: currentUserId,

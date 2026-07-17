@@ -179,7 +179,7 @@ describe.skipIf(!dbUp)('US-061 QA — ConfirmBookingIntent integration', () => {
     const before = await prisma.notification.count({
       where: { userId: s.organizerId, type: 'booking_intent.confirmed' },
     });
-    const res = await s.vendorAgent.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`);
+    const res = await s.vendorAgent.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`).send({ disclaimer_accepted: true });
     expect(res.status).toBe(200);
     expect(res.body.data.status).toBe('confirmed_intent');
     expect(res.body.data.confirmedAt).not.toBeNull();
@@ -200,7 +200,7 @@ describe.skipIf(!dbUp)('US-061 QA — ConfirmBookingIntent integration', () => {
   it('AC-02 confirm sin BudgetItem previo: auto-create con committed=quote.amount + notif organizer', async () => {
     const s = await scenarioPendingIntent();
     // NO preseed BudgetItem para este (event, categoryCode) — US-039 D2 debe auto-crearlo.
-    const res = await s.vendorAgent.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`);
+    const res = await s.vendorAgent.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`).send({ disclaimer_accepted: true });
     expect(res.status).toBe(200);
 
     const budget = await prisma.budget.findFirst({ where: { eventId: s.eventId } });
@@ -222,7 +222,7 @@ describe.skipIf(!dbUp)('US-061 QA — ConfirmBookingIntent integration', () => {
 
   it('AC-03 idempotencia: segundo POST no re-actualiza committed ni emite notifs adicionales', async () => {
     const s = await scenarioPendingIntent();
-    const first = await s.vendorAgent.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`);
+    const first = await s.vendorAgent.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`).send({ disclaimer_accepted: true });
     expect(first.status).toBe(200);
     const budget = await prisma.budget.findFirstOrThrow({ where: { eventId: s.eventId } });
     const itemBefore = await prisma.budgetItem.findFirstOrThrow({
@@ -232,7 +232,7 @@ describe.skipIf(!dbUp)('US-061 QA — ConfirmBookingIntent integration', () => {
       where: { userId: s.organizerId, type: 'booking_intent.confirmed' },
     });
 
-    const second = await s.vendorAgent.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`);
+    const second = await s.vendorAgent.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`).send({ disclaimer_accepted: true });
     expect(second.status).toBe(200);
     expect(second.body.data.status).toBe('confirmed_intent');
 
@@ -254,7 +254,7 @@ describe.skipIf(!dbUp)('US-061 QA — ConfirmBookingIntent integration', () => {
       where: { id: s.bookingIntentId },
       data: { status: 'cancelled', cancelledAt: new Date(), cancelledBy: s.organizerId, cancellationReason: 'test' },
     });
-    const res = await s.vendorAgent.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`);
+    const res = await s.vendorAgent.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`).send({ disclaimer_accepted: true });
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe('BOOKING_INTENT_NOT_CONFIRMABLE');
     expect(res.body.error.details).toContainEqual({
@@ -275,7 +275,7 @@ describe.skipIf(!dbUp)('US-061 QA — ConfirmBookingIntent integration', () => {
         languagesSupported: ['es-LATAM'],
       },
     });
-    const res = await otherVendor.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`);
+    const res = await otherVendor.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`).send({ disclaimer_accepted: true });
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('BOOKING_INTENT_NOT_FOUND');
   });
@@ -285,7 +285,9 @@ describe.skipIf(!dbUp)('US-061 QA — ConfirmBookingIntent integration', () => {
     await prisma.vendorProfile.create({
       data: { userId: vUserId, businessName: 'Solo', status: 'approved', languagesSupported: ['es-LATAM'] },
     });
-    const res = await vendorAgent.post('/api/v1/booking-intents/11111111-1111-4111-8111-111111111111/confirm');
+    const res = await vendorAgent
+      .post('/api/v1/booking-intents/11111111-1111-4111-8111-111111111111/confirm')
+      .send({ disclaimer_accepted: true });
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('BOOKING_INTENT_NOT_FOUND');
   });
@@ -295,21 +297,23 @@ describe.skipIf(!dbUp)('US-061 QA — ConfirmBookingIntent integration', () => {
     await prisma.vendorProfile.create({
       data: { userId: vUserId, businessName: 'Solo', status: 'approved', languagesSupported: ['es-LATAM'] },
     });
-    const res = await vendorAgent.post('/api/v1/booking-intents/not-a-uuid/confirm');
+    const res = await vendorAgent
+      .post('/api/v1/booking-intents/not-a-uuid/confirm')
+      .send({ disclaimer_accepted: true });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('VALIDATION_ERROR');
   });
 
   it('AUTH-TS-03 organizer ⇒ 403 FORBIDDEN', async () => {
     const s = await scenarioPendingIntent();
-    const res = await s.organizer.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`);
+    const res = await s.organizer.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`).send({ disclaimer_accepted: true });
     expect(res.status).toBe(403);
   });
 
   it('AUTH-TS-05 anon ⇒ 401 AUTHENTICATION_REQUIRED', async () => {
     const s = await scenarioPendingIntent();
     const anon = request.agent(app);
-    const res = await anon.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`);
+    const res = await anon.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`).send({ disclaimer_accepted: true });
     expect(res.status).toBe(401);
   });
 
@@ -319,8 +323,8 @@ describe.skipIf(!dbUp)('US-061 QA — ConfirmBookingIntent integration', () => {
     // la segunda observa `status='confirmed_intent'` (idempotencia via `isAlreadyConfirmed`) o
     // `committed_synced_at !== null` (idempotencia del handler US-039) y no re-suma.
     const [r1, r2] = await Promise.all([
-      s.vendorAgent.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`),
-      s.vendorAgent.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`),
+      s.vendorAgent.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`).send({ disclaimer_accepted: true }),
+      s.vendorAgent.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`).send({ disclaimer_accepted: true }),
     ]);
     // Ambas responden 200 (una ejecuta side-effects, la otra idempotente).
     expect(r1.status).toBe(200);
@@ -347,7 +351,7 @@ describe.skipIf(!dbUp)('US-061 QA — ConfirmBookingIntent integration', () => {
       where: { id: s.quoteId },
       data: { currency: 'USD' },
     });
-    const res = await s.vendorAgent.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`);
+    const res = await s.vendorAgent.post(`/api/v1/booking-intents/${s.bookingIntentId}/confirm`).send({ disclaimer_accepted: true });
     // El error handler mapea el BookingSyncCurrencyMismatchError a un domain error apropiado
     // (US-039 lo trata como estado corrupto — bloqueo transaccional total). Verificamos que la
     // request NO completa con 200 y el intent queda en `pending` (rollback).
