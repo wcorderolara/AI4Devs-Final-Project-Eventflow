@@ -101,6 +101,13 @@ import {
   VendorNotFoundForReviewsError,
   Us066InvalidCursorError,
 } from '../../../modules/reviews-moderation/domain/us066.errors.js';
+// US-067 (PB-P1-040): moderación admin. `ReviewNotFoundForModerationError` → 404
+// `REVIEW_NOT_FOUND` uniforme (Decisión PO D6); `InvalidReviewTransitionError` → 409
+// `INVALID_TRANSITION` con `details = [{from},{to},{allowed}]` (EC-01/EC-02).
+import {
+  InvalidReviewTransitionError,
+  ReviewNotFoundForModerationError,
+} from '../../../modules/reviews-moderation/domain/us067.errors.js';
 import {
   MissingInputError,
   AiInvalidBudgetError,
@@ -482,6 +489,23 @@ function mapError(err: unknown): MappedError {
   }
   if (err instanceof Us066InvalidCursorError) {
     return { status: 400, code: ErrorCodes.INVALID_CURSOR, message: err.message };
+  }
+  // US-067 (PB-P1-040): moderación admin. 404 uniforme `REVIEW_NOT_FOUND` (Decisión PO D6);
+  // 409 `INVALID_TRANSITION` con `details` explícito (EC-01/EC-02, whitelist Decisión PO D2).
+  if (err instanceof ReviewNotFoundForModerationError) {
+    return { status: 404, code: ErrorCodes.REVIEW_NOT_FOUND, message: 'Review not found' };
+  }
+  if (err instanceof InvalidReviewTransitionError) {
+    return {
+      status: 409,
+      code: ErrorCodes.INVALID_TRANSITION,
+      message: err.message,
+      details: [
+        { field: 'from', message: err.from },
+        { field: 'to', message: err.to },
+        { field: 'allowed', message: err.allowed.join(',') },
+      ],
+    };
   }
   if (err instanceof MissingInputError) {
     return { status: 400, code: ErrorCodes.MISSING_INPUT, message: err.message };

@@ -18,5 +18,67 @@
         "generic": "No pudimos cargar el evento. Intenta de nuevo."
       }
     }
+  },
+  "review": {
+    "moderate": {
+      "status": {
+        "all": "Todas",
+        "published": "Publicada",
+        "hidden": "Oculta",
+        "removed": "Eliminada"
+      },
+      "actions": {
+        "hide": "Ocultar (no visible al público)",
+        "remove": "Eliminar (baja lógica, final)"
+      },
+      "table": {
+        "title": "Moderación de reseñas",
+        "subtitle": "Oculta o elimina reseñas con un motivo auditable.",
+        "vendorIdLabel": "ID del proveedor",
+        "vendorIdPlaceholder": "UUID del proveedor",
+        "search": "Buscar",
+        "filterByStatus": "Filtrar por estado",
+        "promptSelectVendor": "Ingresa un ID de proveedor para cargar sus reseñas.",
+        "loading": "Cargando reseñas…",
+        "error": "No pudimos cargar las reseñas. Intenta de nuevo.",
+        "empty": "Ninguna reseña coincide con el filtro actual.",
+        "caption": "Reseñas del proveedor con acciones de moderación.",
+        "col": {
+          "rating": "Puntuación",
+          "eventTitle": "Evento",
+          "comment": "Comentario",
+          "status": "Estado",
+          "createdAt": "Creada",
+          "actions": "Acciones"
+        },
+        "moderate": "Moderar",
+        "moderateAria": "Moderar la reseña {id}",
+        "loadMore": "Cargar más"
+      },
+      "dialog": {
+        "title": "Moderar reseña",
+        "currentStatusLabel": "Estado actual: {status}",
+        "currentStatus": {
+          "published": "Publicada",
+          "hidden": "Oculta",
+          "removed": "Eliminada"
+        },
+        "actionLegend": "Elige una acción",
+        "reasonLabel": "Motivo (10–500 caracteres)",
+        "counter": "{current}/{max} (mín. {min})",
+        "cancel": "Cancelar",
+        "submit": "Aplicar moderación",
+        "submitting": "Aplicando…",
+        "finalRemovedNotice": "Esta reseña ya está eliminada. No se permiten más transiciones."
+      },
+      "errors": {
+        "unauthenticated": "Debes iniciar sesión como administrador.",
+        "forbidden": "Solo un administrador puede moderar reseñas.",
+        "notFound": "La reseña ya no existe.",
+        "invalidTransition": "La transición no está permitida para el estado actual.",
+        "validation": "El formulario de moderación no es válido.",
+        "unexpected": "Error inesperado. Intenta de nuevo."
+      }
+    }
   }
 }

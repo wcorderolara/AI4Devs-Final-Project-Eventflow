@@ -183,6 +183,12 @@ export const ErrorCodes = {
   // historial de reviews. `RESOURCE_NOT_FOUND` (404 uniforme) cubre event/vendor inexistente o
   // ajeno (SEC-04, EC-06/EC-07, AUTH-TS-03).
   REVIEW_NOT_ELIGIBLE: 'REVIEW_NOT_ELIGIBLE',
+  // US-067 (PB-P1-040): moderación admin de reviews. `REVIEW_NOT_FOUND` (404 uniforme, Decisión
+  // PO D6 + SEC-05) — código específico de dominio review dentro del panel admin (no confundir
+  // con `RESOURCE_NOT_FOUND`); el admin está autorizado a ver todas las reviews (`sees-all` de
+  // US-066), por lo que exponer este código NO leakea información. `INVALID_TRANSITION` (409,
+  // ya definido arriba) reutiliza el envelope con `details.from`/`details.to`/`details.allowed`.
+  REVIEW_NOT_FOUND: 'REVIEW_NOT_FOUND',
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

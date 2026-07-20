@@ -18,5 +18,67 @@
         "generic": "Não foi possível carregar o evento. Tente novamente."
       }
     }
+  },
+  "review": {
+    "moderate": {
+      "status": {
+        "all": "Todas",
+        "published": "Publicada",
+        "hidden": "Oculta",
+        "removed": "Removida"
+      },
+      "actions": {
+        "hide": "Ocultar (não visível ao público)",
+        "remove": "Remover (exclusão lógica, final)"
+      },
+      "table": {
+        "title": "Moderação de avaliações",
+        "subtitle": "Ocultar ou remover avaliações com um motivo auditável.",
+        "vendorIdLabel": "ID do fornecedor",
+        "vendorIdPlaceholder": "UUID do fornecedor",
+        "search": "Buscar",
+        "filterByStatus": "Filtrar por status",
+        "promptSelectVendor": "Informe um ID de fornecedor para carregar as avaliações.",
+        "loading": "Carregando avaliações…",
+        "error": "Não foi possível carregar as avaliações. Tente novamente.",
+        "empty": "Nenhuma avaliação corresponde ao filtro atual.",
+        "caption": "Avaliações do fornecedor com ações de moderação.",
+        "col": {
+          "rating": "Nota",
+          "eventTitle": "Evento",
+          "comment": "Comentário",
+          "status": "Status",
+          "createdAt": "Criada",
+          "actions": "Ações"
+        },
+        "moderate": "Moderar",
+        "moderateAria": "Moderar a avaliação {id}",
+        "loadMore": "Carregar mais"
+      },
+      "dialog": {
+        "title": "Moderar avaliação",
+        "currentStatusLabel": "Status atual: {status}",
+        "currentStatus": {
+          "published": "Publicada",
+          "hidden": "Oculta",
+          "removed": "Removida"
+        },
+        "actionLegend": "Escolha uma ação",
+        "reasonLabel": "Motivo (10–500 caracteres)",
+        "counter": "{current}/{max} (mín. {min})",
+        "cancel": "Cancelar",
+        "submit": "Aplicar moderação",
+        "submitting": "Aplicando…",
+        "finalRemovedNotice": "Esta avaliação já foi removida. Nenhuma outra transição é permitida."
+      },
+      "errors": {
+        "unauthenticated": "Você precisa entrar como administrador.",
+        "forbidden": "Somente administradores podem moderar avaliações.",
+        "notFound": "A avaliação não existe mais.",
+        "invalidTransition": "A transição não é permitida para o status atual.",
+        "validation": "O formulário de moderação é inválido.",
+        "unexpected": "Erro inesperado. Tente novamente."
+      }
+    }
   }
 }

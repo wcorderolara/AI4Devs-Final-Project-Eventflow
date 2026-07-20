@@ -74,6 +74,12 @@ import {
   ListVendorReviewsQuerySchema,
 } from '../modules/reviews-moderation/interface/list-vendor-reviews.dto.js';
 import { ListVendorReviewsResponseSchema } from '../modules/reviews-moderation/interface/list-vendor-reviews.response.js';
+// US-067 (PB-P1-040 / BE-004): moderación admin de reviews (hide/remove con AdminAction +
+// recálculo denormalize + audit columns). DTOs Zod `.strict()` con action enum + reason 10..500.
+import {
+  ModerateReviewBodySchema,
+  ModerateReviewParamsSchema,
+} from '../modules/reviews-moderation/interface/moderate-review.dto.js';
 import {
   AiBaseRequestSchema,
   ApplyAiRecommendationSchema,
@@ -332,6 +338,12 @@ op({ method: 'post', path: '/organizer/reviews', operationId: 'createOrganizerRe
 // keyset (created_at DESC, id DESC) + anonimato del organizer + admin sees-all. Auth opcional:
 // anónimo permitido (200 si vendor approved), admin extiende el filtro a todos los `status`.
 op({ method: 'get', path: '/vendors/{id}/reviews', operationId: 'listVendorReviews', tags: ['Reviews'], summary: 'US-066 · Listar reviews de vendor (público, cursor + anonimato + admin sees-all)', secured: false, params: VendorIdParamSchema, query: ListVendorReviewsQuerySchema, success: { status: 200, schema: envelope(ListVendorReviewsResponseSchema) }, errors: [400, 404] });
+// US-067 (PB-P1-040 / BE-004): moderación admin de una review (hide/remove) en 1 tx:
+// SELECT FOR UPDATE + validación transición (whitelist Decisión PO D2) + UPDATE audit columns +
+// INSERT AdminAction + UPDATE chain + recálculo denormalize VendorProfile + log observability.
+// 401, 403 FORBIDDEN, 404 REVIEW_NOT_FOUND (Decisión PO D6 uniforme), 409 INVALID_TRANSITION
+// (con details.from/to/allowed), 400 VALIDATION_ERROR.
+op({ method: 'post', path: '/admin/reviews/{id}/moderate', operationId: 'adminModerateReview', tags: ['Admin'], summary: 'US-067 · Admin moderate review (hide|remove) + AdminAction + denormalize', secured: true, params: ModerateReviewParamsSchema, body: ModerateReviewBodySchema, success: { status: 200, schema: envelope(z.object({ id: z.string().uuid(), status: z.enum(['hidden', 'removed']), moderatedAt: z.string().datetime(), moderatedBy: z.string().uuid(), moderationReason: z.string(), adminActionId: z.string().uuid() }).strict()) }, errors: [400, 401, 403, 404, 409] });
 
 // ── AI ASSISTANCE ────────────────────────────────────────────────────────────────
 const AiGenerationResponse = envelope(

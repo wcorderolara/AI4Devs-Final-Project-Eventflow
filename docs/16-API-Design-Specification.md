@@ -2491,8 +2491,7 @@ Organizer publica una review tras `BookingIntent.confirmed_intent`.
 | POST | `/reviews` | Sí | organizer | Crea review. | 201 | 401, 403, 409 (DUPLICATE_REVIEW), 422 |
 | GET | `/vendors/:vendorProfileId/reviews` | No | anonymous, organizer, vendor, admin | Lista pública. | 200 | 404 |
 | GET | `/vendors/me/reviews` | Sí | vendor | Reviews recibidas. | 200 | 401, 403 |
-| POST | `/admin/reviews/:reviewId/hide` | Sí | admin | Oculta review. | 200 | 401, 403, 404 |
-| DELETE | `/admin/reviews/:reviewId` | Sí | admin | Soft delete. | 204 | 401, 403, 404 |
+| POST | `/admin/reviews/:id/moderate` | Sí | admin | Modera review (hide\|remove) con AdminAction + recálculo denormalize. Ver §33.6. | 200 | 400, 401, 403, 404 (REVIEW_NOT_FOUND), 409 (INVALID_TRANSITION) |
 
 ### 33.3 DTOs
 
@@ -2659,6 +2658,97 @@ indica fin del listado.
 
 **Observabilidad**: log estándar HTTP con `correlationId`. Sin eventos de dominio dedicados
 (sólo lectura).
+
+### 33.7 US-067 · `POST /api/v1/admin/reviews/:id/moderate` (moderación admin con AdminAction chain)
+
+Endpoint admin-only que ejecuta la moderación atómica de una review dentro de una única
+`prisma.$transaction`: bloqueo pesimista (`SELECT ... FOR UPDATE`) → validación de transición
+(whitelist Decisión PO D2) → UPDATE audit columns + status → INSERT `AdminAction` (append-only,
+BR-ADMIN-011) → UPDATE `review.admin_action_id` (chain audit) → recálculo total denormalize del
+VendorProfile (AC-04) → log `review.moderated` (§14). Un fallo en cualquier paso revierte todo.
+
+**Autorización**: `sessionAuth + roleMiddleware(['admin'])`. Organizer/vendor ⇒ 403; anónimo ⇒ 401.
+
+**Body (`.strict()`)**:
+
+```ts
+type ModerateReviewBody = {
+  action: 'hide' | 'remove';  // VR-02
+  reason: string;             // [10..500] chars — VR-03, Decisión PO D5
+};
+```
+
+**Response 200**:
+
+```ts
+type ModeratedReviewResponse = {
+  id: string;
+  status: 'hidden' | 'removed';
+  moderatedAt: string;           // ISO 8601
+  moderatedBy: string;           // admin userId
+  moderationReason: string;
+  adminActionId: string;         // chain al AdminAction insertado
+};
+```
+
+**Errores estables**:
+
+| Código | HTTP | Detalle |
+| --- | --- | --- |
+| `VALIDATION_ERROR` | 400 | `action` inválido, `reason` fuera de [10..500], campo ajeno (`.strict()`), UUID malformado (via `INVALID_UUID`). |
+| `AUTHENTICATION_REQUIRED` | 401 | Sin cookie de sesión válida. |
+| `FORBIDDEN` | 403 | Rol organizer o vendor. |
+| `REVIEW_NOT_FOUND` | 404 | Review inexistente. Uniforme, Decisión PO D6. |
+| `INVALID_TRANSITION` | 409 | Transición fuera del whitelist (Decisión PO D2). `details = [{from},{to},{allowed}]`. |
+
+**Whitelist de transiciones** (Decisión PO D2):
+
+- `published → hidden` ✅
+- `published → removed` ✅
+- `hidden → removed` ✅
+- `removed → *` ❌ (SEC-03 / FR-REVIEW-005: soft delete final; rollback fuera de MVP — US-077).
+- `hidden → published`, `hidden → hidden` ❌ (EC-02).
+
+**AdminAction shape** (Decisión PO D8, BR-ADMIN-011):
+
+```json
+{
+  "admin_id":     "<uuid>",
+  "target_type":  "review",
+  "target_id":    "<uuid>",
+  "action":       "hide|remove",
+  "reason":       "<string 10..500>",
+  "payload": {
+    "from_status":       "published|hidden",
+    "to_status":         "hidden|removed",
+    "rating_snapshot":   1,
+    "comment_snapshot":  "..."
+  }
+}
+```
+
+**Cadena review→AdminAction**: la columna `reviews.admin_action_id` referencia el ÚLTIMO acto
+de moderación. Cada nueva moderación crea un nuevo `AdminAction` y actualiza el enlace; los
+`AdminAction` previos permanecen intactos (append-only) para auditar todo el historial (Decisión PO D3/D8).
+
+**Denormalize** (AC-04, Decisión PO D1): tras cada moderación se recalcula
+`vendor_profiles.rating_avg = ROUND(AVG(rating)::numeric, 2)` y `reviews_count = COUNT(*)`
+sobre reviews `status='published' AND deleted_at IS NULL` — `hidden` y `removed` quedan fuera
+del avg/count.
+
+**Concurrencia** (§17 mitigación): dos POST simultáneos sobre la misma review se serializan
+vía `SELECT ... FOR UPDATE` en la primera transacción. La segunda lee ya el status actualizado
+y rechaza con `409 INVALID_TRANSITION` — sin doble `AdminAction`.
+
+**Observabilidad** (§14): `review.moderated` con `{correlationId, actorId, reviewId, adminUserId,
+action, fromStatus, toStatus, adminActionId}`. **NO** se logea `reason` (SEC-09: puede contener
+PII o referencia a contenido reportado).
+
+**Prohibiciones**:
+
+- Sin DELETE `/admin/reviews/:id` (FR-REVIEW-005 — no hard delete).
+- Sin llamadas a AI provider (FR-REVIEW-009 — moderación 100 % manual).
+- Sin notificaciones al organizer/vendor en MVP (Decisión PO D7).
 
 ---
 

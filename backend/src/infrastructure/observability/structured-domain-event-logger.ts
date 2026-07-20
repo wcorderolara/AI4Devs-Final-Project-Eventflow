@@ -1,39 +1,18 @@
 // Adapter — DomainEventLogger estructurado (US-096 / OBS-001). Solo metadatos seguros (SEC-09).
+//
+// Delega en el logger global (`shared/infrastructure/logger`) manteniendo el shape canónico:
+//   `{ event: string, ...seguros }` — sin PII, brief, conditions ni razones libres.
+//
+// Los campos aceptados vienen 1:1 de `DomainEventLogger.emit` (contrato del puerto). El adapter
+// clasifica por convención sufijo:
+//   - `*.limit_reached` → `warn`   (evento operativo umbral, no falla — US-050).
+//   - `*.failed`        → `error`  (falla real de un job/batch — US-053).
+//   - resto             → `info`   (eventos de dominio y auditoría).
 import type { DomainEventLogger } from '../../shared/observability/domain-event-logger.js';
 import { logger } from '../../shared/infrastructure/logger/index.js';
 
 export class StructuredDomainEventLogger implements DomainEventLogger {
-  emit(
-    event: string,
-    data: {
-      correlationId?: string;
-      actorId?: string;
-      quoteRequestId?: string;
-      quoteId?: string;
-      bookingIntentId?: string;
-      // US-050 (BE-005): metadatos del evento `quote_request.limit_reached`.
-      eventId?: string;
-      serviceCategoryId?: string;
-      activeCount?: number;
-      limit?: number;
-      reason?: string;
-      // US-053 (BE-005): metadatos del ExpireQuotesJob.
-      runId?: string;
-      totalExpired?: number;
-      batchCount?: number;
-      batchIndex?: number;
-      count?: number;
-      durationMs?: number;
-      errorCount?: number;
-      jitterMs?: number;
-      // US-054 (BE-006): metadatos de `quote.notification.emitted`.
-      eventName?: string;
-      vendorUserId?: string;
-    },
-  ): void {
-    // Warnings de dominio (p. ej. `quote_request.limit_reached`) van al canal `warn` para
-    // que aparezcan en el flujo operativo apropiado. Errores del job (p. ej. batch/run failed)
-    // van a `error`. El resto sigue en `info`.
+  emit: DomainEventLogger['emit'] = (event, data) => {
     if (event.endsWith('.limit_reached')) {
       logger.warn({ event, ...data });
       return;
@@ -43,5 +22,5 @@ export class StructuredDomainEventLogger implements DomainEventLogger {
       return;
     }
     logger.info({ event, ...data });
-  }
+  };
 }
