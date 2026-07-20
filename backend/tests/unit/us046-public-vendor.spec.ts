@@ -50,6 +50,7 @@ describe('US-046 · PublicVendorSlugParamSchema', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 function baseRecord(overrides: Partial<PublicVendorRecord> = {}): PublicVendorRecord {
   return {
+    id: '00000000-0000-0000-0046-000000000001',
     slug: 'banquetes-el-quetzal',
     businessName: 'Banquetes El Quetzal',
     bio: 'Servicio de banquetes para bodas.',
@@ -92,8 +93,10 @@ function baseRecord(overrides: Partial<PublicVendorRecord> = {}): PublicVendorRe
 
 describe('US-046 · toPublicVendorDto (whitelist mapper)', () => {
   it('no expone email/teléfono/IDs internos ni `deletedAt`', () => {
+    // US-066 (PB-P1-039): `id` del vendor SE expone en el DTO para habilitar el listado
+    // paginado del cliente (`GET /vendors/:id/reviews`). Ya no forma parte del set prohibido.
     const dto = toPublicVendorDto(baseRecord());
-    const forbidden = ['email', 'phone', 'password', 'id', 'userId', 'deletedAt', 'ownerId'];
+    const forbidden = ['email', 'phone', 'password', 'userId', 'deletedAt', 'ownerId'];
     for (const key of forbidden) {
       expect(dto).not.toHaveProperty(key);
     }

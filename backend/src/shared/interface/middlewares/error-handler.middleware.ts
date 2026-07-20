@@ -94,6 +94,13 @@ import {
   ReviewNotEligibleError,
   ReviewTargetNotFoundError,
 } from '../../../modules/reviews-moderation/domain/us065.errors.js';
+// US-066 (PB-P1-039): listado público de reviews por vendor. `VendorNotFoundForReviewsError`
+// → 404 `VENDOR_NOT_FOUND` uniforme (SEC-04 / D5); `Us066InvalidCursorError` → 400
+// `INVALID_CURSOR` (EC-03).
+import {
+  VendorNotFoundForReviewsError,
+  Us066InvalidCursorError,
+} from '../../../modules/reviews-moderation/domain/us066.errors.js';
 import {
   MissingInputError,
   AiInvalidBudgetError,
@@ -467,6 +474,14 @@ function mapError(err: unknown): MappedError {
       message: err.message,
       details: [{ field: 'reason', message: err.reason }],
     };
+  }
+  // US-066 (PB-P1-039): listado público de reviews por vendor. 404 uniforme (D5) para vendor
+  // inexistente o no `approved` (visto por no-admin). Cursor inválido → 400 INVALID_CURSOR.
+  if (err instanceof VendorNotFoundForReviewsError) {
+    return { status: 404, code: ErrorCodes.VENDOR_NOT_FOUND, message: 'Vendor not found' };
+  }
+  if (err instanceof Us066InvalidCursorError) {
+    return { status: 400, code: ErrorCodes.INVALID_CURSOR, message: err.message };
   }
   if (err instanceof MissingInputError) {
     return { status: 400, code: ErrorCodes.MISSING_INPUT, message: err.message };

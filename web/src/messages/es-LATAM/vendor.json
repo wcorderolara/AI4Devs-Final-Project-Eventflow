@@ -110,6 +110,34 @@
       "AUTHENTICATION_REQUIRED": "Debes iniciar sesión para crear tu perfil.",
       "FORBIDDEN": "Solo los proveedores pueden crear un perfil de proveedor.",
       "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
+    },
+    "reviews": {
+      "title": "Reseñas",
+      "empty": "Este proveedor aún no tiene reseñas.",
+      "loadingAria": "Cargando reseñas",
+      "listAria": "Listado de reseñas del proveedor",
+      "actions": {
+        "loadMore": "Cargar más reseñas",
+        "loadingMore": "Cargando más…",
+        "retry": "Reintentar"
+      },
+      "errors": {
+        "load": "No pudimos cargar las reseñas. Intenta nuevamente."
+      },
+      "average": {
+        "empty": "Aún sin reseñas.",
+        "summary": "{count, plural, one {# reseña} other {# reseñas}}",
+        "ariaLabel": "{rating} de {max} estrellas basado en {count, plural, one {# reseña} other {# reseñas}}"
+      },
+      "item": {
+        "ariaRating": "{rating} de {max} estrellas",
+        "statusAriaLabel": "Estado: {status}",
+        "status": {
+          "published": "Publicada",
+          "hidden": "Oculta",
+          "removed": "Eliminada"
+        }
+      }
     }
   },
   "languages": {

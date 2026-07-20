@@ -110,6 +110,34 @@
       "AUTHENTICATION_REQUIRED": "Precisa de iniciar sessão para criar o seu perfil.",
       "FORBIDDEN": "Apenas fornecedores podem criar um perfil de fornecedor.",
       "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
+    },
+    "reviews": {
+      "title": "Avaliações",
+      "empty": "Este fornecedor ainda não tem avaliações.",
+      "loadingAria": "A carregar avaliações",
+      "listAria": "Lista de avaliações do fornecedor",
+      "actions": {
+        "loadMore": "Carregar mais avaliações",
+        "loadingMore": "A carregar mais…",
+        "retry": "Tentar novamente"
+      },
+      "errors": {
+        "load": "Não foi possível carregar as avaliações. Tente novamente."
+      },
+      "average": {
+        "empty": "Ainda sem avaliações.",
+        "summary": "{count, plural, one {# avaliação} other {# avaliações}}",
+        "ariaLabel": "{rating} de {max} estrelas com base em {count, plural, one {# avaliação} other {# avaliações}}"
+      },
+      "item": {
+        "ariaRating": "{rating} de {max} estrelas",
+        "statusAriaLabel": "Estado: {status}",
+        "status": {
+          "published": "Publicada",
+          "hidden": "Oculta",
+          "removed": "Removida"
+        }
+      }
     }
   },
   "languages": {

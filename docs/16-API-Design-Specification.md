@@ -2583,6 +2583,83 @@ type ReviewResponseDto = {
 
 **Observabilidad** (§14): `review.published` con `{reviewId, vendorProfileId, eventId, organizerUserId, rating}`. NO se emite `comment` ni PII (SEC-09).
 
+### 33.6 US-066 · `GET /api/v1/vendors/:id/reviews` (listado paginado con cursor + anonimato)
+
+Endpoint público con **auth opcional** que expone las reseñas verificadas de un vendor. El acceso es
+público (anónimo / organizer / vendor) para vendors `approved`; los administradores extienden el
+alcance a cualquier `vendor.status` y a los estados `published | hidden | removed` de las reseñas
+(D3). Los items obedecen anonimato estricto (D2 / AC-03): **NO** exponen `authorId`,
+`bookingIntentId`, `vendorProfileId`, ni ningún identificador del organizer.
+
+**Request** (path + query):
+
+```
+GET /api/v1/vendors/{id}/reviews?cursor=<base64url>&pageSize=<1..50>
+```
+
+| Campo | Tipo | Restricción | Default |
+| --- | --- | --- | --- |
+| `id` | UUID (path) | Obligatorio, formato v4. | — |
+| `cursor` | string (query) | Opaco base64url `{createdAt, id}` de la última fila de la página previa. | — |
+| `pageSize` | int (query) | 1..50. | 20 |
+
+**Response 200**:
+
+```ts
+type ListVendorReviewsResponse = {
+  vendor: {
+    id: string;
+    businessName: string;
+    slug: string;
+    status: string;
+    ratingAvg: number | null;
+    reviewsCount: number;
+  };
+  items: Array<{
+    id: string;
+    rating: number;
+    comment: string | null;
+    eventTitle: string;                    // desde bookingIntent.event.title (BE-005, sin N+1)
+    createdAt: string;                     // ISO 8601 UTC
+    status?: "published" | "hidden" | "removed"; // sólo cuando el requester es admin (D3)
+  }>;
+  pagination: {
+    nextCursor: string | null;
+    pageSize: number;
+  };
+};
+```
+
+**Orden estable**: `created_at DESC, id DESC` (D1, garantizado por el índice parcial
+`idx_reviews_vendor_published_created (vendor_profile_id, created_at DESC, id DESC) WHERE status='published'`).
+El cursor decodifica exactamente esa tupla; una página con `pagination.nextCursor === null`
+indica fin del listado.
+
+**Errores estables** (§9 API Contract US-066):
+
+| Código | HTTP | Detalle |
+| --- | --- | --- |
+| `VALIDATION_ERROR` | 400 | UUID inválido en `:id`, `pageSize` fuera de `[1..50]`, cursor > 512 chars, campo desconocido en query. |
+| `INVALID_CURSOR` | 400 | `cursor` no decodifica (base64url malformado, JSON inválido, o payload inconsistente — EC-03). |
+| `VENDOR_NOT_FOUND` | 404 | Vendor inexistente o (para no-admin) `vendor.status !== 'approved'` (D5 uniforme, SEC-04). Admin extiende el alcance a todos los estados. |
+
+**Guarantees enforcement**:
+
+- **Anonimato del organizer**: whitelist de columnas seleccionadas en Prisma (`select`) + mapper
+  con contrato tipado a `AnonymizedReview` (sin campos PII). QA-003 verifica que la serialización
+  completa del envelope no contiene `authorId`, `bookingIntentId` ni `vendorProfileId`.
+- **Filtro `status='published'` para no-admin**: aplicado en el `where` del use case. Admin ve
+  todos los estados y recibe el campo `status` por item; no-admin ni siquiera lo obtiene en la
+  respuesta.
+- **Soft delete respetado**: `deleted_at IS NULL` siempre — reviews soft-deleted no son visibles
+  ni siquiera para admin por este endpoint (queda para el catálogo de moderación).
+- **Auth opcional**: `optionalSessionAuthMiddleware` — si la cookie de sesión es válida, `req.user`
+  se puebla y el use case aplica el path admin cuando corresponda; sin cookie o cookie inválida
+  el endpoint sigue respondiendo (sin `401`).
+
+**Observabilidad**: log estándar HTTP con `correlationId`. Sin eventos de dominio dedicados
+(sólo lectura).
+
 ---
 
 ## 34. Notifications API

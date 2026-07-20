@@ -37,6 +37,10 @@ export interface PublicVendorReviewRecord {
 }
 
 export interface PublicVendorRecord {
+  // US-066 (PB-P1-039): `id` requerido en el DTO público para permitir al cliente invocar el
+  // listado paginado `GET /vendors/:id/reviews` sin roundtrip adicional slug→id. No es PII y
+  // ya se emite en endpoints admin/organizer del mismo vendor.
+  id: string;
   slug: string;
   businessName: string;
   bio: string | null;

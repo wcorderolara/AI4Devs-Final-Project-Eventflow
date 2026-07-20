@@ -44,6 +44,9 @@ import { portfolioRouter } from './modules/attachments/interface/index.js';
 // verificada + denormalize `VendorProfile.rating_avg/reviews_count` + 2 notifs `review.published`
 // al vendor dentro de una única transacción (ver `CreateReviewUseCase`).
 import { organizerReviewRouter } from './modules/reviews-moderation/interface/organizer-review.routes.js';
+// US-066 (PB-P1-039): endpoint público `GET /api/v1/vendors/:id/reviews` con cursor pagination
+// keyset + anonimato del organizer + admin sees-all. Auth opcional (anónimo permitido).
+import { vendorReviewsRouter } from './modules/reviews-moderation/interface/vendor-reviews.routes.js';
 
 /** Construye y configura la aplicación Express. */
 export function createApp(): Express {
@@ -118,6 +121,11 @@ export function createApp(): Express {
   apiV1.use('/booking-intents', bookingIntentRouter);
   // US-065 (PB-P1-038 / BE-004): crear Review verificada.
   apiV1.use('/organizer/reviews', organizerReviewRouter);
+  // US-066 (PB-P1-039 / BE-003): listar reviews de un vendor con cursor pagination + admin
+  // sees-all. Path relativo `/:id/reviews` — se monta ANTES de `vendorProfileRouter`
+  // (`/vendors/me[...]`) y `vendorSearchRouter` (`GET /vendors`) para preservar orden de
+  // captura; no colisiona porque `:id` es UUID (regex-guarded por Zod, no cae en `/me`).
+  apiV1.use('/vendors', vendorReviewsRouter);
   // US-040 (PB-P1-024): creación del VendorProfile por el propio vendor. Contrato
   // `POST /api/v1/vendors/me` (Doc 16 §M07). Solo rol `vendor` (organizer/admin → 403; sin
   // sesión → 401). El endpoint público del directorio de vendors vive en US futura.

@@ -51,6 +51,8 @@ function groupPortfolio(
 
 export function toPublicVendorDto(record: PublicVendorRecord): PublicVendorDto {
   return {
+    // US-066 (PB-P1-039): expone `id` para consumo del listado paginado desde el cliente.
+    id: record.id,
     slug: record.slug,
     businessName: record.businessName,
     bio: record.bio ?? '',

@@ -70,6 +70,8 @@ export class PrismaPublicVendorRepository implements PublicVendorRepository {
       .map((a) => ({ workLabel: a.workLabel as string, url: a.url }));
 
     return {
+      // US-066 (PB-P1-039): expone `id` para consumo del listado paginado desde el cliente.
+      id: vendor.id,
       slug: vendor.slug ?? slug,
       businessName: vendor.businessName,
       bio: vendor.bio,

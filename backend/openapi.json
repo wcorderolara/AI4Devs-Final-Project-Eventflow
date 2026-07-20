@@ -8170,6 +8170,183 @@
           "QuoteRequests"
         ]
       }
+    },
+    "/api/v1/vendors/{id}/reviews": {
+      "get": {
+        "operationId": "listVendorReviews",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "items": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "comment": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "createdAt": {
+                                "format": "date-time",
+                                "type": "string"
+                              },
+                              "eventTitle": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "format": "uuid",
+                                "type": "string"
+                              },
+                              "rating": {
+                                "maximum": 5,
+                                "minimum": 1,
+                                "type": "integer"
+                              },
+                              "status": {
+                                "enum": [
+                                  "published",
+                                  "hidden",
+                                  "removed"
+                                ],
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "rating",
+                              "comment",
+                              "eventTitle",
+                              "createdAt"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "pagination": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "nextCursor": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "pageSize": {
+                              "minimum": 1,
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "nextCursor",
+                            "pageSize"
+                          ],
+                          "type": "object"
+                        },
+                        "vendor": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "businessName": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "format": "uuid",
+                              "type": "string"
+                            },
+                            "ratingAvg": {
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "reviewsCount": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "slug": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "businessName",
+                            "slug",
+                            "status",
+                            "ratingAvg",
+                            "reviewsCount"
+                          ],
+                          "type": "object"
+                        }
+                      },
+                      "required": [
+                        "vendor",
+                        "items",
+                        "pagination"
+                      ],
+                      "type": "object"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "summary": "US-066 · Listar reviews de vendor (público, cursor + anonimato + admin sees-all)",
+        "tags": [
+          "Reviews"
+        ]
+      }
     }
   },
   "security": [],

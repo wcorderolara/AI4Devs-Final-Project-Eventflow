@@ -9,6 +9,7 @@ import { buildLocalBusinessLd } from '@/features/vendor-public/components/JsonLd
 import type { PublicVendorDTO } from '@/features/vendor-public/api/vendorPublicApi.types';
 
 const baseVendor: PublicVendorDTO = {
+  id: '00000000-0000-0000-0046-000000000001',
   slug: 'banquetes-el-quetzal',
   businessName: 'Banquetes El Quetzal',
   bio: 'Servicio premium.',
