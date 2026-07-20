@@ -116,6 +116,9 @@ import {
   InvalidVendorTransitionError,
   VendorNotFoundForModerationError,
 } from '../../../modules/admin-governance/domain/us047.errors.js';
+// US-074 (PB-P1-041): listado admin de VendorProfile. `Us074InvalidCursorError` → 400
+// `INVALID_CURSOR` (EC-02). Se reutiliza el código estable ya en el catálogo.
+import { Us074InvalidCursorError } from '../../../modules/admin-governance/domain/us074.errors.js';
 import {
   MissingInputError,
   AiInvalidBudgetError,
@@ -535,6 +538,10 @@ function mapError(err: unknown): MappedError {
         { field: 'allowed', message: err.allowed.join(',') },
       ],
     };
+  }
+  // US-074 (PB-P1-041): listado admin vendors — cursor base64 malformado.
+  if (err instanceof Us074InvalidCursorError) {
+    return { status: 400, code: ErrorCodes.INVALID_CURSOR, message: err.message };
   }
   if (err instanceof MissingInputError) {
     return { status: 400, code: ErrorCodes.MISSING_INPUT, message: err.message };

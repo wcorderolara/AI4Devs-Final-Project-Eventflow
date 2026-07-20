@@ -121,5 +121,88 @@
         "unexpected": "Erro inesperado. Tente novamente."
       }
     }
+  },
+  "vendor": {
+    "panel": {
+      "title": "Painel de moderação de fornecedores",
+      "subtitle": "Filtre fornecedores por status, visibilidade, datas e nome; modere com um clique.",
+      "loading": "Carregando fornecedores…",
+      "loadingMore": "Carregando mais…",
+      "error": "Não foi possível carregar os fornecedores. Tente novamente.",
+      "empty": "Nenhum fornecedor corresponde aos filtros.",
+      "caption": "Fornecedores admin (PII completa + última ação de moderação).",
+      "col": {
+        "businessName": "Nome comercial",
+        "owner": "Conta do fornecedor",
+        "status": "Status",
+        "lastAction": "Última ação admin",
+        "createdAt": "Cadastro",
+        "actions": "Ações"
+      },
+      "moderate": "Moderar",
+      "moderateAria": "Moderar o fornecedor {businessName}",
+      "loadMore": "Carregar mais",
+      "filters": {
+        "formAriaLabel": "Filtros do painel de fornecedores",
+        "statusLegend": "Status do fornecedor",
+        "isHiddenLabel": "Visibilidade",
+        "isHiddenAny": "Todos",
+        "isHiddenOnlyHidden": "Somente ocultos",
+        "isHiddenOnlyVisible": "Somente visíveis",
+        "businessNameLabel": "Nome comercial",
+        "businessNamePlaceholder": "Buscar por nome…",
+        "businessNameHint": "Busca por coincidência parcial (sem diferenciar maiúsculas).",
+        "createdFromLabel": "Cadastro desde",
+        "createdToLabel": "Cadastro até",
+        "reset": "Limpar filtros",
+        "apply": "Aplicar",
+        "errorDateRange": "A data inicial deve ser menor ou igual à final."
+      }
+    },
+    "moderate": {
+      "status": {
+        "pending": "Pendente",
+        "approved": "Aprovado",
+        "rejected": "Rejeitado",
+        "hidden": "Oculto (legado)",
+        "hiddenFlag": "Oculto"
+      },
+      "actions": {
+        "approve": "Aprovar",
+        "reject": "Rejeitar",
+        "hide": "Ocultar do diretório público",
+        "unhide": "Restaurar visibilidade pública"
+      },
+      "dialog": {
+        "title": "Moderar «{businessName}»",
+        "currentStatusLabel": "Status atual: {status} · Visibilidade: {visibility}",
+        "currentStatus": {
+          "pending": "Pendente",
+          "approved": "Aprovado",
+          "rejected": "Rejeitado",
+          "hidden": "Oculto (legado)"
+        },
+        "visibility": {
+          "visible": "visível",
+          "hidden": "oculto"
+        },
+        "actionLegend": "Escolha uma ação",
+        "reasonLabelRequired": "Motivo (10–500 caracteres, obrigatório)",
+        "reasonLabelOptional": "Motivo (opcional, até 500 caracteres)",
+        "counter": "{current}/{max} (mín. {min} quando obrigatório)",
+        "cancel": "Cancelar",
+        "submit": "Aplicar moderação",
+        "submitting": "Aplicando…",
+        "finalNotice": "Este fornecedor está rejeitado. Não são permitidas mais transições no MVP."
+      },
+      "errors": {
+        "unauthenticated": "Você precisa entrar como administrador.",
+        "forbidden": "Somente administradores podem moderar fornecedores.",
+        "notFound": "O fornecedor não existe mais.",
+        "invalidTransition": "A transição não é permitida para o status atual.",
+        "validation": "O formulário de moderação é inválido.",
+        "unexpected": "Erro inesperado. Tente novamente."
+      }
+    }
   }
 }
