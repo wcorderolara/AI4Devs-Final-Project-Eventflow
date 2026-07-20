@@ -31,6 +31,9 @@ import { eventTasksCreateRouter } from './modules/task-management/create/interfa
 import { eventTasksMutateRouter } from './modules/task-management/mutate/interface/http/mutate-event-task.routes.js';
 import { seedDemoRouter, isSeedDemoEnabled } from './modules/seed-demo/interface/seed-demo.routes.js';
 import { adminEventsRouter } from './modules/admin-governance/interface/admin-events.routes.js';
+// US-047 (PB-P1-041): endpoint admin `POST /api/v1/admin/vendors/:id/moderate` — approve/
+// reject/hide/unhide atómico con AdminAction obligatorio + 2 notifs vendor via service común.
+import { adminVendorRouter } from './modules/admin-governance/interface/admin-vendor.routes.js';
 import { budgetRouter, budgetItemMutationRouter } from './modules/budget-management/interface/index.js';
 import {
   vendorProfileRouter,
@@ -172,6 +175,11 @@ export function createApp(): Express {
   // Guards: sessionAuth + roleMiddleware(['admin']); UseCase atómico con AdminAction chain +
   // recálculo denormalize VendorProfile. Sin hard delete (FR-REVIEW-005), sin AI (FR-REVIEW-009).
   apiV1.use('/admin/reviews', adminReviewRouter);
+  // US-047 (PB-P1-041): moderación admin de VendorProfile
+  // (`POST /admin/vendors/:id/moderate`). Guards: sessionAuth + roleMiddleware(['admin']);
+  // UseCase atómico con AdminAction chain + 2 notifs vendor via service común extendido a
+  // 13 eventos. Sin hard delete, sin AI moderation (SEC-05).
+  apiV1.use('/admin/vendors', adminVendorRouter);
   app.use('/api/v1', apiV1);
 
   app.use(notFoundMiddleware); // 8. penúltimo: 404 catch-all

@@ -160,31 +160,35 @@ model User {
   status            UserStatus   @default(active)
   preferredLanguage LanguageCode @default(es_LATAM) @map("preferred_language")
 
-  events                 Event[]
-  vendorProfile          VendorProfile?
-  reviews                Review[]
+  events                  Event[]
+  vendorProfile           VendorProfile?
+  // US-047 (PB-P1-041 / DB-002): relación inversa `vendor_profiles.moderated_by` — admin que
+  // ejecutó la última acción de moderación (approve/reject/hide/unhide). Distinta de
+  // `vendorProfile` (perfil propio del vendor).
+  vendorProfilesModerated VendorProfile[]      @relation("VendorProfileModerator")
+  reviews                 Review[]
   // US-067 (PB-P1-040 / DB-002): relación inversa `reviews.moderated_by` — admin que ejecutó
   // la acción de moderación (hide/remove). Distinta de `reviews` (author).
-  reviewsModerated       Review[]             @relation("ReviewModerator")
-  notifications          Notification[]
-  adminActions           AdminAction[]
-  sessions               Session[]
-  passwordResetTokens    PasswordResetToken[]
-  aiRecommendations      AIRecommendation[]
+  reviewsModerated        Review[]             @relation("ReviewModerator")
+  notifications           Notification[]
+  adminActions            AdminAction[]
+  sessions                Session[]
+  passwordResetTokens     PasswordResetToken[]
+  aiRecommendations       AIRecommendation[]
   // US-028/029/031 (PB-P1-017/018): relaciones inversas de auditoría de EventTask.
-  eventTasksCreated      EventTask[]          @relation("EventTaskCreatedBy")
-  eventTasksUpdated      EventTask[]          @relation("EventTaskUpdatedBy")
-  eventTasksDeleted      EventTask[]          @relation("EventTaskDeletedBy")
-  eventTasksConfirmed    EventTask[]          @relation("EventTaskConfirmedBy")
+  eventTasksCreated       EventTask[]          @relation("EventTaskCreatedBy")
+  eventTasksUpdated       EventTask[]          @relation("EventTaskUpdatedBy")
+  eventTasksDeleted       EventTask[]          @relation("EventTaskDeletedBy")
+  eventTasksConfirmed     EventTask[]          @relation("EventTaskConfirmedBy")
   // US-051 (PB-P1-031 / DB-001): relación inversa de auditoría de la transición
   // `sent → viewed` en QuoteRequest. `viewed_by` referencia al usuario del vendor que la disparó.
-  quoteRequestsViewed    QuoteRequest[]       @relation("QuoteRequestViewedBy")
+  quoteRequestsViewed     QuoteRequest[]       @relation("QuoteRequestViewedBy")
   // US-056 (PB-P1-034 / DB-001): relación inversa de auditoría de la cancelación
   // de un QuoteRequest por el organizer. `cancelled_by` identifica al actor de la transición.
-  quoteRequestsCancelled QuoteRequest[]       @relation("QuoteRequestCancelledBy")
+  quoteRequestsCancelled  QuoteRequest[]       @relation("QuoteRequestCancelledBy")
   // US-060 (PB-P1-036 / DB-002): relación inversa de auditoría de la creación del BookingIntent
   // por el organizer (`booking_intents.created_by`).
-  bookingIntentsCreated  BookingIntent[]      @relation("BookingIntentCreatedBy")
+  bookingIntentsCreated   BookingIntent[]      @relation("BookingIntentCreatedBy")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -330,8 +334,24 @@ model VendorProfile {
   ratingAvg            Decimal?            @map("rating_avg") @db.Decimal(3, 2)
   reviewsCount         Int                 @default(0) @map("reviews_count")
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Restrict)
-  location Location? @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  // US-047 (PB-P1-041 / DB-002): moderación admin del VendorProfile. `is_hidden` es ortogonal
+  // al `status` (Decisión PO D2): un vendor `approved` puede ocultarse (`is_hidden=true`) sin
+  // cambiar status. El directorio público (US-045) y el detalle público (US-046) filtran por
+  // `status='approved' AND is_hidden=false`. Poblado atómicamente por `ModerateVendorUseCase`.
+  // Las 4 columnas audit son NULL antes de la primera acción de moderación (creación US-040).
+  isHidden         Boolean   @default(false) @map("is_hidden")
+  moderatedBy      String?   @map("moderated_by") @db.Uuid
+  moderatedAt      DateTime? @map("moderated_at") @db.Timestamptz(6)
+  moderationReason String?   @map("moderation_reason")
+  adminActionId    String?   @map("admin_action_id") @db.Uuid
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  location    Location?    @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  // US-047 (PB-P1-041 / DB-002): relaciones opcionales al admin moderador y al último
+  // `AdminAction` de moderación (chain audit BR-ADMIN-011). Paridad EXACTA con el patrón
+  // `Review.moderator` / `Review.adminAction` introducido en US-067.
+  moderator   User?        @relation("VendorProfileModerator", fields: [moderatedBy], references: [id], onDelete: Restrict)
+  adminAction AdminAction? @relation("VendorProfileAdminAction", fields: [adminActionId], references: [id], onDelete: Restrict)
 
   services          VendorService[]
   categories        VendorProfileCategory[]
@@ -353,6 +373,12 @@ model VendorProfile {
   @@unique([userId])
   @@index([locationId])
   @@index([status])
+  // US-047 (PB-P1-041 / DB-002): el índice parcial `idx_vendor_profiles_status_hidden`
+  // (status, is_hidden) WHERE deleted_at IS NULL vive en la migración
+  // `20260720160000_us047_vendor_profiles_moderation_audit_columns/migration.sql` porque
+  // Prisma no soporta índices parciales declarativos. Patrón consistente con
+  // `idx_reviews_moderated_by_at` (US-067) y `idx_reviews_vendor_published_created` (US-066):
+  // la SQL raw es la fuente de verdad y `prisma migrate diff` NO debe verlo como drift.
   @@map("vendor_profiles")
 }
 
@@ -841,6 +867,10 @@ model AdminAction {
   // US-067 (PB-P1-040 / DB-002): back-relation cuando este AdminAction es el ÚLTIMO acto de
   // moderación referenciado desde `reviews.admin_action_id` (chain audit BR-ADMIN-011).
   moderatedReviews Review[] @relation("ReviewAdminAction")
+
+  // US-047 (PB-P1-041 / DB-002): back-relation análoga cuando este AdminAction es el ÚLTIMO
+  // acto referenciado desde `vendor_profiles.admin_action_id` (chain audit BR-ADMIN-011).
+  moderatedVendorProfiles VendorProfile[] @relation("VendorProfileAdminAction")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)

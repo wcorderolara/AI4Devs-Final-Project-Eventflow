@@ -43,7 +43,13 @@ export class PrismaVendorSearchRepository implements VendorSearchRepository {
 
   async searchApprovedVendors(input: VendorSearchQueryInput): Promise<VendorSearchRow[]> {
     const params: unknown[] = [];
-    const where: string[] = [`vp.status = 'approved'`, `vp.deleted_at IS NULL`];
+    // US-047 (PB-P1-041 / AC-04): filtro `is_hidden = false` — un vendor `approved+hidden`
+    // desaparece del directorio público sin cambiar de status (Decisión PO D2, flag ortogonal).
+    const where: string[] = [
+      `vp.status = 'approved'`,
+      `vp.is_hidden = false`,
+      `vp.deleted_at IS NULL`,
+    ];
 
     if (input.filters.locationId !== null) {
       params.push(input.filters.locationId);

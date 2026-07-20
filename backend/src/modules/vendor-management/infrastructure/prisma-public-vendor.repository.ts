@@ -20,10 +20,14 @@ export class PrismaPublicVendorRepository implements PublicVendorRepository {
   constructor(private readonly prisma: PrismaClient = defaultPrisma) {}
 
   async findPublicApprovedBySlug(slug: string): Promise<PublicVendorRecord | null> {
+    // US-047 (PB-P1-041 / AC-04): filtra `is_hidden=false` para que un vendor moderado con
+    // `hide` desaparezca del detalle público sin cambiar su `status='approved'` — visibilidad
+    // ortogonal al estado (Decisión PO D2). Coherente con el filtro del directorio (US-045).
     const vendor = await this.prisma.vendorProfile.findFirst({
       where: {
         slug,
         status: 'approved',
+        isHidden: false,
         deletedAt: null,
       },
       include: {

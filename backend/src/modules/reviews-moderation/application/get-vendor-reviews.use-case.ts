@@ -62,7 +62,9 @@ export class GetVendorReviewsUseCase {
     const { currentUser, vendorId, cursor: cursorToken, pageSize } = input;
     const isAdmin = currentUser?.role === 'admin';
 
-    // 1) Vendor lookup + gating por rol (D5 uniforme 404).
+    // 1) Vendor lookup + gating por rol (D5 uniforme 404). US-047 (PB-P1-041 / AC-04):
+    // `is_hidden=true` sobre un vendor `approved` lo saca del directorio público — el listado
+    // de reviews sigue el mismo criterio de visibilidad; admin ve todo (`sees-all` D3 US-066).
     const vendor = await this.prisma.vendorProfile.findUnique({
       where: { id: vendorId },
       select: {
@@ -70,12 +72,13 @@ export class GetVendorReviewsUseCase {
         businessName: true,
         slug: true,
         status: true,
+        isHidden: true,
         ratingAvg: true,
         reviewsCount: true,
       },
     });
     if (!vendor) throw new VendorNotFoundForReviewsError();
-    if (!isAdmin && vendor.status !== 'approved') {
+    if (!isAdmin && (vendor.status !== 'approved' || vendor.isHidden)) {
       throw new VendorNotFoundForReviewsError();
     }
 
