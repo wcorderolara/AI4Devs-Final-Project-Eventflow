@@ -26,10 +26,15 @@ export const vendorProfileApi = {
     return dto.data;
   },
 
-  /** US-040 (EMERGENT): catálogo de ServiceCategory activas para el wizard. */
+  /**
+   * US-040 (EMERGENT) → US-075 (PB-P1-042): catálogo público. El endpoint devuelve
+   * `{tree, flat}`; el wizard `LocationCategoriesStep` sigue esperando la proyección
+   * `ServiceCategoryOption[]` (id, code, label) — se toma directamente de `flat`
+   * ya ordenado por el backend (`parent_id NULLS FIRST, sort_order, label`).
+   */
   async listServiceCategories(): Promise<ServiceCategoryOption[]> {
     const dto = await httpGet<ServiceCategoriesEnvelopeDTO>('/service-categories');
-    return dto.data;
+    return dto.data.flat.map((c) => ({ id: c.id, code: c.code, label: c.label }));
   },
 
   /** EMERGENT US-041: perfil del vendor autenticado (para hidratar el editor). */

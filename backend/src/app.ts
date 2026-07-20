@@ -37,11 +37,17 @@ import { adminVendorRouter } from './modules/admin-governance/interface/admin-ve
 import { budgetRouter, budgetItemMutationRouter } from './modules/budget-management/interface/index.js';
 import {
   vendorProfileRouter,
-  serviceCategoriesRouter,
   vendorServiceRouter,
   vendorSearchRouter,
   publicVendorRouter,
 } from './modules/vendor-management/interface/index.js';
+// US-075 (PB-P1-042): CRUD admin de `ServiceCategory` + endpoint público `{tree, flat}`.
+// Reemplaza al `serviceCategoriesRouter` EMERGENT de US-040 en vendor-management (que solo
+// devolvía un array plano `{id, code, label}`) — el shape ahora es spec-compliant.
+import {
+  adminServiceCategoryRouter,
+  publicServiceCategoryRouter,
+} from './modules/service-catalog/interface/index.js';
 import { portfolioRouter } from './modules/attachments/interface/index.js';
 // US-065 (PB-P1-038): endpoint atómico `POST /api/v1/organizer/reviews` — crea la reseña
 // verificada + denormalize `VendorProfile.rating_avg/reviews_count` + 2 notifs `review.published`
@@ -157,9 +163,10 @@ export function createApp(): Express {
   // `vendorProfileRouter` porque comparte el prefijo `/vendors/me` — Express recorre routers en
   // orden y este es específico al sub-path `/me/portfolio`.
   apiV1.use('/vendors/me/portfolio', portfolioRouter);
-  // US-040 (EMERGENT): catálogo de ServiceCategory activas, requerido por el wizard vendor
-  // (FE-004). Curado por admin (BR-SERVICE-003); solo requiere sesión válida.
-  apiV1.use('/service-categories', serviceCategoriesRouter);
+  // US-075 (PB-P1-042 / BE-007): catálogo público `{tree, flat}` filtrado a `is_active=true`.
+  // Reemplaza al endpoint EMERGENT de US-040 (que devolvía array plano). Curado por admin
+  // (BR-SERVICE-003); solo requiere sesión válida (cualquier rol autenticado).
+  apiV1.use('/service-categories', publicServiceCategoryRouter);
   apiV1.use('/events', eventPlanningRouter); // US-095 / API-001
   apiV1.use('/event-types', eventTypesRouter); // US-009 / catálogo
   apiV1.use('/locations', locationsRouter); // US-009 / catálogo
@@ -180,6 +187,11 @@ export function createApp(): Express {
   // UseCase atómico con AdminAction chain + 2 notifs vendor via service común extendido a
   // 13 eventos. Sin hard delete, sin AI moderation (SEC-05).
   apiV1.use('/admin/vendors', adminVendorRouter);
+  // US-075 (PB-P1-042 / BE-007): CRUD admin del catálogo `ServiceCategory` (5 rutas: GET
+  // listado tree+flat, POST create root/child, PATCH update/reactivate, DELETE soft delete).
+  // Guards: sessionAuth + roleMiddleware(['admin']). Cada mutación crea un AdminAction
+  // append-only (BR-ADMIN-011) sin fan-out de notifs (catálogo cold; sin destinatarios).
+  apiV1.use('/admin/service-categories', adminServiceCategoryRouter);
   app.use('/api/v1', apiV1);
 
   app.use(notFoundMiddleware); // 8. penúltimo: 404 catch-all

@@ -84,6 +84,13 @@ export interface DomainEventLogger {
       // a contenido reportado sensible (SEC-09; misma técnica que review.moderated).
       fromIsHidden?: boolean;
       toIsHidden?: boolean;
+      // US-075 (BE-004..006): `service_category.created` / `updated` / `reactivated` /
+      // `soft_deleted`. `code` es el slug de la categoría; `parentId` distingue root
+      // vs subcategoría al leer logs sin JOIN. `adminUserId`/`adminActionId` ya
+      // existen (chain audit BR-ADMIN-011). NO se logea `name_i18n` ni `reason` —
+      // pueden contener texto largo/no sanitizado (SEC-09; paridad review.moderated).
+      code?: string;
+      parentId?: string | null;
     },
   ): void;
 }

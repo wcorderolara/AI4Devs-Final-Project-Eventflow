@@ -336,7 +336,7 @@ correlationId
 
 | Rol | Características |
 | --- | --- |
-| `anonymous` | Solo accede a `/health`, `/auth/*`, `/api/v1/public/*`, `/api/v1/event-types`, `/api/v1/service-categories` (read-only). |
+| `anonymous` | Solo accede a `/health`, `/auth/*`, `/api/v1/public/*`, `/api/v1/event-types` (read-only). `/api/v1/service-categories` pasa a requerir sesión válida (cualquier rol) desde US-075 (Decisión PO D10 + SEC-02). |
 | `organizer` | Gestiona sus eventos, tasks, budgets, quote requests, booking intents, reviews, IA, notifications. |
 | `vendor` | Gestiona su `VendorProfile`, sus `VendorService`, su portfolio, sus quote requests asignadas, responde quotes, ve sus reviews. |
 | `admin` | Aprueba/rechaza vendors, modera reviews, gestiona catálogos (EventType, ServiceCategory), ve métricas, lee eventos en read-only, ejecuta seed/demo. |
@@ -478,7 +478,16 @@ correlationId
 | `DUPLICATE_QUOTE_REQUEST_ACTIVE` | 409 | Reglas | QuoteRequest activa duplicada. |
 | `QUOTE_EXPIRED` | 410 | Estado | Quote expirada al intentar aceptar. |
 | `EVENT_TYPE_HAS_EVENTS` | 409 | Reglas | Intento de borrar EventType con eventos asociados. |
-| `CATEGORY_DEPTH_EXCEEDED` | 409 | Reglas | ServiceCategory excede profundidad máxima (2). |
+| `CATEGORY_DEPTH_EXCEEDED` | 409 | Reglas | (Deprecado tras US-075: usar `INVALID_HIERARCHY_DEPTH`.) ServiceCategory excede profundidad máxima (2). |
+| `INVALID_HIERARCHY_DEPTH` | 409 | Reglas | ServiceCategory: crear/mover a nivel 3 o mover root con children a sub. Reemplaza al histórico `CATEGORY_DEPTH_EXCEEDED` (US-075). |
+| `SERVICE_CATEGORY_NOT_FOUND` | 404 | Estado | ServiceCategory inexistente o soft-deleted (uniforme, US-075 SEC-05). |
+| `CATEGORY_IN_USE` | 409 | Reglas | Soft delete bloqueado: hay `vendor_services` asociados. `details.usage_count`. (US-075 EC-03) |
+| `CATEGORY_HAS_CHILDREN` | 409 | Reglas | Soft delete bloqueado: hay subcategorías activas. `details.children_count`. (US-075 EC-04) |
+| `DUPLICATE_CODE` | 409 | Estado | ServiceCategory: `code` ya existe. (US-075 EC-06) |
+| `INVALID_NAME_I18N` | 400 | Validación | `name_i18n['es-LATAM']` requerido y no vacío. (US-075 EC-05) |
+| `INVALID_PARENT_ID` | 400 | Validación | `parent_id` referencia una categoría inexistente. (US-075) |
+| `REASON_REQUIRED` | 400 | Validación | DELETE sin body.reason. (US-075 VR-10) |
+| `INVALID_REASON_LENGTH` | 400 | Validación | DELETE con reason fuera de [10..500]. (US-075 VR-10) |
 | `RATE_LIMIT_EXCEEDED` | 429 | Anti-abuso | Límite de requests excedido. |
 | `EMAIL_TAKEN` | 409 | Estado | Email ya registrado en `/auth/register` (mensaje neutro anti-enumeración). |
 | `CAPTCHA_REQUIRED` | 400 | Anti-abuso | Token de captcha ausente en endpoint protegido por captcha. |
@@ -1740,42 +1749,85 @@ Catálogo de categorías de servicio jerárquico (máx 2 niveles).
 
 ### 29.2 Endpoints
 
+> US-075 (PB-P1-042) — implementación concreta del contrato §29. Consolidada en 5 rutas
+> (Decisión PO D1/D10). El endpoint público requiere **sesión válida** (cualquier rol
+> autenticado, Decisión PO D10 + SEC-02); no está expuesto como `anonymous`. Todas las
+> mutaciones emiten un `AdminAction` append-only con `target_entity='service_category'`.
+
 | Método | Path | Auth | Roles | Propósito | Success | Errores |
 | --- | --- | --- | --- | --- | --- | --- |
-| GET | `/service-categories` | No | anonymous | Lista activas con jerarquía. | 200 | — |
-| GET | `/service-categories/:id` | No | anonymous | Detalle. | 200 | 404 |
-| POST | `/admin/service-categories` | Sí | admin | Crea categoría. | 201 | 401, 403, 409 (CATEGORY_DEPTH_EXCEEDED), 422 |
-| PATCH | `/admin/service-categories/:id` | Sí | admin | Actualiza categoría. | 200 | 401, 403, 404, 422 |
-| DELETE | `/admin/service-categories/:id` | Sí | admin | Soft delete (`isActive=false`). | 204 | 401, 403, 404 |
+| GET | `/service-categories` | Sí | any authenticated | Lista `{tree, flat}` **solo activas**. | 200 | 401 |
+| GET | `/admin/service-categories` | Sí | admin | Lista `{tree, flat}` **incluye inactivas** (soft-deleted por `is_active=false`). | 200 | 401, 403 |
+| POST | `/admin/service-categories` | Sí | admin | Crea root o child + AdminAction `create`. | 201 | 400 (`INVALID_NAME_I18N`, `INVALID_PARENT_ID`, `VALIDATION_ERROR`), 401, 403, 409 (`INVALID_HIERARCHY_DEPTH`, `DUPLICATE_CODE`) |
+| PATCH | `/admin/service-categories/:id` | Sí | admin | Update / reactivate + AdminAction (`update` o `reactivate` según transición `is_active`). | 200 | 400 (`INVALID_NAME_I18N`, `INVALID_PARENT_ID`), 401, 403, 404 (`SERVICE_CATEGORY_NOT_FOUND`), 409 (`INVALID_HIERARCHY_DEPTH`) |
+| DELETE | `/admin/service-categories/:id` | Sí | admin | Soft delete (`is_active=false`) + AdminAction `soft_delete`. Body `{ reason }` requerido [10..500]. | 200 | 400 (`REASON_REQUIRED`, `INVALID_REASON_LENGTH`), 401, 403, 404 (`SERVICE_CATEGORY_NOT_FOUND`), 409 (`CATEGORY_IN_USE`, `CATEGORY_HAS_CHILDREN`) |
 
 ### 29.3 DTOs
 
+Wire shape snake_case (paridad con `toServiceCategoryView` en
+`backend/src/modules/service-catalog/application/service-category.view.ts`):
+
 ```ts
-type ServiceCategoryResponseDto = {
+type ServiceCategoryNode = {
   id: string;
   code: string;
-  displayName: string;
-  description: string | null;
-  parentId: string | null;
-  depthLevel: 1 | 2;
-  isActive: boolean;
-  sortOrder: number | null;
-  isSeed: boolean;
+  label: string;                              // denormalizado desde name_i18n['es-LATAM']
+  description: string | null;                 // idem desde description_i18n['es-LATAM']
+  name_i18n: Record<string, string>;          // required es-LATAM
+  description_i18n: Record<string, string> | null;
+  parent_id: string | null;
+  sort_order: number;                         // int >= 0
+  depth_level: 1 | 2;
+  is_active: boolean;
+  created_at: string;                         // ISO 8601 UTC
+  updated_at: string;
 };
 
-type CreateServiceCategoryRequestDto = {
-  code: string;
-  displayName: { "es-LATAM": string; "es-ES"?: string; "pt"?: string; "en"?: string };
-  description?: string;
-  parentId?: string;
-  sortOrder?: number;
+type ServiceCategoryTreeNode = ServiceCategoryNode & { children: ServiceCategoryTreeNode[] };
+
+type ListServiceCategoriesResponse = {
+  tree: ServiceCategoryTreeNode[];
+  flat: ServiceCategoryNode[];
+};
+
+type CreateServiceCategoryRequest = {
+  code: string;                               // slug ^[a-z0-9-]+$, [1..64]
+  name_i18n: Record<string, string>;          // es-LATAM required (server-side)
+  description_i18n?: Record<string, string>;
+  parent_id?: string | null;
+  sort_order?: number;                        // default 0
+  reason?: string;                            // opcional en create; el AdminAction lo persiste
+};
+
+type UpdateServiceCategoryRequest = {
+  name_i18n?: Record<string, string>;
+  description_i18n?: Record<string, string>;
+  parent_id?: string | null;
+  sort_order?: number;
+  is_active?: boolean;                        // false→true dispara AdminAction reactivate
+  reason?: string;
+};
+
+type DeleteServiceCategoryRequest = {
+  reason: string;                             // [10..500] chars — VR-10
 };
 ```
 
 ### 29.4 Reglas
 
-- **BR-SERVICE-005**: profundidad máxima **2**. `parentId` cuyo padre tenga `parentId != null` → `409 CATEGORY_DEPTH_EXCEEDED`.
-- **BR-SERVICE-007**: soft delete obligatorio.
+- **BR-SERVICE-003 / SEC-01**: catálogo curado exclusivamente por admin.
+- **BR-SERVICE-005 / Decisión PO D4**: profundidad máxima **2**. `parent_id` con parent ya-hijo,
+  o mover un root con children a sub, disparan `409 INVALID_HIERARCHY_DEPTH` (código del
+  catálogo actualizado; el histórico `CATEGORY_DEPTH_EXCEEDED` queda deprecado tras US-075).
+- **BR-SERVICE-007 / Decisión PO D5**: soft delete obligatorio con guards previos: `CATEGORY_IN_USE`
+  (existe `vendor_services` asociado, expone `details.usage_count`) y `CATEGORY_HAS_CHILDREN`
+  (root con children activos, expone `details.children_count`). No hay hard delete.
+- **Decisión PO D3 / VR-03**: `name_i18n['es-LATAM']` requerido en create y en update-name;
+  el UseCase emite `400 INVALID_NAME_I18N` cuando falta o está vacío.
+- **Decisión PO D7 / BR-ADMIN-011**: cada mutación crea un `AdminAction` append-only con
+  `metadata.snapshot` y `reason`. `soft_delete` requiere reason [10..500].
+- **Decisión PO D10 / SEC-02**: el endpoint público `GET /service-categories` requiere sesión
+  válida (cualquier rol). No es `anonymous` — reemplaza al listado EMERGENT de US-040.
 
 ---
 

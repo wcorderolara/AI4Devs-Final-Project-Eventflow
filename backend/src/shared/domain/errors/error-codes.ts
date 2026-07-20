@@ -189,6 +189,18 @@ export const ErrorCodes = {
   // US-066), por lo que exponer este código NO leakea información. `INVALID_TRANSITION` (409,
   // ya definido arriba) reutiliza el envelope con `details.from`/`details.to`/`details.allowed`.
   REVIEW_NOT_FOUND: 'REVIEW_NOT_FOUND',
+  // US-075 (PB-P1-042): CRUD admin ServiceCategory. Todos los códigos son estables y
+  // consumidos por FE + MSW + i18n `admin.category.errors.*` (Tech Spec §7 Error Handling).
+  SERVICE_CATEGORY_NOT_FOUND: 'SERVICE_CATEGORY_NOT_FOUND', // 404 uniforme (D9, VR-11)
+  INVALID_HIERARCHY_DEPTH: 'INVALID_HIERARCHY_DEPTH', // 409 (EC-01/EC-02, VR-06)
+  DUPLICATE_CODE: 'DUPLICATE_CODE', // 409 (EC-06, VR-02)
+  CATEGORY_IN_USE: 'CATEGORY_IN_USE', // 409 (EC-03, VR-09); details.usage_count
+  CATEGORY_HAS_CHILDREN: 'CATEGORY_HAS_CHILDREN', // 409 (EC-04, VR-09); details.children_count
+  INVALID_NAME_I18N: 'INVALID_NAME_I18N', // 400 (EC-05, VR-03) — falta `es-LATAM`
+  INVALID_PARENT_ID: 'INVALID_PARENT_ID', // 400 (VR-05) — parent inexistente
+  INVALID_SORT_ORDER: 'INVALID_SORT_ORDER', // 400 (VR-07)
+  REASON_REQUIRED: 'REASON_REQUIRED', // 400 (VR-10) — DELETE sin reason
+  INVALID_REASON_LENGTH: 'INVALID_REASON_LENGTH', // 400 (VR-10) — reason fuera de [10..500]
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

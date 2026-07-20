@@ -219,18 +219,91 @@ export class SeedDemoDataUseCase {
         ),
       );
     }
-    const categories = [];
-    for (const cat of SERVICE_CATEGORIES) {
-      categories.push(
-        await ensure(
-          () => tx.serviceCategory.findUnique({ where: { code: cat.code } }),
-          () =>
-            tx.serviceCategory.create({
-              data: { code: cat.code, label: cat.label, depthLevel: cat.depthLevel, isActive: true, isSeed: true },
-            }),
-          counts,
-        ),
+    // US-075 (PB-P1-042 / DB-003): 2 pasadas para respetar la self-ref `parent_id`.
+    //   1) Crea roots (`parentCode=null`) — no dependen de nadie.
+    //   2) Crea/actualiza subs enlazando al `parent_id` ya insertado.
+    // Idempotente: si la fila ya existe pero le faltan campos de US-075 (`nameI18n`,
+    // `parentId`, `sortOrder`) se rehidrata sin duplicar. `label` se conserva para
+    // callers legacy y se mantiene sincronizado con `nameI18n['es-LATAM']`.
+    const categories: { id: string; code: string }[] = [];
+    const byCode = new Map<string, { id: string }>();
+    const roots = SERVICE_CATEGORIES.filter((c) => c.parentCode === null);
+    const subs = SERVICE_CATEGORIES.filter((c) => c.parentCode !== null);
+    for (const cat of roots) {
+      const row = await ensure(
+        () => tx.serviceCategory.findUnique({ where: { code: cat.code } }),
+        () =>
+          tx.serviceCategory.create({
+            data: {
+              code: cat.code,
+              label: cat.label,
+              nameI18n: cat.nameI18n as Prisma.InputJsonObject,
+              descriptionI18n: cat.descriptionI18n
+                ? (cat.descriptionI18n as Prisma.InputJsonObject)
+                : undefined,
+              depthLevel: cat.depthLevel,
+              sortOrder: cat.sortOrder,
+              parentId: null,
+              isActive: true,
+              isSeed: true,
+            },
+          }),
+        counts,
       );
+      // Backfill idempotente de campos US-075 en filas seed pre-US-075.
+      await tx.serviceCategory.update({
+        where: { id: row.id },
+        data: {
+          label: cat.label,
+          nameI18n: cat.nameI18n as Prisma.InputJsonObject,
+          descriptionI18n: cat.descriptionI18n
+            ? (cat.descriptionI18n as Prisma.InputJsonObject)
+            : undefined,
+          sortOrder: cat.sortOrder,
+          depthLevel: cat.depthLevel,
+          parentId: null,
+        },
+      });
+      byCode.set(cat.code, { id: row.id });
+      categories.push({ id: row.id, code: cat.code });
+    }
+    for (const cat of subs) {
+      const parent = byCode.get(cat.parentCode as string);
+      if (!parent) continue; // safety: parent debe existir por el orden de pasadas.
+      const row = await ensure(
+        () => tx.serviceCategory.findUnique({ where: { code: cat.code } }),
+        () =>
+          tx.serviceCategory.create({
+            data: {
+              code: cat.code,
+              label: cat.label,
+              nameI18n: cat.nameI18n as Prisma.InputJsonObject,
+              descriptionI18n: cat.descriptionI18n
+                ? (cat.descriptionI18n as Prisma.InputJsonObject)
+                : undefined,
+              depthLevel: cat.depthLevel,
+              sortOrder: cat.sortOrder,
+              parentId: parent.id,
+              isActive: true,
+              isSeed: true,
+            },
+          }),
+        counts,
+      );
+      await tx.serviceCategory.update({
+        where: { id: row.id },
+        data: {
+          label: cat.label,
+          nameI18n: cat.nameI18n as Prisma.InputJsonObject,
+          descriptionI18n: cat.descriptionI18n
+            ? (cat.descriptionI18n as Prisma.InputJsonObject)
+            : undefined,
+          sortOrder: cat.sortOrder,
+          depthLevel: cat.depthLevel,
+          parentId: parent.id,
+        },
+      });
+      categories.push({ id: row.id, code: cat.code });
     }
     const locations = [];
     for (const loc of LOCATIONS) {

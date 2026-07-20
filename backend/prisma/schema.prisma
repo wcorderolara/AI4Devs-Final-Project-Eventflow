@@ -259,13 +259,29 @@ model Location {
 }
 
 model ServiceCategory {
-  id          String  @id @default(uuid()) @db.Uuid
-  code        String  @unique
-  label       String
-  description String?
-  isActive    Boolean @default(true) @map("is_active")
+  id              String            @id @default(uuid()) @db.Uuid
+  code            String            @unique
+  // US-075 (PB-P1-042 / DB-002): el catálogo pasa a i18n-first (Decisión PO D3).
+  // `label` se mantiene como fallback denormalizado en `es-LATAM` — poblado server-side
+  // desde `name_i18n['es-LATAM']` en create/update — para no romper los callers
+  // legacy que ya proyectan `label` directo (VendorService, EventTask, Quote denormalizado).
+  label           String
+  description     String?
+  // US-075 / DB-002: `name_i18n` obligatorio con `es-LATAM` requerido (validación en la
+  // capa Zod/UseCase, no en SQL). `description_i18n` opcional. JSONB para lookups i18n baratos.
+  nameI18n        Json              @default("{}") @map("name_i18n") @db.JsonB
+  descriptionI18n Json?             @map("description_i18n") @db.JsonB
+  isActive        Boolean           @default(true) @map("is_active")
   // US-102: soporte para chk_service_categories_depth_level (C-026b; BETWEEN 1 AND 2).
-  depthLevel  Int     @default(1) @map("depth_level")
+  depthLevel      Int               @default(1) @map("depth_level")
+  // US-075 (PB-P1-042 / DB-002): jerarquía self-referencial 2 niveles (Decisión PO D4).
+  // Enforcement de profundidad en el UseCase (409 INVALID_HIERARCHY_DEPTH) — el CHECK SQL
+  // sigue siendo `depth_level BETWEEN 1 AND 2`. `sort_order` gobierna orden dentro del
+  // mismo nivel (`ORDER BY parent_id NULLS FIRST, sort_order ASC, label ASC`).
+  parentId        String?           @map("parent_id") @db.Uuid
+  parent          ServiceCategory?  @relation("ServiceCategoryHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children        ServiceCategory[] @relation("ServiceCategoryHierarchy")
+  sortOrder       Int               @default(0) @map("sort_order")
 
   vendorServices     VendorService[]
   vendorProfiles     VendorProfileCategory[]
@@ -281,6 +297,12 @@ model ServiceCategory {
   isSeed    Boolean   @default(false) @map("is_seed")
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
+  // Nota (patrón US-066/US-102/US-067 CI drift fix): el índice parcial
+  // `idx_service_categories_parent_active_sort (parent_id, is_active, sort_order)
+  //  WHERE deleted_at IS NULL` se declara SOLO en la migración SQL raw
+  // (`20260720170000_us075_service_categories_i18n_hierarchy/migration.sql`).
+  // Prisma no soporta `WHERE` en `@@index`; declararlo aquí sin la cláusula produciría
+  // un `prisma migrate diff` con drift permanente.
   @@map("service_categories")
 }
 
