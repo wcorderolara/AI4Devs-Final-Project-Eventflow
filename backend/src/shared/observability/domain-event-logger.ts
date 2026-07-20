@@ -77,6 +77,13 @@ export interface DomainEventLogger {
       fromStatus?: string;
       toStatus?: string;
       adminActionId?: string;
+      // US-047 (BE-005): `vendor.moderated` con `vendorProfileId`, `adminUserId`, `action`
+      // (`approve`|`reject`|`hide`|`unhide`), `fromStatus`, `toStatus`, `fromIsHidden`,
+      // `toIsHidden`, `adminActionId`. Cumple Tech Spec §14 (7 campos requeridos + adminActionId
+      // como trazabilidad BR-ADMIN-011). NO se logea el `moderation_reason` — puede referirse
+      // a contenido reportado sensible (SEC-09; misma técnica que review.moderated).
+      fromIsHidden?: boolean;
+      toIsHidden?: boolean;
     },
   ): void;
 }

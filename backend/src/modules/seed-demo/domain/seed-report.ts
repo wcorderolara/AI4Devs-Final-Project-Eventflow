@@ -10,7 +10,8 @@ export type SeedDomainName =
   | 'reviews'
   | 'ai'
   | 'notifications'
-  | 'adminActions';
+  | 'adminActions'
+  | 'vendor-moderations';
 
 export interface DomainCounts {
   created: number;

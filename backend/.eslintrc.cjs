@@ -75,6 +75,14 @@ module.exports = {
       // (`organizer-review.routes.ts`) enlaza el `QuoteEventNotificationService` (US-060 BE-002)
       // como adapter del `ReviewEventNotifierPort` (consumer-owned interface). Wire cross-module
       // sin lógica de negocio — patrón consistente con US-039 y US-037.
+      //
+      // Excepción documentada (US-047 PB-P1-041): `ModerateVendorUseCase` + su composition root
+      // (`admin-vendor.routes.ts`) también enlazan el `QuoteEventNotificationService` extendido a
+      // 13 eventos (con 4 `vendor.*` nuevos) para la fan-out atómica al vendor tras la moderación
+      // admin. Mismo patrón wire consumer-owned; sin lógica cross-module. El use-case importa
+      // sólo el TIPO del emisor (subset `VendorNotifyEmitter = Pick<..., 'emit'>` + el union
+      // `QuoteEventName`) — no invoca `new QuoteEventNotificationService(...)`, eso lo hace el
+      // composition root del router.
       files: [
         'src/modules/ai-assistance/interface/ai.routes.ts',
         'src/modules/budget-management/application/hitl/budget-suggestion-apply.strategy.ts',
@@ -82,6 +90,8 @@ module.exports = {
         'src/modules/budget-management/application/update-committed-from-booking-intent.use-case.ts',
         'src/modules/budget-management/infrastructure/budget-committed-sync.adapter.ts',
         'src/modules/reviews-moderation/interface/organizer-review.routes.ts',
+        'src/modules/admin-governance/application/moderate-vendor.use-case.ts',
+        'src/modules/admin-governance/interface/admin-vendor.routes.ts',
       ],
       rules: {
         'boundaries/element-types': 'off',

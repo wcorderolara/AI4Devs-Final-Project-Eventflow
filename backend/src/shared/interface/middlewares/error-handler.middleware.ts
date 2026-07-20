@@ -108,6 +108,14 @@ import {
   InvalidReviewTransitionError,
   ReviewNotFoundForModerationError,
 } from '../../../modules/reviews-moderation/domain/us067.errors.js';
+// US-047 (PB-P1-041): moderación admin de VendorProfile. `VendorNotFoundForModerationError`
+// → 404 `VENDOR_NOT_FOUND` uniforme (Decisión PO D7); `InvalidVendorTransitionError` → 409
+// `INVALID_TRANSITION` con `details = [{from_status},{from_is_hidden},{to_status},
+// {to_is_hidden},{action},{allowed}]` (EC-01..EC-03).
+import {
+  InvalidVendorTransitionError,
+  VendorNotFoundForModerationError,
+} from '../../../modules/admin-governance/domain/us047.errors.js';
 import {
   MissingInputError,
   AiInvalidBudgetError,
@@ -503,6 +511,27 @@ function mapError(err: unknown): MappedError {
       details: [
         { field: 'from', message: err.from },
         { field: 'to', message: err.to },
+        { field: 'allowed', message: err.allowed.join(',') },
+      ],
+    };
+  }
+  // US-047 (PB-P1-041): moderación admin de VendorProfile. 404 uniforme `VENDOR_NOT_FOUND`
+  // (Decisión PO D7 + SEC-03); 409 `INVALID_TRANSITION` con envelope enriquecido para que el
+  // frontend pueda distinguir status vs is_hidden en el mismo tipo de error.
+  if (err instanceof VendorNotFoundForModerationError) {
+    return { status: 404, code: ErrorCodes.VENDOR_NOT_FOUND, message: 'Vendor not found' };
+  }
+  if (err instanceof InvalidVendorTransitionError) {
+    return {
+      status: 409,
+      code: ErrorCodes.INVALID_TRANSITION,
+      message: err.message,
+      details: [
+        { field: 'from_status', message: err.fromStatus },
+        { field: 'from_is_hidden', message: String(err.fromIsHidden) },
+        { field: 'to_status', message: err.toStatus },
+        { field: 'to_is_hidden', message: String(err.toIsHidden) },
+        { field: 'action', message: err.action },
         { field: 'allowed', message: err.allowed.join(',') },
       ],
     };

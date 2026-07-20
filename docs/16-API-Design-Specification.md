@@ -1226,6 +1226,7 @@ Gestionar el perfil del proveedor, aprobación admin, directorio público.
 | GET | `/api/v1/public/vendors` | No | anonymous | Directorio público. | 200 | — |
 | GET | `/api/v1/public/vendors/:vendorSlug` | No | anonymous | Perfil público SEO del vendor por slug (US-046). Whitelist explícita (D1). Cache-Control `public, max-age=60, stale-while-revalidate=300` (D4). Rate limit 60 req/min por IP (D7). | 200 | 400 `VALIDATION_ERROR`, 404 `VENDOR_NOT_FOUND` (uniforme D6), 429 `RATE_LIMIT_EXCEEDED` |
 | GET | `/api/v1/public/vendors/:vendorSlug/portfolio` | No | anonymous | Portafolio público. | 200 | 404 |
+| POST | `/admin/vendors/:id/moderate` | Sí | admin | US-047 · Modera VendorProfile (approve\|reject\|hide\|unhide) con AdminAction + 2 notifs al vendor via service común extendido a 13 eventos. Ver §27.8. | 200 | 400 (VALIDATION_ERROR), 401, 403, 404 (VENDOR_NOT_FOUND), 409 (INVALID_TRANSITION) |
 
 ### 27.4 DTOs
 
@@ -1527,6 +1528,84 @@ Endpoint público (sin auth) del perfil SEO de un vendor. Alimenta el Server Com
 - **`reviewer_display_name`**: pseudonimizado (`Juan P.`) desde `users.full_name`; fallback `Anónimo`.
 - **XSS**: la `bio` viaja como string; Next.js aplica auto-escape en el renderer. La API no permite HTML en el input (BR US-041).
 - **ISR**: la página cachea el resultado por 300 s. Invalidación on-demand queda como Future.
+
+### 27.8 US-047 · `POST /api/v1/admin/vendors/:id/moderate` (moderación admin con AdminAction chain)
+
+Endpoint atómico admin para gestionar el lifecycle de moderación del `VendorProfile`. Ejecuta 4 acciones sobre un vendor identificado por UUID:
+
+| `action` | Precondición (from) | Postcondición (to) | Notas |
+| --- | --- | --- | --- |
+| `approve` | `status='pending'` | `status='approved'`, `is_hidden=false` | Reason opcional (D3). |
+| `reject`  | `status='pending'` | `status='rejected'` (is_hidden preservado) | Reason **required** [10..500] (D4). `rejected` es terminal en el MVP — re-approve OUT of scope. |
+| `hide`    | `status='approved' AND is_hidden=false` | `is_hidden=true` (status intacto) | Reason **required** [10..500] (D4). Flag ortogonal al status (D2). |
+| `unhide`  | `status='approved' AND is_hidden=true`  | `is_hidden=false` (status intacto) | Reason opcional (D3). |
+
+**Auth**: `sessionAuth` + `roleMiddleware(['admin'])`. Organizer/vendor ⇒ `403 FORBIDDEN`; sin sesión ⇒ `401 AUTHENTICATION_REQUIRED`. Vendor inexistente o soft-deleted ⇒ `404 VENDOR_NOT_FOUND` uniforme (D7 / SEC-03) — sin distinción entre "no existe" y "eliminado" para evitar leakage.
+
+**Body**:
+
+```jsonc
+{
+  "action": "approve" | "reject" | "hide" | "unhide",
+  "reason": "<string [10..500]>"   // required en reject/hide, optional en approve/unhide
+}
+```
+
+- Zod `.strict()` — cualquier campo extra ⇒ `400 VALIDATION_ERROR` con `details.unrecognized_keys[*]`.
+- Cross-field refine (D4): `reject`/`hide` sin reason ⇒ `400 VALIDATION_ERROR` con `details=[{field:'body.reason', message:'REASON_REQUIRED'}]`.
+
+**Response 200**:
+
+```jsonc
+{
+  "data": {
+    "id": "<uuid>",
+    "status": "pending" | "approved" | "rejected" | "hidden",
+    "isHidden": true,
+    "moderatedBy": "<admin uuid>",
+    "moderatedAt": "2026-07-20T12:34:56.000Z",
+    "moderationReason": "..." | null,
+    "adminActionId": "<uuid>"
+  },
+  "meta": { "correlationId": "…", "timestamp": "…" }
+}
+```
+
+**Errores estables**:
+
+| Código HTTP | Código app | Cuándo |
+| --- | --- | --- |
+| 400 | `VALIDATION_ERROR` | Path `:id` no UUID; body Zod inválido; refine cross-field `REASON_REQUIRED`; action fuera del enum; reason length fuera [10..500]. |
+| 401 | `AUTHENTICATION_REQUIRED` | Sin cookie de sesión válida. |
+| 403 | `FORBIDDEN` | Rol ≠ admin. |
+| 404 | `VENDOR_NOT_FOUND` | UUID inexistente o vendor `deletedAt IS NOT NULL` (uniforme, D7). |
+| 409 | `INVALID_TRANSITION` | Acción no permitida desde el estado actual. `details=[{from_status},{from_is_hidden},{to_status},{to_is_hidden},{action},{allowed}]`. Whitelist explícita (D5). |
+
+**Whitelist de transiciones (D5)**:
+
+- `pending`   → `{approve, reject}`.
+- `approved`  → `{hide}` si `is_hidden=false`; `{unhide}` si `is_hidden=true`.
+- `rejected`  → `{}`  (re-approve OUT of MVP).
+- Cualquier otra combinación ⇒ `409 INVALID_TRANSITION`.
+
+**Atomicidad (Tech Spec §7 + Decisión PO D8)** — un único `prisma.$transaction` orquesta:
+
+1. `SELECT ... FOR UPDATE` sobre `vendor_profiles.id` — bloqueo pesimista contra la race de 2 admins moderando en simultáneo (QA-004: 2 hide simultáneos ⇒ `[200, 409]`, un solo AdminAction persistido).
+2. Validación transición (whitelist D5) — rechazo temprano sin crear AdminAction (BR-ADMIN-011 preservado).
+3. UPDATE `vendor_profiles` con `status`/`is_hidden` según acción + `moderated_by`, `moderated_at`, `moderation_reason`.
+4. INSERT `AdminAction` (append-only): `action ∈ {approve, reject, hide, unhide}`, `target_entity='vendor_profile'`, `target_id=<vendorId>`, `metadata={reason, from_status, to_status, from_is_hidden, to_is_hidden, correlationId}` (snapshot preserva el estado pre-moderación aunque se re-modere después).
+5. UPDATE `vendor_profiles.admin_action_id = <adminAction.id>` — chain audit `vendor → AdminAction` (BR-ADMIN-011).
+6. Fan-out de notificaciones al vendor via `QuoteEventNotificationService.emit({ eventName, tx })` — 2 rows en `notifications` (in-app + email_simulated). Eventos canónicos: `vendor.approved`, `vendor.rejected`, `vendor.hidden`, `vendor.unhidden`. Extiende el service común a 13 eventos totales (los 9 previos siguen operativos por regresión US-054..067).
+7. Log estructurado `vendor.moderated` con `{vendorProfileId, adminUserId, action, fromStatus, toStatus, fromIsHidden, toIsHidden, adminActionId}` — **sin** `reason` (SEC-05/09; mismo criterio que `review.moderated` de US-067).
+
+**Efecto cruzado en US-040 lookup / US-045 directorio / US-046 detalle público** — el filtro público exige `status='approved' AND is_hidden=false AND deleted_at IS NULL`. Un vendor moderado con `hide` desaparece del directorio y del detalle público sin cambiar de `status`; `unhide` lo restaura. Un vendor `rejected` sale por el predicado de status. Verificado en QA-002 TS-06 (`GET /public/vendors/:slug` pasa 200 antes de `hide`, 404 después).
+
+**Prohibiciones**:
+
+- **Sin AI moderation** (SEC-05): el `ModerateVendorUseCase` no depende de `AIProviderPort`.
+- **Sin bulk moderation** (Out of Scope): el endpoint procesa un único `vendorId` por request.
+- **Sin re-approve rejected** (Out of Scope, D5): estado terminal en el MVP; se manejará en una historia futura.
+- **Sin notif al organizer** cuando se modera un vendor (Out of Scope): sólo el vendor recibe notificaciones.
 
 ---
 

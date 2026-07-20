@@ -85,6 +85,13 @@ import {
 // `zod-to-openapi` exige `ZodObject`; los refines cross-field están tan en el schema completo
 // pero no cambian el shape del contrato OpenAPI (sólo la validación runtime).
 import { AdminReviewsQueryBaseSchema } from '../modules/reviews-moderation/interface/admin-reviews-query.dto.js';
+// US-047 (PB-P1-041 / BE-004): moderación admin de VendorProfile (approve/reject/hide/unhide
+// con AdminAction + 2 notifs vendor + audit columns). DTOs Zod `.strict()` con action enum +
+// reason [10..500] cross-field refine (required en reject/hide).
+import {
+  ModerateVendorBodyBaseSchema,
+  ModerateVendorParamsSchema,
+} from '../modules/admin-governance/interface/moderate-vendor.dto.js';
 import {
   AiBaseRequestSchema,
   ApplyAiRecommendationSchema,
@@ -354,6 +361,13 @@ op({ method: 'post', path: '/admin/reviews/{id}/moderate', operationId: 'adminMo
 // has_admin_action). Response incluye PII completa + `last_admin_action` chain (Decisión PO D4).
 // 400 (VALIDATION_ERROR / INVALID_CURSOR), 401, 403 FORBIDDEN.
 op({ method: 'get', path: '/admin/reviews', operationId: 'adminListReviews', tags: ['Admin'], summary: 'US-077 · Admin list reviews (filtros combinados + cursor keyset + PII completa)', secured: true, query: AdminReviewsQueryBaseSchema, success: { status: 200, schema: envelope(z.object({ items: z.array(z.object({ id: z.string().uuid(), rating: z.number().int(), comment: z.string().nullable(), status: z.enum(['published', 'hidden', 'removed']), createdAt: z.string().datetime(), author: z.object({ userId: z.string().uuid(), displayName: z.string() }).strict(), vendor: z.object({ id: z.string().uuid(), businessName: z.string(), slug: z.string().nullable() }).strict(), event: z.object({ id: z.string().uuid(), title: z.string() }).strict(), lastAdminAction: z.object({ action: z.string(), reason: z.string().nullable(), adminId: z.string().uuid().nullable(), createdAt: z.string().datetime() }).strict().nullable() }).strict()), pagination: z.object({ nextCursor: z.string().nullable(), pageSize: z.number().int() }).strict() }).strict()) }, errors: [400, 401, 403] });
+// US-047 (PB-P1-041 / BE-004): moderación admin de un VendorProfile (approve|reject|hide|
+// unhide) en 1 tx: SELECT FOR UPDATE + validación transición (whitelist Decisión PO D5) +
+// UPDATE status/is_hidden + audit columns + INSERT AdminAction + UPDATE chain + fan-out
+// notifs via service común (2 rows por evento) + log observability sin `reason` (SEC-05/09).
+// 401, 403 FORBIDDEN, 404 VENDOR_NOT_FOUND (Decisión PO D7 uniforme), 409 INVALID_TRANSITION
+// (con details from/to status+is_hidden), 400 VALIDATION_ERROR.
+op({ method: 'post', path: '/admin/vendors/{id}/moderate', operationId: 'adminModerateVendor', tags: ['Admin'], summary: 'US-047 · Admin moderate vendor (approve|reject|hide|unhide) + AdminAction + 2 notifs vendor', secured: true, params: ModerateVendorParamsSchema, body: ModerateVendorBodyBaseSchema, success: { status: 200, schema: envelope(z.object({ id: z.string().uuid(), status: z.enum(['pending', 'approved', 'rejected', 'hidden']), isHidden: z.boolean(), moderatedAt: z.string().datetime(), moderatedBy: z.string().uuid(), moderationReason: z.string().nullable(), adminActionId: z.string().uuid() }).strict()) }, errors: [400, 401, 403, 404, 409] });
 
 // ── AI ASSISTANCE ────────────────────────────────────────────────────────────────
 const AiGenerationResponse = envelope(

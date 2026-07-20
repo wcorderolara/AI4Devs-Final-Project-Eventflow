@@ -187,6 +187,16 @@ export class SeedDemoDataUseCase {
     await run('adminActions', (c) =>
       this.prisma.$transaction((tx) => this.seedAdminActions(tx, c, identities.admin, vendors), TX_OPTS),
     );
+    // US-047 (PB-P1-041 / BE-006): escenarios demo de moderación de VendorProfile con audit
+    // chain completo (approved+hidden y rejected). Idempotente: cada UPDATE queda como noop
+    // en re-runs. Alinea el estado seed con el shape que produce `ModerateVendorUseCase` en
+    // runtime — permite demoar el panel admin US-074 sin scripting manual.
+    await run('vendor-moderations', (c) =>
+      this.prisma.$transaction(
+        (tx) => this.seedVendorModerations(tx, c, identities.admin, vendors),
+        TX_OPTS,
+      ),
+    );
     // US-045 (PB-P1-028 / DB-001): recompone `rating_avg` y `reviews_count` denormalizados en
     // `vendor_profiles` a partir de las reviews sembradas. Idempotente: fija el estado exacto
     // en cada ejecución (setea 0/NULL si no hay reviews).
@@ -1047,6 +1057,100 @@ export class SeedDemoDataUseCase {
         counts,
       );
     }
+    return {};
+  }
+
+  /**
+   * US-047 (PB-P1-041 / BE-006): 2 escenarios de moderación en el mismo shape que produce
+   * `ModerateVendorUseCase` en runtime — permite que el panel admin US-074 muestre casos
+   * `hide` y `reject` sin scripting manual.
+   *
+   * - `vendors[3]` (si existe) → action='hide' aplicada sobre `approved+visible`:
+   *     `is_hidden=true` + audit columns pobladas + AdminAction (`action='hide'`) + chain
+   *     `admin_action_id`.
+   * - `vendors[4]` (si existe) → action='reject' aplicada sobre `approved` (simulando que se
+   *     rechaza tras haber sido aprobado previamente por review admin): `status='rejected'`
+   *     + audit + AdminAction (`action='reject'`) + chain.
+   *
+   * `ensure(...)` sobre `vendor_profiles.admin_action_id != NULL` mantiene idempotencia:
+   * la primera pasada crea el AdminAction y linkea; la segunda encuentra la cadena ya
+   * establecida y suma a `unchanged` (US-085 TS-02).
+   */
+  private async seedVendorModerations(
+    tx: Tx,
+    counts: DomainCounts,
+    admin: { id: string },
+    vendors: { id: string }[],
+  ): Promise<Record<string, never>> {
+    const scenarios: Array<{
+      vendorIndex: number;
+      action: 'hide' | 'reject';
+      reason: string;
+      updateData: { status?: 'rejected'; isHidden?: boolean };
+      metadataDelta: { from_status: string; to_status: string; from_is_hidden: boolean; to_is_hidden: boolean };
+    }> = [
+      {
+        vendorIndex: 3,
+        action: 'hide',
+        reason: 'Perfil ocultado temporalmente por revisión de contenido (demo seed).',
+        updateData: { isHidden: true },
+        metadataDelta: { from_status: 'approved', to_status: 'approved', from_is_hidden: false, to_is_hidden: true },
+      },
+      {
+        vendorIndex: 4,
+        action: 'reject',
+        reason: 'Documentación insuficiente para publicación en el directorio (demo seed).',
+        updateData: { status: 'rejected' },
+        metadataDelta: { from_status: 'approved', to_status: 'rejected', from_is_hidden: false, to_is_hidden: false },
+      },
+    ];
+
+    for (const scenario of scenarios) {
+      if (scenario.vendorIndex >= vendors.length) continue;
+      const vendor = vendors[scenario.vendorIndex]!;
+
+      // Guard idempotencia: si el vendor ya tiene `admin_action_id` seteado por US-047, saltamos
+      // (unchanged — la ejecución previa dejó el estado deseado). NO se re-usa `vendor.approve`
+      // legacy porque el seedAdminActions histórico apunta al mismo `targetId`; el chain nuevo
+      // referencia una AdminAction distinta (action='hide'|'reject').
+      const existingChain = await tx.vendorProfile.findFirst({
+        where: { id: vendor.id, adminActionId: { not: null } },
+        select: { id: true },
+      });
+      if (existingChain !== null) {
+        counts.unchanged = (counts.unchanged ?? 0) + 1;
+        continue;
+      }
+
+      const adminAction = await tx.adminAction.create({
+        data: {
+          adminUserId: admin.id,
+          action: scenario.action,
+          targetEntity: 'vendor_profile',
+          targetId: vendor.id,
+          metadata: {
+            correlationId: null,
+            reason: scenario.reason,
+            ...scenario.metadataDelta,
+          },
+          isSeed: true,
+        },
+        select: { id: true },
+      });
+
+      await tx.vendorProfile.update({
+        where: { id: vendor.id },
+        data: {
+          ...scenario.updateData,
+          moderatedBy: admin.id,
+          moderationReason: scenario.reason,
+          adminActionId: adminAction.id,
+        },
+        select: { id: true },
+      });
+      counts.created = (counts.created ?? 0) + 1;
+    }
+
     return {};
   }
 

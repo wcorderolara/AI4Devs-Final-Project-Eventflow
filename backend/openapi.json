@@ -946,6 +946,144 @@
         ]
       }
     },
+    "/api/v1/admin/vendors/{id}/moderate": {
+      "post": {
+        "operationId": "adminModerateVendor",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "action": {
+                    "enum": [
+                      "approve",
+                      "reject",
+                      "hide",
+                      "unhide"
+                    ],
+                    "type": "string"
+                  },
+                  "reason": {
+                    "maxLength": 500,
+                    "minLength": 10,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "action"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "adminActionId": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "id": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "isHidden": {
+                          "type": "boolean"
+                        },
+                        "moderatedAt": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "moderatedBy": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "moderationReason": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": [
+                            "pending",
+                            "approved",
+                            "rejected",
+                            "hidden"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "status",
+                        "isHidden",
+                        "moderatedAt",
+                        "moderatedBy",
+                        "moderationReason",
+                        "adminActionId"
+                      ],
+                      "type": "object"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "US-047 · Admin moderate vendor (approve|reject|hide|unhide) + AdminAction + 2 notifs vendor",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
     "/api/v1/ai-recommendations/{aiRecommendationId}": {
       "get": {
         "operationId": "getAiRecommendation",
