@@ -40,6 +40,10 @@ import {
   publicVendorRouter,
 } from './modules/vendor-management/interface/index.js';
 import { portfolioRouter } from './modules/attachments/interface/index.js';
+// US-065 (PB-P1-038): endpoint atómico `POST /api/v1/organizer/reviews` — crea la reseña
+// verificada + denormalize `VendorProfile.rating_avg/reviews_count` + 2 notifs `review.published`
+// al vendor dentro de una única transacción (ver `CreateReviewUseCase`).
+import { organizerReviewRouter } from './modules/reviews-moderation/interface/organizer-review.routes.js';
 
 /** Construye y configura la aplicación Express. */
 export function createApp(): Express {
@@ -112,6 +116,8 @@ export function createApp(): Express {
   // no declara `deletedAt`); auditoría vía log estructurado `budget.item.deleted`.
   apiV1.use(budgetItemMutationRouter);
   apiV1.use('/booking-intents', bookingIntentRouter);
+  // US-065 (PB-P1-038 / BE-004): crear Review verificada.
+  apiV1.use('/organizer/reviews', organizerReviewRouter);
   // US-040 (PB-P1-024): creación del VendorProfile por el propio vendor. Contrato
   // `POST /api/v1/vendors/me` (Doc 16 §M07). Solo rol `vendor` (organizer/admin → 403; sin
   // sesión → 401). El endpoint público del directorio de vendors vive en US futura.

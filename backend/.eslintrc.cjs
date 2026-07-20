@@ -70,12 +70,18 @@ module.exports = {
       // el port `BudgetCommittedSyncPort` está definido por su consumidor en `modules/booking-intent`
       // (patrón consumer-owned interface). El adapter y el composition root del router requieren
       // el mismo tipo de wire cross-module que la excepción US-037.
+      //
+      // Excepción documentada (US-065 PB-P1-038): el composition root del módulo `reviews-moderation`
+      // (`organizer-review.routes.ts`) enlaza el `QuoteEventNotificationService` (US-060 BE-002)
+      // como adapter del `ReviewEventNotifierPort` (consumer-owned interface). Wire cross-module
+      // sin lógica de negocio — patrón consistente con US-039 y US-037.
       files: [
         'src/modules/ai-assistance/interface/ai.routes.ts',
         'src/modules/budget-management/application/hitl/budget-suggestion-apply.strategy.ts',
         'src/modules/booking-intent/interface/booking-intent.routes.ts',
         'src/modules/budget-management/application/update-committed-from-booking-intent.use-case.ts',
         'src/modules/budget-management/infrastructure/budget-committed-sync.adapter.ts',
+        'src/modules/reviews-moderation/interface/organizer-review.routes.ts',
       ],
       rules: {
         'boundaries/element-types': 'off',

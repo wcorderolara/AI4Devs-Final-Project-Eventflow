@@ -2522,9 +2522,66 @@ type ReviewResponseDto = {
 ### 33.4 Reglas enforced
 
 - **BR-REVIEW-001**: requiere `BookingIntent.confirmed_intent` para `(event, vendor)`.
-- **BR-REVIEW-002**: única por `(eventId, vendorProfileId)`. Duplicado → `409 DUPLICATE_REVIEW`.
+- **BR-REVIEW-002**: única por `(eventId, vendorProfileId)`. Duplicado → `403 REVIEW_NOT_ELIGIBLE` reason='already_reviewed' (US-065 D6 refina el legacy `409 DUPLICATE_REVIEW`).
 - **BR-REVIEW-003**: rating entero **1 a 5**.
 - **BR-REVIEW-005**: ocultamiento por admin con auditoría en `AdminAction`.
+- **FR-REVIEW-007** (US-065 D8): la review es **inmutable** post-publicación — no existen endpoints `PATCH /organizer/reviews/:id` ni `DELETE /organizer/reviews/:id` (verificado en QA-006, 404 natural).
+
+### 33.5 US-065 · `POST /api/v1/organizer/reviews` (creación atómica + denormalize)
+
+Reemplaza el endpoint genérico `POST /reviews` mencionado en §33.2 por el endpoint scoped al
+rol organizer. La creación es una única `prisma.$transaction` (§7 Tech Spec US-065) que
+persiste la review, recomputa el denormalize `VendorProfile.rating_avg + reviews_count`,
+emite 2 Notifications al vendor (`event='review.published'`) vía el
+`QuoteEventNotificationService` extendido a 9 eventos, y loguea `review.published` con 5
+campos (§14). Un fallo en cualquiera de los pasos revierte todo el cambio (D3, atomicidad).
+
+**Body (snake_case, `.strict()`)**:
+
+```ts
+type CreateReviewRequestBody = {
+  event_id: string;          // UUID; VR-03
+  vendor_profile_id: string; // UUID; VR-03
+  rating: number;            // int 1..5 (D8, EC-04)
+  comment?: string;          // opcional, [0..2000]; EC-05, D1
+};
+```
+
+**Response 201 (camelCase, envelope `{ data, correlationId }`)**:
+
+```ts
+type ReviewResponseDto = {
+  id: string;
+  eventId: string;
+  vendorProfileId: string;
+  bookingIntentId: string;
+  authorUserId: string;
+  rating: number;
+  comment: string | null;
+  status: 'published';
+  createdAt: string;
+};
+```
+
+**Errores estables** (§9 API Contract US-065):
+
+| Código | HTTP | Detalle |
+| --- | --- | --- |
+| `VALIDATION_ERROR` | 400 | rating fuera de 1..5, comment > 2000, UUID inválido o campo ajeno (`.strict()`). |
+| `AUTHENTICATION_REQUIRED` | 401 | Sin cookie de sesión válida. |
+| `FORBIDDEN` | 403 | Rol vendor o admin. |
+| `RESOURCE_NOT_FOUND` | 404 | Event o Vendor inexistente **o** organizer ajeno (uniforme, SEC-04). |
+| `REVIEW_NOT_ELIGIBLE` | 403 | `details[0]={field:'reason', message:X}` con `X ∈ {no_booking, event_not_completed, window_expired, already_reviewed}` (D6). |
+
+**Guarantees enforcement**:
+
+- **Ventana 30 días**: `now <= event.completedAt + 30d` — else `window_expired` (EC-03).
+- **Elegibilidad bilateral**: existe `BookingIntent.confirmed_intent` para `(event_id, vendor_profile_id)` — else `no_booking` (EC-01).
+- **Event completado**: `event.completedAt IS NOT NULL` — else `event_not_completed` (EC-02).
+- **Unicidad (event, vendor)**: sin review activa (`deletedAt IS NULL` + `status ∈ {published, hidden}`) para el mismo `BookingIntent` — else `already_reviewed` (AC-03). La unicidad DB-level es transitiva vía `uq_booking_intents_active_per_quote` (US-060) + verificación aplicativa dentro de la tx.
+- **Denormalize atómico** (D4): `AVG(rating)::numeric,2` + `COUNT(*)` sobre reviews `published AND deleted_at IS NULL` del vendor, UPDATE de `vendor_profiles.rating_avg + reviews_count` en la misma tx.
+
+**Observabilidad** (§14): `review.published` con `{reviewId, vendorProfileId, eventId, organizerUserId, rating}`. NO se emite `comment` ni PII (SEC-09).
 
 ---
 

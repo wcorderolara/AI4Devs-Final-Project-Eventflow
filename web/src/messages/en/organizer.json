@@ -128,5 +128,37 @@
         "UNEXPECTED": "An unexpected error occurred. Please try again."
       }
     }
+  },
+  "review": {
+    "create": {
+      "ratingLabel": "Rating",
+      "commentLabel": "Comment (optional)",
+      "commentHint": "Sharing details helps other organizers. Up to 2000 characters.",
+      "commentCounter": "{count}/{max}",
+      "actions": {
+        "submit": "Publish review",
+        "submitting": "Publishing…"
+      },
+      "success": "Review published. The vendor has been notified.",
+      "errors": {
+        "VALIDATION_ERROR": "Please review the rating and comment.",
+        "AUTHENTICATION_REQUIRED": "You need to sign in to publish a review.",
+        "FORBIDDEN": "Your role cannot publish reviews.",
+        "RESOURCE_NOT_FOUND": "We couldn't find this event or vendor.",
+        "RATE_LIMIT_EXCEEDED": "Too many requests. Wait a moment and try again.",
+        "REVIEW_NOT_ELIGIBLE": "You can't review this vendor yet.",
+        "UNEXPECTED": "An unexpected error occurred. Please try again."
+      }
+    },
+    "eligibility": {
+      "title": "You can't publish this review",
+      "no_booking": "You can only review vendors you've confirmed a booking with for this event.",
+      "event_not_completed": "You'll be able to review once the event is marked as completed.",
+      "window_expired": "The 30-day window to review this event has already expired.",
+      "already_reviewed": "You already published a review for this vendor on this event."
+    },
+    "starRating": {
+      "optionLabel": "{value} out of 5 stars"
+    }
   }
 }

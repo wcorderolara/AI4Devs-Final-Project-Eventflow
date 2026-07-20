@@ -618,6 +618,7 @@ Importante: este listado prohíbe automáticamente crear un controller/repo por 
 - **Authorization:** organizer = autor; admin hide.
 - **Eventos/notificaciones:** notificación al vendor cuando se crea la review.
 - **Testing focus:** elegibilidad, soft delete, filtro en listados públicos.
+- **US-065 (PB-P1-038):** implementa el endpoint atómico `POST /api/v1/organizer/reviews` que ejecuta en una única `prisma.$transaction`: INSERT `reviews` + recálculo denormalize `AVG(rating)` / `COUNT(*)` con UPDATE de `VendorProfile.rating_avg + reviews_count` (D4) + fan-out `review.published` de 2 Notifications al vendor vía `QuoteEventNotificationService` extendido a 9 eventos (BE-002) + log estructurado `review.published` (§14). El módulo declara el `ReviewEventNotifierPort` (consumer-owned interface) — el composition root del router enlaza el service común como adapter. La unicidad `(event, vendor)` se enforce a nivel aplicación (`findFirst` intra-tx) respaldada transitivamente por `uq_booking_intents_active_per_quote` (US-060). Ver `management/workflows/development-execution/P1/PB-P1-038/US-065-execution.md`.
 
 ### 10.11 Notifications
 

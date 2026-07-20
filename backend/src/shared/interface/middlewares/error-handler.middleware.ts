@@ -87,6 +87,13 @@ import {
   BookingIntentNotCancellableError,
   InvalidCancellationReasonError as Us062InvalidCancellationReasonError,
 } from '../../../modules/booking-intent/domain/us062.errors.js';
+// US-065 (PB-P1-038): creación de Review verificada. `ReviewTargetNotFoundError` → 404 uniforme
+// (SEC-04); `ReviewNotEligibleError` → 403 con `details.reason` ∈ {`no_booking`,
+// `event_not_completed`, `window_expired`, `already_reviewed`} (D6).
+import {
+  ReviewNotEligibleError,
+  ReviewTargetNotFoundError,
+} from '../../../modules/reviews-moderation/domain/us065.errors.js';
 import {
   MissingInputError,
   AiInvalidBudgetError,
@@ -447,6 +454,18 @@ function mapError(err: unknown): MappedError {
       code: ErrorCodes.INVALID_CANCELLATION_REASON,
       message: err.message,
       details: [{ field: 'reason', message: 'too_long' }],
+    };
+  }
+  // US-065 (PB-P1-038): creación de Review verificada.
+  if (err instanceof ReviewTargetNotFoundError) {
+    return { status: 404, code: ErrorCodes.RESOURCE_NOT_FOUND, message: 'Resource not found', masked: true };
+  }
+  if (err instanceof ReviewNotEligibleError) {
+    return {
+      status: 403,
+      code: ErrorCodes.REVIEW_NOT_ELIGIBLE,
+      message: err.message,
+      details: [{ field: 'reason', message: err.reason }],
     };
   }
   if (err instanceof MissingInputError) {

@@ -4610,6 +4610,146 @@
         ]
       }
     },
+    "/api/v1/organizer/reviews": {
+      "post": {
+        "operationId": "createOrganizerReview",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "comment": {
+                    "maxLength": 2000,
+                    "type": "string"
+                  },
+                  "event_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "rating": {
+                    "maximum": 5,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "vendor_profile_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "vendor_profile_id",
+                  "rating"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "authorUserId": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "bookingIntentId": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "comment": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "eventId": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "id": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "rating": {
+                          "maximum": 5,
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "status": {
+                          "enum": [
+                            "published",
+                            "hidden",
+                            "removed"
+                          ],
+                          "type": "string"
+                        },
+                        "vendorProfileId": {
+                          "format": "uuid",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "eventId",
+                        "vendorProfileId",
+                        "bookingIntentId",
+                        "authorUserId",
+                        "rating",
+                        "comment",
+                        "status",
+                        "createdAt"
+                      ],
+                      "type": "object"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "US-065 · Crear Review verificada + denormalize atómico + notif vendor",
+        "tags": [
+          "Reviews"
+        ]
+      }
+    },
     "/api/v1/quote-requests/{quoteRequestId}": {
       "get": {
         "operationId": "getQuoteRequest",
