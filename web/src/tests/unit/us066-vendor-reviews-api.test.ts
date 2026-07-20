@@ -38,9 +38,9 @@ describe('US-066 · vendorReviewsApi.list (MSW)', () => {
   it('AC-03 anonimato: items NO exponen authorId/bookingIntentId/vendorProfileId', async () => {
     const view = await vendorReviewsApi.list(HAPPY_VP);
     for (const item of view.items) {
-      expect((item as Record<string, unknown>).authorId).toBeUndefined();
-      expect((item as Record<string, unknown>).bookingIntentId).toBeUndefined();
-      expect((item as Record<string, unknown>).vendorProfileId).toBeUndefined();
+      expect((item as unknown as Record<string, unknown>).authorId).toBeUndefined();
+      expect((item as unknown as Record<string, unknown>).bookingIntentId).toBeUndefined();
+      expect((item as unknown as Record<string, unknown>).vendorProfileId).toBeUndefined();
     }
   });
 

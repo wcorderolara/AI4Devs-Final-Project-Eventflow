@@ -70,7 +70,16 @@ describe('QA-004: contrato/seguridad (AC-05, VR-03/05, SEC)', () => {
     }
   });
   it('endpoints protegidos declaran cookieAuth y respuesta 401 (SEC-03, AUTH-TS-01)', () => {
-    const publicOps = new Set(['registerUser', 'loginUser', 'requestPasswordReset', 'resetPassword']);
+    const publicOps = new Set([
+      'registerUser',
+      'loginUser',
+      'requestPasswordReset',
+      'resetPassword',
+      // US-066 (PB-P1-039): listado público paginado de reviews por vendor con optional
+      // session auth — anónimo permitido; admin extiende alcance en runtime sin declararse
+      // como endpoint autenticado en OpenAPI.
+      'listVendorReviews',
+    ]);
     for (const methods of Object.values(doc.paths)) {
       for (const op of Object.values(methods)) {
         if (op.operationId && publicOps.has(op.operationId)) {
