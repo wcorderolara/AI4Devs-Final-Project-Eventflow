@@ -788,7 +788,12 @@ model Review {
   @@index([vendorProfileId])
   @@index([bookingIntentId])
   @@index([authorId])
-  @@index([moderatedBy, moderatedAt(sort: Desc)], map: "idx_reviews_moderated_by_at")
+  // US-067 (PB-P1-040 / DB-002): el índice parcial `idx_reviews_moderated_by_at
+  // (moderated_by, moderated_at DESC) WHERE moderated_at IS NOT NULL` vive en la migración
+  // `20260720150000_us067_reviews_moderation_audit_columns/migration.sql` porque Prisma no
+  // soporta índices parciales declarativos. Patrón consistente con `idx_reviews_vendor_status_published`
+  // (US-102) y `idx_reviews_vendor_published_created` (US-066): la SQL raw es la fuente de
+  // verdad y `prisma migrate diff` NO debe verlo como drift (por eso NO se declara aquí).
   @@map("reviews")
 }
 
