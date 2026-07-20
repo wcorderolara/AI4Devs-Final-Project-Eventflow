@@ -80,6 +80,11 @@ import {
   ModerateReviewBodySchema,
   ModerateReviewParamsSchema,
 } from '../modules/reviews-moderation/interface/moderate-review.dto.js';
+// US-077 (PB-P1-040 / BE-003): panel admin global de reviews (`GET /admin/reviews`) con filtros
+// combinados + cursor keyset (paridad US-066). Se usa el schema base (sin `superRefine`) porque
+// `zod-to-openapi` exige `ZodObject`; los refines cross-field están tan en el schema completo
+// pero no cambian el shape del contrato OpenAPI (sólo la validación runtime).
+import { AdminReviewsQueryBaseSchema } from '../modules/reviews-moderation/interface/admin-reviews-query.dto.js';
 import {
   AiBaseRequestSchema,
   ApplyAiRecommendationSchema,
@@ -344,6 +349,11 @@ op({ method: 'get', path: '/vendors/{id}/reviews', operationId: 'listVendorRevie
 // 401, 403 FORBIDDEN, 404 REVIEW_NOT_FOUND (Decisión PO D6 uniforme), 409 INVALID_TRANSITION
 // (con details.from/to/allowed), 400 VALIDATION_ERROR.
 op({ method: 'post', path: '/admin/reviews/{id}/moderate', operationId: 'adminModerateReview', tags: ['Admin'], summary: 'US-067 · Admin moderate review (hide|remove) + AdminAction + denormalize', secured: true, params: ModerateReviewParamsSchema, body: ModerateReviewBodySchema, success: { status: 200, schema: envelope(z.object({ id: z.string().uuid(), status: z.enum(['hidden', 'removed']), moderatedAt: z.string().datetime(), moderatedBy: z.string().uuid(), moderationReason: z.string(), adminActionId: z.string().uuid() }).strict()) }, errors: [400, 401, 403, 404, 409] });
+// US-077 (PB-P1-040 / BE-003): panel admin global de reviews. Listado paginado con cursor keyset
+// (paridad US-066) + filtros combinados (multi-status, vendor_id, rango fechas, rango rating,
+// has_admin_action). Response incluye PII completa + `last_admin_action` chain (Decisión PO D4).
+// 400 (VALIDATION_ERROR / INVALID_CURSOR), 401, 403 FORBIDDEN.
+op({ method: 'get', path: '/admin/reviews', operationId: 'adminListReviews', tags: ['Admin'], summary: 'US-077 · Admin list reviews (filtros combinados + cursor keyset + PII completa)', secured: true, query: AdminReviewsQueryBaseSchema, success: { status: 200, schema: envelope(z.object({ items: z.array(z.object({ id: z.string().uuid(), rating: z.number().int(), comment: z.string().nullable(), status: z.enum(['published', 'hidden', 'removed']), createdAt: z.string().datetime(), author: z.object({ userId: z.string().uuid(), displayName: z.string() }).strict(), vendor: z.object({ id: z.string().uuid(), businessName: z.string(), slug: z.string().nullable() }).strict(), event: z.object({ id: z.string().uuid(), title: z.string() }).strict(), lastAdminAction: z.object({ action: z.string(), reason: z.string().nullable(), adminId: z.string().uuid().nullable(), createdAt: z.string().datetime() }).strict().nullable() }).strict()), pagination: z.object({ nextCursor: z.string().nullable(), pageSize: z.number().int() }).strict() }).strict()) }, errors: [400, 401, 403] });
 
 // ── AI ASSISTANCE ────────────────────────────────────────────────────────────────
 const AiGenerationResponse = envelope(

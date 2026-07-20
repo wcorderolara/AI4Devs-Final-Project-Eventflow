@@ -59,9 +59,13 @@ function build(opts: BuildOpts = {}) {
   const clock: ClockPort = { now: () => NOW };
   const logger: DomainEventLogger = { emit: logSpy };
 
-  const reviewUpdateSpy = vi.fn();
-  const vendorProfileUpdateSpy = vi.fn(async () => undefined);
-  const adminActionCreateSpy = vi.fn(async () => ({ id: ADMIN_ACTION_ID }));
+  // Los spies tipan `args` como `Record<string, unknown>`; los asserts abajo hacen narrowing
+  // manual sobre `mock.calls[n]![0]`. Esto evita `any` (regla ESLint) sin arrastrar los tipos
+  // reales de Prisma que quedan fuera del scope de estos UT.
+  type SpyArgs = { data: Record<string, unknown>; where?: Record<string, unknown>; select?: unknown };
+  const reviewUpdateSpy = vi.fn<(args: SpyArgs) => void>();
+  const vendorProfileUpdateSpy = vi.fn<(args: SpyArgs) => Promise<undefined>>(async () => undefined);
+  const adminActionCreateSpy = vi.fn<(args: SpyArgs) => Promise<{ id: string }>>(async () => ({ id: ADMIN_ACTION_ID }));
   const queryRawSpy = vi.fn();
   let queryRawCallIndex = 0;
 
@@ -183,25 +187,26 @@ describe('US-067 · ModerateReviewUseCase.execute', () => {
 
     // Dos UPDATE sobre reviews: 1) audit columns + status; 2) admin_action_id chain.
     expect(reviewUpdateSpy).toHaveBeenCalledTimes(2);
-    const firstUpdate = reviewUpdateSpy.mock.calls[0]?.[0];
+    const firstUpdate = reviewUpdateSpy.mock.calls[0]![0];
     expect(firstUpdate.data).toMatchObject({
       status: 'hidden',
       moderatedBy: ADMIN_USER_ID,
       moderationReason: body.reason,
     });
-    const secondUpdate = reviewUpdateSpy.mock.calls[1]?.[0];
+    const secondUpdate = reviewUpdateSpy.mock.calls[1]![0];
     expect(secondUpdate.data).toEqual({ adminActionId: ADMIN_ACTION_ID });
 
     // AdminAction append-only con payload snapshot (Decisión PO D8).
     expect(adminActionCreateSpy).toHaveBeenCalledTimes(1);
-    const admActionArgs = adminActionCreateSpy.mock.calls[0]?.[0];
+    const admActionArgs = adminActionCreateSpy.mock.calls[0]![0];
     expect(admActionArgs.data).toMatchObject({
       adminUserId: ADMIN_USER_ID,
       action: 'hide',
       targetEntity: 'review',
       targetId: REVIEW_ID,
     });
-    expect(admActionArgs.data.metadata).toMatchObject({
+    const metadata = admActionArgs.data.metadata as Record<string, unknown>;
+    expect(metadata).toMatchObject({
       correlationId: 'cid-67',
       reason: body.reason,
       from_status: 'published',
@@ -238,16 +243,17 @@ describe('US-067 · ModerateReviewUseCase.execute', () => {
   it('AC-02 published → removed: action=remove ⇒ targetStatus=removed', async () => {
     const { uc, reviewUpdateSpy, adminActionCreateSpy } = build();
     await uc.execute(ADMIN_USER_ID, REVIEW_ID, { ...body, action: 'remove' });
-    expect(reviewUpdateSpy.mock.calls[0]?.[0].data.status).toBe('removed');
-    expect(adminActionCreateSpy.mock.calls[0]?.[0].data.action).toBe('remove');
+    expect(reviewUpdateSpy.mock.calls[0]![0].data.status).toBe('removed');
+    expect(adminActionCreateSpy.mock.calls[0]![0].data.action).toBe('remove');
   });
 
   it('AC-03 hidden → removed: transición permitida crea nueva AdminAction', async () => {
     const { uc, reviewUpdateSpy, adminActionCreateSpy } = build({ currentStatus: 'hidden' });
     await uc.execute(ADMIN_USER_ID, REVIEW_ID, { ...body, action: 'remove' });
-    expect(reviewUpdateSpy.mock.calls[0]?.[0].data.status).toBe('removed');
-    expect(adminActionCreateSpy.mock.calls[0]?.[0].data.metadata.from_status).toBe('hidden');
-    expect(adminActionCreateSpy.mock.calls[0]?.[0].data.metadata.to_status).toBe('removed');
+    expect(reviewUpdateSpy.mock.calls[0]![0].data.status).toBe('removed');
+    const meta = adminActionCreateSpy.mock.calls[0]![0].data.metadata as Record<string, unknown>;
+    expect(meta.from_status).toBe('hidden');
+    expect(meta.to_status).toBe('removed');
   });
 
   it('EC-01 removed → hide ⇒ InvalidReviewTransitionError sin AdminAction', async () => {

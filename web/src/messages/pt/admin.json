@@ -20,6 +20,47 @@
     }
   },
   "review": {
+    "panel": {
+      "title": "Painel de moderação de avaliações",
+      "subtitle": "Filtre as avaliações por status, fornecedor, datas e nota; modere em um clique.",
+      "loading": "Carregando avaliações…",
+      "loadingMore": "Carregando mais…",
+      "error": "Não foi possível carregar as avaliações. Tente novamente.",
+      "empty": "Nenhuma avaliação corresponde aos filtros.",
+      "caption": "Avaliações admin (PII completa + última ação de moderação).",
+      "col": {
+        "rating": "Nota",
+        "author": "Autor",
+        "vendor": "Fornecedor",
+        "event": "Evento",
+        "comment": "Comentário",
+        "status": "Status",
+        "lastAction": "Última ação admin",
+        "createdAt": "Criada",
+        "actions": "Ações"
+      },
+      "moderate": "Moderar",
+      "moderateAria": "Moderar a avaliação {id}",
+      "loadMore": "Carregar mais",
+      "filters": {
+        "formAriaLabel": "Filtros do painel de avaliações",
+        "statusLegend": "Status da avaliação",
+        "vendorIdLabel": "ID do fornecedor",
+        "vendorIdPlaceholder": "UUID do fornecedor",
+        "createdFromLabel": "Criada desde",
+        "createdToLabel": "Criada até",
+        "ratingMinLabel": "Nota mínima",
+        "ratingMaxLabel": "Nota máxima",
+        "hasAdminActionLabel": "Com ação de moderação",
+        "hasAdminActionAny": "Todas",
+        "hasAdminActionYes": "Apenas moderadas",
+        "hasAdminActionNo": "Apenas não moderadas",
+        "reset": "Limpar filtros",
+        "apply": "Aplicar",
+        "errorRatingRange": "A nota mínima deve ser menor ou igual à máxima.",
+        "errorDateRange": "A data inicial deve ser menor ou igual à final."
+      }
+    },
     "moderate": {
       "status": {
         "all": "Todas",

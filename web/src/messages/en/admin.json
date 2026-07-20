@@ -20,6 +20,47 @@
     }
   },
   "review": {
+    "panel": {
+      "title": "Review moderation panel",
+      "subtitle": "Filter reviews by status, vendor, dates and rating; moderate in one click.",
+      "loading": "Loading reviews…",
+      "loadingMore": "Loading more…",
+      "error": "We couldn't load the reviews. Please try again.",
+      "empty": "No reviews match the current filters.",
+      "caption": "Admin reviews (full PII + last moderation action).",
+      "col": {
+        "rating": "Rating",
+        "author": "Author",
+        "vendor": "Vendor",
+        "event": "Event",
+        "comment": "Comment",
+        "status": "Status",
+        "lastAction": "Last admin action",
+        "createdAt": "Created",
+        "actions": "Actions"
+      },
+      "moderate": "Moderate",
+      "moderateAria": "Moderate review {id}",
+      "loadMore": "Load more",
+      "filters": {
+        "formAriaLabel": "Review panel filters",
+        "statusLegend": "Review status",
+        "vendorIdLabel": "Vendor ID",
+        "vendorIdPlaceholder": "Vendor UUID",
+        "createdFromLabel": "Created from",
+        "createdToLabel": "Created to",
+        "ratingMinLabel": "Minimum rating",
+        "ratingMaxLabel": "Maximum rating",
+        "hasAdminActionLabel": "With admin action",
+        "hasAdminActionAny": "All",
+        "hasAdminActionYes": "Moderated only",
+        "hasAdminActionNo": "Not moderated only",
+        "reset": "Clear filters",
+        "apply": "Apply",
+        "errorRatingRange": "Minimum rating must be less than or equal to maximum.",
+        "errorDateRange": "Start date must be less than or equal to end date."
+      }
+    },
     "moderate": {
       "status": {
         "all": "All",
