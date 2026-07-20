@@ -1,13 +1,99 @@
 // Datos LATAM deterministas para el seed (US-085, BR-SEED-004/009). Sin PII real (BR-PRIVACY-010):
 // nombres ficticios y emails de dominio `@seed.eventflow.test`. Sin aleatoriedad → idempotencia.
 
-export const EVENT_TYPES: Array<{ code: string; label: string }> = [
-  { code: 'wedding', label: 'Boda' },
-  { code: 'xv', label: 'XV Años' },
-  { code: 'baptism', label: 'Bautizo' },
-  { code: 'baby_shower', label: 'Baby Shower' },
-  { code: 'birthday', label: 'Cumpleaños' },
-  { code: 'corporate', label: 'Evento Corporativo' },
+// US-076 (PB-P1-043 / DB-003): 6 EventTypes culturales obligatorios (FR-EVENT-013).
+// Codes fijos: `wedding, xv, baptism, baby_shower, birthday, corporate`. i18n en
+// 4 locales (Decisión PO D3, `es-LATAM` requerido). `sortOrder` explícito (D10)
+// mapea al orden de presentación estándar del wizard de creación de eventos.
+// `label` se conserva denormalizado desde `nameI18n['es-LATAM']` para callers legacy
+// (`PrismaEventTypeRepository.findActive`, `useEventTypes` FE) que proyectan
+// `{code, label}` directamente.
+export interface EventTypeSeed {
+  code: string;
+  label: string;
+  sortOrder: number;
+  nameI18n: Record<string, string>;
+  descriptionI18n?: Record<string, string>;
+}
+
+export const EVENT_TYPES: EventTypeSeed[] = [
+  {
+    code: 'wedding',
+    label: 'Boda',
+    sortOrder: 10,
+    nameI18n: { 'es-LATAM': 'Boda', 'es-ES': 'Boda', en: 'Wedding', pt: 'Casamento' },
+    descriptionI18n: {
+      'es-LATAM': 'Ceremonia y recepción matrimonial.',
+      'es-ES': 'Ceremonia y banquete de boda.',
+      en: 'Wedding ceremony and reception.',
+      pt: 'Cerimônia e recepção de casamento.',
+    },
+  },
+  {
+    code: 'xv',
+    label: 'XV Años',
+    sortOrder: 20,
+    nameI18n: { 'es-LATAM': 'XV Años', 'es-ES': '15 Años', en: 'Quinceañera', pt: '15 Anos' },
+    descriptionI18n: {
+      'es-LATAM': 'Celebración de los quince años.',
+      'es-ES': 'Celebración de 15 años.',
+      en: 'Quinceañera celebration.',
+      pt: 'Festa de 15 anos.',
+    },
+  },
+  {
+    code: 'baptism',
+    label: 'Bautizo',
+    sortOrder: 30,
+    nameI18n: { 'es-LATAM': 'Bautizo', 'es-ES': 'Bautizo', en: 'Baptism', pt: 'Batizado' },
+    descriptionI18n: {
+      'es-LATAM': 'Ceremonia religiosa de bautismo.',
+      'es-ES': 'Ceremonia de bautismo.',
+      en: 'Baptism ceremony.',
+      pt: 'Cerimônia de batizado.',
+    },
+  },
+  {
+    code: 'baby_shower',
+    label: 'Baby Shower',
+    sortOrder: 40,
+    nameI18n: { 'es-LATAM': 'Baby Shower', 'es-ES': 'Baby Shower', en: 'Baby Shower', pt: 'Chá de Bebê' },
+    descriptionI18n: {
+      'es-LATAM': 'Celebración previa al nacimiento del bebé.',
+      'es-ES': 'Celebración pre-natal.',
+      en: 'Pre-birth celebration for expecting parents.',
+      pt: 'Comemoração antes do nascimento do bebê.',
+    },
+  },
+  {
+    code: 'birthday',
+    label: 'Cumpleaños',
+    sortOrder: 50,
+    nameI18n: { 'es-LATAM': 'Cumpleaños', 'es-ES': 'Cumpleaños', en: 'Birthday', pt: 'Aniversário' },
+    descriptionI18n: {
+      'es-LATAM': 'Celebración de cumpleaños.',
+      'es-ES': 'Fiesta de cumpleaños.',
+      en: 'Birthday celebration.',
+      pt: 'Festa de aniversário.',
+    },
+  },
+  {
+    code: 'corporate',
+    label: 'Evento Corporativo',
+    sortOrder: 60,
+    nameI18n: {
+      'es-LATAM': 'Evento Corporativo',
+      'es-ES': 'Evento de Empresa',
+      en: 'Corporate Event',
+      pt: 'Evento Corporativo',
+    },
+    descriptionI18n: {
+      'es-LATAM': 'Lanzamientos, cenas de fin de año, activaciones de marca.',
+      'es-ES': 'Eventos corporativos y empresariales.',
+      en: 'Product launches, year-end dinners, brand activations.',
+      pt: 'Lançamentos, jantares de fim de ano, ativações de marca.',
+    },
+  },
 ];
 
 // US-075 (PB-P1-042 / DB-003): catálogo LATAM culturalmente coherente (BR-SERVICE-004)

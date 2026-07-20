@@ -91,6 +91,10 @@ export interface DomainEventLogger {
       // pueden contener texto largo/no sanitizado (SEC-09; paridad review.moderated).
       code?: string;
       parentId?: string | null;
+      // US-076 (BE-004..006): `event_type.created` / `updated` / `reactivated` /
+      // `soft_deleted`. `eventTypeId` distingue del `serviceCategoryId` en logs cruzados.
+      // NO se logea `name_i18n` ni `reason` (SEC-09; paridad US-075).
+      eventTypeId?: string;
     },
   ): void;
 }

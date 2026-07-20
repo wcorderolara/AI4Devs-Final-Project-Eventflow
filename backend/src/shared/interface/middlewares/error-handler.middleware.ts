@@ -134,6 +134,16 @@ import {
   ReasonRequiredError,
   ServiceCategoryNotFoundError,
 } from '../../../modules/service-catalog/domain/us075.errors.js';
+// US-076 (PB-P1-043): CRUD admin EventType. Solo se importan los errores nuevos —
+// `InvalidNameI18nError`, `ReasonRequiredError` e `InvalidReasonLengthError` los reusa el
+// módulo `event-catalog` desde `us075.errors.js` (evita duplicar branches de mapeo).
+// `DuplicateEventTypeCodeError` comparte `code=DUPLICATE_CODE` con `DuplicateCategoryCodeError`
+// pero se mapea por separado para preservar el `message` específico del dominio EventType.
+import {
+  EventTypeNotFoundError,
+  EventTypeInUseError,
+  DuplicateEventTypeCodeError,
+} from '../../../modules/event-catalog/domain/us076.errors.js';
 import {
   MissingInputError,
   AiInvalidBudgetError,
@@ -600,6 +610,28 @@ function mapError(err: unknown): MappedError {
   }
   if (err instanceof InvalidReasonLengthError) {
     return { status: 400, code: ErrorCodes.INVALID_REASON_LENGTH, message: err.message };
+  }
+  // US-076 (PB-P1-043): CRUD admin EventType. 404 uniforme + 409 con `usage_count` +
+  // 409 DUPLICATE_CODE. Sin jerarquía (no aplica INVALID_HIERARCHY_DEPTH ni
+  // CATEGORY_HAS_CHILDREN). Los errores compartidos con US-075 los mapean los branches
+  // anteriores (misma clase importada desde `service-catalog`).
+  if (err instanceof EventTypeNotFoundError) {
+    return {
+      status: 404,
+      code: ErrorCodes.EVENT_TYPE_NOT_FOUND,
+      message: 'Event type not found',
+    };
+  }
+  if (err instanceof EventTypeInUseError) {
+    return {
+      status: 409,
+      code: ErrorCodes.EVENT_TYPE_IN_USE,
+      message: err.message,
+      details: [{ field: 'usage_count', message: String(err.usageCount) }],
+    };
+  }
+  if (err instanceof DuplicateEventTypeCodeError) {
+    return { status: 409, code: ErrorCodes.DUPLICATE_CODE, message: err.message };
   }
   if (err instanceof MissingInputError) {
     return { status: 400, code: ErrorCodes.MISSING_INPUT, message: err.message };

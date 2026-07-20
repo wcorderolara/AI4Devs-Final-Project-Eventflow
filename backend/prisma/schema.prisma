@@ -313,6 +313,15 @@ model EventType {
   description String?
   isActive    Boolean @default(true) @map("is_active")
 
+  // US-076 (PB-P1-043 / DB-002): catálogo i18n-first (Decisión PO D3) + orden explícito
+  // (D10). `label` y `description` se preservan como fallback denormalizado desde
+  // `nameI18n['es-LATAM']` / `descriptionI18n['es-LATAM']` para no romper callers legacy
+  // (`PrismaEventTypeRepository.findActive`, `useEventTypes` FE) que proyectan
+  // `{code, label}` directamente sin resolver locale.
+  nameI18n        Json  @default("{}") @map("name_i18n")
+  descriptionI18n Json? @map("description_i18n")
+  sortOrder       Int   @default(0) @map("sort_order")
+
   events Event[]
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -320,6 +329,12 @@ model EventType {
   isSeed    Boolean   @default(false) @map("is_seed")
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
+  // Nota (patrón US-066/US-075/US-102 CI drift fix): el índice parcial
+  // `idx_event_types_active_sort (is_active, sort_order) WHERE deleted_at IS NULL`
+  // se declara SOLO en la migración SQL raw
+  // (`20260720190000_us076_event_types_i18n/migration.sql`). Prisma no soporta `WHERE`
+  // en `@@index`; declararlo aquí sin la cláusula produciría un `prisma migrate diff`
+  // con drift permanente.
   @@map("event_types")
 }
 

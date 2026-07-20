@@ -201,6 +201,11 @@ export const ErrorCodes = {
   INVALID_SORT_ORDER: 'INVALID_SORT_ORDER', // 400 (VR-07)
   REASON_REQUIRED: 'REASON_REQUIRED', // 400 (VR-10) — DELETE sin reason
   INVALID_REASON_LENGTH: 'INVALID_REASON_LENGTH', // 400 (VR-10) — reason fuera de [10..500]
+  // US-076 (PB-P1-043): CRUD admin EventType. Códigos específicos (paridad US-075).
+  // `DUPLICATE_CODE`, `INVALID_NAME_I18N`, `REASON_REQUIRED`, `INVALID_REASON_LENGTH` se
+  // reutilizan (mismo shape catálogo-wide) y solo se agregan los específicos del dominio.
+  EVENT_TYPE_NOT_FOUND: 'EVENT_TYPE_NOT_FOUND', // 404 uniforme (D7, VR-08)
+  EVENT_TYPE_IN_USE: 'EVENT_TYPE_IN_USE', // 409 (EC-01, VR-06); details.usage_count
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
