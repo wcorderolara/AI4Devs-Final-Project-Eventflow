@@ -283,7 +283,11 @@ export function CategoryFormDialog({
               <label key={locale} className="flex flex-col text-sm">
                 <span className="mb-1 text-xs font-medium uppercase tracking-wide text-neutral-500">
                   {locale}
-                  {locale === 'es-LATAM' ? <span className="ml-1 text-red-600">*</span> : null}
+                  {locale === 'es-LATAM' ? (
+                    <span className="ml-1 text-red-600" aria-hidden>
+                      {'*'}
+                    </span>
+                  ) : null}
                 </span>
                 <input
                   type="text"
