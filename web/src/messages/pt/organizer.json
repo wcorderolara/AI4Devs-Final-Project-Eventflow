@@ -128,5 +128,37 @@
         "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
       }
     }
+  },
+  "review": {
+    "create": {
+      "ratingLabel": "Avaliação",
+      "commentLabel": "Comentário (opcional)",
+      "commentHint": "Compartilhar detalhes ajuda outros organizadores. Máximo 2000 caracteres.",
+      "commentCounter": "{count}/{max}",
+      "actions": {
+        "submit": "Publicar avaliação",
+        "submitting": "Publicando…"
+      },
+      "success": "Avaliação publicada. Notificamos o fornecedor.",
+      "errors": {
+        "VALIDATION_ERROR": "Revise a avaliação e o comentário.",
+        "AUTHENTICATION_REQUIRED": "Você precisa entrar para publicar a avaliação.",
+        "FORBIDDEN": "Seu perfil não pode publicar avaliações.",
+        "RESOURCE_NOT_FOUND": "Não encontramos este evento ou fornecedor.",
+        "RATE_LIMIT_EXCEEDED": "Muitas solicitações. Aguarde um momento e tente novamente.",
+        "REVIEW_NOT_ELIGIBLE": "Ainda não é possível avaliar este fornecedor.",
+        "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
+      }
+    },
+    "eligibility": {
+      "title": "Não é possível publicar esta avaliação",
+      "no_booking": "Você só pode avaliar fornecedores com quem confirmou uma reserva para este evento.",
+      "event_not_completed": "Você poderá avaliar quando o evento estiver marcado como concluído.",
+      "window_expired": "O prazo de 30 dias para avaliar este evento já expirou.",
+      "already_reviewed": "Você já publicou uma avaliação para este fornecedor neste evento."
+    },
+    "starRating": {
+      "optionLabel": "{value} de 5 estrelas"
+    }
   }
 }

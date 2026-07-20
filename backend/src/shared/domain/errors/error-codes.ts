@@ -177,6 +177,12 @@ export const ErrorCodes = {
   // US-062 (PB-P1-036): cancelación bilateral del BookingIntent + revert atómico condicional
   // del `BudgetItem.committed`. Códigos específicos §7 Tech Spec.
   BOOKING_INTENT_NOT_CANCELLABLE: 'BOOKING_INTENT_NOT_CANCELLABLE', // 409 — BookingIntent.status ∉ {pending, confirmed_intent} (EC-01, VR-05); `details.current_status`.
+  // US-065 (PB-P1-038): creación de Review verificada. `REVIEW_NOT_ELIGIBLE` mapea a 403 con
+  // `details.reason` ∈ {`no_booking`, `event_not_completed`, `window_expired`, `already_reviewed`}
+  // (D6, AC-03, EC-01..EC-03). No es leakage — el organizer conoce su propio evento y su
+  // historial de reviews. `RESOURCE_NOT_FOUND` (404 uniforme) cubre event/vendor inexistente o
+  // ajeno (SEC-04, EC-06/EC-07, AUTH-TS-03).
+  REVIEW_NOT_ELIGIBLE: 'REVIEW_NOT_ELIGIBLE',
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

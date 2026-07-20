@@ -128,5 +128,37 @@
         "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
       }
     }
+  },
+  "review": {
+    "create": {
+      "ratingLabel": "Puntuación",
+      "commentLabel": "Comentario (opcional)",
+      "commentHint": "Compartir detalles ayuda a otros organizadores. Máximo 2000 caracteres.",
+      "commentCounter": "{count}/{max}",
+      "actions": {
+        "submit": "Publicar reseña",
+        "submitting": "Publicando…"
+      },
+      "success": "Reseña publicada. Notificamos al proveedor.",
+      "errors": {
+        "VALIDATION_ERROR": "Revisa la puntuación y el comentario.",
+        "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para publicar la reseña.",
+        "FORBIDDEN": "Tu rol no puede publicar reseñas.",
+        "RESOURCE_NOT_FOUND": "No encontramos este evento o proveedor.",
+        "RATE_LIMIT_EXCEEDED": "Demasiadas solicitudes. Espera un momento e intenta de nuevo.",
+        "REVIEW_NOT_ELIGIBLE": "Aún no puedes reseñar este proveedor.",
+        "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
+      }
+    },
+    "eligibility": {
+      "title": "No puedes publicar esta reseña",
+      "no_booking": "Solo puedes reseñar proveedores con quienes confirmaste una reserva para este evento.",
+      "event_not_completed": "Podrás reseñar cuando el evento esté marcado como completado.",
+      "window_expired": "El plazo de 30 días para reseñar este evento ya venció.",
+      "already_reviewed": "Ya publicaste una reseña para este proveedor en este evento."
+    },
+    "starRating": {
+      "optionLabel": "{value} de 5 estrellas"
+    }
   }
 }

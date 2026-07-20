@@ -63,6 +63,10 @@ import {
   BookingIntentResponseSchema,
   BookingIntentIdParamSchema,
 } from '../modules/booking-intent/dto/index.js';
+// US-065 (PB-P1-038 / BE-004): endpoint atómico crear Review verificada + denormalize
+// VendorProfile.rating_avg/reviews_count + fan-out review.published al vendor.
+import { CreateReviewRequestSchema } from '../modules/reviews-moderation/interface/create-review.dto.js';
+import { ReviewResponseSchema } from '../modules/reviews-moderation/interface/review.response.js';
 import {
   AiBaseRequestSchema,
   ApplyAiRecommendationSchema,
@@ -310,6 +314,13 @@ op({ method: 'post', path: '/booking-intents/{bookingIntentId}/confirm', operati
 // condicional del `BudgetItem.committed` (US-039 revert) + fan-out de 2 notifs a la contraparte
 // con `event='booking_intent.cancelled'`. Body opcional `{reason?:string(0..500)}`.
 op({ method: 'post', path: '/booking-intents/{bookingIntentId}/cancel', operationId: 'cancelBookingIntent', tags: ['BookingIntents'], summary: 'US-062 · Cancelar BookingIntent (bilateral) + revert committed condicional', secured: true, params: BookingIntentIdParamSchema, body: CancelBookingIntentRequestSchema, success: { status: 200, schema: envelope(BookingIntentResponseSchema) }, errors: [400, 401, 403, 404, 409] });
+
+// ── REVIEWS (ORGANIZER) ──────────────────────────────────────────────────────
+// US-065 (PB-P1-038 / BE-004): creación atómica de Review verificada — 1 tx: INSERT review +
+// UPDATE denormalize VendorProfile + 2 notifs review.published al vendor + log observability.
+// 401, 403 (FORBIDDEN | REVIEW_NOT_ELIGIBLE con reason ∈ {no_booking, event_not_completed,
+// window_expired, already_reviewed}), 404 RESOURCE_NOT_FOUND uniforme, 400 VALIDATION_ERROR.
+op({ method: 'post', path: '/organizer/reviews', operationId: 'createOrganizerReview', tags: ['Reviews'], summary: 'US-065 · Crear Review verificada + denormalize atómico + notif vendor', secured: true, body: CreateReviewRequestSchema, success: { status: 201, schema: envelope(ReviewResponseSchema) }, errors: [400, 401, 403, 404] });
 
 // ── AI ASSISTANCE ────────────────────────────────────────────────────────────────
 const AiGenerationResponse = envelope(

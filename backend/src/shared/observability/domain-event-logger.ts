@@ -61,6 +61,14 @@ export interface DomainEventLogger {
       action?: string;
       agreementCopyVersion?: string;
       acceptedAt?: string;
+      // US-065 (BE-005): `review.published` con `reviewId`, `vendorProfileId`, `eventId`,
+      // `organizerUserId`, `rating`. `eventId` ya existía (US-050); se agregan los específicos
+      // del dominio Reviews. `organizerUserId` es semánticamente `actorId` — se preserva por
+      // paridad con auditores externos que buscan el nombre literal (Tech Spec §14).
+      reviewId?: string;
+      vendorProfileId?: string;
+      organizerUserId?: string;
+      rating?: number;
     },
   ): void;
 }
