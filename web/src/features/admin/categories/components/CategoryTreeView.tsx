@@ -112,6 +112,11 @@ function TreeNodeItem({
       role="treeitem"
       aria-level={level}
       aria-expanded={hasChildren ? expanded : undefined}
+      // WAI-ARIA APG Tree Pattern: cuando no hay selección múltiple ni exclusiva
+      // (nuestro tree es de solo lectura + acciones por nodo), `aria-selected="false"`
+      // en todos los items es la señal correcta. La regla jsx-a11y/role-has-required-aria-props
+      // lo exige explícitamente.
+      aria-selected={false}
       data-testid={`category-tree-item-${node.code}`}
     >
       <div

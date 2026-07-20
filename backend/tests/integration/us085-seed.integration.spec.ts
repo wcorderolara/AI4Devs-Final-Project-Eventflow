@@ -75,11 +75,14 @@ describe.skipIf(!dbUp)('US-085 — Seed reproducible e idempotente', () => {
     expect(await prisma.bookingIntent.count({ where: { status: 'confirmed_intent' } })).toBeGreaterThanOrEqual(1);
   });
 
-  it('TS-04: catálogos cerrados (6 EventType, 10-15 ServiceCategory)', async () => {
+  it('TS-04: catálogos cerrados (6 EventType, ~21 ServiceCategory = 15 roots + 6 subs post US-075)', async () => {
     expect(await prisma.eventType.count()).toBe(6);
+    // US-075 (PB-P1-042 / DB-003): el fixture `SERVICE_CATEGORIES` se extendió a 21 entradas
+    // (15 roots + 6 subs) culturalmente coherentes LATAM (BR-SERVICE-004) para demostrar el
+    // árbol de 2 niveles del panel admin. Preserva los 12 códigos originales.
     const cats = await prisma.serviceCategory.count();
-    expect(cats).toBeGreaterThanOrEqual(10);
-    expect(cats).toBeLessThanOrEqual(15);
+    expect(cats).toBeGreaterThanOrEqual(15);
+    expect(cats).toBeLessThanOrEqual(30);
   });
 
   it('TS-03: 100% de entidades sembradas con is_seed=true', async () => {
