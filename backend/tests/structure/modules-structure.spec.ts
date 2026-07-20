@@ -1,5 +1,7 @@
 // Test estructural de US-090 (EMERGENT): hace durable en `npm test` el invariante de AC-01/AC-02.
-// Verifica 16 bounded contexts × 5 capas, el shared kernel y los 14 middleware stubs.
+// Verifica 17 bounded contexts × 5 capas (US-076 añadió `event-catalog` como split-out del
+// legado `event-planning` que solo exponía el catálogo público), el shared kernel y los 14
+// middleware stubs.
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
@@ -10,9 +12,9 @@ const srcDir = resolve(here, '../../src');
 
 const MODULES = [
   'identity-access', 'user-profile', 'event-planning', 'task-management',
-  'budget-management', 'vendor-management', 'service-catalog', 'quote-flow',
-  'booking-intent', 'reviews-moderation', 'notifications', 'ai-assistance',
-  'admin-governance', 'attachments', 'localization', 'seed-demo',
+  'budget-management', 'vendor-management', 'service-catalog', 'event-catalog',
+  'quote-flow', 'booking-intent', 'reviews-moderation', 'notifications',
+  'ai-assistance', 'admin-governance', 'attachments', 'localization', 'seed-demo',
 ] as const;
 const LAYERS = ['interface', 'application', 'domain', 'ports', 'infrastructure'] as const;
 
@@ -36,7 +38,7 @@ describe('US-090 estructura de módulos (AC-01)', () => {
     expect(dirs).toEqual([...MODULES].sort());
   });
 
-  it('cada módulo contiene las 5 capas (80 directorios)', () => {
+  it('cada módulo contiene las 5 capas (85 directorios post-US-076)', () => {
     let layerCount = 0;
     for (const m of MODULES) {
       for (const l of LAYERS) {
@@ -45,7 +47,7 @@ describe('US-090 estructura de módulos (AC-01)', () => {
         layerCount++;
       }
     }
-    expect(layerCount).toBe(80);
+    expect(layerCount).toBe(85);
   });
 });
 
