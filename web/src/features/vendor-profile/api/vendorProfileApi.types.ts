@@ -46,8 +46,35 @@ export interface ServiceCategoryOption {
   label: string;
 }
 
+/**
+ * US-075 (PB-P1-042): el endpoint `GET /service-categories` ahora devuelve
+ * `{tree, flat}` (Decisión PO D2) — el shape plano del EMERGENT US-040 se retiró.
+ * El wizard `LocationCategoriesStep` sigue consumiendo `ServiceCategoryOption[]`;
+ * la conversión ocurre en `listServiceCategories` proyectando `flat.map(...)`.
+ */
+export interface ServiceCategoryPublicNode {
+  id: string;
+  code: string;
+  label: string;
+  name_i18n: Record<string, string>;
+  description_i18n: Record<string, string> | null;
+  parent_id: string | null;
+  sort_order: number;
+  depth_level: number;
+  is_active: boolean;
+}
+
+export interface ServiceCategoryPublicTreeNode extends ServiceCategoryPublicNode {
+  children: ServiceCategoryPublicTreeNode[];
+}
+
+export interface ServiceCategoriesTreeFlatDTO {
+  tree: ServiceCategoryPublicTreeNode[];
+  flat: ServiceCategoryPublicNode[];
+}
+
 export interface ServiceCategoriesEnvelopeDTO {
-  data: ServiceCategoryOption[];
+  data: ServiceCategoriesTreeFlatDTO;
   meta: { correlationId: string; timestamp?: string };
 }
 

@@ -1,3 +1,2 @@
-// Placeholder de capa (US-090). Sin lógica de feature; la implementación pertenece a la
-// feature story de este bounded context. `export {}` mantiene el módulo compilable con `tsc`.
-export {};
+// US-075 (PB-P1-042): errores de dominio del CRUD admin.
+export * from './us075.errors.js';

@@ -204,5 +204,72 @@
         "unexpected": "Unexpected error. Please try again."
       }
     }
+  },
+  "category": {
+    "panel": {
+      "title": "Service categories panel",
+      "subtitle": "Manage the service catalog (2-level hierarchy, i18n and soft delete).",
+      "loading": "Loading categories…",
+      "error": "We couldn't load the catalog. Please try again."
+    },
+    "tree": {
+      "ariaLabel": "Service categories tree",
+      "empty": "No categories yet. Create the first one to start.",
+      "countLabel": "{count, plural, one {1 category} other {# categories}} in the catalog.",
+      "createRoot": "Create category",
+      "createChild": "Create subcategory",
+      "createChildAria": "Create subcategory under {name}",
+      "edit": "Edit",
+      "editAria": "Edit {name}",
+      "delete": "Deactivate",
+      "deleteAria": "Deactivate {name}",
+      "reactivate": "Reactivate",
+      "reactivateAria": "Reactivate {name}",
+      "inactiveBadge": "Inactive",
+      "expand": "Expand",
+      "collapse": "Collapse"
+    },
+    "form": {
+      "createRootTitle": "Create root category",
+      "createChildTitle": "Create subcategory under {parentName}",
+      "editTitle": "Edit {name}",
+      "codeLabel": "Code (unique slug)",
+      "codeInvalid": "Only lowercase letters, digits, and dashes (slug format).",
+      "sortOrderLabel": "Order",
+      "nameLegend": "Name per locale",
+      "descriptionLegend": "Description per locale (optional)",
+      "parentLabel": "Parent category",
+      "parentNone": "None (root category)",
+      "isActive": "Active category",
+      "esLatamRequired": "The es-LATAM name is required.",
+      "cancel": "Cancel",
+      "create": "Create",
+      "save": "Save changes",
+      "submitting": "Saving…"
+    },
+    "delete": {
+      "title": "Deactivate {name}",
+      "description": "The category will be marked inactive; it is not physically deleted to preserve traceability.",
+      "reasonLabel": "Reason (10–500 characters, required)",
+      "counter": "{current}/{max} (min. {min})",
+      "cancel": "Cancel",
+      "submit": "Deactivate category",
+      "submitting": "Deactivating…"
+    },
+    "errors": {
+      "unauthenticated": "You need to sign in as an admin.",
+      "forbidden": "Only admins can manage the catalog.",
+      "notFound": "The category no longer exists.",
+      "hierarchyDepth": "You can't create level-3 categories: the max depth is 2.",
+      "duplicateCode": "The code already exists. Pick a unique one.",
+      "categoryInUse": "Cannot deactivate: there are vendors with services in this category.",
+      "categoryHasChildren": "Cannot deactivate: it has active subcategories. Deactivate them first.",
+      "esLatamRequired": "The es-LATAM name is required.",
+      "invalidParent": "The parent category does not exist.",
+      "reasonRequired": "You must provide a reason to deactivate.",
+      "reasonLength": "Reason must be between 10 and 500 characters.",
+      "validation": "The form is not valid.",
+      "unexpected": "Unexpected error. Please try again."
+    }
   }
 }

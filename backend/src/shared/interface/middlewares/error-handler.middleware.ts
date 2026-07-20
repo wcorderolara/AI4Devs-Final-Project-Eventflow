@@ -119,6 +119,21 @@ import {
 // US-074 (PB-P1-041): listado admin de VendorProfile. `Us074InvalidCursorError` → 400
 // `INVALID_CURSOR` (EC-02). Se reutiliza el código estable ya en el catálogo.
 import { Us074InvalidCursorError } from '../../../modules/admin-governance/domain/us074.errors.js';
+// US-075 (PB-P1-042): CRUD admin ServiceCategory. Todos los códigos son estables (Tech
+// Spec §7 Error Handling; Decisiones PO D3/D4/D5/D7/D9). Cada error de dominio mapea 1:1
+// a un `ErrorCode` distinto para que FE + MSW + i18n `admin.category.errors.*` sean
+// deterministas.
+import {
+  CategoryHasChildrenError,
+  CategoryInUseError,
+  DuplicateCategoryCodeError,
+  InvalidHierarchyDepthError,
+  InvalidNameI18nError,
+  InvalidParentIdError,
+  InvalidReasonLengthError,
+  ReasonRequiredError,
+  ServiceCategoryNotFoundError,
+} from '../../../modules/service-catalog/domain/us075.errors.js';
 import {
   MissingInputError,
   AiInvalidBudgetError,
@@ -542,6 +557,49 @@ function mapError(err: unknown): MappedError {
   // US-074 (PB-P1-041): listado admin vendors — cursor base64 malformado.
   if (err instanceof Us074InvalidCursorError) {
     return { status: 400, code: ErrorCodes.INVALID_CURSOR, message: err.message };
+  }
+  // US-075 (PB-P1-042): CRUD admin ServiceCategory. 404 uniforme + 409 con `details`
+  // enriquecidos + 400 con códigos estables. Sin fan-out ni notifs.
+  if (err instanceof ServiceCategoryNotFoundError) {
+    return {
+      status: 404,
+      code: ErrorCodes.SERVICE_CATEGORY_NOT_FOUND,
+      message: 'Service category not found',
+    };
+  }
+  if (err instanceof InvalidHierarchyDepthError) {
+    return { status: 409, code: ErrorCodes.INVALID_HIERARCHY_DEPTH, message: err.message };
+  }
+  if (err instanceof DuplicateCategoryCodeError) {
+    return { status: 409, code: ErrorCodes.DUPLICATE_CODE, message: err.message };
+  }
+  if (err instanceof CategoryInUseError) {
+    return {
+      status: 409,
+      code: ErrorCodes.CATEGORY_IN_USE,
+      message: err.message,
+      details: [{ field: 'usage_count', message: String(err.usageCount) }],
+    };
+  }
+  if (err instanceof CategoryHasChildrenError) {
+    return {
+      status: 409,
+      code: ErrorCodes.CATEGORY_HAS_CHILDREN,
+      message: err.message,
+      details: [{ field: 'children_count', message: String(err.childrenCount) }],
+    };
+  }
+  if (err instanceof InvalidParentIdError) {
+    return { status: 400, code: ErrorCodes.INVALID_PARENT_ID, message: err.message };
+  }
+  if (err instanceof InvalidNameI18nError) {
+    return { status: 400, code: ErrorCodes.INVALID_NAME_I18N, message: err.message };
+  }
+  if (err instanceof ReasonRequiredError) {
+    return { status: 400, code: ErrorCodes.REASON_REQUIRED, message: err.message };
+  }
+  if (err instanceof InvalidReasonLengthError) {
+    return { status: 400, code: ErrorCodes.INVALID_REASON_LENGTH, message: err.message };
   }
   if (err instanceof MissingInputError) {
     return { status: 400, code: ErrorCodes.MISSING_INPUT, message: err.message };

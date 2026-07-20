@@ -204,5 +204,72 @@
         "unexpected": "Erro inesperado. Tente novamente."
       }
     }
+  },
+  "category": {
+    "panel": {
+      "title": "Painel do catálogo de categorias",
+      "subtitle": "Administre as categorias de serviços (hierarquia de 2 níveis, i18n e soft delete).",
+      "loading": "Carregando categorias…",
+      "error": "Não foi possível carregar o catálogo. Tente novamente."
+    },
+    "tree": {
+      "ariaLabel": "Árvore de categorias de serviços",
+      "empty": "Ainda não há categorias. Crie a primeira para começar.",
+      "countLabel": "{count, plural, one {1 categoria} other {# categorias}} no catálogo.",
+      "createRoot": "Criar categoria",
+      "createChild": "Criar subcategoria",
+      "createChildAria": "Criar subcategoria em {name}",
+      "edit": "Editar",
+      "editAria": "Editar {name}",
+      "delete": "Desativar",
+      "deleteAria": "Desativar {name}",
+      "reactivate": "Reativar",
+      "reactivateAria": "Reativar {name}",
+      "inactiveBadge": "Inativa",
+      "expand": "Expandir",
+      "collapse": "Recolher"
+    },
+    "form": {
+      "createRootTitle": "Criar categoria raiz",
+      "createChildTitle": "Criar subcategoria em {parentName}",
+      "editTitle": "Editar {name}",
+      "codeLabel": "Código (slug único)",
+      "codeInvalid": "Somente minúsculas, dígitos e hífens (formato slug).",
+      "sortOrderLabel": "Ordem",
+      "nameLegend": "Nome por idioma",
+      "descriptionLegend": "Descrição por idioma (opcional)",
+      "parentLabel": "Categoria pai",
+      "parentNone": "Nenhuma (categoria raiz)",
+      "isActive": "Categoria ativa",
+      "esLatamRequired": "O nome em es-LATAM é obrigatório.",
+      "cancel": "Cancelar",
+      "create": "Criar",
+      "save": "Salvar alterações",
+      "submitting": "Salvando…"
+    },
+    "delete": {
+      "title": "Desativar {name}",
+      "description": "Será marcada como inativa; não é excluída fisicamente para preservar a rastreabilidade.",
+      "reasonLabel": "Motivo (10–500 caracteres, obrigatório)",
+      "counter": "{current}/{max} (mín. {min})",
+      "cancel": "Cancelar",
+      "submit": "Desativar categoria",
+      "submitting": "Desativando…"
+    },
+    "errors": {
+      "unauthenticated": "Você precisa entrar como administrador.",
+      "forbidden": "Somente administradores podem gerir o catálogo.",
+      "notFound": "A categoria não existe mais.",
+      "hierarchyDepth": "Não é possível criar categorias de 3 níveis: a profundidade máxima é 2.",
+      "duplicateCode": "O código já existe. Escolha um único.",
+      "categoryInUse": "Não é possível desativar: há fornecedores com serviços nessa categoria.",
+      "categoryHasChildren": "Não é possível desativar: possui subcategorias ativas. Desative-as primeiro.",
+      "esLatamRequired": "O nome em es-LATAM é obrigatório.",
+      "invalidParent": "A categoria pai não existe.",
+      "reasonRequired": "Você precisa informar um motivo para desativar.",
+      "reasonLength": "O motivo deve ter entre 10 e 500 caracteres.",
+      "validation": "O formulário não é válido.",
+      "unexpected": "Erro inesperado. Tente novamente."
+    }
   }
 }

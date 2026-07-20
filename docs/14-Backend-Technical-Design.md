@@ -542,19 +542,40 @@ Importante: este listado prohíbe automáticamente crear un controller/repo por 
 
 ### 10.7 Service Catalog
 
-- **Responsabilidad:** categorías de servicio y `EventType` curado.
-- **In-scope:** listar categorías y EventType activos; admin crea/edita/desactiva.
-- **Out-of-scope:** profundidad > 2 niveles, creación de categorías por proveedores.
-- **Main use cases:** `ListServiceCategoriesUseCase`, `AdminCreateServiceCategoryUseCase`, `AdminUpdateServiceCategoryUseCase`, `AdminDisableServiceCategoryUseCase`, `AdminDisableEventTypeUseCase`.
-- **Domain services / policies:** `ServiceCategoryHierarchyPolicyService` (depth ≤ 2).
-- **Repository ports:** `ServiceCategoryRepository` (una sola tabla persiste categorías).
-- **Evaluación de `EventType`:** **PostgreSQL table managed by seed/admin** + enum-like helper para tipos seed.
-  - Justificación: `EventType` no puede eliminarse físicamente si hay eventos asociados → requiere persistencia con soft disable.
-  - Implementación: tabla `EventType` simple con `is_active`; sin repositorio dedicado salvo helper read-only en `ServiceCatalogModule`.
-- **Evaluación de `ServiceCategory`:** tabla PostgreSQL con repositorio único.
-- **Validaciones:** depth ≤ 2, slug único.
-- **Authorization:** admin para mutaciones; público para lectura.
-- **Testing focus:** depth policy, soft delete, EventType no eliminable.
+- **Responsabilidad:** categorías de servicio (`ServiceCategory`) y `EventType` curado.
+- **In-scope:** listar categorías (admin ve inactivas, público solo activas) y EventType activos;
+  admin crea/edita/desactiva/reactiva categorías; enforcement de jerarquía 2 niveles.
+- **Out-of-scope:** profundidad > 2 niveles, hard delete, bulk reorder, creación de categorías
+  por proveedores, AI-generated categories.
+- **Main use cases (US-075 / PB-P1-042):**
+  - `CreateServiceCategoryUseCase` — crea root o child con validación de jerarquía + AdminAction append-only.
+  - `UpdateServiceCategoryUseCase` — patch parcial (name/desc/parent/sort/is_active) con detección `reactivate` y validación de jerarquía al mover.
+  - `SoftDeleteServiceCategoryUseCase` — guards (`CATEGORY_IN_USE`, `CATEGORY_HAS_CHILDREN`) + UPDATE `is_active=false` + AdminAction `soft_delete`.
+  - `ListServiceCategoriesUseCase` — variante admin/pública; devuelve `{tree, flat}` en orden determinista
+    (`parent_id NULLS FIRST, sort_order ASC, label ASC`).
+- **Domain services / policies:** enforcement inline de depth ≤ 2 en cada UseCase de mutación
+  (Decisión PO D4 + BR-SERVICE-005) — sin `ServiceCategoryHierarchyPolicyService` separado. El
+  CHECK SQL `depth_level BETWEEN 1 AND 2` (US-102) es la segunda línea de defensa.
+- **Persistencia y campos (post US-075 DB-002):** `service_categories` con `name_i18n jsonb`
+  (required `es-LATAM`), `description_i18n jsonb?`, `parent_id uuid?` self-ref FK
+  (`ON DELETE RESTRICT`), `sort_order int default 0`, `depth_level`, `is_active`, `deleted_at`.
+  `label` / `description` se mantienen como fallback denormalizado desde `es-LATAM` en cada
+  write para compat con callers legacy (`VendorService`, `EventTask`, `Quote`).
+- **Endpoints (Tech Spec US-075 §7):**
+  - `GET  /api/v1/admin/service-categories`    — admin listing (incluye inactivas).
+  - `POST /api/v1/admin/service-categories`    — create root / child.
+  - `PATCH /api/v1/admin/service-categories/:id` — update / reactivate.
+  - `DELETE /api/v1/admin/service-categories/:id` — soft delete con `reason` [10..500].
+  - `GET  /api/v1/service-categories`          — público (sesión requerida, cualquier rol).
+- **Audit trail:** cada mutación crea un `AdminAction` (`target_entity='service_category'`) con
+  acción `create` / `update` / `reactivate` / `soft_delete` (BR-ADMIN-011 / Decisión PO D7).
+  No hay chain audit inverso en `service_categories.admin_action_id` (el catálogo es cold; los
+  admins consultan `admin_actions.target_entity='service_category'` con index dedicado).
+- **Authorization:** admin para mutaciones (`roleMiddleware(['admin'])`); sesión válida para
+  lectura pública (Decisión PO D10 + SEC-02 — no anonymous).
+- **Testing focus:** depth policy (crear/mover a nivel 3), soft delete guards (vendor_services,
+  children activos), reactivate detection, `EventType` no eliminable, seed cultural LATAM
+  (`SERVICE_CATEGORIES` fixture en `latam-data.ts`).
 
 ### 10.8 Quote Flow
 
