@@ -34,6 +34,9 @@ export interface PublicVendorReviewDTO {
 }
 
 export interface PublicVendorDTO {
+  // US-066 (PB-P1-039): el backend expone `id` para habilitar el listado paginado por UUID
+  // (`GET /vendors/:id/reviews`) sin roundtrip adicional slug→id.
+  id: string;
   slug: string;
   businessName: string;
   bio: string;

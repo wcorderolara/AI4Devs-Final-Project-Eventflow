@@ -33,6 +33,9 @@ export interface PublicVendorReviewDto {
 }
 
 export interface PublicVendorDto {
+  // US-066 (PB-P1-039): `id` extendido para habilitar el listado paginado del cliente
+  // (`GET /vendors/:id/reviews`). Ampliación backward-compatible del contrato de US-046.
+  id: string;
   slug: string;
   businessName: string;
   bio: string;

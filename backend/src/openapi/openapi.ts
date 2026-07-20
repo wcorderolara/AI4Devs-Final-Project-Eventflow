@@ -67,6 +67,13 @@ import {
 // VendorProfile.rating_avg/reviews_count + fan-out review.published al vendor.
 import { CreateReviewRequestSchema } from '../modules/reviews-moderation/interface/create-review.dto.js';
 import { ReviewResponseSchema } from '../modules/reviews-moderation/interface/review.response.js';
+// US-066 (PB-P1-039 / BE-003): listado paginado público de reviews por vendor con cursor
+// keyset + anonimato del organizer + admin sees-all.
+import {
+  VendorIdParamSchema,
+  ListVendorReviewsQuerySchema,
+} from '../modules/reviews-moderation/interface/list-vendor-reviews.dto.js';
+import { ListVendorReviewsResponseSchema } from '../modules/reviews-moderation/interface/list-vendor-reviews.response.js';
 import {
   AiBaseRequestSchema,
   ApplyAiRecommendationSchema,
@@ -321,6 +328,10 @@ op({ method: 'post', path: '/booking-intents/{bookingIntentId}/cancel', operatio
 // 401, 403 (FORBIDDEN | REVIEW_NOT_ELIGIBLE con reason ∈ {no_booking, event_not_completed,
 // window_expired, already_reviewed}), 404 RESOURCE_NOT_FOUND uniforme, 400 VALIDATION_ERROR.
 op({ method: 'post', path: '/organizer/reviews', operationId: 'createOrganizerReview', tags: ['Reviews'], summary: 'US-065 · Crear Review verificada + denormalize atómico + notif vendor', secured: true, body: CreateReviewRequestSchema, success: { status: 201, schema: envelope(ReviewResponseSchema) }, errors: [400, 401, 403, 404] });
+// US-066 (PB-P1-039 / BE-003): listado paginado público de reviews por vendor con cursor keyset
+// keyset (created_at DESC, id DESC) + anonimato del organizer + admin sees-all. Auth opcional:
+// anónimo permitido (200 si vendor approved), admin extiende el filtro a todos los `status`.
+op({ method: 'get', path: '/vendors/{id}/reviews', operationId: 'listVendorReviews', tags: ['Reviews'], summary: 'US-066 · Listar reviews de vendor (público, cursor + anonimato + admin sees-all)', secured: false, params: VendorIdParamSchema, query: ListVendorReviewsQuerySchema, success: { status: 200, schema: envelope(ListVendorReviewsResponseSchema) }, errors: [400, 404] });
 
 // ── AI ASSISTANCE ────────────────────────────────────────────────────────────────
 const AiGenerationResponse = envelope(

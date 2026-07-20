@@ -13,6 +13,7 @@ import { quotesHandlers } from './quotes';
 import { vendorQrHandlers } from './vendor-qr';
 import { bookingIntentsHandlers } from './booking-intents';
 import { organizerReviewsHandlers } from './organizer-reviews';
+import { vendorReviewsHandlers } from './vendor-reviews';
 
 // Catch-all: cualquier `/api/v1/*` sin handler dedicado → 501 visible (falla ruidosamente).
 // DEBE ir al final del array; cada feature agrega su handler ANTES de este.
@@ -38,6 +39,7 @@ export const handlers = [
   ...quotesHandlers,
   ...bookingIntentsHandlers,
   ...organizerReviewsHandlers,
+  ...vendorReviewsHandlers,
   ...vendorQrHandlers,
   ...eventsHandlers,
   ...tasksHandlers,

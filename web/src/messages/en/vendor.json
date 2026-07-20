@@ -110,6 +110,34 @@
       "AUTHENTICATION_REQUIRED": "You need to sign in to create your profile.",
       "FORBIDDEN": "Only vendors can create a vendor profile.",
       "UNEXPECTED": "Something went wrong. Please try again."
+    },
+    "reviews": {
+      "title": "Reviews",
+      "empty": "This vendor doesn't have reviews yet.",
+      "loadingAria": "Loading reviews",
+      "listAria": "Vendor review list",
+      "actions": {
+        "loadMore": "Load more reviews",
+        "loadingMore": "Loading more…",
+        "retry": "Retry"
+      },
+      "errors": {
+        "load": "We couldn't load the reviews. Please try again."
+      },
+      "average": {
+        "empty": "No reviews yet.",
+        "summary": "{count, plural, one {# review} other {# reviews}}",
+        "ariaLabel": "{rating} out of {max} stars based on {count, plural, one {# review} other {# reviews}}"
+      },
+      "item": {
+        "ariaRating": "{rating} out of {max} stars",
+        "statusAriaLabel": "Status: {status}",
+        "status": {
+          "published": "Published",
+          "hidden": "Hidden",
+          "removed": "Removed"
+        }
+      }
     }
   },
   "languages": {

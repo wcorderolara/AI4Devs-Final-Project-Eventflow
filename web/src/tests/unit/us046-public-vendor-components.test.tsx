@@ -28,6 +28,7 @@ function withIntl(children: React.ReactNode): React.ReactElement {
 }
 
 const vendor: PublicVendorDTO = {
+  id: '00000000-0000-0000-0046-000000000001',
   slug: 'banquetes-el-quetzal',
   businessName: 'Banquetes El Quetzal',
   bio: 'Servicio premium con 20 años.',
