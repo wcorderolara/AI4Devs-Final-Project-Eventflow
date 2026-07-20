@@ -1,15 +1,14 @@
-// MSW handlers — admin moderate review (US-067 / PB-P1-040 / FE-003).
+// MSW handlers — admin reviews (US-067 moderate + US-077 list).
 //
-// Cubre `POST /api/v1/admin/reviews/:id/moderate` con 200 happy path + errores del contrato §9:
-//   - `400 VALIDATION_ERROR` (body sin reason o reason fuera de [10..500] o action inválido).
-//   - `400 INVALID_UUID` (path `:id` no es UUID).
-//   - `401 AUTHENTICATION_REQUIRED`.
-//   - `403 FORBIDDEN` (organizer/vendor — rol no autorizado).
-//   - `404 REVIEW_NOT_FOUND` (Decisión PO D6 — código específico de dominio review).
-//   - `409 INVALID_TRANSITION` con `details = [{from},{to},{allowed}]` (EC-01/EC-02).
+// - `POST /api/v1/admin/reviews/:id/moderate` (US-067) — 200 happy + 400/401/403/404/409.
+// - `GET  /api/v1/admin/reviews` (US-077) — 200 happy con fixtures deterministas + 400 INVALID_CURSOR.
 //
-// Los disparadores viven en el `:id` de la review para no requerir headers custom — cualquier
-// UUID que no matchee explícitamente cae al happy path (`hidden` o `removed` según action).
+// Los disparadores del POST viven en el `:id`; los del GET reaccionan a filtros específicos:
+//   - `cursor=__invalid__` ⇒ 400 INVALID_CURSOR.
+//   - `vendor_id=<uuid trigger>` ⇒ conjunto filtrado deterministá para el UI de filtros.
+//   - `has_admin_action=true` ⇒ sólo items con lastAdminAction poblado.
+//   - `status=X` ⇒ filtro cliente-side sobre las fixtures.
+//   - default ⇒ 25 fixtures con mezcla de status.
 import { http, HttpResponse } from 'msw';
 
 const CORRELATION = '00000000-0000-0000-0000-msw000000067';
@@ -144,4 +143,87 @@ export const adminReviewsHandlers = [
       }
     }
   }),
+
+  // ── US-077 · GET /admin/reviews ──────────────────────────────────────────
+  http.get('*/api/v1/admin/reviews', ({ request }) => {
+    const url = new URL(request.url);
+    const cursor = url.searchParams.get('cursor');
+    if (cursor === '__invalid__') {
+      return HttpResponse.json(errorEnvelope('INVALID_CURSOR', 'Invalid cursor'), { status: 400 });
+    }
+
+    const statusFilter = url.searchParams.getAll('status');
+    const hasAdminActionRaw = url.searchParams.get('has_admin_action');
+    const vendorIdFilter = url.searchParams.get('vendor_id');
+    const pageSize = Number(url.searchParams.get('pageSize') ?? '25');
+
+    const all = adminReviewsFixtures();
+    let filtered = all;
+    if (statusFilter.length > 0) {
+      filtered = filtered.filter((r) => statusFilter.includes(r.status));
+    }
+    if (hasAdminActionRaw === 'true') {
+      filtered = filtered.filter((r) => r.lastAdminAction !== null);
+    } else if (hasAdminActionRaw === 'false') {
+      filtered = filtered.filter((r) => r.lastAdminAction === null);
+    }
+    if (vendorIdFilter) {
+      filtered = filtered.filter((r) => r.vendor.id === vendorIdFilter);
+    }
+
+    // Cursor simplificado — segundo pageParam entrega los últimos `pageSize` restantes.
+    const startIndex = cursor === 'cursor-page-2' ? pageSize : 0;
+    const slice = filtered.slice(startIndex, startIndex + pageSize);
+    const nextCursor =
+      startIndex === 0 && filtered.length > pageSize ? 'cursor-page-2' : null;
+
+    return HttpResponse.json(
+      envelope({
+        items: slice,
+        pagination: { nextCursor, pageSize },
+      }),
+      { status: 200 },
+    );
+  }),
 ];
+
+// ── Fixtures deterministas ──────────────────────────────────────────────────
+// 30 reviews: 15 published + 8 hidden + 7 removed. Los últimos 15 tienen `lastAdminAction`.
+function adminReviewsFixtures() {
+  const items = [];
+  for (let i = 0; i < 30; i += 1) {
+    const status: 'published' | 'hidden' | 'removed' =
+      i < 15 ? 'published' : i < 23 ? 'hidden' : 'removed';
+    const idSuffix = String(i + 1).padStart(3, '0');
+    const isModerated = status !== 'published';
+    items.push({
+      id: `00000000-0000-0000-0077-${idSuffix}00000001`,
+      rating: 1 + (i % 5),
+      comment: `Comentario demo #${i + 1}`,
+      status,
+      createdAt: new Date(2026, 5, 20 - i, 12, 0, 0).toISOString(),
+      author: {
+        userId: `00000000-0000-0000-0077-author${idSuffix}`,
+        displayName: `Organizador ${i + 1}`,
+      },
+      vendor: {
+        id: `00000000-0000-0000-0077-vendor${idSuffix.slice(0, 3)}`,
+        businessName: `Vendor ${i + 1}`,
+        slug: `vendor-${i + 1}`,
+      },
+      event: {
+        id: `00000000-0000-0000-0077-event${idSuffix}`,
+        title: `Evento demo #${i + 1}`,
+      },
+      lastAdminAction: isModerated
+        ? {
+            action: status === 'hidden' ? 'hide' : 'remove',
+            reason: 'Contenido marcado para revisión (demo msw).',
+            adminId: '00000000-0000-0000-0077-adminuser001',
+            createdAt: new Date(2026, 5, 22, 12, 0, 0).toISOString(),
+          }
+        : null,
+    });
+  }
+  return items;
+}

@@ -20,6 +20,47 @@
     }
   },
   "review": {
+    "panel": {
+      "title": "Panel de moderación de reseñas",
+      "subtitle": "Filtra las reseñas por estado, proveedor, fechas y rating; modera con un clic.",
+      "loading": "Cargando reseñas…",
+      "loadingMore": "Cargando más…",
+      "error": "No pudimos cargar las reseñas. Intenta nuevamente.",
+      "empty": "Ninguna reseña coincide con los filtros.",
+      "caption": "Reseñas admin (PII completa + última acción de moderación).",
+      "col": {
+        "rating": "Puntuación",
+        "author": "Autor",
+        "vendor": "Proveedor",
+        "event": "Evento",
+        "comment": "Comentario",
+        "status": "Estado",
+        "lastAction": "Última acción admin",
+        "createdAt": "Creada",
+        "actions": "Acciones"
+      },
+      "moderate": "Moderar",
+      "moderateAria": "Moderar la reseña {id}",
+      "loadMore": "Cargar más",
+      "filters": {
+        "formAriaLabel": "Filtros del panel de reseñas",
+        "statusLegend": "Estado de la reseña",
+        "vendorIdLabel": "ID del proveedor",
+        "vendorIdPlaceholder": "UUID del proveedor",
+        "createdFromLabel": "Creada desde",
+        "createdToLabel": "Creada hasta",
+        "ratingMinLabel": "Puntuación mínima",
+        "ratingMaxLabel": "Puntuación máxima",
+        "hasAdminActionLabel": "Con acción de moderación",
+        "hasAdminActionAny": "Todas",
+        "hasAdminActionYes": "Solo moderadas",
+        "hasAdminActionNo": "Solo no moderadas",
+        "reset": "Limpiar filtros",
+        "apply": "Aplicar",
+        "errorRatingRange": "La puntuación mínima debe ser menor o igual a la máxima.",
+        "errorDateRange": "La fecha inicial debe ser menor o igual a la final."
+      }
+    },
     "moderate": {
       "status": {
         "all": "Todas",

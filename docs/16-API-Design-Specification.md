@@ -2491,7 +2491,8 @@ Organizer publica una review tras `BookingIntent.confirmed_intent`.
 | POST | `/reviews` | Sí | organizer | Crea review. | 201 | 401, 403, 409 (DUPLICATE_REVIEW), 422 |
 | GET | `/vendors/:vendorProfileId/reviews` | No | anonymous, organizer, vendor, admin | Lista pública. | 200 | 404 |
 | GET | `/vendors/me/reviews` | Sí | vendor | Reviews recibidas. | 200 | 401, 403 |
-| POST | `/admin/reviews/:id/moderate` | Sí | admin | Modera review (hide\|remove) con AdminAction + recálculo denormalize. Ver §33.6. | 200 | 400, 401, 403, 404 (REVIEW_NOT_FOUND), 409 (INVALID_TRANSITION) |
+| POST | `/admin/reviews/:id/moderate` | Sí | admin | Modera review (hide\|remove) con AdminAction + recálculo denormalize. Ver §33.7. | 200 | 400, 401, 403, 404 (REVIEW_NOT_FOUND), 409 (INVALID_TRANSITION) |
+| GET | `/admin/reviews` | Sí | admin | Panel admin global con filtros combinados + cursor keyset + PII completa + last_admin_action. Ver §33.8. | 200 | 400 (VALIDATION_ERROR / INVALID_CURSOR), 401, 403 |
 
 ### 33.3 DTOs
 
@@ -2749,6 +2750,89 @@ PII o referencia a contenido reportado).
 - Sin DELETE `/admin/reviews/:id` (FR-REVIEW-005 — no hard delete).
 - Sin llamadas a AI provider (FR-REVIEW-009 — moderación 100 % manual).
 - Sin notificaciones al organizer/vendor en MVP (Decisión PO D7).
+
+### 33.8 US-077 · `GET /api/v1/admin/reviews` (panel admin global con filtros combinados)
+
+Endpoint admin-only que expone el listado paginado global de reseñas con filtros combinados
+para el panel operativo. Distinto del endpoint público de US-066 (que es per-vendor y anonimizado);
+aquí el admin ve **PII completa** (Decisión PO D4 · SEC-03) y el chain `last_admin_action`.
+
+**Autorización**: `sessionAuth + roleMiddleware(['admin'])`. Organizer/vendor ⇒ 403; anónimo ⇒ 401.
+
+**Query params** (Decisión PO D2 · `.strict()`):
+
+| Campo | Tipo | Detalle |
+| --- | --- | --- |
+| `status` | string \| string[] | `?status=published&status=hidden` (Decisión PO D8). Normalizado a array. |
+| `vendor_id` | UUID? | Filtro por vendor (VR-06 · `400 INVALID_UUID` si mal formado). |
+| `created_at_from` | ISO date? | Límite inferior de rango. |
+| `created_at_to` | ISO date? | Límite superior de rango. |
+| `rating_min` | int 1..5? | Rating mínimo. |
+| `rating_max` | int 1..5? | Rating máximo. |
+| `has_admin_action` | bool? | `true` sólo moderadas; `false` sólo no moderadas. |
+| `pageSize` | int 1..50, default 25 | VR-01. |
+| `cursor` | base64url? | Cursor opaco keyset paridad US-066 (Decisión PO D3). |
+
+**Cross-field refines**: `rating_min <= rating_max` y `created_at_from <= created_at_to`
+(EC-04) — falla ⇒ `400 VALIDATION_ERROR` (path Zod del refine, i.e. `details[0].field=rating_min`
+o `details[0].field=created_at_from`).
+
+**Response 200**:
+
+```ts
+type AdminReviewsListResponse = {
+  items: Array<{
+    id: string;
+    rating: number;
+    comment: string | null;
+    status: 'published' | 'hidden' | 'removed';
+    createdAt: string;
+    author: { userId: string; displayName: string };
+    vendor: { id: string; businessName: string; slug: string | null };
+    event: { id: string; title: string };
+    lastAdminAction: {
+      action: string;
+      reason: string | null;    // desde admin_actions.metadata.reason (BR-ADMIN-011)
+      adminId: string | null;   // nullable — el modelo AdminAction lo permite (US-041)
+      createdAt: string;
+    } | null;
+  }>;
+  pagination: {
+    nextCursor: string | null;   // base64url {createdAt, id}
+    pageSize: number;
+  };
+};
+```
+
+**Errores estables**:
+
+| Código | HTTP | Detalle |
+| --- | --- | --- |
+| `VALIDATION_ERROR` | 400 | Filtro fuera de rango, cross-field refine, claves ajenas (`.strict()`). |
+| `INVALID_CURSOR` | 400 | Cursor base64url no decodifica (reusa el envelope de US-066). |
+| `AUTHENTICATION_REQUIRED` | 401 | Sin cookie de sesión válida. |
+| `FORBIDDEN` | 403 | Rol organizer o vendor. |
+
+**Orden estable**: `ORDER BY created_at DESC, id DESC` (paridad US-066). El cursor codifica
+`{createdAt, id}` en base64url; la próxima página se filtra con
+`(created_at < c.createdAt) OR (created_at = c.createdAt AND id < c.id)`.
+
+**Cross-endpoint contrast** (US-066 vs US-077):
+
+|  | US-066 · público | US-077 · admin |
+| --- | --- | --- |
+| Ruta | `GET /vendors/:id/reviews` | `GET /admin/reviews` |
+| Auth | opcional (admin extiende scope) | obligatoria + rol admin |
+| Scope | per-vendor | global |
+| Filtros | (sólo vendor + cursor) | multi-status, vendor, fechas, rating, admin_action, cursor |
+| Anonimato | sí (SEC-04) | NO (PII completa, D4) |
+| `last_admin_action` | no expuesto | expuesto |
+
+**Reuso**: el cursor keyset y el helper `encodeVendorReviewsCursor`/`decodeVendorReviewsCursor`
+son reutilizados verbatim (importados de `application/vendor-reviews-cursor.ts` de US-066).
+
+**Observabilidad**: log estándar HTTP con `correlationId`. Sin evento de dominio dedicado
+(sólo lectura). No persiste `AdminAction` (no es una acción, es una consulta).
 
 ---
 
