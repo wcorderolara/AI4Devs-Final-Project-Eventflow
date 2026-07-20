@@ -47,6 +47,9 @@ import { organizerReviewRouter } from './modules/reviews-moderation/interface/or
 // US-066 (PB-P1-039): endpoint público `GET /api/v1/vendors/:id/reviews` con cursor pagination
 // keyset + anonimato del organizer + admin sees-all. Auth opcional (anónimo permitido).
 import { vendorReviewsRouter } from './modules/reviews-moderation/interface/vendor-reviews.routes.js';
+// US-067 (PB-P1-040): endpoint admin `POST /api/v1/admin/reviews/:id/moderate` — hide/remove
+// atómico con AdminAction obligatorio + recálculo denormalize VendorProfile + audit chain.
+import { adminReviewRouter } from './modules/reviews-moderation/interface/admin-review.routes.js';
 
 /** Construye y configura la aplicación Express. */
 export function createApp(): Express {
@@ -165,6 +168,10 @@ export function createApp(): Express {
   // US-016 (PB-P1-010): lectura admin de eventos con auditoría (`GET /admin/events/:id`).
   // Bloquea explícitamente PATCH/DELETE/POST sobre el mismo recurso con `403 FORBIDDEN_WRITE`.
   apiV1.use('/admin/events', adminEventsRouter);
+  // US-067 (PB-P1-040): moderación admin de reviews (`POST /admin/reviews/:id/moderate`).
+  // Guards: sessionAuth + roleMiddleware(['admin']); UseCase atómico con AdminAction chain +
+  // recálculo denormalize VendorProfile. Sin hard delete (FR-REVIEW-005), sin AI (FR-REVIEW-009).
+  apiV1.use('/admin/reviews', adminReviewRouter);
   app.use('/api/v1', apiV1);
 
   app.use(notFoundMiddleware); // 8. penúltimo: 404 catch-all

@@ -1,11 +1,8 @@
-import { useTranslations } from 'next-intl';
+// US-067 (PB-P1-040 / FE-001..004): panel admin de moderación de reseñas. Server Component
+// que monta la tabla client (`ReviewModerationTable`) — el fetch de reviews vive en TanStack
+// dentro del cliente.
+import { ReviewModerationTable } from '@/features/admin/reviews';
 
-export default function AdminReviewsPage() {
-  const t = useTranslations('navigation');
-  return (
-    <>
-      <h1 className="text-2xl font-bold">{t('placeholder.adminReviews.title')}</h1>
-      <p className="mt-2 text-neutral-600">{t('placeholder.adminReviews.body')}</p>
-    </>
-  );
+export default function AdminReviewsPage(): React.JSX.Element {
+  return <ReviewModerationTable />;
 }

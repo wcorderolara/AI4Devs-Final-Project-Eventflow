@@ -163,6 +163,9 @@ model User {
   events                 Event[]
   vendorProfile          VendorProfile?
   reviews                Review[]
+  // US-067 (PB-P1-040 / DB-002): relación inversa `reviews.moderated_by` — admin que ejecutó
+  // la acción de moderación (hide/remove). Distinta de `reviews` (author).
+  reviewsModerated       Review[]             @relation("ReviewModerator")
   notifications          Notification[]
   adminActions           AdminAction[]
   sessions               Session[]
@@ -688,31 +691,31 @@ model Quote {
 }
 
 model BookingIntent {
-  id                    String              @id @default(uuid()) @db.Uuid
-  quoteId               String              @map("quote_id") @db.Uuid
+  id                           String              @id @default(uuid()) @db.Uuid
+  quoteId                      String              @map("quote_id") @db.Uuid
   // US-102: (event, category) para uq_booking_intents_event_category_confirmed (C-037).
-  eventId               String              @map("event_id") @db.Uuid
-  serviceCategoryId     String              @map("service_category_id") @db.Uuid
-  status                BookingIntentStatus @default(pending)
+  eventId                      String              @map("event_id") @db.Uuid
+  serviceCategoryId            String              @map("service_category_id") @db.Uuid
+  status                       BookingIntentStatus @default(pending)
   // US-102: chk_booking_intents_is_simulated (C-038; MVP no procesa pagos reales).
-  isSimulated           Boolean             @default(true) @map("is_simulated")
-  confirmedAt           DateTime?           @map("confirmed_at") @db.Timestamptz(6)
+  isSimulated                  Boolean             @default(true) @map("is_simulated")
+  confirmedAt                  DateTime?           @map("confirmed_at") @db.Timestamptz(6)
   // US-096 (PB-P0-004): vendor asignado (denormalizado desde el quote para auth/consultas) y
   // metadatos de cancelación (razón obligatoria — VR-10).
-  vendorProfileId       String?             @map("vendor_profile_id") @db.Uuid
-  cancelledAt           DateTime?           @map("cancelled_at") @db.Timestamptz(6)
-  cancelledBy           String?             @map("cancelled_by") @db.Uuid
-  cancellationReason    String?             @map("cancellation_reason")
+  vendorProfileId              String?             @map("vendor_profile_id") @db.Uuid
+  cancelledAt                  DateTime?           @map("cancelled_at") @db.Timestamptz(6)
+  cancelledBy                  String?             @map("cancelled_by") @db.Uuid
+  cancellationReason           String?             @map("cancellation_reason")
   // US-060 (PB-P1-036 / DB-002): auditoría del organizer que originó el intent. `NOT NULL` con FK
   // a `users.id` (`ON DELETE RESTRICT`) — permite trazabilidad por actor sin depender del join
   // `booking_intents → quotes → quote_requests → events → users`. Backfill idempotente desde ese
   // join en la migración.
-  createdBy             String              @map("created_by") @db.Uuid
+  createdBy                    String              @map("created_by") @db.Uuid
   // US-039 (PB-P1-023 / D1): idempotencia del sync de `BudgetItem.committed`. Ambos NULL cuando
   // el intent no está sincronizado; `committedSyncedAmount` preserva el monto original para una
   // reversa exacta independiente de cambios posteriores en `Quote.amount`.
-  committedSyncedAt     DateTime?           @map("committed_synced_at") @db.Timestamptz(6)
-  committedSyncedAmount Decimal?            @map("committed_synced_amount") @db.Decimal(14, 2)
+  committedSyncedAt            DateTime?           @map("committed_synced_at") @db.Timestamptz(6)
+  committedSyncedAmount        Decimal?            @map("committed_synced_amount") @db.Decimal(14, 2)
   // US-063 (PB-P1-037 / DB-002): auditoría bilateral del disclaimer aceptado (D2 + D7).
   // `disclaimerAcceptedAtCreate` se captura en la creación del intent (US-060 refactor BE-002);
   // `disclaimerAcceptedAtConfirm` en la confirmación (US-061 refactor BE-004). Las columnas
@@ -721,10 +724,10 @@ model BookingIntent {
   // en la migración: `create` desde `created_at`, `confirm` desde `confirmed_at` sólo si
   // `status='confirmed_intent'`. Los DEFAULT del ADD COLUMN se conservan como safety net para
   // rutas de escritura raw SQL (tests) — el use case aplicativo siempre pasa el valor explícito.
-  disclaimerAcceptedAtCreate  DateTime  @default(now()) @map("disclaimer_accepted_at_create") @db.Timestamptz(6)
-  disclaimerAcceptedAtConfirm DateTime? @map("disclaimer_accepted_at_confirm") @db.Timestamptz(6)
-  disclaimerCopyVersionCreate  String   @default("v1") @map("disclaimer_copy_version_create")
-  disclaimerCopyVersionConfirm String?  @map("disclaimer_copy_version_confirm")
+  disclaimerAcceptedAtCreate   DateTime            @default(now()) @map("disclaimer_accepted_at_create") @db.Timestamptz(6)
+  disclaimerAcceptedAtConfirm  DateTime?           @map("disclaimer_accepted_at_confirm") @db.Timestamptz(6)
+  disclaimerCopyVersionCreate  String              @default("v1") @map("disclaimer_copy_version_create")
+  disclaimerCopyVersionConfirm String?             @map("disclaimer_copy_version_confirm")
 
   quote           Quote           @relation(fields: [quoteId], references: [id], onDelete: Restrict)
   event           Event           @relation(fields: [eventId], references: [id], onDelete: Restrict)
@@ -764,9 +767,18 @@ model Review {
   comment         String?
   status          ReviewStatus @default(published)
 
+  // US-067 (PB-P1-040 / DB-002): 4 columnas audit de moderación admin (soft delete + AdminAction).
+  // Poblado atómicamente por `ModerateReviewUseCase`. NULL para reviews `published`.
+  moderatedBy      String?   @map("moderated_by") @db.Uuid
+  moderatedAt      DateTime? @map("moderated_at") @db.Timestamptz(6)
+  moderationReason String?   @map("moderation_reason")
+  adminActionId    String?   @map("admin_action_id") @db.Uuid
+
   bookingIntent BookingIntent @relation(fields: [bookingIntentId], references: [id], onDelete: Restrict)
   vendorProfile VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Restrict)
   author        User          @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  moderator     User?         @relation("ReviewModerator", fields: [moderatedBy], references: [id], onDelete: Restrict)
+  adminAction   AdminAction?  @relation("ReviewAdminAction", fields: [adminActionId], references: [id], onDelete: Restrict)
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -776,6 +788,7 @@ model Review {
   @@index([vendorProfileId])
   @@index([bookingIntentId])
   @@index([authorId])
+  @@index([moderatedBy, moderatedAt(sort: Desc)], map: "idx_reviews_moderated_by_at")
   @@map("reviews")
 }
 
@@ -819,6 +832,10 @@ model AdminAction {
   correlationId String? @map("correlation_id")
 
   adminUser User? @relation(fields: [adminUserId], references: [id], onDelete: Restrict)
+
+  // US-067 (PB-P1-040 / DB-002): back-relation cuando este AdminAction es el ÚLTIMO acto de
+  // moderación referenciado desde `reviews.admin_action_id` (chain audit BR-ADMIN-011).
+  moderatedReviews Review[] @relation("ReviewAdminAction")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)

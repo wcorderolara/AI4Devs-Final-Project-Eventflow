@@ -106,14 +106,42 @@ describe.skipIf(!dbUp)('US-088 — BookingIntent confirmado + reseñas verificad
   });
 
   it('AC-04: cada reseña hidden/removed tiene su AdminAction de moderación', async () => {
+    // US-067 (BE-006 / DEV-08): los literales `action` se alinearon a los canónicos que produce
+    // `ModerateReviewUseCase` en runtime — `hide`/`remove` en vez de `HIDE_REVIEW`/`REMOVE_REVIEW`.
+    // Se preserva la semántica AC-04 (1 AdminAction por review moderada) con los nuevos valores.
     const [hidden, removed, hideActions, removeActions] = await Promise.all([
       prisma.review.count({ where: { isSeed: true, status: 'hidden' } }),
       prisma.review.count({ where: { isSeed: true, status: 'removed' } }),
-      prisma.adminAction.count({ where: { isSeed: true, action: 'HIDE_REVIEW', targetEntity: 'review' } }),
-      prisma.adminAction.count({ where: { isSeed: true, action: 'REMOVE_REVIEW', targetEntity: 'review' } }),
+      prisma.adminAction.count({ where: { isSeed: true, action: 'hide', targetEntity: 'review' } }),
+      prisma.adminAction.count({ where: { isSeed: true, action: 'remove', targetEntity: 'review' } }),
     ]);
     expect(hideActions).toBe(hidden);
     expect(removeActions).toBe(removed);
+  });
+
+  it('US-067 BE-006: reviews hidden/removed del seed también persisten las 4 columnas audit + chain admin_action_id', async () => {
+    const moderated = await prisma.review.findMany({
+      where: { isSeed: true, status: { in: ['hidden', 'removed'] } },
+      select: {
+        id: true,
+        status: true,
+        moderatedBy: true,
+        moderatedAt: true,
+        moderationReason: true,
+        adminActionId: true,
+      },
+    });
+    expect(moderated.length).toBeGreaterThan(0);
+    for (const r of moderated) {
+      expect(r.moderatedBy).not.toBeNull();
+      expect(r.moderatedAt).not.toBeNull();
+      expect(r.moderationReason).not.toBeNull();
+      expect(r.adminActionId).not.toBeNull();
+      const action = await prisma.adminAction.findUnique({ where: { id: r.adminActionId! } });
+      expect(action?.targetEntity).toBe('review');
+      expect(action?.targetId).toBe(r.id);
+      expect(action?.action).toBe(r.status === 'hidden' ? 'hide' : 'remove');
+    }
   });
 
   it('AC-05: BudgetItem.committed refleja el monto del quote por cada confirmed_intent', async () => {

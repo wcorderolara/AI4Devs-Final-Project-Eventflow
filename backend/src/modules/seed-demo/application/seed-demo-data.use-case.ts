@@ -783,9 +783,23 @@ export class SeedDemoDataUseCase {
         reviewCounts,
       );
       // US-088 AC-04 — Trazabilidad de moderación: `AdminAction` por cada review hidden/removed.
+      // US-067 (PB-P1-040 / BE-006): además del AdminAction se pueblan las 4 columnas audit
+      // en `reviews` (`moderated_by`, `moderated_at`, `moderation_reason`, `admin_action_id`)
+      // introducidas por la migración `20260720150000_us067_reviews_moderation_audit_columns`.
+      // Esto habilita la demo del admin panel — `ReviewModerationTable` muestra el badge del
+      // AdminAction y el `moderatedAt` sin depender de una moderación runtime posterior. El
+      // UPDATE es idempotente: `ensure` no lo re-ejecuta si el `admin_action_id` ya está seteado.
       if (status !== 'published') {
-        const action = status === 'hidden' ? 'HIDE_REVIEW' : 'REMOVE_REVIEW';
-        await ensure(
+        // Nombres canónicos del contrato admin US-067 (`hide` | `remove`). Se preservan las
+        // constantes históricas del seed (`HIDE_REVIEW`/`REMOVE_REVIEW`) sólo si ya existieran
+        // en snapshots previos — no las usamos aquí para mantener paridad EXACTA con el shape
+        // que produce `ModerateReviewUseCase` en runtime (Decisión PO D8).
+        const action = status === 'hidden' ? 'hide' : 'remove';
+        const reason = status === 'hidden'
+          ? 'Contenido marcado para revisión (demo).'
+          : 'Reseña eliminada por incumplir políticas (demo).';
+        const moderatedAt = new Date('2026-05-20T12:00:00Z'); // determinista
+        const adminAction = await ensure(
           () => tx.adminAction.findFirst({ where: { action, targetEntity: 'review', targetId: review.id, isSeed: true } }),
           () =>
             tx.adminAction.create({
@@ -795,15 +809,29 @@ export class SeedDemoDataUseCase {
                 targetEntity: 'review',
                 targetId: review.id,
                 metadata: {
-                  reason: status === 'hidden'
-                    ? 'Contenido marcado para revisión (demo).'
-                    : 'Reseña eliminada por incumplir políticas (demo).',
+                  reason,
+                  from_status: 'published',
+                  to_status: status,
+                  rating_snapshot: review.rating,
+                  comment_snapshot: review.comment,
                 },
                 isSeed: true,
               },
             }),
           counts,
         );
+        // UPDATE idempotente de columnas audit + chain al AdminAction (BR-ADMIN-011).
+        if (review.adminActionId !== adminAction.id) {
+          await tx.review.update({
+            where: { id: review.id },
+            data: {
+              moderatedBy: admin.id,
+              moderatedAt,
+              moderationReason: reason,
+              adminActionId: adminAction.id,
+            },
+          });
+        }
       }
     }
     return {};

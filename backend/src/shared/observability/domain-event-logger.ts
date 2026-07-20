@@ -69,6 +69,14 @@ export interface DomainEventLogger {
       vendorProfileId?: string;
       organizerUserId?: string;
       rating?: number;
+      // US-067 (BE-005): `review.moderated` con `reviewId`, `adminUserId`, `action`
+      // (`hide`|`remove`), `fromStatus`, `toStatus`, `adminActionId`. Cumple Tech Spec §14 (5
+      // campos requeridos + adminActionId como trazabilidad BR-ADMIN-011). NO se logea el
+      // `moderation_reason` — puede contener PII/datos sensibles del contenido reportado (SEC-09).
+      adminUserId?: string;
+      fromStatus?: string;
+      toStatus?: string;
+      adminActionId?: string;
     },
   ): void;
 }

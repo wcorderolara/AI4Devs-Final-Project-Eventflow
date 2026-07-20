@@ -18,5 +18,67 @@
         "generic": "We couldn’t load the event. Please try again."
       }
     }
+  },
+  "review": {
+    "moderate": {
+      "status": {
+        "all": "All",
+        "published": "Published",
+        "hidden": "Hidden",
+        "removed": "Removed"
+      },
+      "actions": {
+        "hide": "Hide (not visible to the public)",
+        "remove": "Remove (soft delete, final)"
+      },
+      "table": {
+        "title": "Review moderation",
+        "subtitle": "Hide or remove reviews with an auditable reason.",
+        "vendorIdLabel": "Vendor ID",
+        "vendorIdPlaceholder": "Vendor UUID",
+        "search": "Search",
+        "filterByStatus": "Filter by status",
+        "promptSelectVendor": "Enter a vendor ID to load its reviews.",
+        "loading": "Loading reviews…",
+        "error": "We couldn’t load the reviews. Please try again.",
+        "empty": "No reviews match the current filter.",
+        "caption": "Vendor reviews with moderation actions.",
+        "col": {
+          "rating": "Rating",
+          "eventTitle": "Event",
+          "comment": "Comment",
+          "status": "Status",
+          "createdAt": "Created",
+          "actions": "Actions"
+        },
+        "moderate": "Moderate",
+        "moderateAria": "Moderate review {id}",
+        "loadMore": "Load more"
+      },
+      "dialog": {
+        "title": "Moderate review",
+        "currentStatusLabel": "Current status: {status}",
+        "currentStatus": {
+          "published": "Published",
+          "hidden": "Hidden",
+          "removed": "Removed"
+        },
+        "actionLegend": "Choose an action",
+        "reasonLabel": "Reason (10–500 characters)",
+        "counter": "{current}/{max} (min. {min})",
+        "cancel": "Cancel",
+        "submit": "Apply moderation",
+        "submitting": "Applying…",
+        "finalRemovedNotice": "This review is already removed. No further transition is allowed."
+      },
+      "errors": {
+        "unauthenticated": "You need to sign in as an admin.",
+        "forbidden": "Only admins can moderate reviews.",
+        "notFound": "The review no longer exists.",
+        "invalidTransition": "That transition is not allowed for the current status.",
+        "validation": "The moderation form is invalid.",
+        "unexpected": "Unexpected error. Please try again."
+      }
+    }
   }
 }
