@@ -121,5 +121,88 @@
         "unexpected": "Unexpected error. Please try again."
       }
     }
+  },
+  "vendor": {
+    "panel": {
+      "title": "Vendor moderation panel",
+      "subtitle": "Filter vendors by status, visibility, dates and name; moderate with a click.",
+      "loading": "Loading vendors…",
+      "loadingMore": "Loading more…",
+      "error": "We couldn't load vendors. Please try again.",
+      "empty": "No vendors match the current filters.",
+      "caption": "Admin vendors (full PII + last moderation action).",
+      "col": {
+        "businessName": "Business name",
+        "owner": "Vendor account",
+        "status": "Status",
+        "lastAction": "Last admin action",
+        "createdAt": "Created",
+        "actions": "Actions"
+      },
+      "moderate": "Moderate",
+      "moderateAria": "Moderate vendor {businessName}",
+      "loadMore": "Load more",
+      "filters": {
+        "formAriaLabel": "Vendor panel filters",
+        "statusLegend": "Vendor status",
+        "isHiddenLabel": "Visibility",
+        "isHiddenAny": "All",
+        "isHiddenOnlyHidden": "Only hidden",
+        "isHiddenOnlyVisible": "Only visible",
+        "businessNameLabel": "Business name",
+        "businessNamePlaceholder": "Search by name…",
+        "businessNameHint": "Partial, case-insensitive substring match.",
+        "createdFromLabel": "Created from",
+        "createdToLabel": "Created to",
+        "reset": "Clear filters",
+        "apply": "Apply",
+        "errorDateRange": "The start date must be before or equal to the end date."
+      }
+    },
+    "moderate": {
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "hidden": "Hidden (legacy)",
+        "hiddenFlag": "Hidden"
+      },
+      "actions": {
+        "approve": "Approve",
+        "reject": "Reject",
+        "hide": "Hide from public directory",
+        "unhide": "Restore public visibility"
+      },
+      "dialog": {
+        "title": "Moderate \"{businessName}\"",
+        "currentStatusLabel": "Current status: {status} · Visibility: {visibility}",
+        "currentStatus": {
+          "pending": "Pending",
+          "approved": "Approved",
+          "rejected": "Rejected",
+          "hidden": "Hidden (legacy)"
+        },
+        "visibility": {
+          "visible": "visible",
+          "hidden": "hidden"
+        },
+        "actionLegend": "Choose an action",
+        "reasonLabelRequired": "Reason (10–500 characters, required)",
+        "reasonLabelOptional": "Reason (optional, up to 500 characters)",
+        "counter": "{current}/{max} (min. {min} when required)",
+        "cancel": "Cancel",
+        "submit": "Apply moderation",
+        "submitting": "Applying…",
+        "finalNotice": "This vendor is rejected. No further transitions allowed in the MVP."
+      },
+      "errors": {
+        "unauthenticated": "You need to sign in as an admin.",
+        "forbidden": "Only admins can moderate vendors.",
+        "notFound": "The vendor no longer exists.",
+        "invalidTransition": "That transition is not allowed for the current status.",
+        "validation": "The moderation form is invalid.",
+        "unexpected": "Unexpected error. Please try again."
+      }
+    }
   }
 }

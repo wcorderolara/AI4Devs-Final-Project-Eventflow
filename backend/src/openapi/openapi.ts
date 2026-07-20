@@ -92,6 +92,9 @@ import {
   ModerateVendorBodyBaseSchema,
   ModerateVendorParamsSchema,
 } from '../modules/admin-governance/interface/moderate-vendor.dto.js';
+// US-074 (PB-P1-041 / BE-003): panel admin global de VendorProfiles (`GET /admin/vendors`) con
+// filtros combinados + cursor keyset paridad US-077. Se usa el schema base (sin `superRefine`).
+import { AdminVendorsQueryBaseSchema } from '../modules/admin-governance/interface/admin-vendors-query.dto.js';
 import {
   AiBaseRequestSchema,
   ApplyAiRecommendationSchema,
@@ -368,6 +371,11 @@ op({ method: 'get', path: '/admin/reviews', operationId: 'adminListReviews', tag
 // 401, 403 FORBIDDEN, 404 VENDOR_NOT_FOUND (Decisión PO D7 uniforme), 409 INVALID_TRANSITION
 // (con details from/to status+is_hidden), 400 VALIDATION_ERROR.
 op({ method: 'post', path: '/admin/vendors/{id}/moderate', operationId: 'adminModerateVendor', tags: ['Admin'], summary: 'US-047 · Admin moderate vendor (approve|reject|hide|unhide) + AdminAction + 2 notifs vendor', secured: true, params: ModerateVendorParamsSchema, body: ModerateVendorBodyBaseSchema, success: { status: 200, schema: envelope(z.object({ id: z.string().uuid(), status: z.enum(['pending', 'approved', 'rejected', 'hidden']), isHidden: z.boolean(), moderatedAt: z.string().datetime(), moderatedBy: z.string().uuid(), moderationReason: z.string().nullable(), adminActionId: z.string().uuid() }).strict()) }, errors: [400, 401, 403, 404, 409] });
+// US-074 (PB-P1-041 / BE-003): panel admin global de VendorProfiles. Listado paginado con
+// cursor keyset (paridad US-077) + filtros combinados (multi-status, is_hidden, rango fechas,
+// business_name ILIKE). Response incluye PII completa (owner email, D4) + `last_admin_action`
+// chain. 400 (VALIDATION_ERROR / INVALID_CURSOR), 401, 403 FORBIDDEN.
+op({ method: 'get', path: '/admin/vendors', operationId: 'adminListVendors', tags: ['Admin'], summary: 'US-074 · Admin list vendors (filtros combinados + cursor keyset + PII completa)', secured: true, query: AdminVendorsQueryBaseSchema, success: { status: 200, schema: envelope(z.object({ items: z.array(z.object({ id: z.string().uuid(), businessName: z.string(), slug: z.string().nullable(), status: z.enum(['pending', 'approved', 'rejected', 'hidden']), isHidden: z.boolean(), createdAt: z.string().datetime(), owner: z.object({ userId: z.string().uuid(), email: z.string().email() }).strict(), lastAdminAction: z.object({ action: z.string(), reason: z.string().nullable(), adminId: z.string().uuid().nullable(), createdAt: z.string().datetime() }).strict().nullable() }).strict()), pagination: z.object({ nextCursor: z.string().nullable(), pageSize: z.number().int() }).strict() }).strict()) }, errors: [400, 401, 403] });
 
 // ── AI ASSISTANCE ────────────────────────────────────────────────────────────────
 const AiGenerationResponse = envelope(

@@ -1227,6 +1227,7 @@ Gestionar el perfil del proveedor, aprobación admin, directorio público.
 | GET | `/api/v1/public/vendors/:vendorSlug` | No | anonymous | Perfil público SEO del vendor por slug (US-046). Whitelist explícita (D1). Cache-Control `public, max-age=60, stale-while-revalidate=300` (D4). Rate limit 60 req/min por IP (D7). | 200 | 400 `VALIDATION_ERROR`, 404 `VENDOR_NOT_FOUND` (uniforme D6), 429 `RATE_LIMIT_EXCEEDED` |
 | GET | `/api/v1/public/vendors/:vendorSlug/portfolio` | No | anonymous | Portafolio público. | 200 | 404 |
 | POST | `/admin/vendors/:id/moderate` | Sí | admin | US-047 · Modera VendorProfile (approve\|reject\|hide\|unhide) con AdminAction + 2 notifs al vendor via service común extendido a 13 eventos. Ver §27.8. | 200 | 400 (VALIDATION_ERROR), 401, 403, 404 (VENDOR_NOT_FOUND), 409 (INVALID_TRANSITION) |
+| GET | `/admin/vendors` | Sí | admin | US-074 · Listado admin global con filtros combinados (multi-status, is_hidden, rango fechas, business_name ILIKE) + cursor keyset + PII completa (owner.email) + last_admin_action chain. Ver §27.9. | 200 | 400 (VALIDATION_ERROR / INVALID_CURSOR), 401, 403 |
 
 ### 27.4 DTOs
 
@@ -1606,6 +1607,78 @@ Endpoint atómico admin para gestionar el lifecycle de moderación del `VendorPr
 - **Sin bulk moderation** (Out of Scope): el endpoint procesa un único `vendorId` por request.
 - **Sin re-approve rejected** (Out of Scope, D5): estado terminal en el MVP; se manejará en una historia futura.
 - **Sin notif al organizer** cuando se modera un vendor (Out of Scope): sólo el vendor recibe notificaciones.
+
+### 27.9 US-074 · `GET /api/v1/admin/vendors` (panel admin con filtros combinados + cursor)
+
+Endpoint de LECTURA admin del panel global de VendorProfiles. Complementa el endpoint puntual de moderación US-047 (§27.8) exponiendo un listado paginado con filtros combinados y PII completa. **Distinto** al directorio público autenticado (§27.6 / US-045), que filtra `status='approved' AND is_hidden=false` para no-admins.
+
+**Auth**: `sessionAuth` + `roleMiddleware(['admin'])`. Organizer/vendor ⇒ `403 FORBIDDEN`; sin sesión ⇒ `401 AUTHENTICATION_REQUIRED`.
+
+**Query params** (Decisiones PO D2/D7):
+
+| Param | Tipo | Notas |
+| --- | --- | --- |
+| `status` | multi (`?status=pending&status=approved`) | Whitelist `pending`/`approved`/`rejected`/`hidden` (legacy). Omitido ⇒ sin filtro. |
+| `is_hidden` | boolean | `true` / `false`. Flag ortogonal al status (US-047 D2). Omitido ⇒ sin filtro. |
+| `created_at_from` | ISO date-time | Límite inferior del rango. |
+| `created_at_to` | ISO date-time | Límite superior del rango. `from > to` ⇒ `400 VALIDATION_ERROR`. |
+| `business_name` | string [1..100] post-trim | ILIKE substring case-insensitive (D7). Vacío/whitespace ⇒ trima a undefined (EC-05). |
+| `pageSize` | int [1..50], default 25 | VR-01. |
+| `cursor` | base64url opaco | Paridad US-077 — `{c: ISO, i: UUID}`. Malformado ⇒ `400 INVALID_CURSOR` (EC-02). |
+
+**Response 200**:
+
+```jsonc
+{
+  "data": {
+    "items": [
+      {
+        "id": "<uuid>",
+        "businessName": "Banquetes Demo",
+        "slug": "banquetes-demo",
+        "status": "approved",
+        "isHidden": false,
+        "createdAt": "2026-06-01T12:00:00.000Z",
+        "owner": { "userId": "<uuid>", "email": "owner@example.com" },
+        "lastAdminAction": {
+          "action": "approve",
+          "reason": null,
+          "adminId": "<uuid>",
+          "createdAt": "2026-06-02T12:00:00.000Z"
+        }
+      }
+    ],
+    "pagination": { "nextCursor": "<base64url>|null", "pageSize": 25 }
+  },
+  "meta": { "correlationId": "…", "timestamp": "…" }
+}
+```
+
+**Errores estables**:
+
+- `400 VALIDATION_ERROR` — filtros inválidos (multi-status fuera del whitelist, `from > to`, `business_name > 100 chars`, `pageSize` fuera [1..50], claves extras).
+- `400 INVALID_CURSOR` — cursor base64 malformado o payload inconsistente.
+- `401 AUTHENTICATION_REQUIRED` — sin cookie de sesión.
+- `403 FORBIDDEN` — rol ≠ admin.
+
+**Comportamiento**:
+
+- **Sort fijo** `created_at DESC, id DESC` (D5) — cursor keyset compuesto por `(createdAt, id)` en base64url; misma técnica que US-066/US-077.
+- **`deleted_at IS NULL` implícito** — el listado no incluye vendors soft-deleted (dominio US-041 fuera de scope).
+- **PII completa** (D4 · SEC-03): expone `owner.email` en cada item. Ningún filtro de anonimato — el guard admin es la única frontera.
+- **`last_admin_action`** materializado desde el chain `vendor_profiles.admin_action_id → admin_actions` establecido por `ModerateVendorUseCase` (US-047). `reason` se lee desde `metadata.reason` (mismo shape que US-077 admin review).
+- **Regresión inmediata US-047**: tras un `POST /admin/vendors/:id/moderate`, el próximo `GET /admin/vendors` refleja el nuevo `status`/`isHidden`/`lastAdminAction` — verificado en QA-002 IT.
+
+**Frontend** (US-074 · FE):
+
+- `app/[locale]/admin/vendors/page.tsx` monta `<VendorModerationTable />` (Client Component) que pre-aplica `status=['pending']` como default operacional (D5) antes del primer fetch.
+- `<VendorFiltersPanel>` — multi-status checkboxes, is_hidden select (any/only-hidden/only-visible), rango de fechas nativo, búsqueda por nombre con debounce 300 ms (D7). Cross-field error `from > to` con `role="alert"` + `aria-invalid`.
+- `<VendorModerationDialog>` — `<dialog>` nativo (focus/Esc trap), action selector (radio) con whitelist client-side idéntica a US-047 D5, textarea con label variable (required en reject/hide, opcional en approve/unhide). Mutation `useModerateVendor` invalida `adminVendorsKeys.all` (prefix) + `['public-vendor','detail',slug]` + `['vendor-directory']` para refrescar todos los sitios afectados por el cambio de visibilidad.
+- i18n en 4 locales (`admin.vendor.panel.*`, `admin.vendor.moderate.*`).
+
+**Deuda**:
+
+- `ILIKE` sobre `business_name` puede degradarse con volumen alto (Tech Spec §17). Un índice `gin_trgm_ops` post-MVP resuelve el caso; hoy con seed y baja cardinalidad el smoke QA-005 pasa < 500 ms.
 
 ---
 

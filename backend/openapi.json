@@ -946,6 +946,270 @@
         ]
       }
     },
+    "/api/v1/admin/vendors": {
+      "get": {
+        "operationId": "adminListVendors",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "rejected",
+                    "hidden"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "items": {
+                    "enum": [
+                      "pending",
+                      "approved",
+                      "rejected",
+                      "hidden"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "is_hidden",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "true",
+                    "false"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "created_at_from",
+            "required": false,
+            "schema": {
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "created_at_to",
+            "required": false,
+            "schema": {
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "business_name",
+            "required": false,
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "items": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "businessName": {
+                                "type": "string"
+                              },
+                              "createdAt": {
+                                "format": "date-time",
+                                "type": "string"
+                              },
+                              "id": {
+                                "format": "uuid",
+                                "type": "string"
+                              },
+                              "isHidden": {
+                                "type": "boolean"
+                              },
+                              "lastAdminAction": {
+                                "additionalProperties": false,
+                                "nullable": true,
+                                "properties": {
+                                  "action": {
+                                    "type": "string"
+                                  },
+                                  "adminId": {
+                                    "format": "uuid",
+                                    "nullable": true,
+                                    "type": "string"
+                                  },
+                                  "createdAt": {
+                                    "format": "date-time",
+                                    "type": "string"
+                                  },
+                                  "reason": {
+                                    "nullable": true,
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "action",
+                                  "reason",
+                                  "adminId",
+                                  "createdAt"
+                                ],
+                                "type": "object"
+                              },
+                              "owner": {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "email": {
+                                    "format": "email",
+                                    "type": "string"
+                                  },
+                                  "userId": {
+                                    "format": "uuid",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "userId",
+                                  "email"
+                                ],
+                                "type": "object"
+                              },
+                              "slug": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "status": {
+                                "enum": [
+                                  "pending",
+                                  "approved",
+                                  "rejected",
+                                  "hidden"
+                                ],
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "businessName",
+                              "slug",
+                              "status",
+                              "isHidden",
+                              "createdAt",
+                              "owner",
+                              "lastAdminAction"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "pagination": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "nextCursor": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "pageSize": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "nextCursor",
+                            "pageSize"
+                          ],
+                          "type": "object"
+                        }
+                      },
+                      "required": [
+                        "items",
+                        "pagination"
+                      ],
+                      "type": "object"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "US-074 · Admin list vendors (filtros combinados + cursor keyset + PII completa)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
     "/api/v1/admin/vendors/{id}/moderate": {
       "post": {
         "operationId": "adminModerateVendor",
