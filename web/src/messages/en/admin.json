@@ -271,5 +271,67 @@
       "validation": "The form is not valid.",
       "unexpected": "Unexpected error. Please try again."
     }
+  },
+  "event-type": {
+    "panel": {
+      "title": "Event types catalog",
+      "subtitle": "Manage event types (weddings, quinceañeras, baptisms, corporate…). Soft delete is blocked when events already reference the type.",
+      "loading": "Loading event types…",
+      "error": "We couldn't load the catalog. Please try again."
+    },
+    "table": {
+      "ariaLabel": "Event types",
+      "empty": "No event types yet. Create the first one to begin.",
+      "countLabel": "{count, plural, one {1 type} other {# types}} in the catalog.",
+      "create": "Create event type",
+      "edit": "Edit",
+      "editAria": "Edit {name}",
+      "delete": "Deactivate",
+      "deleteAria": "Deactivate {name}",
+      "reactivate": "Reactivate",
+      "reactivateAria": "Reactivate {name}",
+      "inactiveBadge": "Inactive",
+      "inactiveBadgeAria": "{name} is inactive",
+      "nameHeader": "Name",
+      "codeHeader": "Code",
+      "sortOrderHeader": "Order",
+      "actionsHeader": "Actions"
+    },
+    "form": {
+      "createTitle": "Create event type",
+      "editTitle": "Edit {name}",
+      "codeLabel": "Code (unique slug)",
+      "codeInvalid": "Lowercase letters, digits, dashes and underscores only.",
+      "sortOrderLabel": "Order",
+      "nameLegend": "Name per locale",
+      "descriptionLegend": "Description per locale (optional)",
+      "isActive": "Active type",
+      "esLatamRequired": "The es-LATAM name is required.",
+      "cancel": "Cancel",
+      "create": "Create",
+      "save": "Save changes",
+      "submitting": "Saving…"
+    },
+    "delete": {
+      "title": "Deactivate {name}",
+      "description": "It will be marked as inactive; it is not deleted physically to preserve historical event traceability.",
+      "reasonLabel": "Reason (10–500 characters, required)",
+      "counter": "{current}/{max} (min. {min})",
+      "cancel": "Cancel",
+      "submit": "Deactivate event type",
+      "submitting": "Deactivating…"
+    },
+    "errors": {
+      "unauthenticated": "You need to sign in as an admin.",
+      "forbidden": "Only admins can manage the catalog.",
+      "notFound": "The event type no longer exists.",
+      "duplicateCode": "The code already exists. Pick a unique one.",
+      "eventTypeInUse": "Cannot deactivate: there are events associated with this type.",
+      "esLatamRequired": "The es-LATAM name is required.",
+      "reasonRequired": "You must provide a reason to deactivate.",
+      "reasonLength": "Reason must be between 10 and 500 characters.",
+      "validation": "The form is not valid.",
+      "unexpected": "Unexpected error. Please try again."
+    }
   }
 }

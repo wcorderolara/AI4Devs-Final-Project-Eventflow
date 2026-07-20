@@ -209,15 +209,43 @@ export class SeedDemoDataUseCase {
   }
 
   private async seedCatalogs(tx: Tx, counts: DomainCounts) {
+    // US-076 (PB-P1-043 / DB-003): FR-EVENT-013 exige los 6 EventTypes obligatorios con
+    // i18n en 4 locales y `sortOrder` explícito. Idempotente: si la fila ya existe, se
+    // rehidrata con `nameI18n`, `descriptionI18n` y `sortOrder` sin duplicar. `label` se
+    // mantiene sincronizado con `nameI18n['es-LATAM']` (fallback denormalizado).
     const eventTypes = [];
     for (const et of EVENT_TYPES) {
-      eventTypes.push(
-        await ensure(
-          () => tx.eventType.findUnique({ where: { code: et.code } }),
-          () => tx.eventType.create({ data: { code: et.code, label: et.label, isActive: true, isSeed: true } }),
-          counts,
-        ),
+      const row = await ensure(
+        () => tx.eventType.findUnique({ where: { code: et.code } }),
+        () =>
+          tx.eventType.create({
+            data: {
+              code: et.code,
+              label: et.label,
+              nameI18n: et.nameI18n as Prisma.InputJsonObject,
+              descriptionI18n: et.descriptionI18n
+                ? (et.descriptionI18n as Prisma.InputJsonObject)
+                : undefined,
+              sortOrder: et.sortOrder,
+              isActive: true,
+              isSeed: true,
+            },
+          }),
+        counts,
       );
+      // Backfill idempotente para filas seed pre-US-076.
+      await tx.eventType.update({
+        where: { id: row.id },
+        data: {
+          label: et.label,
+          nameI18n: et.nameI18n as Prisma.InputJsonObject,
+          descriptionI18n: et.descriptionI18n
+            ? (et.descriptionI18n as Prisma.InputJsonObject)
+            : undefined,
+          sortOrder: et.sortOrder,
+        },
+      });
+      eventTypes.push(row);
     }
     // US-075 (PB-P1-042 / DB-003): 2 pasadas para respetar la self-ref `parent_id`.
     //   1) Crea roots (`parentCode=null`) — no dependen de nadie.

@@ -271,5 +271,67 @@
       "validation": "El formulario no es válido.",
       "unexpected": "Error inesperado. Vuelve a intentarlo."
     }
+  },
+  "event-type": {
+    "panel": {
+      "title": "Panel del catálogo de tipos de evento",
+      "subtitle": "Administra los tipos de evento (bodas, 15 años, bautizos, corporativos…). Baja lógica bloqueada si hay eventos asociados.",
+      "loading": "Cargando tipos de evento…",
+      "error": "No pudimos cargar el catálogo. Vuelve a intentarlo."
+    },
+    "table": {
+      "ariaLabel": "Tipos de evento",
+      "empty": "Aún no hay tipos de evento. Crea el primero para empezar.",
+      "countLabel": "{count, plural, one {1 tipo} other {# tipos}} de evento en el catálogo.",
+      "create": "Crear tipo de evento",
+      "edit": "Editar",
+      "editAria": "Editar {name}",
+      "delete": "Desactivar",
+      "deleteAria": "Desactivar {name}",
+      "reactivate": "Reactivar",
+      "reactivateAria": "Reactivar {name}",
+      "inactiveBadge": "Inactivo",
+      "inactiveBadgeAria": "{name} está inactivo",
+      "nameHeader": "Nombre",
+      "codeHeader": "Código",
+      "sortOrderHeader": "Orden",
+      "actionsHeader": "Acciones"
+    },
+    "form": {
+      "createTitle": "Crear tipo de evento",
+      "editTitle": "Editar {name}",
+      "codeLabel": "Código (slug único)",
+      "codeInvalid": "Sólo minúsculas, dígitos, guiones y guiones bajos.",
+      "sortOrderLabel": "Orden",
+      "nameLegend": "Nombre por idioma",
+      "descriptionLegend": "Descripción por idioma (opcional)",
+      "isActive": "Tipo activo",
+      "esLatamRequired": "El nombre en es-LATAM es obligatorio.",
+      "cancel": "Cancelar",
+      "create": "Crear",
+      "save": "Guardar cambios",
+      "submitting": "Guardando…"
+    },
+    "delete": {
+      "title": "Desactivar {name}",
+      "description": "Se marcará como inactivo; no se elimina físicamente para preservar la trazabilidad de eventos históricos.",
+      "reasonLabel": "Motivo (10–500 caracteres, requerido)",
+      "counter": "{current}/{max} (mín. {min})",
+      "cancel": "Cancelar",
+      "submit": "Desactivar tipo de evento",
+      "submitting": "Desactivando…"
+    },
+    "errors": {
+      "unauthenticated": "Debes iniciar sesión como administrador.",
+      "forbidden": "Sólo un administrador puede administrar el catálogo.",
+      "notFound": "El tipo de evento ya no existe.",
+      "duplicateCode": "El código ya existe. Elige uno único.",
+      "eventTypeInUse": "No se puede desactivar: hay eventos asociados a este tipo.",
+      "esLatamRequired": "El nombre en es-LATAM es obligatorio.",
+      "reasonRequired": "Debes indicar un motivo para desactivar.",
+      "reasonLength": "El motivo debe tener entre 10 y 500 caracteres.",
+      "validation": "El formulario no es válido.",
+      "unexpected": "Error inesperado. Vuelve a intentarlo."
+    }
   }
 }

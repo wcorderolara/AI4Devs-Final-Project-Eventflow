@@ -477,7 +477,9 @@ correlationId
 | `DUPLICATE_REVIEW` | 409 | Reglas | Review ya existe para `(event, vendor)`. |
 | `DUPLICATE_QUOTE_REQUEST_ACTIVE` | 409 | Reglas | QuoteRequest activa duplicada. |
 | `QUOTE_EXPIRED` | 410 | Estado | Quote expirada al intentar aceptar. |
-| `EVENT_TYPE_HAS_EVENTS` | 409 | Reglas | Intento de borrar EventType con eventos asociados. |
+| `EVENT_TYPE_HAS_EVENTS` | 409 | Reglas | Deprecado tras US-076 — reemplazado por `EVENT_TYPE_IN_USE` (semántica idéntica, nomenclatura alineada con `CATEGORY_IN_USE`). |
+| `EVENT_TYPE_NOT_FOUND` | 404 | Reglas (US-076) | 404 uniforme cuando el EventType no existe o está soft-deleted. |
+| `EVENT_TYPE_IN_USE` | 409 | Reglas (US-076) | Soft delete bloqueado: hay eventos referenciando este EventType. `details.usage_count` expone el conteo. |
 | `CATEGORY_DEPTH_EXCEEDED` | 409 | Reglas | (Deprecado tras US-075: usar `INVALID_HIERARCHY_DEPTH`.) ServiceCategory excede profundidad máxima (2). |
 | `INVALID_HIERARCHY_DEPTH` | 409 | Reglas | ServiceCategory: crear/mover a nivel 3 o mover root con children a sub. Reemplaza al histórico `CATEGORY_DEPTH_EXCEEDED` (US-075). |
 | `SERVICE_CATEGORY_NOT_FOUND` | 404 | Estado | ServiceCategory inexistente o soft-deleted (uniforme, US-075 SEC-05). |
@@ -3335,10 +3337,10 @@ Aprobaciones, moderación, catálogos y métricas administrativas.
 | POST | `/admin/vendors/:vendorProfileId/approve` | Sí | admin | Aprueba vendor. | 200 | 401, 403, 404, 422 |
 | POST | `/admin/vendors/:vendorProfileId/reject` | Sí | admin | Rechaza con motivo. | 200 | 401, 403, 404, 422 |
 | POST | `/admin/vendors/:vendorProfileId/hide` | Sí | admin | Oculta vendor. | 200 | 401, 403, 404, 422 |
-| GET | `/admin/event-types` | Sí | admin | Lista catálogo completo. | 200 | 401, 403 |
-| POST | `/admin/event-types` | Sí | admin | Crea event type. | 201 | 401, 403, 422 |
-| PATCH | `/admin/event-types/:code` | Sí | admin | Actualiza event type. | 200 | 401, 403, 404, 422 |
-| POST | `/admin/event-types/:code/deactivate` | Sí | admin | Desactiva event type. | 200 | 401, 403, 404, 409 (EVENT_TYPE_HAS_EVENTS), 422 |
+| GET | `/admin/event-types` | Sí | admin | Lista catálogo completo (incluye inactivos). | 200 | 401, 403 |
+| POST | `/admin/event-types` | Sí | admin | Crea event type. | 201 | 401, 403, 400 (INVALID_NAME_I18N), 409 (DUPLICATE_CODE) |
+| PATCH | `/admin/event-types/:id` | Sí | admin | Actualiza / reactiva event type. | 200 | 401, 403, 404 (EVENT_TYPE_NOT_FOUND), 400 (INVALID_NAME_I18N) |
+| DELETE | `/admin/event-types/:id` | Sí | admin | Soft delete con `reason` [10..500]. | 200 | 401, 403, 404 (EVENT_TYPE_NOT_FOUND), 409 (EVENT_TYPE_IN_USE), 400 (REASON_REQUIRED / INVALID_REASON_LENGTH) |
 | GET | `/admin/metrics` | Sí | admin | Métricas agregadas. | 200 | 401, 403 |
 | GET | `/admin/admin-actions` | Sí | admin | Audit log. | 200 | 401, 403 |
 
@@ -3393,7 +3395,7 @@ Listar idiomas y monedas soportadas, para selección en formularios.
 | Método | Path | Auth | Roles | Propósito | Success | Errores |
 | --- | --- | --- | --- | --- | --- | --- |
 | GET | `/i18n/languages` | No | anonymous | Idiomas soportados. | 200 | — |
-| GET | `/i18n/event-types` | No | anonymous | Catálogo público de event types activos. | 200 | — |
+| GET | `/event-types` | Sí | cualquier autenticado | Catálogo público de event types activos (US-076 reemplaza el legacy `/i18n/event-types` con shape superset spec-compliant). Devuelve `EventTypeView[]` con `name_i18n`, `sort_order`, `is_active`. Backward-compatible con consumers que solo proyectan `{code, label}`. | 200 | 401 |
 | GET | `/currencies` | No | anonymous | Monedas permitidas (sin conversión). | 200 | — |
 
 ### 38.3 DTOs

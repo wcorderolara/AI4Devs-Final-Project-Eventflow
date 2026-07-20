@@ -574,8 +574,53 @@ Importante: este listado prohíbe automáticamente crear un controller/repo por 
 - **Authorization:** admin para mutaciones (`roleMiddleware(['admin'])`); sesión válida para
   lectura pública (Decisión PO D10 + SEC-02 — no anonymous).
 - **Testing focus:** depth policy (crear/mover a nivel 3), soft delete guards (vendor_services,
-  children activos), reactivate detection, `EventType` no eliminable, seed cultural LATAM
-  (`SERVICE_CATEGORIES` fixture en `latam-data.ts`).
+  children activos), reactivate detection, seed cultural LATAM (`SERVICE_CATEGORIES` fixture
+  en `latam-data.ts`).
+
+#### 10.7.b Event Catalog (`EventType`, US-076 / PB-P1-043)
+
+Nuevo sub-módulo `backend/src/modules/event-catalog` que espeja la superficie de
+`service-catalog` **sin jerarquía** (Decisión PO: catálogo plano):
+
+- **Responsabilidad:** CRUD admin de `EventType` (`wedding`, `xv`, `baptism`,
+  `baby_shower`, `birthday`, `corporate` + custom) y endpoint público consumido por el
+  wizard de creación de eventos.
+- **Main use cases (US-076 / PB-P1-043):**
+  - `CreateEventTypeUseCase` — INSERT + AdminAction append-only. Invariantes: es-LATAM
+    requerido, code único (detección eager antes del INSERT).
+  - `UpdateEventTypeUseCase` — patch parcial (name/desc/sort/is_active) con detección
+    `reactivate` (false→true dispara acción `reactivate`).
+  - `SoftDeleteEventTypeUseCase` — guard único `EXISTS events` (BR-EVENTTYPE-007) →
+    `EVENT_TYPE_IN_USE` con `details.usage_count`. Sin `CATEGORY_HAS_CHILDREN` (no aplica).
+    Muta `is_active=false`. Sin hard delete físico.
+  - `ListEventTypesUseCase` — variante admin/pública; devuelve `EventTypeView[]` ordenado
+    por `sort_order ASC, label ASC`. Público filtra `is_active=true`. Sin `{tree, flat}`
+    — el catálogo es plano.
+- **Persistencia (post US-076 DB-002):** `event_types` extendida con `name_i18n jsonb`
+  (required `es-LATAM`), `description_i18n jsonb?`, `sort_order int default 0`. `label` /
+  `description` se mantienen como fallback denormalizado desde `es-LATAM` en cada write
+  para compat con callers legacy (`PrismaEventTypeRepository.findActive`, `useEventTypes`
+  FE del wizard de creación). Índice parcial `idx_event_types_active_sort (is_active,
+  sort_order) WHERE deleted_at IS NULL` en SQL raw (patrón US-066/US-075/US-102 CI drift fix).
+- **Endpoints (Tech Spec US-076 §7):**
+  - `GET  /api/v1/admin/event-types`      — admin listing (incluye inactivos).
+  - `POST /api/v1/admin/event-types`      — create.
+  - `PATCH /api/v1/admin/event-types/:id` — update / reactivate.
+  - `DELETE /api/v1/admin/event-types/:id` — soft delete con `reason` [10..500].
+  - `GET  /api/v1/event-types`            — público (sesión requerida). Reemplaza al
+    endpoint de US-009 con shape superset spec-compliant (`EventTypeView[]` vs el legacy
+    `{code, label}[]`). Backward-compatible con `EventTypeOption` del wizard.
+- **Audit trail:** cada mutación crea un `AdminAction` (`target_entity='event_type'`) con
+  acción `create` / `update` / `reactivate` / `soft_delete` (BR-ADMIN-011).
+- **Códigos de error:** `EVENT_TYPE_NOT_FOUND` (404), `EVENT_TYPE_IN_USE` (409),
+  `DUPLICATE_CODE` (409, compartido con US-075). Los errores compartidos
+  `INVALID_NAME_I18N`, `REASON_REQUIRED`, `INVALID_REASON_LENGTH` reusan las clases del
+  módulo `service-catalog` para preservar un solo punto de mapeo en el error handler.
+- **Seed obligatorio (FR-EVENT-013 / US-076 DB-003):** los 6 EventTypes culturales
+  se hidratan con `nameI18n`, `descriptionI18n` (4 locales) y `sortOrder` explícito
+  desde `EVENT_TYPES` en `latam-data.ts`. Idempotente: backfill en filas seed pre-US-076.
+- **Testing focus:** guard EXISTS events, reactivate detection, i18n es-LATAM required,
+  code slug con underscore (`baby_shower`).
 
 ### 10.8 Quote Flow
 

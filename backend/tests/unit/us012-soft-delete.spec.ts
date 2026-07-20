@@ -1,14 +1,13 @@
 // US-012 — SoftDeleteEventUseCase: soft delete SOLO desde `draft` y del owner (AC-01; VR-01).
-// US-009 — Catálogos: ListActiveEventTypesUseCase / ListActiveLocationsUseCase.
+// US-009 — Catálogos: ListActiveLocationsUseCase (el listado de EventType se movió al
+// módulo `event-catalog` en US-076 — ver `us076-event-types.spec.ts`).
 import { describe, it, expect } from 'vitest';
 import { SoftDeleteEventUseCase } from '../../src/modules/event-planning/application/soft-delete-event.use-case.js';
-import { ListActiveEventTypesUseCase } from '../../src/modules/event-planning/application/list-event-types.use-case.js';
 import { ListActiveLocationsUseCase } from '../../src/modules/event-planning/application/list-locations.use-case.js';
 import { NotFoundError } from '../../src/shared/domain/errors/not-found.error.js';
 import { ConflictError } from '../../src/shared/domain/errors/conflict.error.js';
 import type {
   EventRepository,
-  EventTypeRepository,
   LocationRepository,
 } from '../../src/modules/event-planning/ports/event.repository.js';
 import type { EventAuditLogger, EventAuditName } from '../../src/modules/event-planning/ports/event-audit-logger.js';
@@ -115,15 +114,6 @@ describe('US-012 SoftDeleteEventUseCase', () => {
 });
 
 describe('US-009 catálogos', () => {
-  it('ListActiveEventTypesUseCase devuelve el catálogo del repo', async () => {
-    const repo: EventTypeRepository = {
-      findActiveIdByCode: () => Promise.resolve(null),
-      findActive: () => Promise.resolve([{ code: 'wedding', label: 'Boda' }]),
-    };
-    const uc = new ListActiveEventTypesUseCase(repo);
-    await expect(uc.execute()).resolves.toEqual([{ code: 'wedding', label: 'Boda' }]);
-  });
-
   it('ListActiveLocationsUseCase devuelve el catálogo del repo', async () => {
     const repo: LocationRepository = {
       existsActive: () => Promise.resolve(true),

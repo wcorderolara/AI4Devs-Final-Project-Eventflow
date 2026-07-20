@@ -16,10 +16,7 @@ import { errorHandlerMiddleware } from './shared/interface/middlewares/error-han
 import { identityAccessRouter } from './modules/identity-access/interface/identity-access.routes.js';
 import { userProfileRouter } from './modules/user-profile/interface/user-profile.routes.js';
 import { eventPlanningRouter } from './modules/event-planning/interface/events.routes.js';
-import {
-  eventTypesRouter,
-  locationsRouter,
-} from './modules/event-planning/interface/catalog.routes.js';
+import { locationsRouter } from './modules/event-planning/interface/catalog.routes.js';
 import { quoteFlowRouter } from './modules/quote-flow/interface/quote-flow.routes.js';
 import { us049QuoteRequestsRouter } from './modules/quote-flow/interface/us049-quote-requests.routes.js';
 import { us051VendorQuoteRequestsRouter } from './modules/quote-flow/interface/us051-vendor-quote-requests.routes.js';
@@ -48,6 +45,14 @@ import {
   adminServiceCategoryRouter,
   publicServiceCategoryRouter,
 } from './modules/service-catalog/interface/index.js';
+// US-076 (PB-P1-043): CRUD admin de `EventType` (4 rutas: GET/POST/PATCH/DELETE) +
+// endpoint público `GET /api/v1/event-types` con shape spec-compliant. Reemplaza al
+// `eventTypesRouter` de US-009 en `event-planning/interface/catalog.routes.ts` (el
+// shape es un superset backward-compatible con `{code, label}`).
+import {
+  adminEventTypeRouter,
+  publicEventTypeRouter,
+} from './modules/event-catalog/interface/index.js';
 import { portfolioRouter } from './modules/attachments/interface/index.js';
 // US-065 (PB-P1-038): endpoint atómico `POST /api/v1/organizer/reviews` — crea la reseña
 // verificada + denormalize `VendorProfile.rating_avg/reviews_count` + 2 notifs `review.published`
@@ -168,7 +173,10 @@ export function createApp(): Express {
   // (BR-SERVICE-003); solo requiere sesión válida (cualquier rol autenticado).
   apiV1.use('/service-categories', publicServiceCategoryRouter);
   apiV1.use('/events', eventPlanningRouter); // US-095 / API-001
-  apiV1.use('/event-types', eventTypesRouter); // US-009 / catálogo
+  // US-076 (PB-P1-043 / BE-007): catálogo público `EventTypeView[]` filtrado a
+  // `is_active=true`. Reemplaza al endpoint de US-009 (mismo path); shape superset
+  // backward-compatible con el consumer `useEventTypes` de FE.
+  apiV1.use('/event-types', publicEventTypeRouter);
   apiV1.use('/locations', locationsRouter); // US-009 / catálogo
   // US-086 (PB-P0-014): reset surgical Demo. La ruta `/admin/seed/*` SOLO se monta cuando
   // `SEED_DEMO_ENABLED=true`; con el flag apagado no existe (404 natural, THR-012 / EC-01).
@@ -192,6 +200,11 @@ export function createApp(): Express {
   // Guards: sessionAuth + roleMiddleware(['admin']). Cada mutación crea un AdminAction
   // append-only (BR-ADMIN-011) sin fan-out de notifs (catálogo cold; sin destinatarios).
   apiV1.use('/admin/service-categories', adminServiceCategoryRouter);
+  // US-076 (PB-P1-043 / BE-007): CRUD admin del catálogo `EventType` (4 rutas: GET
+  // listado admin, POST create, PATCH update/reactivate, DELETE soft delete con guard
+  // EXISTS events). Guards: sessionAuth + roleMiddleware(['admin']). Cada mutación crea
+  // un AdminAction append-only con `target_entity='event_type'` (BR-ADMIN-011).
+  apiV1.use('/admin/event-types', adminEventTypeRouter);
   app.use('/api/v1', apiV1);
 
   app.use(notFoundMiddleware); // 8. penúltimo: 404 catch-all
