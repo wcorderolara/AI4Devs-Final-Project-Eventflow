@@ -7,6 +7,7 @@
 // `aria-live` para status. Consumidor pasa `initialItems` y `currencyCode` desde la recomendación.
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
+import { Money } from '@/shared/i18n';
 
 export interface BudgetItemPreview {
   category: string;
@@ -229,7 +230,7 @@ export function ApplyAIBudgetDialog({
                   {t('total')}
                 </td>
                 <td className="py-2 text-right">
-                  {total.toLocaleString(undefined, { style: 'currency', currency: currencyCode })}
+                  <Money amount={total} currency={currencyCode} />
                 </td>
               </tr>
             </tfoot>

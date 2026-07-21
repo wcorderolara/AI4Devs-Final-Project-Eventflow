@@ -2,6 +2,7 @@
 // `over_committed = true`. US-038 AC-04/AC-07: agrega delta bruto + CTA "Editar items" con
 // scroll + focus a la primera fila `over_committed=true` vía `useOvercommitFocus`.
 import { useTranslations } from 'next-intl';
+import { formatCurrency } from '@/shared/i18n';
 import type { BudgetSummaryDto } from '../api/budgetApi';
 import { useOvercommitFocus } from '../hooks/useOvercommitFocus';
 
@@ -10,14 +11,6 @@ interface OvercommitWarningProps {
   summary?: BudgetSummaryDto;
   eventId?: string;
   locale?: string;
-}
-
-function formatCurrency(amount: number, currencyCode: string, locale: string): string {
-  try {
-    return new Intl.NumberFormat(locale, { style: 'currency', currency: currencyCode }).format(amount);
-  } catch {
-    return `${amount.toFixed(2)} ${currencyCode}`;
-  }
 }
 
 export function OvercommitWarning({

@@ -6,6 +6,7 @@
 // A11Y: `<ul>` semántico con `<li>` por card; cada valor es un `<span>` con `aria-label` que
 // combina label + número (útil para lectores de pantalla).
 import { useTranslations } from 'next-intl';
+import { Money } from '@/shared/i18n';
 import type {
   AdminEventBudgetSummaryModel,
   AdminEventCountsModel,
@@ -34,14 +35,9 @@ const CARDS: readonly Card[] = [
   { key: 'aiRecommendations', labelKey: 'aiRecommendations' },
 ];
 
-function formatCurrency(value: string, currency: string, locale: string): string {
+function parseAmount(value: string): number | null {
   const n = Number(value);
-  if (Number.isNaN(n)) return `${currency} ${value}`;
-  try {
-    return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(n);
-  } catch {
-    return `${currency} ${n.toFixed(2)}`;
-  }
+  return Number.isNaN(n) ? null : n;
 }
 
 export function EventCountsCards({
@@ -50,7 +46,6 @@ export function EventCountsCards({
   currency = 'GTQ',
 }: Props): React.JSX.Element {
   const t = useTranslations('admin.events.counts');
-  const locale = typeof navigator !== 'undefined' ? navigator.language : 'es-419';
 
   return (
     <div className="space-y-3">
@@ -89,7 +84,12 @@ export function EventCountsCards({
                 {t('totalPlanned')}
               </span>
               <span className="mt-1 block text-2xl font-semibold text-neutral-900">
-                {formatCurrency(budgetSummary.totalPlanned, currency, locale)}
+                {(() => {
+                  const n = parseAmount(budgetSummary.totalPlanned);
+                  return n === null ? `${currency} ${budgetSummary.totalPlanned}` : (
+                    <Money amount={n} currency={currency} />
+                  );
+                })()}
               </span>
             </li>
             <li className="rounded-md border border-neutral-200 bg-white p-3 shadow-sm">
@@ -97,7 +97,12 @@ export function EventCountsCards({
                 {t('totalCommitted')}
               </span>
               <span className="mt-1 block text-2xl font-semibold text-neutral-900">
-                {formatCurrency(budgetSummary.totalCommitted, currency, locale)}
+                {(() => {
+                  const n = parseAmount(budgetSummary.totalCommitted);
+                  return n === null ? `${currency} ${budgetSummary.totalCommitted}` : (
+                    <Money amount={n} currency={currency} />
+                  );
+                })()}
               </span>
             </li>
           </ul>

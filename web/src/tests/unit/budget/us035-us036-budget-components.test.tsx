@@ -39,9 +39,11 @@ describe('US-035 — <BudgetSummary>', () => {
       ),
     );
     expect(screen.getByText('Currency')).toBeInTheDocument();
-    expect(screen.getByText('USD')).toBeInTheDocument();
-    expect(screen.getByText(/\$8,000/)).toBeInTheDocument();
-    expect(screen.getByText(/\$3,000/)).toBeInTheDocument();
+    // Dos ocurrencias esperadas: la celda "Currency" muestra el código, y las cifras (USD en
+    // locale `en`) ahora se desambiguan con el código ISO por AC-03 de US-083 (PB-P1-048).
+    expect(screen.getAllByText('USD').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/USD\s?8,000/)).toBeInTheDocument();
+    expect(screen.getByText(/USD\s?3,000/)).toBeInTheDocument();
   });
 
   it('A11Y: sin violaciones', async () => {

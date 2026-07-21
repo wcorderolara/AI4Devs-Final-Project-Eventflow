@@ -986,6 +986,10 @@ type EventResponseDto = {
 - `409 EVENT_LANGUAGE_NOT_EDITABLE` (US-082 · PB-P1-047) si se intenta enviar `languageCode` en PATCH cuando `event.status ∈ {completed, cancelled}` (AC-04, VR-03). Respuesta incluye `details: [{ field: 'current_status', message: '<completed|cancelled>' }]`.
 - `422 BUSINESS_RULE_VIOLATION` si la transición de estado es inválida.
 
+> **US-083 · Currency inmutable (PB-P1-048).**
+> - **PATCH `/events/:eventId`** — el schema acepta `currencyCode` con enum válido para poder emitir `409 CURRENCY_IMMUTABLE` (semántico de conflicto de estado) en vez de `400` por campo desconocido. La User Story original describe la restricción como `400 INVALID_BODY` (AC-04), pero la política vigente adoptada por US-095 y refrendada aquí es `409 CURRENCY_IMMUTABLE`: el conflicto es sobre estado ya persistido, no sobre forma del body. El use case rechaza `currencyCode !== undefined` **antes** de leer/mutar la BD y emite el evento de auditoría `event.currency_immutable_violation` con `correlationId` y `actorId`. IT en `backend/tests/api/us095-events.integration.spec.ts`.
+> - **A11Y del display**. Todas las cifras monetarias en la UI se renderizan vía el componente cliente `<Money>` (doc 15 §32.2), que emite `title={code}` + `aria-label={amount currencyName}` y desambigua `$` cuando `locale === 'en'` y `currency ∈ {USD, MXN, COP}` (AC-03).
+
 > **US-082 · `event.languageCode` (PB-P1-047).**
 > - **POST `/events`** — el body ahora acepta `languageCode` opcional (D3). Resolución del use case: `body.languageCode ?? organizer.preferredLanguage ?? 'es-LATAM'` (EC-01). Se registra el origen del valor resuelto en el log estructurado `event.language.set` (`languageSource ∈ { 'body' | 'inherited' | 'default' }`).
 > - **PATCH `/events/:eventId`** — el body acepta `languageCode` opcional. En estados no terminales el cambio se persiste y se registra en `event.language.changed` (con `fromLanguage`/`toLanguage`). En `completed`/`cancelled` responde `409 EVENT_LANGUAGE_NOT_EDITABLE` **antes** que el bloqueo genérico `422 BUSINESS_RULE_VIOLATION` (permite al FE mostrar mensaje específico y ocultar el selector).

@@ -11,5 +11,12 @@
     "label": "Cambiar idioma",
     "error": "No se pudo guardar tu preferencia. Inténtalo más tarde.",
     "dismiss": "Cerrar"
+  },
+  "currency": {
+    "GTQ": "quetzales guatemaltecos",
+    "EUR": "euros",
+    "MXN": "pesos mexicanos",
+    "COP": "pesos colombianos",
+    "USD": "dólares estadounidenses"
   }
 }

@@ -1,24 +1,14 @@
 // PackageList — Server Component (US-046 / FE-003).
 // Renderiza los paquetes (`VendorService` activos) con nombre, precio, moneda y descripción.
-// Precio se formatea via `Money` cuando existe el helper; usamos formato numérico simple
-// aquí para no acoplar el Server Component al hook del cliente.
+// US-083 (PB-P1-048 / FE-003): el precio pasa por el componente cliente `<Money>` (tooltip ISO
+// + aria-label). El Server Component pasa datos serializables; `<Money>` resuelve el locale
+// del contexto next-intl del cliente.
 import { useTranslations } from 'next-intl';
+import { Money } from '@/shared/i18n';
 import type { PublicVendorPackageDTO } from '../api/vendorPublicApi.types';
 
 interface Props {
   packages: PublicVendorPackageDTO[];
-}
-
-function formatPrice(basePrice: string, currency: string): string {
-  const asNumber = Number(basePrice);
-  if (!Number.isFinite(asNumber)) return `${basePrice} ${currency}`;
-  const formatted = new Intl.NumberFormat('es-419', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(asNumber);
-  return formatted;
 }
 
 export function PackageList({ packages }: Props) {
@@ -48,7 +38,14 @@ export function PackageList({ packages }: Props) {
           >
             <h3 className="text-base font-semibold text-neutral-900">{pkg.packageName}</h3>
             <p className="text-sm font-medium text-neutral-800">
-              {formatPrice(pkg.basePrice, pkg.currencyCode)}
+              {(() => {
+                const n = Number(pkg.basePrice);
+                return Number.isFinite(n) ? (
+                  <Money amount={n} currency={pkg.currencyCode} />
+                ) : (
+                  `${pkg.basePrice} ${pkg.currencyCode}`
+                );
+              })()}
             </p>
             <p className="text-sm text-neutral-700">{pkg.description}</p>
           </li>
