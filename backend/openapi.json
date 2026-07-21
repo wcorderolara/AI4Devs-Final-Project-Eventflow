@@ -835,6 +835,235 @@
         ]
       }
     },
+    "/api/v1/admin/metrics": {
+      "get": {
+        "operationId": "adminGetMetrics",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ai": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "by_type": {
+                              "additionalProperties": {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "success_count": {
+                                    "type": "integer"
+                                  },
+                                  "total_count": {
+                                    "type": "integer"
+                                  }
+                                },
+                                "required": [
+                                  "total_count",
+                                  "success_count"
+                                ],
+                                "type": "object"
+                              },
+                              "type": "object"
+                            },
+                            "total_recommendations": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "total_recommendations",
+                            "by_type"
+                          ],
+                          "type": "object"
+                        },
+                        "bookings": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "booking_intents_cancelled": {
+                              "type": "integer"
+                            },
+                            "booking_intents_confirmed": {
+                              "type": "integer"
+                            },
+                            "booking_intents_created": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "booking_intents_created",
+                            "booking_intents_confirmed",
+                            "booking_intents_cancelled"
+                          ],
+                          "type": "object"
+                        },
+                        "events": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "by_status": {
+                              "additionalProperties": {
+                                "minimum": 0,
+                                "type": "integer"
+                              },
+                              "type": "object"
+                            },
+                            "total": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "total",
+                            "by_status"
+                          ],
+                          "type": "object"
+                        },
+                        "generated_at": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "quotes": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "quote_requests_created": {
+                              "type": "integer"
+                            },
+                            "quotes_accepted": {
+                              "type": "integer"
+                            },
+                            "quotes_expired": {
+                              "type": "integer"
+                            },
+                            "quotes_rejected": {
+                              "type": "integer"
+                            },
+                            "quotes_responded": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "quote_requests_created",
+                            "quotes_responded",
+                            "quotes_accepted",
+                            "quotes_rejected",
+                            "quotes_expired"
+                          ],
+                          "type": "object"
+                        },
+                        "reviews": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "by_status": {
+                              "additionalProperties": {
+                                "minimum": 0,
+                                "type": "integer"
+                              },
+                              "type": "object"
+                            },
+                            "total": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "total",
+                            "by_status"
+                          ],
+                          "type": "object"
+                        },
+                        "users": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "by_role": {
+                              "additionalProperties": {
+                                "minimum": 0,
+                                "type": "integer"
+                              },
+                              "type": "object"
+                            },
+                            "total": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "total",
+                            "by_role"
+                          ],
+                          "type": "object"
+                        },
+                        "vendors": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "by_status": {
+                              "additionalProperties": {
+                                "minimum": 0,
+                                "type": "integer"
+                              },
+                              "type": "object"
+                            },
+                            "hidden_count": {
+                              "type": "integer"
+                            },
+                            "total": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "total",
+                            "by_status",
+                            "hidden_count"
+                          ],
+                          "type": "object"
+                        }
+                      },
+                      "required": [
+                        "users",
+                        "vendors",
+                        "events",
+                        "quotes",
+                        "bookings",
+                        "reviews",
+                        "ai",
+                        "generated_at"
+                      ],
+                      "type": "object"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "US-079 · Admin operational metrics (7 secciones agregadas + cache 60s, sin comerciales)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
     "/api/v1/admin/reviews": {
       "get": {
         "operationId": "adminListReviews",

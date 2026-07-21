@@ -380,6 +380,39 @@ op({ method: 'post', path: '/admin/vendors/{id}/moderate', operationId: 'adminMo
 // chain. 400 (VALIDATION_ERROR / INVALID_CURSOR), 401, 403 FORBIDDEN.
 op({ method: 'get', path: '/admin/vendors', operationId: 'adminListVendors', tags: ['Admin'], summary: 'US-074 · Admin list vendors (filtros combinados + cursor keyset + PII completa)', secured: true, query: AdminVendorsQueryBaseSchema, success: { status: 200, schema: envelope(z.object({ items: z.array(z.object({ id: z.string().uuid(), businessName: z.string(), slug: z.string().nullable(), status: z.enum(['pending', 'approved', 'rejected', 'hidden']), isHidden: z.boolean(), createdAt: z.string().datetime(), owner: z.object({ userId: z.string().uuid(), email: z.string().email() }).strict(), lastAdminAction: z.object({ action: z.string(), reason: z.string().nullable(), adminId: z.string().uuid().nullable(), createdAt: z.string().datetime() }).strict().nullable() }).strict()), pagination: z.object({ nextCursor: z.string().nullable(), pageSize: z.number().int() }).strict() }).strict()) }, errors: [400, 401, 403] });
 
+// US-079 (PB-P1-045 / BE-003): dashboard admin de métricas operativas
+// `GET /api/v1/admin/metrics`. 7 secciones agregadas + `generated_at` + cache in-memory TTL 60s
+// (header `Cache-Control: private, max-age=60`). SEC-02 / AC-05: shape NO contiene ningún
+// campo comercial (revenue/gmv/arpu/conversion_rate_*/monetary). Errores: 401 (sin sesión),
+// 403 (rol no admin), 500 (fallo en una de las 7 sub-queries agregadas).
+const AdminMetricsSectionCount = z.record(z.number().int().nonnegative());
+op({
+  method: 'get',
+  path: '/admin/metrics',
+  operationId: 'adminGetMetrics',
+  tags: ['Admin'],
+  summary: 'US-079 · Admin operational metrics (7 secciones agregadas + cache 60s, sin comerciales)',
+  secured: true,
+  success: {
+    status: 200,
+    schema: envelope(
+      z
+        .object({
+          users: z.object({ total: z.number().int(), by_role: AdminMetricsSectionCount }).strict(),
+          vendors: z.object({ total: z.number().int(), by_status: AdminMetricsSectionCount, hidden_count: z.number().int() }).strict(),
+          events: z.object({ total: z.number().int(), by_status: AdminMetricsSectionCount }).strict(),
+          quotes: z.object({ quote_requests_created: z.number().int(), quotes_responded: z.number().int(), quotes_accepted: z.number().int(), quotes_rejected: z.number().int(), quotes_expired: z.number().int() }).strict(),
+          bookings: z.object({ booking_intents_created: z.number().int(), booking_intents_confirmed: z.number().int(), booking_intents_cancelled: z.number().int() }).strict(),
+          reviews: z.object({ total: z.number().int(), by_status: AdminMetricsSectionCount }).strict(),
+          ai: z.object({ total_recommendations: z.number().int(), by_type: z.record(z.object({ total_count: z.number().int(), success_count: z.number().int() }).strict()) }).strict(),
+          generated_at: z.string().datetime(),
+        })
+        .strict(),
+    ),
+  },
+  errors: [401, 403, 500],
+});
+
 // ── AI ASSISTANCE ────────────────────────────────────────────────────────────────
 const AiGenerationResponse = envelope(
   z

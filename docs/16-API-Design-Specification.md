@@ -904,6 +904,14 @@ Crear y administrar eventos del `organizer`. Lectura controlada por admin.
 
 > **US-078 · Arquitectura sólo lectura.** El módulo `admin/events` expone **exclusivamente** los dos GETs anteriores. Los verbos `PATCH`/`DELETE`/`POST` sobre `/admin/events/:id` devuelven `403 FORBIDDEN_WRITE` (baseline US-016 BE-005) para mantener retro-compatibilidad con la suite de tests existente; funcionalmente equivalen al 404 pedido por US-078 AC-03 (no hay use case de mutación registrado). Ver deviation DEV-1 en `management/workflows/development-execution/P1/PB-P1-044/US-078-execution.md`.
 
+#### 24.5 Admin operational metrics (US-079 · PB-P1-045)
+
+| Método | Path | Auth | Roles | Descripción | 200 | Errores |
+|---|---|---|---|---|---|---|
+| GET | `/admin/metrics` | Sí | admin | Dashboard admin — 7 secciones agregadas (`users`, `vendors`, `events`, `quotes`, `bookings`, `reviews`, `ai`) + `generated_at`. Cache in-memory server-side TTL 60s (key canónica `admin:metrics:v1`, Decisión PO D3). Emite header `Cache-Control: private, max-age=60`. AI breakdown por `recommendation_type` con `success_count` = agregados con `aiMeta.fallbackUsed=false` (Decisión PO D5). Sin AdminAction (Decisión PO D4). | 200 | 401 (`AUTHENTICATION_REQUIRED`), 403 (`FORBIDDEN`), 500 (`INTERNAL_ERROR` al fallar cualquiera de las 7 sub-queries) |
+
+> **US-079 · No comerciales.** El shape del response NO incluye ningún campo comercial (`revenue`, `gmv`, `arpu`, `conversion_rate_*`, `monetary`, `earnings`, `profit`) por Decisión PO D7 / SEC-02 / AC-05. La única fuente del contrato es el DTO `AdminMetricsResponse` (`backend/src/modules/admin-governance/dto/admin-metrics.response.ts`); QA-005 y el unit test `us079-get-admin-metrics.use-case.spec.ts` asseerean explícitamente la ausencia de esos tokens en el JSON serializado.
+
 ### 24.4 DTOs
 
 ```ts

@@ -391,5 +391,73 @@
       "validation": "The form is not valid.",
       "unexpected": "Unexpected error. Please try again."
     }
+  },
+  "metrics": {
+    "title": "Operational metrics",
+    "subtitle": "System health snapshot. No commercial metrics.",
+    "generatedAt": "Updated: {timestamp}",
+    "error": "We couldn't load the metrics. Please try again.",
+    "actions": {
+      "refresh": "Refresh",
+      "refreshing": "Refreshing…"
+    },
+    "sections": {
+      "users": "Users",
+      "vendors": "Vendors",
+      "events": "Events",
+      "quotes": "Quotes",
+      "bookings": "Bookings",
+      "reviews": "Reviews",
+      "ai": "AI assistant",
+      "breakdownByRole": "Breakdown by role",
+      "breakdownByStatus": "Breakdown by status",
+      "hiddenCount": "{count, plural, one {# hidden} other {# hidden}}",
+      "quotesRequestedLabel": "Quote requests created",
+      "quotesBreakdownTitle": "Quote statuses",
+      "quotesLabels": {
+        "responded": "Responded",
+        "accepted": "Accepted",
+        "rejected": "Rejected",
+        "expired": "Expired"
+      },
+      "bookingsBreakdownTitle": "Booking statuses",
+      "bookingsLabels": {
+        "confirmed": "Confirmed",
+        "cancelled": "Cancelled"
+      },
+      "ai": {
+        "totalAria": "Total AI recommendations: {total}",
+        "empty": "No AI recommendations yet.",
+        "tableCaption": "AI recommendations breakdown by type with success rate.",
+        "col": {
+          "type": "Type",
+          "total": "Total",
+          "success": "Success",
+          "rate": "Rate"
+        }
+      }
+    },
+    "roles": {
+      "organizer": "Organizer",
+      "vendor": "Vendor",
+      "admin": "Admin"
+    },
+    "vendorStatus": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "hidden": "Hidden (legacy)"
+    },
+    "eventStatus": {
+      "draft": "Draft",
+      "active": "Active",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "reviewStatus": {
+      "published": "Published",
+      "hidden": "Hidden",
+      "removed": "Removed"
+    }
   }
 }

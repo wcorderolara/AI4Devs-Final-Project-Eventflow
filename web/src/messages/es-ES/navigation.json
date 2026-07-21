@@ -119,6 +119,7 @@
     },
     "admin": {
       "label": "Navegación de administración",
+      "metrics": "Métricas",
       "vendors": "Aprobación de proveedores",
       "reviews": "Moderación de reseñas",
       "users": "Usuarios",

@@ -391,5 +391,73 @@
       "validation": "O formulário não é válido.",
       "unexpected": "Erro inesperado. Tente novamente."
     }
+  },
+  "metrics": {
+    "title": "Métricas operacionais",
+    "subtitle": "Instantâneo do estado do sistema. Sem métricas comerciais.",
+    "generatedAt": "Atualizado: {timestamp}",
+    "error": "Não foi possível carregar as métricas. Tente novamente.",
+    "actions": {
+      "refresh": "Atualizar",
+      "refreshing": "Atualizando…"
+    },
+    "sections": {
+      "users": "Usuários",
+      "vendors": "Fornecedores",
+      "events": "Eventos",
+      "quotes": "Orçamentos",
+      "bookings": "Reservas",
+      "reviews": "Avaliações",
+      "ai": "Assistente IA",
+      "breakdownByRole": "Detalhamento por papel",
+      "breakdownByStatus": "Detalhamento por status",
+      "hiddenCount": "{count, plural, one {# oculto} other {# ocultos}}",
+      "quotesRequestedLabel": "Solicitações de orçamento criadas",
+      "quotesBreakdownTitle": "Estados de orçamento",
+      "quotesLabels": {
+        "responded": "Respondidos",
+        "accepted": "Aceitos",
+        "rejected": "Rejeitados",
+        "expired": "Expirados"
+      },
+      "bookingsBreakdownTitle": "Estados de reserva",
+      "bookingsLabels": {
+        "confirmed": "Confirmadas",
+        "cancelled": "Canceladas"
+      },
+      "ai": {
+        "totalAria": "Total de recomendações IA: {total}",
+        "empty": "Ainda não há recomendações de IA.",
+        "tableCaption": "Detalhamento de recomendações IA por tipo com taxa de sucesso.",
+        "col": {
+          "type": "Tipo",
+          "total": "Total",
+          "success": "Sucessos",
+          "rate": "Taxa"
+        }
+      }
+    },
+    "roles": {
+      "organizer": "Organizador",
+      "vendor": "Fornecedor",
+      "admin": "Administrador"
+    },
+    "vendorStatus": {
+      "pending": "Pendente",
+      "approved": "Aprovado",
+      "rejected": "Rejeitado",
+      "hidden": "Oculto (legado)"
+    },
+    "eventStatus": {
+      "draft": "Rascunho",
+      "active": "Ativo",
+      "completed": "Concluído",
+      "cancelled": "Cancelado"
+    },
+    "reviewStatus": {
+      "published": "Publicadas",
+      "hidden": "Ocultas",
+      "removed": "Removidas"
+    }
   }
 }

@@ -119,6 +119,7 @@
     },
     "admin": {
       "label": "Admin navigation",
+      "metrics": "Metrics",
       "vendors": "Vendor approval",
       "reviews": "Review moderation",
       "users": "Users",

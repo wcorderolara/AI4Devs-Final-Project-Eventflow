@@ -391,5 +391,73 @@
       "validation": "El formulario no es válido.",
       "unexpected": "Error inesperado. Intenta de nuevo."
     }
+  },
+  "metrics": {
+    "title": "Métricas operativas",
+    "subtitle": "Instantánea del estado del sistema. Sin métricas comerciales.",
+    "generatedAt": "Actualizado: {timestamp}",
+    "error": "No pudimos cargar las métricas. Intenta nuevamente.",
+    "actions": {
+      "refresh": "Actualizar",
+      "refreshing": "Actualizando…"
+    },
+    "sections": {
+      "users": "Usuarios",
+      "vendors": "Proveedores",
+      "events": "Eventos",
+      "quotes": "Cotizaciones",
+      "bookings": "Reservas",
+      "reviews": "Reseñas",
+      "ai": "Asistente IA",
+      "breakdownByRole": "Desglose por rol",
+      "breakdownByStatus": "Desglose por estado",
+      "hiddenCount": "{count, plural, one {# oculto} other {# ocultos}}",
+      "quotesRequestedLabel": "Solicitudes de cotización creadas",
+      "quotesBreakdownTitle": "Estados de cotización",
+      "quotesLabels": {
+        "responded": "Respondidas",
+        "accepted": "Aceptadas",
+        "rejected": "Rechazadas",
+        "expired": "Expiradas"
+      },
+      "bookingsBreakdownTitle": "Estados de reserva",
+      "bookingsLabels": {
+        "confirmed": "Confirmadas",
+        "cancelled": "Canceladas"
+      },
+      "ai": {
+        "totalAria": "Total de recomendaciones IA: {total}",
+        "empty": "Aún no hay recomendaciones de IA.",
+        "tableCaption": "Breakdown de recomendaciones IA por tipo con tasa de éxito.",
+        "col": {
+          "type": "Tipo",
+          "total": "Total",
+          "success": "Éxitos",
+          "rate": "Tasa"
+        }
+      }
+    },
+    "roles": {
+      "organizer": "Organizador",
+      "vendor": "Proveedor",
+      "admin": "Administrador"
+    },
+    "vendorStatus": {
+      "pending": "Pendiente",
+      "approved": "Aprobado",
+      "rejected": "Rechazado",
+      "hidden": "Oculto (legado)"
+    },
+    "eventStatus": {
+      "draft": "Borrador",
+      "active": "Activo",
+      "completed": "Completado",
+      "cancelled": "Cancelado"
+    },
+    "reviewStatus": {
+      "published": "Publicadas",
+      "hidden": "Ocultas",
+      "removed": "Removidas"
+    }
   }
 }
