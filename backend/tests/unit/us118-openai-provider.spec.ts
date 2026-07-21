@@ -19,10 +19,16 @@ import {
 } from '../../src/shared/domain/errors/ai.errors.js';
 import { logger } from '../../src/shared/infrastructure/logger/index.js';
 import type { AiFeatureType } from '../../src/modules/ai-assistance/domain/ai-features.js';
+import type { SupportedLanguage } from '../../src/shared/constants/languages.js';
 
 const FAKE_KEY = 'sk-test-fake-key-do-not-use';
 const cfg: OpenAIConfig = { apiKey: FAKE_KEY, model: 'gpt-4o-mini', baseUrl: 'https://api.openai.test/v1', timeoutMs: 5000 };
-const REQ = { feature: 'event_plan' as AiFeatureType, input: { guests: 100 }, languageCode: 'es-LATAM' };
+// US-084 (BE-002): `languageCode` es `SupportedLanguage` (whitelist) — const literal explícito.
+const REQ = {
+  feature: 'event_plan' as AiFeatureType,
+  input: { guests: 100 },
+  languageCode: 'es-LATAM' as SupportedLanguage,
+};
 
 class FakeTransport implements OpenAIChatTransport {
   lastRequest?: OpenAIChatRequest;
@@ -79,9 +85,14 @@ describe('OpenAIProvider structured output request (US-118 AC-03)', () => {
     await provider.generate(REQ);
     expect(transport.lastRequest?.responseFormat).toEqual({ type: 'json_object' });
     expect(transport.lastRequest?.model).toBe('gpt-4o-mini');
-    const system = transport.lastRequest?.messages.find((m) => m.role === 'system')?.content ?? '';
-    expect(system).toContain('event_plan');
-    expect(system).toContain('es-LATAM');
+    // US-084 (BE-003 · AC-02): dos system messages — el primero es la directiva sistémica de
+    // locale (composeLocaleInstruction) y el segundo es el system prompt específico de la feature.
+    const systems = (transport.lastRequest?.messages ?? []).filter((m) => m.role === 'system').map((m) => m.content);
+    const localeSystem = systems.find((s) => s.includes('IMPORTANTE')) ?? '';
+    expect(localeSystem).toContain('español latinoamericano');
+    const featureSystem = systems.find((s) => s.includes('event_plan')) ?? '';
+    expect(featureSystem).toContain('event_plan');
+    expect(featureSystem).toContain('es-LATAM');
     const user = transport.lastRequest?.messages.find((m) => m.role === 'user')?.content ?? '';
     expect(JSON.parse(user)).toEqual({ guests: 100 });
   });

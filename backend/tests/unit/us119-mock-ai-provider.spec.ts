@@ -74,7 +74,11 @@ describe.skip('US-119 EC-03/EC-04 — errores tipados', () => {
     await expect(provider.generate({ feature: 'unknown_feature' as AiFeatureType, input: { x: 1 }, languageCode: 'es-LATAM' })).rejects.toBeInstanceOf(ValidationError);
   });
   it('idioma no soportado → UnsupportedLanguageError', async () => {
-    await expect(provider.generate({ feature: 'event_plan', input: { x: 1 }, languageCode: 'fr' })).rejects.toBeInstanceOf(UnsupportedLanguageError);
+    // Intencional: probamos la guarda RUNTIME del provider frente a un locale que el tipado
+    // de US-084 (BE-002) excluye compile-time. Cast explícito para evadir la validación TS.
+    await expect(
+      provider.generate({ feature: 'event_plan', input: { x: 1 }, languageCode: 'fr' as never }),
+    ).rejects.toBeInstanceOf(UnsupportedLanguageError);
   });
 });
 

@@ -95,6 +95,12 @@ export interface DomainEventLogger {
       // `soft_deleted`. `eventTypeId` distingue del `serviceCategoryId` en logs cruzados.
       // NO se logea `name_i18n` ni `reason` (SEC-09; paridad US-075).
       eventTypeId?: string;
+      // US-084 (PB-P1-049 / BE-005 · AC-05): `ai.locale.applied` / `ai.locale.fallback`.
+      // `feature` es el `AiFeatureType` invocado; `locale` es el idioma efectivo con el que se
+      // llamó al provider; `fallbackReason` es un code SEGURO (nunca prompts/output/raw error).
+      feature?: string;
+      locale?: string;
+      fallbackReason?: string;
     },
   ): void;
 }

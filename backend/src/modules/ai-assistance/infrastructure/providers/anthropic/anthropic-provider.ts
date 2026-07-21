@@ -5,13 +5,14 @@
 // Anthropic funcional es Future y requiere nuevo backlog + ADR/PO.
 import type { LLMProvider, LlmGenerationResult } from '../../../ports/llm-provider.js';
 import type { AiFeatureType } from '../../../domain/ai-features.js';
+import type { SupportedLanguage } from '../../../../../shared/constants/languages.js';
 import { logger } from '../../../../../shared/infrastructure/logger/index.js';
 import { AIProviderNotConfiguredError } from '../../../../../shared/domain/errors/ai.errors.js';
 
 interface GenerateRequest {
   feature: AiFeatureType;
   input: Record<string, unknown>;
-  languageCode: string;
+  languageCode: SupportedLanguage;
   preferMock?: boolean;
 }
 

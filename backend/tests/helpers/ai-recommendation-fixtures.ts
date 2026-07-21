@@ -52,6 +52,9 @@ export class FakeAIRecommendationRepository implements AIRecommendationRepositor
       input: {},
       output: { errorCode: input.errorCode },
       aiMeta: null,
+      // US-084 (BE-004): las columnas denormalizadas también se preservan en el fake.
+      locale: input.languageCode,
+      localeFallback: input.fallbackUsed,
       createdAt: '2026-07-09T00:00:00.000Z',
     };
   }
@@ -83,6 +86,9 @@ export class FakeAIRecommendationRepository implements AIRecommendationRepositor
         fallbackUsed: input.fallbackUsed,
         languageCode: input.languageCode,
       },
+      // US-084 (BE-004): columnas denormalizadas replicadas en el fake.
+      locale: input.languageCode,
+      localeFallback: input.fallbackUsed,
       createdAt: '2026-07-09T00:00:00.000Z',
     };
   }

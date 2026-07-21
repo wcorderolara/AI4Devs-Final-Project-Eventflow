@@ -5,8 +5,10 @@
 import { createHash } from 'node:crypto';
 import type { LLMProvider, LlmGenerationResult } from '../../../ports/llm-provider.js';
 import type { AiFeatureType } from '../../../domain/ai-features.js';
+import type { SupportedLanguage } from '../../../../../shared/constants/languages.js';
 import { config } from '../../../../../config/env.js';
 import { logger } from '../../../../../shared/infrastructure/logger/index.js';
+import { composeLocaleInstruction } from '../../../../../shared/i18n/locale-label.js';
 import { AiInvalidOutputError } from '../../../../../shared/domain/errors/ai.errors.js';
 import { resolveOpenAIConfig, type OpenAIConfig } from './openai-config.js';
 import {
@@ -19,15 +21,21 @@ import { toTypedProviderError } from './openai-error-mapper.js';
 interface GenerateRequest {
   feature: AiFeatureType;
   input: Record<string, unknown>;
-  languageCode: string;
+  languageCode: SupportedLanguage;
   preferMock?: boolean;
 }
 
-/** Instrucción mínima de structured output. No es un PromptRegistry (fuera de scope, PB-P0-010). */
+/**
+ * Construye el chat request. US-084 (PB-P1-049 / BE-003 · AC-02): la directiva de idioma se
+ * inyecta como PRIMER mensaje `system` via `composeLocaleInstruction(languageCode)`, seguida por
+ * el system prompt específico de la feature. Empíricamente los LLMs modernos respetan mejor una
+ * directiva sistémica prependida como mensaje separado que embebida al final de otro system.
+ */
 function buildChatRequest(req: GenerateRequest, model: string): OpenAIChatRequest {
   return {
     model,
     messages: [
+      { role: 'system', content: composeLocaleInstruction(req.languageCode) },
       {
         role: 'system',
         content:

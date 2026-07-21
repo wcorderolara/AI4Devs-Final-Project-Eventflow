@@ -1320,6 +1320,20 @@ interface LLMProvider {
 }
 ```
 
+> **US-084 (PB-P1-049) — `LLMProvider.generate({ languageCode })` obligatorio y tipado.**
+> El puerto operativo entregado por US-097 (`src/modules/ai-assistance/ports/llm-provider.ts`)
+> exige `languageCode: SupportedLanguage` (whitelist `es-LATAM | es-ES | pt | en`). Cualquier
+> adapter que omita el binding falla en compile-time (AC-01). Los adapters inyectan al inicio
+> del prompt la directiva sistémica que produce `composeLocaleInstruction(locale)` del helper
+> compartido `src/shared/i18n/locale-label.ts` (AC-02) — el `LOCALE_LABEL` mapea el locale
+> técnico a su nombre humano ("español latinoamericano", "português brasileiro", etc.), más
+> efectivo empíricamente que pasar solo el código ISO. El binding real del locale al provider se
+> deriva **centralmente** en `GenerateAiRecommendationUseCase` (motor único US-097 + reader
+> `EventLanguageReader` de US-082): `effectiveLanguageCode = event.languageCode`, no el
+> `languageCode` del body del cliente (AC-03). US-084 emite además los logs de dominio
+> `ai.locale.applied` (siempre en éxito) y `ai.locale.fallback` (cuando `aiMeta.fallbackUsed`
+> es true) con `feature`/`locale`/`fallbackReason` seguros (nunca prompt/output crudo — SEC-09).
+
 ### 20.2 Flujo runtime: Generate event plan
 
 ```mermaid

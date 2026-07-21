@@ -32,6 +32,9 @@ function toView(r: {
   inputPayload: unknown;
   outputPayload: unknown;
   aiMeta: unknown;
+  // US-084 (BE-004): las columnas denormalizadas también viajan aquí (view HITL).
+  locale: string;
+  localeFallback: boolean;
   createdAt: Date;
 }): AiRecommendationView {
   return {
@@ -45,6 +48,8 @@ function toView(r: {
     input: r.inputPayload,
     output: r.outputPayload,
     aiMeta: (r.aiMeta as AiMeta | null) ?? null,
+    locale: r.locale,
+    localeFallback: r.localeFallback,
     createdAt: r.createdAt.toISOString(),
   };
 }

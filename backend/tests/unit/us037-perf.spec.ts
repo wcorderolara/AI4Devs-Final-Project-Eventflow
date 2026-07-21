@@ -79,6 +79,9 @@ function makeRec(): AiRecommendationView {
       items: CATEGORIES.slice(0, N).map((c, i) => ({ category: c, estimatedAmount: String(500 + i * 10) })),
     },
     aiMeta: null,
+    // US-084 (BE-004): columnas denormalizadas obligatorias en el view.
+    locale: 'es-LATAM',
+    localeFallback: false,
     createdAt: '2026-06-27T00:00:00Z',
   };
 }

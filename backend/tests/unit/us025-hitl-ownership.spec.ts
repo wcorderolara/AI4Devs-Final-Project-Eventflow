@@ -23,6 +23,9 @@ function rec(overrides: Partial<AiRecommendationView> = {}): AiRecommendationVie
     input: {},
     output: {},
     aiMeta: null,
+    // US-084 (BE-004): columnas denormalizadas obligatorias en el view.
+    locale: 'es-LATAM',
+    localeFallback: false,
     createdAt: '2026-07-13T00:00:00Z',
     ...overrides,
   };

@@ -29,6 +29,9 @@ function toView(r: PrismaRec): AiRecommendationView {
     input: r.inputPayload,
     output: r.outputPayload,
     aiMeta: (r.aiMeta as AiMeta | null) ?? null,
+    // US-084: expone las columnas denormalizadas hacia el dominio/use cases/tests.
+    locale: r.locale,
+    localeFallback: r.localeFallback,
     createdAt: r.createdAt.toISOString(),
   };
 }
@@ -77,6 +80,9 @@ export class PrismaAIRecommendationRepository implements AIRecommendationReposit
         outputPayload: data.output as Prisma.InputJsonValue,
         aiMeta: data.aiMeta as unknown as Prisma.InputJsonValue,
         status: 'pending',
+        // US-084 (PB-P1-049 / BE-004 · AC-03, AC-05): denormaliza a columnas dedicadas.
+        locale: data.aiMeta.languageCode,
+        localeFallback: data.aiMeta.fallbackUsed,
       },
     });
     return toView(rec);
@@ -119,6 +125,9 @@ export class PrismaAIRecommendationRepository implements AIRecommendationReposit
         status: 'pending',
         timeoutMs: input.timeoutMs,
         isSeed: input.isSeed ?? false,
+        // US-084 (BE-004 · AC-03/AC-05): columnas denormalizadas para auditoría i18n.
+        locale: input.languageCode,
+        localeFallback: input.fallbackUsed,
       },
     });
     return toView(rec);
@@ -154,6 +163,11 @@ export class PrismaAIRecommendationRepository implements AIRecommendationReposit
         status: 'failed',
         timeoutMs: input.timeoutMs,
         isSeed: input.isSeed ?? false,
+        // US-084 (BE-004 · AC-05): incluso en `failed`, se persiste el locale solicitado y el
+        // flag de fallback para observabilidad. `fallbackUsed=true` en records fallidos indica
+        // que el path degradó al mock antes de fallar; ambos casos son auditables.
+        locale: input.languageCode,
+        localeFallback: input.fallbackUsed,
       },
     });
     return toView(rec);

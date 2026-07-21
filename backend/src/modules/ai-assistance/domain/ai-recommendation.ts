@@ -22,6 +22,11 @@ export interface AiRecommendationView {
   input: unknown;
   output: unknown;
   aiMeta: AiMeta | null;
+  // US-084 (PB-P1-049 / BE-004 · AC-03/AC-05): columnas denormalizadas expuestas al dominio.
+  // `locale` es el idioma efectivo con el que se invocó al provider (formato contrato API);
+  // `localeFallback` es true si la ejecución degradó a template estático o al mock por error.
+  locale: string;
+  localeFallback: boolean;
   createdAt: string;
 }
 

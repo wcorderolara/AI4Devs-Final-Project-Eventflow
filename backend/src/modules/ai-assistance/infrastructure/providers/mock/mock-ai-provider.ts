@@ -10,7 +10,7 @@
 import { createHash } from 'node:crypto';
 import type { LLMProvider, LlmGenerationResult } from '../../../ports/llm-provider.js';
 import { AI_FEATURE_TYPES, type AiFeatureType } from '../../../domain/ai-features.js';
-import { SUPPORTED_LANGUAGES } from '../../../../../shared/constants/languages.js';
+import { SUPPORTED_LANGUAGES, type SupportedLanguage } from '../../../../../shared/constants/languages.js';
 import { logger } from '../../../../../shared/infrastructure/logger/index.js';
 import {
   AiProviderTimeoutError,
@@ -24,7 +24,7 @@ import { resolveFixture, baseOutput, type FixtureResolution } from './mock-fixtu
 interface GenerateRequest {
   feature: AiFeatureType;
   input: Record<string, unknown>;
-  languageCode: string;
+  languageCode: SupportedLanguage;
   preferMock?: boolean;
 }
 

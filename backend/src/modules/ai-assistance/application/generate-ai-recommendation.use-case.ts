@@ -85,6 +85,26 @@ export class GenerateAiRecommendationUseCase {
       throw err;
     }
 
+    // US-084 (PB-P1-049 / BE-005 · AC-05): auditoría del binding i18n del provider IA.
+    // `ai.locale.applied` acompaña TODA generación exitosa con el locale efectivo. Si el
+    // adapter degradó a fallback, además se emite `ai.locale.fallback` con la razón segura
+    // (no se logea prompt/output crudo — SEC-09).
+    this.logger.emit('ai.locale.applied', {
+      correlationId: cmd.correlationId,
+      actorId: cmd.userId,
+      feature: cmd.feature,
+      locale: outcome.aiMeta.languageCode,
+    });
+    if (outcome.aiMeta.fallbackUsed) {
+      this.logger.emit('ai.locale.fallback', {
+        correlationId: cmd.correlationId,
+        actorId: cmd.userId,
+        feature: cmd.feature,
+        locale: outcome.aiMeta.languageCode,
+        fallbackReason: 'provider_fallback',
+      });
+    }
+
     const view = await this.repo.createPending({
       requestedByUserId: cmd.userId,
       type: cmd.feature,

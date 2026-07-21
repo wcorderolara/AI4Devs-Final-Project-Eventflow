@@ -8,9 +8,14 @@ import { selectProvider } from '../../src/modules/ai-assistance/infrastructure/l
 import { AIProviderNotConfiguredError } from '../../src/shared/domain/errors/ai.errors.js';
 import { logger } from '../../src/shared/infrastructure/logger/index.js';
 import { AI_FEATURE_TYPES } from '../../src/modules/ai-assistance/domain/ai-features.js';
+import type { SupportedLanguage } from '../../src/shared/constants/languages.js';
 
 const provider = new AnthropicProvider();
-const REQ = { feature: 'event_plan' as const, input: { secret: 'a@b.com' }, languageCode: 'es-LATAM' };
+const REQ = {
+  feature: 'event_plan' as const,
+  input: { secret: 'a@b.com' },
+  languageCode: 'es-LATAM' as SupportedLanguage,
+};
 
 afterEach(() => vi.restoreAllMocks());
 
