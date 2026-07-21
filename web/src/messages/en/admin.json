@@ -1,5 +1,63 @@
 {
   "events": {
+    "status": {
+      "draft": "Draft",
+      "active": "Active",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "list": {
+      "title": "Events (admin)",
+      "subtitle": "Read-only list of events. Combine filters to narrow results.",
+      "loading": "Loading events…",
+      "loadingMore": "Loading more…",
+      "error": "We couldn’t load events. Please try again.",
+      "empty": "No events match the filters.",
+      "caption": "Admin events — read-only view.",
+      "deletedBadge": "Deleted",
+      "view": "View details",
+      "viewAria": "View details for event {title}",
+      "loadMore": "Load more",
+      "col": {
+        "title": "Title",
+        "status": "Status",
+        "eventType": "Type",
+        "owner": "Organizer",
+        "eventDate": "Date",
+        "guests": "Guests",
+        "estimatedBudget": "Budget",
+        "actions": "Actions"
+      }
+    },
+    "filters": {
+      "formAriaLabel": "Events panel filters",
+      "statusLegend": "Event status",
+      "eventTypeIdLabel": "Event type (UUID)",
+      "eventTypeIdPlaceholder": "Event type UUID",
+      "organizerSearchLabel": "Organizer search",
+      "organizerSearchPlaceholder": "Email or name…",
+      "organizerSearchHint": "Partial, case-insensitive match on email and name.",
+      "eventDateFromLabel": "Date from",
+      "eventDateToLabel": "Date to",
+      "reset": "Clear filters",
+      "apply": "Apply",
+      "errorDateRange": "The start date must be earlier than or equal to the end date."
+    },
+    "counts": {
+      "sectionTitle": "Event summary",
+      "budgetSectionTitle": "Budget summary",
+      "tasks": "Tasks",
+      "tasksCompleted": "Tasks completed",
+      "quoteRequests": "Quote requests",
+      "quoteRequestsActive": "Active quote requests",
+      "quotes": "Quotes received",
+      "quotesAccepted": "Accepted quotes",
+      "bookingIntents": "Booking intents",
+      "bookingIntentsConfirmed": "Confirmed booking intents",
+      "aiRecommendations": "AI recommendations",
+      "totalPlanned": "Planned total",
+      "totalCommitted": "Committed total"
+    },
     "detail": {
       "title": "Event details",
       "readOnlyBadge": "Read-only mode",

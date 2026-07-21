@@ -1,13 +1,19 @@
 // US-016 / BE-003 — Controlador admin de eventos.
-// Contrato: `GET /api/v1/admin/events/:id` → `200` con `AdminEventReadView` + envelope `success`.
-// `PATCH/DELETE/POST /api/v1/admin/events/:id` → `403 FORBIDDEN` con `code='FORBIDDEN_WRITE'`.
-// El controlador es DELGADO: usa lo ya validado (`req.validated.params`), invoca el use case y
-// serializa. Los errores propagan al `errorHandlerMiddleware` global.
+// Contrato:
+//   - `GET /api/v1/admin/events` (US-078 §7): 200 con `{items, pagination}` + envelope `success`.
+//   - `GET /api/v1/admin/events/:id` (US-016 §7): 200 con `AdminEventReadView` (US-078 lo
+//     extiende con `counts` + `budgetSummary`) + envelope `success`.
+//   - `PATCH/DELETE/POST /api/v1/admin/events/:id`: 403 FORBIDDEN con `code='FORBIDDEN_WRITE'`
+//     (baseline US-016 BE-005; ver deviation DEV-1 del execution record US-078).
+// El controlador es DELGADO: usa lo ya validado (`req.validated.params/query`), invoca el use
+// case y serializa. Los errores propagan al `errorHandlerMiddleware` global.
 import type { Request, Response, RequestHandler } from 'express';
 import { success } from '../../../shared/response/index.js';
 import { UnauthorizedError } from '../../../shared/domain/errors/unauthorized.error.js';
 import type { AdminViewEventUseCase } from '../application/admin-view-event.use-case.js';
+import type { ListEventsForAdminUseCase } from '../application/list-events-for-admin.use-case.js';
 import type { AdminEventIdParam } from '../dto/admin-event-id.param.js';
+import type { AdminEventsQuery } from './admin-events-query.dto.js';
 import type {
   AdminEventAuditLogger,
   AdminEventViewResult,
@@ -15,6 +21,7 @@ import type {
 
 export interface AdminEventsControllerDeps {
   viewEvent: AdminViewEventUseCase;
+  listEvents: ListEventsForAdminUseCase;
   auditLogger: AdminEventAuditLogger;
 }
 
@@ -26,6 +33,18 @@ function requireActorId(req: Request): string {
 
 export class AdminEventsController {
   constructor(private readonly deps: AdminEventsControllerDeps) {}
+
+  /** US-078 §7 — GET /api/v1/admin/events. Listado paginado con filtros combinados. */
+  list = async (req: Request, res: Response): Promise<void> => {
+    // AC-01 (US-078): NO se registra AdminAction en list (Decisión PO D2). El logger
+    // estructurado de US-016 (`AdminEventAuditLogger.logView`) es específico del detail;
+    // el list se loguea en el logger de request global (nivel http).
+    const query = req.validated?.query as AdminEventsQuery;
+    // El guard `requireActorId` valida que la sesión exista antes de listar.
+    requireActorId(req);
+    const result = await this.deps.listEvents.execute(query);
+    res.status(200).json(success(result, req.correlationId ?? ''));
+  };
 
   show = async (req: Request, res: Response): Promise<void> => {
     const started = Date.now();

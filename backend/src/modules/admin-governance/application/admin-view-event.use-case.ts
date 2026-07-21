@@ -30,8 +30,17 @@ export class AdminViewEventUseCase {
     // AC-01: transacción read + audit. El insert de AdminAction requiere el eventId, así que la
     // lectura se hace primero; ambos ocurren dentro del mismo `$transaction` para garantizar la
     // pista de auditoría (o rollback conjunto si el insert falla).
+    //
+    // US-078 §7 (AC-02/AC-04): preferimos `findDetailByIdIncludingDeleted` cuando existe
+    // (default en producción con `PrismaAdminEventRepository`). Los fakes de test de US-016
+    // sólo implementan `findByIdIncludingDeleted`; se hace fallback transparente para no
+    // romper la suite legada.
+    const finder = this.events.findDetailByIdIncludingDeleted
+      ? this.events.findDetailByIdIncludingDeleted.bind(this.events)
+      : this.events.findByIdIncludingDeleted.bind(this.events);
+
     return this.prisma.$transaction(async (tx) => {
-      const row = await this.events.findByIdIncludingDeleted(input.eventId);
+      const row = await finder(input.eventId);
       if (!row) {
         // EC-02: no persistir AdminAction en 404. La transacción se cierra sin cambios.
         throw new NotFoundError('Event not found');
@@ -45,6 +54,9 @@ export class AdminViewEventUseCase {
       });
 
       // VR-02: whitelist explícita. `deleted` flag deriva de `deletedAt` (EC-01).
+      // US-078: `counts` y `budgetSummary` se emiten cuando el repository los pobló
+      // (default en producción). Ambos son opcionales en el contrato (dto), preservando
+      // compatibilidad con consumers legados de US-016.
       const view: AdminEventReadView = {
         id: row.id,
         ownerId: row.ownerId,
@@ -65,6 +77,8 @@ export class AdminViewEventUseCase {
         deletedAt: row.deletedAt,
         deleted: row.deletedAt !== null,
         owner: row.owner,
+        ...(row.counts !== undefined ? { counts: row.counts } : {}),
+        ...(row.budgetSummary !== undefined ? { budgetSummary: row.budgetSummary } : {}),
       };
       return view;
     });

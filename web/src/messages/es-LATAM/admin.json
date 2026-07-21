@@ -1,5 +1,63 @@
 {
   "events": {
+    "status": {
+      "draft": "Borrador",
+      "active": "Activo",
+      "completed": "Completado",
+      "cancelled": "Cancelado"
+    },
+    "list": {
+      "title": "Eventos (admin)",
+      "subtitle": "Lista solo lectura de eventos. Aplica filtros combinados para acotar resultados.",
+      "loading": "Cargando eventos…",
+      "loadingMore": "Cargando más…",
+      "error": "No pudimos cargar los eventos. Intenta nuevamente.",
+      "empty": "Ningún evento coincide con los filtros.",
+      "caption": "Eventos admin — vista solo lectura.",
+      "deletedBadge": "Eliminado",
+      "view": "Ver detalle",
+      "viewAria": "Ver detalle del evento {title}",
+      "loadMore": "Cargar más",
+      "col": {
+        "title": "Título",
+        "status": "Estado",
+        "eventType": "Tipo",
+        "owner": "Organizador",
+        "eventDate": "Fecha",
+        "guests": "Invitados",
+        "estimatedBudget": "Presupuesto",
+        "actions": "Acciones"
+      }
+    },
+    "filters": {
+      "formAriaLabel": "Filtros del panel de eventos",
+      "statusLegend": "Estado del evento",
+      "eventTypeIdLabel": "Tipo de evento (UUID)",
+      "eventTypeIdPlaceholder": "UUID del tipo de evento",
+      "organizerSearchLabel": "Búsqueda de organizador",
+      "organizerSearchPlaceholder": "Email o nombre…",
+      "organizerSearchHint": "Búsqueda por coincidencia parcial en email y nombre (sin distinguir mayúsculas).",
+      "eventDateFromLabel": "Fecha desde",
+      "eventDateToLabel": "Fecha hasta",
+      "reset": "Limpiar filtros",
+      "apply": "Aplicar",
+      "errorDateRange": "La fecha inicial debe ser menor o igual a la final."
+    },
+    "counts": {
+      "sectionTitle": "Resumen del evento",
+      "budgetSectionTitle": "Resumen de presupuesto",
+      "tasks": "Tareas",
+      "tasksCompleted": "Tareas hechas",
+      "quoteRequests": "Cotizaciones (solicitudes)",
+      "quoteRequestsActive": "Solicitudes activas",
+      "quotes": "Cotizaciones recibidas",
+      "quotesAccepted": "Cotizaciones aceptadas",
+      "bookingIntents": "Reservas intentadas",
+      "bookingIntentsConfirmed": "Reservas confirmadas",
+      "aiRecommendations": "Recomendaciones IA",
+      "totalPlanned": "Total planeado",
+      "totalCommitted": "Total comprometido"
+    },
     "detail": {
       "title": "Detalle del evento",
       "readOnlyBadge": "Modo lectura",

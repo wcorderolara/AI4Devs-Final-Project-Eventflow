@@ -4,11 +4,13 @@
 // - Renderiza campos como `<input readOnly aria-readonly>` (FE-004).
 // - Muestra `ReadOnlyBadge` (AC-03) y `DeletedEventBanner` cuando `deleted=true` (EC-01).
 // - No expone controles primarios de edición ni de cancelación (AC-03).
+// - US-078 / FE-002: renderiza `EventCountsCards` cuando el backend devuelve `counts`.
 import { useTranslations } from 'next-intl';
 import { EventStatusBadge } from '@/features/events/components/EventStatusBadge';
 import type { AdminEventModel } from '../api/adminEventsApi.types';
 import { ReadOnlyBadge } from './ReadOnlyBadge';
 import { DeletedEventBanner } from './DeletedEventBanner';
+import { EventCountsCards } from './EventCountsCards';
 
 interface Props {
   event: AdminEventModel;
@@ -69,6 +71,14 @@ export function AdminEventViewer({ event }: Props): React.JSX.Element {
           </div>
         ) : null}
       </div>
+
+      {event.counts ? (
+        <EventCountsCards
+          counts={event.counts}
+          budgetSummary={event.budgetSummary ?? null}
+          currency={event.currencyCode}
+        />
+      ) : null}
     </section>
   );
 }

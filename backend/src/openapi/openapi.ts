@@ -95,6 +95,7 @@ import {
 // US-074 (PB-P1-041 / BE-003): panel admin global de VendorProfiles (`GET /admin/vendors`) con
 // filtros combinados + cursor keyset paridad US-077. Se usa el schema base (sin `superRefine`).
 import { AdminVendorsQueryBaseSchema } from '../modules/admin-governance/interface/admin-vendors-query.dto.js';
+import { AdminEventsQueryBaseSchema } from '../modules/admin-governance/interface/admin-events-query.dto.js';
 import {
   AiBaseRequestSchema,
   ApplyAiRecommendationSchema,
@@ -105,6 +106,7 @@ import {
 import {
   AdminEventReadResponseSchema,
   AdminEventIdOpenApiParamSchema,
+  AdminEventsListResponseSchema,
 } from '../modules/admin-governance/dto/index.js';
 
 extendZodWithOpenApi(z);
@@ -283,8 +285,9 @@ op({ method: 'patch', path: '/events/{eventId}', operationId: 'updateEvent', tag
 op({ method: 'post', path: '/events/{eventId}/activate', operationId: 'activateEvent', tags: ['Events'], summary: 'Activar evento (draft→active)', secured: true, params: EventIdParamSchema, success: { status: 200, schema: envelope(EventResponseSchema) }, errors: [401, 404, 422] });
 op({ method: 'post', path: '/events/{eventId}/cancel', operationId: 'cancelEvent', tags: ['Events'], summary: 'Cancelar evento', secured: true, params: EventIdParamSchema, success: { status: 200, schema: envelope(EventResponseSchema) }, errors: [401, 404, 422] });
 
-// ── ADMIN GOVERNANCE — Events (US-016 / PB-P1-010) ─────────────────────────────
-op({ method: 'get', path: '/admin/events/{id}', operationId: 'adminGetEvent', tags: ['Admin'], summary: 'Ver evento (admin, read-only, auditado)', secured: true, params: AdminEventIdOpenApiParamSchema, success: { status: 200, schema: envelope(AdminEventReadResponseSchema) }, errors: [400, 401, 403, 404] });
+// ── ADMIN GOVERNANCE — Events (US-016 / PB-P1-010 detail; US-078 / PB-P1-044 list + counts) ──
+op({ method: 'get', path: '/admin/events', operationId: 'adminListEvents', tags: ['Admin'], summary: 'US-078 · Admin list events (filtros combinados + cursor keyset, sólo lectura)', secured: true, query: AdminEventsQueryBaseSchema, success: { status: 200, schema: envelope(AdminEventsListResponseSchema) }, errors: [400, 401, 403] });
+op({ method: 'get', path: '/admin/events/{id}', operationId: 'adminGetEvent', tags: ['Admin'], summary: 'Ver evento (admin, read-only, auditado; US-078 counts + budgetSummary)', secured: true, params: AdminEventIdOpenApiParamSchema, success: { status: 200, schema: envelope(AdminEventReadResponseSchema) }, errors: [400, 401, 403, 404] });
 op({ method: 'patch', path: '/admin/events/{id}', operationId: 'adminEventPatchForbidden', tags: ['Admin'], summary: 'Bloqueado: escritura admin no permitida (AC-02)', secured: true, params: AdminEventIdOpenApiParamSchema, success: { status: 403, description: 'FORBIDDEN_WRITE' }, errors: [401, 403] });
 op({ method: 'delete', path: '/admin/events/{id}', operationId: 'adminEventDeleteForbidden', tags: ['Admin'], summary: 'Bloqueado: escritura admin no permitida (AC-02)', secured: true, params: AdminEventIdOpenApiParamSchema, success: { status: 403, description: 'FORBIDDEN_WRITE' }, errors: [401, 403] });
 
