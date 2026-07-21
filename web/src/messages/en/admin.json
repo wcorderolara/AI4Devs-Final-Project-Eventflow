@@ -459,5 +459,59 @@
       "hidden": "Hidden",
       "removed": "Removed"
     }
+  },
+  "admin-actions": {
+    "list": {
+      "title": "Admin action log",
+      "subtitle": "Immutable audit log of every admin action. Read-only.",
+      "loading": "Loading entries…",
+      "loadingMore": "Loading more…",
+      "error": "We could not load the log. Please try again.",
+      "empty": "No actions match these filters.",
+      "caption": "Admin log — read-only, immutable view.",
+      "view": "View detail",
+      "collapse": "Hide detail",
+      "loadMore": "Load more",
+      "col": {
+        "createdAt": "Timestamp",
+        "admin": "Admin",
+        "targetType": "Target type",
+        "targetId": "Target ID",
+        "action": "Action",
+        "actions": "Detail"
+      },
+      "admin": {
+        "system": "System"
+      },
+      "expansion": {
+        "reasonLabel": "Reason",
+        "payloadLabel": "Payload",
+        "payloadEmpty": "No additional payload."
+      }
+    },
+    "filters": {
+      "formAriaLabel": "Admin action log filters",
+      "adminIdLabel": "Admin ID",
+      "adminIdPlaceholder": "Admin UUID",
+      "adminIdHint": "Filter by the UUID of the admin actor.",
+      "targetTypeLabel": "Target type",
+      "targetTypeAny": "Any",
+      "targetIdLabel": "Target ID",
+      "targetIdPlaceholder": "Resource UUID",
+      "actionLabel": "Action (exact)",
+      "actionPlaceholder": "hide, approve, reject…",
+      "createdAtFromLabel": "From date",
+      "createdAtToLabel": "To date",
+      "reset": "Clear filters",
+      "apply": "Apply",
+      "errorDateRange": "The start date must be less than or equal to the end date."
+    },
+    "targetType": {
+      "review": "Review",
+      "vendor_profile": "Vendor",
+      "service_category": "Category",
+      "event_type": "Event type",
+      "event": "Event"
+    }
   }
 }

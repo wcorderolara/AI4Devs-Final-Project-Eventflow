@@ -912,6 +912,16 @@ Crear y administrar eventos del `organizer`. Lectura controlada por admin.
 
 > **US-079 · No comerciales.** El shape del response NO incluye ningún campo comercial (`revenue`, `gmv`, `arpu`, `conversion_rate_*`, `monetary`, `earnings`, `profit`) por Decisión PO D7 / SEC-02 / AC-05. La única fuente del contrato es el DTO `AdminMetricsResponse` (`backend/src/modules/admin-governance/dto/admin-metrics.response.ts`); QA-005 y el unit test `us079-get-admin-metrics.use-case.spec.ts` asseerean explícitamente la ausencia de esos tokens en el JSON serializado.
 
+#### 24.6 Admin AdminAction audit log viewer (US-080 · PB-P1-046)
+
+| Método | Path | Auth | Roles | Descripción | 200 | Errores |
+|---|---|---|---|---|---|---|
+| GET | `/admin/admin-actions` | Sí | admin | Visor inmutable del audit log — filtros combinados (`admin_id`, `target_type` ∈ {`review`,`vendor_profile`,`service_category`,`event_type`,`event`}, `target_id`, `action`, `created_at_from/to`) + cursor keyset `(created_at DESC, id DESC)` + `pageSize` ≤ 50. Cada item incluye `admin: {id, businessName, email}` + `reason` + `payload` (extraídos de `AdminAction.metadata`). Ver §24.6.1. | 200 `{items, pagination}` | 400 (`INVALID_CURSOR` / `VALIDATION_ERROR`), 401, 403 |
+
+> **US-080 · Inmutabilidad arquitectónica (AC-03).** El módulo `admin/admin-actions` **NO** expone ningún handler `POST`/`PATCH`/`DELETE`; cualquier verbo de escritura sobre `/admin/admin-actions[/**]` cae en el catch-all 404 del `notFoundMiddleware` (FR-ADMIN-006). El test arquitectónico `us080-admin-actions-immutability.spec.ts` verifica la invariante sobre el source del router. Ver también §14 `Admin Governance` para la posición sistémica del visor.
+>
+> **US-080 · Self-log evitado (AC-04 / Decisión PO D6).** El UseCase `ListAdminActionsUseCase` **NO** crea `AdminAction` al consultar (evita loop infinito). Sólo emite log estructurado `admin.admin_actions.viewed` con `filterCount`/`pageSize`/`returned`/`hasMore` (sin PII y sin valores de filtros). El IT `us080-admin-actions-list.integration.spec.ts` (TS-04) verifica `COUNT(admin_actions)` antes/después del GET.
+
 ### 24.4 DTOs
 
 ```ts

@@ -916,6 +916,13 @@ model AdminAction {
   @@index([adminUserId])
   @@index([actorUserId])
   @@index([targetEntity, targetId])
+  // US-080 (PB-P1-046 / DB-001): índices B-tree para el visor admin del audit log.
+  // - `[createdAt(desc)]` cubre el listado sin filtros ordenado cronológicamente.
+  // - `[adminUserId, createdAt(desc)]` cubre el filtro por actor admin con orden estable.
+  // - `[targetEntity, targetId, createdAt(desc)]` cubre auditoría de una entidad puntual.
+  @@index([createdAt(sort: Desc)])
+  @@index([adminUserId, createdAt(sort: Desc)])
+  @@index([targetEntity, targetId, createdAt(sort: Desc)])
   @@map("admin_actions")
 }
 
