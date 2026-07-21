@@ -17,7 +17,7 @@
 // la paridad con US-077 IT.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import request from 'supertest';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { createApp } from '../../src/app.js';
 
 const prisma = new PrismaClient();
@@ -77,13 +77,14 @@ async function seedAction(
   metadata: Record<string, unknown> | null,
   createdAt: Date,
 ): Promise<string> {
+  const jsonMetadata = (metadata ?? {}) as Prisma.InputJsonValue;
   const created = await prisma.adminAction.create({
     data: {
       adminUserId,
       action,
       targetEntity,
       targetId,
-      metadata: metadata ?? {},
+      metadata: jsonMetadata,
       createdAt,
     },
     select: { id: true },
