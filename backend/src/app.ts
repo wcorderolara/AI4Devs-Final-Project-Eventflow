@@ -31,6 +31,10 @@ import { adminEventsRouter } from './modules/admin-governance/interface/admin-ev
 // US-047 (PB-P1-041): endpoint admin `POST /api/v1/admin/vendors/:id/moderate` — approve/
 // reject/hide/unhide atómico con AdminAction obligatorio + 2 notifs vendor via service común.
 import { adminVendorRouter } from './modules/admin-governance/interface/admin-vendor.routes.js';
+// US-079 (PB-P1-045): dashboard admin de métricas operativas
+// (`GET /api/v1/admin/metrics`). Guards: sessionAuth + roleMiddleware(['admin']); UseCase con
+// cache in-memory TTL 60s + 7 sub-queries agregadas. Sin AdminAction (Decisión PO D4).
+import { adminMetricsRouter } from './modules/admin-governance/interface/admin-metrics.routes.js';
 import { budgetRouter, budgetItemMutationRouter } from './modules/budget-management/interface/index.js';
 import {
   vendorProfileRouter,
@@ -205,6 +209,10 @@ export function createApp(): Express {
   // EXISTS events). Guards: sessionAuth + roleMiddleware(['admin']). Cada mutación crea
   // un AdminAction append-only con `target_entity='event_type'` (BR-ADMIN-011).
   apiV1.use('/admin/event-types', adminEventTypeRouter);
+  // US-079 (PB-P1-045): dashboard admin de métricas operativas (`GET /admin/metrics`).
+  // 7 secciones agregadas + cache in-memory TTL 60s (`Cache-Control: private, max-age=60`).
+  // Sin métricas comerciales (SEC-02 / AC-05). Sin AdminAction (Decisión PO D4).
+  apiV1.use('/admin/metrics', adminMetricsRouter);
   app.use('/api/v1', apiV1);
 
   app.use(notFoundMiddleware); // 8. penúltimo: 404 catch-all

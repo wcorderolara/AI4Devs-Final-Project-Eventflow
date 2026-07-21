@@ -1,4 +1,5 @@
 import {
+  Activity,
   Bell,
   Briefcase,
   Calendar,
@@ -41,6 +42,7 @@ export const VENDOR_NAV_ITEMS: NavItem[] = [
 ];
 
 export const ADMIN_NAV_ITEMS: NavItem[] = [
+  { href: '/admin/metrics', labelKey: 'sidebar.admin.metrics', icon: Activity },
   { href: '/admin/vendors', labelKey: 'sidebar.admin.vendors', icon: Store },
   { href: '/admin/reviews', labelKey: 'sidebar.admin.reviews', icon: MessageSquare },
   { href: '/admin/users', labelKey: 'sidebar.admin.users', icon: Users },
