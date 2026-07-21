@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { LocaleSwitcher } from '@/shared/i18n';
+import { LanguageSelector } from '@/shared/i18n';
 import { Footer, Logo, SkipLink } from '@/shared/navigation';
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
@@ -20,7 +20,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
           <Link href="/register" className="hover:underline">
             {t('public.register')}
           </Link>
-          <LocaleSwitcher />
+          <LanguageSelector />
         </nav>
       </header>
       <main id="main-content" className="flex flex-1 flex-col">

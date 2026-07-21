@@ -876,6 +876,8 @@ type UserProfileResponseDto = AuthUserResponseDto & {
 - `BR-USER-006`: idioma preferido configurable y respetado.
 - Cambio de email no permitido en MVP.
 
+> **Nota (US-081, 2026-07-21):** el `LanguageSelector` global del header (visible en public / auth / app) reusa `PATCH /users/me/preferred-language` para persistir la preferencia de usuarios autenticados. El flujo es optimista: la UI escribe la cookie técnica `eventflow_locale` y ejecuta `router.refresh()` inmediatamente; el PATCH viaja en background y, si falla (5xx / red), la UI revierte la cookie al locale previo y expone un aviso i18n (`common.languageSelector.error`). Los visitantes anónimos NO disparan PATCH — la cookie es la única persistencia (FR-I18N-006).
+
 ---
 
 ## 24. Events API

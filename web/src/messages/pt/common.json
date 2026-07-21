@@ -6,5 +6,10 @@
   "retry": "Tentar novamente",
   "save": "Salvar",
   "cancel": "Cancelar",
-  "confirm": "Confirmar"
+  "confirm": "Confirmar",
+  "languageSelector": {
+    "label": "Alterar idioma",
+    "error": "Não foi possível salvar sua preferência. Tente mais tarde.",
+    "dismiss": "Fechar"
+  }
 }
