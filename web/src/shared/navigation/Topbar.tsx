@@ -2,7 +2,7 @@
 
 import { Menu as MenuIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { LocaleSwitcher } from '@/shared/i18n';
+import { LanguageSelector } from '@/shared/i18n';
 import { Logo } from './Logo';
 import { NotificationsBadge } from './NotificationsBadge';
 import { UserMenu } from './UserMenu';
@@ -32,7 +32,7 @@ export function Topbar({
       </div>
       <div className="flex items-center gap-2">
         <NotificationsBadge />
-        <LocaleSwitcher />
+        <LanguageSelector />
         <UserMenu />
       </div>
     </header>

@@ -1183,6 +1183,8 @@ sequenceDiagram
 * Switcher de locale persiste cookie.
 * Servidor lee cookie en middleware y propaga al provider.
 
+> **US-081 (2026-07-21) — `LanguageSelector` global:** el header (Topbar, layout `(public)` y layout `(auth)`) monta `<LanguageSelector />` (HeadlessUI `Listbox` accesible: `role="listbox"` + `role="option"` + keyboard nav) que consume el hook `useLocaleSwitcher()`. El hook aplica el cambio de forma **optimista**: (1) escribe la cookie `eventflow_locale` con `SameSite=Lax`, `Max-Age=1y` y `Secure` en producción; (2) llama `router.refresh()` para re-hidratar `next-intl` en el segmento sin recarga completa; (3) si hay sesión autenticada, dispara `PATCH /api/v1/users/me/preferred-language` en background y, ante fallo (5xx / red), **revierte** la cookie al locale previo, hace refresh y expone `error='SAVE_FAILED'` (i18n `common.languageSelector.error`). Los visitantes anónimos NO disparan PATCH — la cookie es la única persistencia.
+
 ### 31.3 Convenciones
 
 * Claves jerárquicas: `events.create.title`, `errors.validation.required`.
@@ -1303,7 +1305,7 @@ sequenceDiagram
 | `RoleBadge`, `OwnershipIndicator` | Iconos de rol. |
 | `AIBadge`, `AIPanel`, `AIDiff` | Específicos para IA. |
 | `NotificationBell`, `NotificationList` | Notificaciones in-app. |
-| `Avatar`, `UserMenu`, `LocaleSwitcher` | — |
+| `Avatar`, `UserMenu`, `LanguageSelector` | `LanguageSelector` (US-081) sustituye al `LocaleSwitcher` heredado — dropdown accesible (Listbox) con optimistic + rollback. |
 
 ### 35.3 Documentación visual
 

@@ -9,6 +9,11 @@ export {
 } from './config';
 export { mapToBcp47, formatDate, formatNumber, formatCurrency } from './format';
 export { useLocale, type UseLocaleResult } from './useLocale';
+export {
+  useLocaleSwitcher,
+  type UseLocaleSwitcherResult,
+  type LocaleSwitchError,
+} from './useLocaleSwitcher';
 export { attachLocaleHeader } from './attachLocaleHeader';
 export { Money, type MoneyProps } from './Money';
-export { LocaleSwitcher } from './LocaleSwitcher';
+export { LanguageSelector } from './LanguageSelector';
