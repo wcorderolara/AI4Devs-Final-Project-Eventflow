@@ -62,7 +62,9 @@ test('AC-03: PATCH 500 revierte la cookie y muestra alerta i18n', async ({ page,
   await page.getByRole('option', { name: /English/ }).click();
 
   // Alerta de rollback visible con texto i18n en es-LATAM (el que estaba activo antes del intento).
-  const alert = page.getByRole('alert');
+  // Se usa `data-testid` en lugar de `getByRole('alert')` porque Next monta un route announcer
+  // global con `role="alert"` que también matchea (strict-mode violation en Playwright).
+  const alert = page.getByTestId('language-selector-error');
   await expect(alert).toContainText('No se pudo guardar tu preferencia');
 
   // Cookie revertida al locale previo.
