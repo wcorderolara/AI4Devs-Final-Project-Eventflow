@@ -133,11 +133,15 @@ describe.skipIf(!dbUp)('US-084 integración — locale + locale_fallback denorma
     // aseguramos que Postgres materializa el default.
     const promptVersionId = promptVersionSyncRows()[0]!.id;
     const rawId = '00000000-0000-4000-8000-0000000a1188';
+    // `@updatedAt` (Prisma) NO se traduce a DEFAULT en Postgres — hay que suministrarlo
+    // explícitamente en raw SQL. `@default(now())` sí se materializa como DEFAULT (created_at).
     await prisma.$executeRawUnsafe(
       `
       INSERT INTO ai_recommendations
-        (id, event_id, ai_prompt_version_id, requested_by_user_id, kind, input_payload, output_payload)
-      VALUES ($1::uuid, $2::uuid, $3::uuid, $4::uuid, 'event_plan', '{}'::jsonb, '{}'::jsonb)
+        (id, event_id, ai_prompt_version_id, requested_by_user_id, kind,
+         input_payload, output_payload, updated_at)
+      VALUES ($1::uuid, $2::uuid, $3::uuid, $4::uuid, 'event_plan',
+              '{}'::jsonb, '{}'::jsonb, now())
       `,
       rawId,
       EVENT_ID_PT,
