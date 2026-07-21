@@ -16,6 +16,7 @@ import {
 import { useCreateEvent } from '../hooks/useEventsMutations';
 import { useEventTypes, useLocations } from '../hooks/useEventsQueries';
 import { createEventSchema, type CreateEventFormValues } from '../schemas/eventSchemas';
+import { EventLanguageSelector } from './EventLanguageSelector';
 
 const STEP_FIELDS: Array<Array<keyof CreateEventFormValues>> = [
   ['eventTypeCode', 'eventDate', 'locationId'],
@@ -202,13 +203,8 @@ export function CreateEventWizard(): React.JSX.Element {
               <label htmlFor="event-language" className="block text-sm font-medium">
                 {t('fields.language')}
               </label>
-              <select id="event-language" className="mt-1 w-full rounded border border-neutral-300 px-3 py-2" {...register('languageCode')}>
-                {EVENT_LANGUAGES.map((code) => (
-                  <option key={code} value={code}>
-                    {code}
-                  </option>
-                ))}
-              </select>
+              <EventLanguageSelector id="event-language" {...register('languageCode')} />
+              <p className="mt-1 text-xs text-neutral-500">{t('language.help')}</p>
             </div>
           </>
         ) : null}

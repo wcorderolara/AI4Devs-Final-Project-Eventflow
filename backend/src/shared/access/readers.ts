@@ -2,6 +2,7 @@
 // booking-intent resolver ownership de evento, VendorProfile del usuario y categoría activa SIN
 // importar otros módulos (ADR-ARCH-001): los adapters (app-infra) consultan las tablas directamente.
 import type { SupportedCurrency } from '../constants/currencies.js';
+import type { SupportedLanguage } from '../constants/languages.js';
 
 export interface OwnedEvent {
   id: string;
@@ -52,4 +53,15 @@ export interface ServiceCategoryReader {
 export interface QuoteRequestEventReader {
   /** eventId al que pertenece el QuoteRequest, o null si no existe. */
   getEventId(quoteRequestId: string): Promise<string | null>;
+}
+
+/**
+ * US-082 (PB-P1-047 / D5, AC-05). Reader dedicado del `languageCode` de un evento. Los AI use
+ * cases event-scoped y quote-request-scoped lo consultan para pasar `locale = event.languageCode`
+ * al provider IA. Se define como puerto independiente para no romper implementaciones existentes
+ * de `EventAccessReader` (varios fakes de tests).
+ */
+export interface EventLanguageReader {
+  /** `event.languageCode` o null si el evento no existe. */
+  getLanguage(eventId: string): Promise<SupportedLanguage | null>;
 }

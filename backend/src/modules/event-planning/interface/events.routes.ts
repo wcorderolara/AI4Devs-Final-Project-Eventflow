@@ -21,6 +21,7 @@ import {
   PrismaEventTypeRepository,
   PrismaLocationRepository,
 } from '../infrastructure/prisma-catalog.repository.js';
+import { PrismaOrganizerLanguageLookup } from '../infrastructure/prisma-organizer-language.lookup.js';
 import { StructuredEventAuditLogger } from '../infrastructure/structured-event-audit-logger.js';
 import { CreateEventUseCase } from '../application/create-event.use-case.js';
 import { ListMyEventsUseCase } from '../application/list-my-events.use-case.js';
@@ -34,10 +35,11 @@ import { EventsController } from './events.controller.js';
 const eventRepo = new PrismaEventRepository();
 const eventTypeRepo = new PrismaEventTypeRepository();
 const locationRepo = new PrismaLocationRepository();
+const organizerLanguageLookup = new PrismaOrganizerLanguageLookup();
 const audit = new StructuredEventAuditLogger();
 
 const controller = new EventsController({
-  create: new CreateEventUseCase(eventRepo, eventTypeRepo, locationRepo, audit),
+  create: new CreateEventUseCase(eventRepo, eventTypeRepo, locationRepo, audit, organizerLanguageLookup),
   list: new ListMyEventsUseCase(eventRepo),
   getById: new GetEventByIdUseCase(eventRepo),
   update: new UpdateEventUseCase(eventRepo, eventTypeRepo, locationRepo, audit),

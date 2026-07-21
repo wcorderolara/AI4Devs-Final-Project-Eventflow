@@ -12,6 +12,7 @@ import { aiGenerationRateLimit } from '../../../shared/interface/http/ai-rate-li
 import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
 import {
   PrismaEventAccessReader,
+  PrismaEventLanguageReader,
   PrismaVendorProfileReader,
   PrismaQuoteRequestEventReader,
 } from '../../../infrastructure/readers/prisma-access-readers.js';
@@ -55,6 +56,9 @@ const generateUseCase = new GenerateAiRecommendationUseCase(
   new PrismaVendorProfileReader(),
   new PrismaQuoteRequestEventReader(),
   logger,
+  // US-082 D5 / AC-05: reader del `event.languageCode` para pasar `locale = event.languageCode`
+  // al provider IA en features event-scoped y quote-request-scoped.
+  new PrismaEventLanguageReader(),
 );
 const assistance = new AIAssistanceController(generateUseCase);
 

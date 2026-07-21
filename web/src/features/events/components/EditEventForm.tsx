@@ -7,7 +7,6 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { ApiError } from '@/shared/api-client';
 import {
-  EVENT_LANGUAGES,
   EVENT_TYPE_CODES,
   type EventModel,
   type UpdateEventRequestDTO,
@@ -15,6 +14,7 @@ import {
 import { useUpdateEvent } from '../hooks/useEventsMutations';
 import { useLocations } from '../hooks/useEventsQueries';
 import { updateEventSchema, type UpdateEventFormValues } from '../schemas/eventSchemas';
+import { EventLanguageSelector } from './EventLanguageSelector';
 
 /**
  * Formulario de edición de evento (US-010 / AC-04). Campos editables; la MONEDA no es editable
@@ -27,6 +27,9 @@ export function EditEventForm({ event }: { event: EventModel }): React.JSX.Eleme
   const mutation = useUpdateEvent(event.id);
   const locationsQuery = useLocations();
   const [globalError, setGlobalError] = useState<string | null>(null);
+  // US-082 AC-04: en estados terminales el idioma no se puede modificar (backend responde
+  // `409 EVENT_LANGUAGE_NOT_EDITABLE`). Se bloquea la interacción y se muestra un aviso.
+  const isLanguageLocked = event.status === 'completed' || event.status === 'cancelled';
 
   const {
     register,
@@ -48,19 +51,24 @@ export function EditEventForm({ event }: { event: EventModel }): React.JSX.Eleme
 
   const onSubmit = handleSubmit((values) => {
     setGlobalError(null);
+    // US-082 AC-04: si el idioma está bloqueado, NO se envía al backend (evita 409 de UX).
     const payload: UpdateEventRequestDTO = {
       eventTypeCode: values.eventTypeCode,
       eventDate: values.eventDate,
       guestsCount: values.guestsCount,
       locationId: values.locationId,
       estimatedBudget: values.estimatedBudget,
-      languageCode: values.languageCode,
+      ...(isLanguageLocked ? {} : { languageCode: values.languageCode }),
       name: values.name && values.name.trim() ? values.name.trim() : undefined,
       notes: values.notes && values.notes.trim() ? values.notes.trim() : null,
     };
     mutation.mutate(payload, {
       onSuccess: (updated) => router.push(`/organizer/events/${updated.id}`),
       onError: (error) => {
+        if (error instanceof ApiError && error.code === 'EVENT_LANGUAGE_NOT_EDITABLE') {
+          setGlobalError(t('errors.EVENT_LANGUAGE_NOT_EDITABLE'));
+          return;
+        }
         if (error instanceof ApiError && error.status === 409) {
           setGlobalError(t('errors.CURRENCY_IMMUTABLE'));
           return;
@@ -157,13 +165,17 @@ export function EditEventForm({ event }: { event: EventModel }): React.JSX.Eleme
           <label htmlFor="edit-language" className="block text-sm font-medium">
             {t('fields.language')}
           </label>
-          <select id="edit-language" className="mt-1 w-full rounded border border-neutral-300 px-3 py-2" {...register('languageCode')}>
-            {EVENT_LANGUAGES.map((code) => (
-              <option key={code} value={code}>
-                {code}
-              </option>
-            ))}
-          </select>
+          <EventLanguageSelector
+            id="edit-language"
+            {...register('languageCode')}
+            disabled={isLanguageLocked}
+            aria-describedby={isLanguageLocked ? 'edit-language-hint' : undefined}
+          />
+          {isLanguageLocked ? (
+            <p id="edit-language-hint" className="mt-1 text-xs text-neutral-500">
+              {t('language.locked')}
+            </p>
+          ) : null}
         </div>
 
         <div>

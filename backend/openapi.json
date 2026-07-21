@@ -3903,8 +3903,7 @@
                   "guestsCount",
                   "locationId",
                   "estimatedBudget",
-                  "currencyCode",
-                  "languageCode"
+                  "currencyCode"
                 ],
                 "type": "object"
               }
