@@ -248,6 +248,272 @@
   },
   "openapi": "3.0.3",
   "paths": {
+    "/api/v1/admin/events": {
+      "get": {
+        "operationId": "adminListEvents",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "draft",
+                    "active",
+                    "completed",
+                    "cancelled"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "items": {
+                    "enum": [
+                      "draft",
+                      "active",
+                      "completed",
+                      "cancelled"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "event_type_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "event_date_from",
+            "required": false,
+            "schema": {
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "event_date_to",
+            "required": false,
+            "schema": {
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "organizer_search",
+            "required": false,
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "items": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "createdAt": {
+                                "type": "string"
+                              },
+                              "currency": {
+                                "type": "string"
+                              },
+                              "deletedAt": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "estimatedBudget": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "eventDate": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "eventType": {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "code": {
+                                    "type": "string"
+                                  },
+                                  "id": {
+                                    "format": "uuid",
+                                    "type": "string"
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "code",
+                                  "label"
+                                ],
+                                "type": "object"
+                              },
+                              "guestsCount": {
+                                "nullable": true,
+                                "type": "integer"
+                              },
+                              "id": {
+                                "format": "uuid",
+                                "type": "string"
+                              },
+                              "owner": {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "email": {
+                                    "type": "string"
+                                  },
+                                  "fullName": {
+                                    "nullable": true,
+                                    "type": "string"
+                                  },
+                                  "id": {
+                                    "format": "uuid",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "email",
+                                  "fullName"
+                                ],
+                                "type": "object"
+                              },
+                              "status": {
+                                "enum": [
+                                  "draft",
+                                  "active",
+                                  "completed",
+                                  "cancelled"
+                                ],
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "title",
+                              "status",
+                              "eventDate",
+                              "guestsCount",
+                              "estimatedBudget",
+                              "currency",
+                              "createdAt",
+                              "deletedAt",
+                              "owner",
+                              "eventType"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "pagination": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "nextCursor": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "pageSize": {
+                              "maximum": 50,
+                              "minimum": 1,
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "nextCursor",
+                            "pageSize"
+                          ],
+                          "type": "object"
+                        }
+                      },
+                      "required": [
+                        "items",
+                        "pagination"
+                      ],
+                      "type": "object"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "US-078 · Admin list events (filtros combinados + cursor keyset, sólo lectura)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
     "/api/v1/admin/events/{id}": {
       "delete": {
         "operationId": "adminEventDeleteForbidden",
@@ -306,9 +572,79 @@
                         "autoCompleted": {
                           "type": "boolean"
                         },
+                        "budgetSummary": {
+                          "additionalProperties": false,
+                          "nullable": true,
+                          "properties": {
+                            "totalCommitted": {
+                              "type": "string"
+                            },
+                            "totalPlanned": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "totalPlanned",
+                            "totalCommitted"
+                          ],
+                          "type": "object"
+                        },
                         "completedAt": {
                           "nullable": true,
                           "type": "string"
+                        },
+                        "counts": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "aiRecommendations": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "bookingIntents": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "bookingIntentsConfirmed": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "quoteRequests": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "quoteRequestsActive": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "quotes": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "quotesAccepted": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "tasks": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "tasksCompleted": {
+                              "minimum": 0,
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "tasks",
+                            "tasksCompleted",
+                            "quoteRequests",
+                            "quoteRequestsActive",
+                            "quotes",
+                            "quotesAccepted",
+                            "bookingIntents",
+                            "bookingIntentsConfirmed",
+                            "aiRecommendations"
+                          ],
+                          "type": "object"
                         },
                         "createdAt": {
                           "type": "string"
@@ -462,7 +798,7 @@
             "cookieAuth": []
           }
         ],
-        "summary": "Ver evento (admin, read-only, auditado)",
+        "summary": "Ver evento (admin, read-only, auditado; US-078 counts + budgetSummary)",
         "tags": [
           "Admin"
         ]

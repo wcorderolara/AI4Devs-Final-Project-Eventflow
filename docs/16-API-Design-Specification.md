@@ -899,7 +899,10 @@ Crear y administrar eventos del `organizer`. Lectura controlada por admin.
 | PATCH | `/events/:eventId` | Sí | organizer | Actualiza evento (no currency). | 200 | 401, 403, 404, 409 (CURRENCY_IMMUTABLE), 422 |
 | POST | `/events/:eventId/activate` | Sí | organizer | Pasa `draft → active`. | 200 | 401, 403, 404, 422 |
 | POST | `/events/:eventId/cancel` | Sí | organizer | Pasa estado a `cancelled`. | 200 | 401, 403, 404, 422 |
-| GET | `/admin/events` | Sí | admin | Lista eventos read-only. | 200 | 401, 403 |
+| GET | `/admin/events` | Sí | admin | Lista eventos read-only (US-078 · filtros `status[]` multi + `event_type_id` + `event_date_from/to` + `organizer_search` ILIKE sobre `email`+`fullName` + cursor keyset `pageSize`≤50). No emite AdminAction. | 200 | 400 (`INVALID_CURSOR` / `VALIDATION_ERROR`), 401, 403 |
+| GET | `/admin/events/:id` | Sí | admin | Detalle read-only + AdminAction(view_event) atómico (US-016). US-078 extiende la respuesta con `counts` (tasks/quoteRequests/quotes/bookingIntents/aiRecommendations + variantes filtradas) y `budgetSummary` (`totalPlanned`/`totalCommitted`; `null` si el evento no tiene budget). | 200 | 400 (`INVALID_UUID`), 401, 403, 404 (`EVENT_NOT_FOUND`) |
+
+> **US-078 · Arquitectura sólo lectura.** El módulo `admin/events` expone **exclusivamente** los dos GETs anteriores. Los verbos `PATCH`/`DELETE`/`POST` sobre `/admin/events/:id` devuelven `403 FORBIDDEN_WRITE` (baseline US-016 BE-005) para mantener retro-compatibilidad con la suite de tests existente; funcionalmente equivalen al 404 pedido por US-078 AC-03 (no hay use case de mutación registrado). Ver deviation DEV-1 en `management/workflows/development-execution/P1/PB-P1-044/US-078-execution.md`.
 
 ### 24.4 DTOs
 

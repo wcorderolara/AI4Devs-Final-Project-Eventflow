@@ -38,12 +38,12 @@ describe('QA-003 (sin BD): anonymous y rutas fuera de scope', () => {
     expect((await request(app).get(`/api/v1/events/${SOME_UUID}`)).status).toBe(401);
   });
 
-  it('scope: `/api/v1/admin/events` (listado) no está implementado — US-078 (fuera de scope de US-095)', async () => {
-    // US-016 (PB-P1-010) monta `/api/v1/admin/events/:id` para lectura admin. El LISTADO admin
-    // pertenece a US-078 y aún no existe. Con el router admin montado, un anónimo cae en `sessionAuth`
-    // → 401 (no 404); un usuario admin autenticado obtendría 404 porque el router no tiene GET `/`.
+  it('scope: `/api/v1/admin/events` (listado) requiere sesión admin — US-078', async () => {
+    // US-078 (PB-P1-044) implementa el LISTADO admin (`GET /api/v1/admin/events`). El router
+    // exige `sessionAuth` antes que `roleMiddleware(['admin'])`, así que un anónimo obtiene 401
+    // (no 404). Los tests de autorización específicos viven junto a las suites admin.
     const res = await request(app).get('/api/v1/admin/events');
-    expect([401, 404]).toContain(res.status);
+    expect(res.status).toBe(401);
   });
 });
 
