@@ -7,6 +7,7 @@
 // (US-039 apply) al confirmar un `BookingIntent` sin `BudgetItem` previo — el organizer los
 // reconoce sin ambigüedad.
 import { useTranslations } from 'next-intl';
+import { Money, formatCurrency } from '@/shared/i18n';
 import type { BudgetItemDto } from '../api/budgetApi';
 
 interface BudgetItemsTableProps {
@@ -16,14 +17,6 @@ interface BudgetItemsTableProps {
   onEdit?: (item: BudgetItemDto) => void;
   onDelete?: (item: BudgetItemDto) => void;
   readOnly?: boolean;
-}
-
-function fmt(amount: number, currency: string, locale: string): string {
-  try {
-    return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(amount);
-  } catch {
-    return `${amount.toFixed(2)} ${currency}`;
-  }
 }
 
 export function BudgetItemsTable({
@@ -58,7 +51,7 @@ export function BudgetItemsTable({
         {items.map((it) => {
           const badgeAriaLabel = it.over_committed
             ? tOver('item_aria_label', {
-                amount: fmt(it.overcommitted_amount, currencyCode, locale),
+                amount: formatCurrency(it.overcommitted_amount, currencyCode, locale),
               })
             : undefined;
           return (
@@ -99,8 +92,12 @@ export function BudgetItemsTable({
                 </div>
               </td>
               <td className="py-2 text-neutral-700">{it.category_code ?? '—'}</td>
-              <td className="py-2 text-right">{fmt(it.amount_planned, currencyCode, locale)}</td>
-              <td className="py-2 text-right">{fmt(it.amount_committed, currencyCode, locale)}</td>
+              <td className="py-2 text-right">
+                <Money amount={it.amount_planned} currency={currencyCode} locale={locale} />
+              </td>
+              <td className="py-2 text-right">
+                <Money amount={it.amount_committed} currency={currencyCode} locale={locale} />
+              </td>
               {showActions ? (
                 <td className="py-2 text-right">
                   <div className="flex justify-end gap-2">

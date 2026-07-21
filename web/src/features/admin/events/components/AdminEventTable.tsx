@@ -8,6 +8,7 @@
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
+import { Money } from '@/shared/i18n';
 import type {
   AdminEventListItemModel,
   AdminEventsListFilters,
@@ -31,15 +32,11 @@ function formatDate(value: string | null, locale: string): string {
   }
 }
 
-function formatCurrency(value: string | null, currency: string, locale: string): string {
-  if (!value) return '—';
+function EstimatedBudgetCell({ value, currency }: { value: string | null; currency: string }): React.JSX.Element {
+  if (!value) return <>—</>;
   const n = Number(value);
-  if (Number.isNaN(n)) return `${currency} ${value}`;
-  try {
-    return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(n);
-  } catch {
-    return `${currency} ${n.toFixed(2)}`;
-  }
+  if (Number.isNaN(n)) return <>{`${currency} ${value}`}</>;
+  return <Money amount={n} currency={currency} />;
 }
 
 export function AdminEventTable({ filters }: Props): React.JSX.Element {
@@ -151,7 +148,7 @@ export function AdminEventTable({ filters }: Props): React.JSX.Element {
                     {ev.guestsCount ?? '—'}
                   </td>
                   <td className="px-3 py-2 text-right text-neutral-700">
-                    {formatCurrency(ev.estimatedBudget, ev.currency, locale)}
+                    <EstimatedBudgetCell value={ev.estimatedBudget} currency={ev.currency} />
                   </td>
                   <td className="px-3 py-2 text-right">
                     <Link

@@ -6,6 +6,7 @@
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { AIBadge } from '@/features/ai/event-plan';
+import { Money, formatCurrency } from '@/shared/i18n';
 import type { BudgetSuggestionOutput } from '../api/aiApi';
 
 interface AIBudgetViewerProps {
@@ -14,16 +15,10 @@ interface AIBudgetViewerProps {
   autoFocusOnMount?: boolean;
 }
 
-function formatAmount(amount: number, currencyCode: string, locale: string): string {
-  try {
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: currencyCode,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  } catch {
-    return `${amount} ${currencyCode}`;
-  }
+// US-019 conserva `maximumFractionDigits: 0` (montos IA sin decimales). El helper compartido
+// acepta `Intl.NumberFormatOptions` como override — se usa en interpolación de traducción.
+function formatAmountNoDecimals(amount: number, currencyCode: string, locale: string): string {
+  return formatCurrency(amount, currencyCode, locale, { maximumFractionDigits: 0 });
 }
 
 function formatPercentage(percentage: number, locale: string): string {
@@ -74,7 +69,7 @@ export function AIBudgetViewer({
           </h2>
           <p className="mt-1 text-sm text-neutral-700">
             {t('viewerHint', {
-              total: formatAmount(budget_estimated, currency_code, locale),
+              total: formatAmountNoDecimals(budget_estimated, currency_code, locale),
               count: categories.length,
             })}
           </p>
@@ -121,7 +116,12 @@ export function AIBudgetViewer({
                   </div>
                 </td>
                 <td className="py-2 pr-3 tabular-nums text-neutral-800">
-                  {formatAmount(c.amount, currency_code, locale)}
+                  <Money
+                    amount={c.amount}
+                    currency={currency_code}
+                    locale={locale}
+                    formatOptions={{ maximumFractionDigits: 0 }}
+                  />
                 </td>
                 <td className="py-2 pr-3 text-neutral-700">{c.notes ?? '—'}</td>
               </tr>

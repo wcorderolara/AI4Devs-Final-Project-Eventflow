@@ -11,6 +11,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Money, formatCurrency } from '@/shared/i18n';
 import type { BudgetSummaryDto } from '../api/budgetApi';
 
 interface BudgetSummaryProps {
@@ -21,14 +22,6 @@ interface BudgetSummaryProps {
   // renderiza como estado de la CTA para retroalimentación inmediata.
   onRefresh?: () => void;
   isRefreshing?: boolean;
-}
-
-function formatCurrency(amount: number, currencyCode: string, locale: string): string {
-  try {
-    return new Intl.NumberFormat(locale, { style: 'currency', currency: currencyCode }).format(amount);
-  } catch {
-    return `${amount.toFixed(2)} ${currencyCode}`;
-  }
 }
 
 export function BudgetSummary({
@@ -83,16 +76,20 @@ export function BudgetSummary({
       <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div>
           <dt className="text-xs text-neutral-500">{t('planned')}</dt>
-          <dd className="text-lg font-medium">{formatCurrency(summary.total_planned, summary.currency_code, locale)}</dd>
+          <dd className="text-lg font-medium">
+            <Money amount={summary.total_planned} currency={summary.currency_code} locale={locale} />
+          </dd>
         </div>
         <div>
           <dt className="text-xs text-neutral-500">{t('committed')}</dt>
-          <dd className="text-lg font-medium">{formatCurrency(summary.total_committed, summary.currency_code, locale)}</dd>
+          <dd className="text-lg font-medium">
+            <Money amount={summary.total_committed} currency={summary.currency_code} locale={locale} />
+          </dd>
         </div>
         <div>
           <dt className="text-xs text-neutral-500">{t('remaining')}</dt>
           <dd className={`text-lg font-medium ${remaining < 0 ? 'text-red-700' : 'text-neutral-900'}`}>
-            {formatCurrency(remaining, summary.currency_code, locale)}
+            <Money amount={remaining} currency={summary.currency_code} locale={locale} />
           </dd>
         </div>
         <div>

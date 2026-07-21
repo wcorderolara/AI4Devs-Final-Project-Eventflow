@@ -11,5 +11,12 @@
     "label": "Change language",
     "error": "We couldn't save your preference. Please try again later.",
     "dismiss": "Dismiss"
+  },
+  "currency": {
+    "GTQ": "Guatemalan quetzales",
+    "EUR": "euros",
+    "MXN": "Mexican pesos",
+    "COP": "Colombian pesos",
+    "USD": "US dollars"
   }
 }

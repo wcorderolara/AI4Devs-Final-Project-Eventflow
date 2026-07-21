@@ -1219,9 +1219,16 @@ sequenceDiagram
 
 ### 32.2 Componente `<Money>`
 
-* Recibe `{ amount, currency }` y locale activo.
-* Usa `Intl.NumberFormat(locale, { style: 'currency', currency })`.
-* No realiza ninguna lógica de conversión.
+* Recibe `{ amount, currency, locale?, className?, formatOptions? }`.
+* Resuelve el locale efectivo desde el prop `locale` (whitelist) o `useLocale()`; si el input no está en la whitelist degrada al locale activo (defensivo, no lanza).
+* Usa `Intl.NumberFormat(locale, { style: 'currency', currency })` via el helper compartido `formatCurrency` (`src/shared/i18n/format.ts`), SSR-compatible.
+* No realiza ninguna lógica de conversión FX (BR-BUDGET-007).
+* **A11Y** (US-083 AC-01): renderiza `<span title={currencyCode} aria-label="<amount> <currencyName>">` para tooltip nativo del código ISO y anuncio con el nombre completo de la moneda; los nombres viven en `messages/{locale}/common.json` bajo `common.currency.<CODE>` (5 currencies × 4 locales).
+* **AC-03 desambiguación USD-en**: cuando `locale === 'en'` y `currency ∈ {USD, MXN, COP}`, se fuerza `currencyDisplay: 'code'` para evitar el `$` ambiguo (`USD 500.00` en vez de `$500.00`). En locales `es-*`/`pt` los formatos ICU ya son inequívocos (Q, €, MX$, COL$, US$).
+* **EC-05** (currency inválida): el helper degrada a `"<amount> <code>"` sin lanzar.
+* **Overrides puntuales** (`formatOptions`): admite el subset seguro de `Intl.NumberFormatOptions` (por ejemplo `maximumFractionDigits: 0` para vistas IA sin decimales) sin permitir override de `style`/`currency`/`currencyDisplay` (política del componente).
+
+**Audit (US-083 AC-05)**. Todas las superficies con cifras monetarias deben usar `<Money>` (JSX) o `formatCurrency` (interpolación de traducción). Un test unitario (`src/tests/unit/i18n/currency-display-audit.test.ts`) escanea `src/` y falla si detecta `Intl.NumberFormat({ style: 'currency' })` o `Number.prototype.toLocaleString({ style: 'currency' })` fuera de `src/shared/i18n/format.ts` o del directorio de tests.
 
 ### 32.3 Mensajes UX
 
