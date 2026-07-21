@@ -19,6 +19,7 @@ import {
   TokenExpiredError,
 } from '../../domain/errors/password-reset.errors.js';
 import { CurrencyImmutableError } from '../../domain/errors/currency-immutable.error.js';
+import { EventLanguageNotEditableError } from '../../domain/errors/event-language-not-editable.error.js';
 import {
   MaxQuoteRequestsExceededError,
   DuplicateQuoteRequestActiveError,
@@ -289,6 +290,15 @@ function mapError(err: unknown): MappedError {
   }
   if (err instanceof CurrencyImmutableError) {
     return { status: 409, code: ErrorCodes.CURRENCY_IMMUTABLE, message: err.message };
+  }
+  // US-082 (PB-P1-047): PATCH `languageCode` en `event.status ∈ {completed, cancelled}` → 409.
+  if (err instanceof EventLanguageNotEditableError) {
+    return {
+      status: 409,
+      code: ErrorCodes.EVENT_LANGUAGE_NOT_EDITABLE,
+      message: err.message,
+      details: [{ field: 'current_status', message: err.details.currentStatus }],
+    };
   }
   if (err instanceof MaxQuoteRequestsExceededError) {
     return { status: 409, code: ErrorCodes.MAX_QUOTE_REQUESTS_EXCEEDED, message: err.message };

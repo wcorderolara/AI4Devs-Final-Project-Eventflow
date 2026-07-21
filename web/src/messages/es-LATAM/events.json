@@ -96,6 +96,10 @@
     "cancelEdit": "Descartar",
     "terminalBlocked": "Los eventos completados o cancelados no se pueden editar."
   },
+  "language": {
+    "help": "Se usa como idioma por defecto de las sugerencias de IA del evento. Se puede cambiar después.",
+    "locked": "El idioma no se puede modificar tras completar o cancelar el evento."
+  },
   "validation": {
     "typeRequired": "Selecciona un tipo de evento.",
     "dateFormat": "La fecha debe tener formato AAAA-MM-DD.",
@@ -113,6 +117,7 @@
     "VALIDATION_ERROR": "Revisa los datos ingresados.",
     "NOT_FOUND": "Este evento no existe o no está disponible.",
     "INVALID_STATE": "La acción no es válida para el estado actual del evento.",
-    "CURRENCY_IMMUTABLE": "La moneda no se puede modificar."
+    "CURRENCY_IMMUTABLE": "La moneda no se puede modificar.",
+    "EVENT_LANGUAGE_NOT_EDITABLE": "El idioma del evento no se puede modificar tras cerrarlo."
   }
 }

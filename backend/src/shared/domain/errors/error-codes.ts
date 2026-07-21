@@ -11,6 +11,10 @@ export const ErrorCodes = {
   EMAIL_TAKEN: 'EMAIL_TAKEN',
   // US-095 (PB-P0-004): intento de cambiar `currencyCode` tras crear el evento (AC-05, NT-08) → 409.
   CURRENCY_IMMUTABLE: 'CURRENCY_IMMUTABLE',
+  // US-082 (PB-P1-047): intento de PATCH `languageCode` cuando `event.status ∈ {completed, cancelled}`
+  // (AC-04, VR-03) → 409. Se distingue del bloqueo genérico BUSINESS_RULE_VIOLATION porque el
+  // FE precisa mostrar un mensaje específico y ocultar el selector para eventos cerrados.
+  EVENT_LANGUAGE_NOT_EDITABLE: 'EVENT_LANGUAGE_NOT_EDITABLE',
   // US-096 (PB-P0-004): límites/estado del flujo Quote/Booking (AC-01, EC-04/05/07).
   MAX_QUOTE_REQUESTS_EXCEEDED: 'MAX_QUOTE_REQUESTS_EXCEEDED', // 409
   DUPLICATE_QUOTE_REQUEST_ACTIVE: 'DUPLICATE_QUOTE_REQUEST_ACTIVE', // 409

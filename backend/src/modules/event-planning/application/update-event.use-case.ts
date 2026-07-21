@@ -1,6 +1,9 @@
-// UpdateEventUseCase (US-095 / BE-004). AC-04/AC-05; EC-03/EC-04/EC-05.
+// UpdateEventUseCase (US-095 / BE-004; US-082 D2). AC-04/AC-05; EC-03/EC-04/EC-05.
 // Reglas: `currencyCode` presente → 409 CURRENCY_IMMUTABLE (antes de tocar la BD); ownership
-// masked 404; estados terminales no editables → 422; valida catálogos si cambian.
+// masked 404; estados terminales no editables → 422 para campos genéricos, 409
+// EVENT_LANGUAGE_NOT_EDITABLE cuando específicamente se intenta modificar `languageCode` en
+// `completed`/`cancelled` (US-082 AC-04); valida catálogos si cambian; emite
+// `event.language.changed` cuando el idioma efectivamente cambia (US-082 OBS).
 import type {
   EventRepository,
   EventTypeRepository,
@@ -12,6 +15,7 @@ import type { UpdateEventRequest } from '../dto/index.js';
 import { isMutable } from '../domain/event-lifecycle.js';
 import { NotFoundError } from '../../../shared/domain/errors/not-found.error.js';
 import { CurrencyImmutableError } from '../../../shared/domain/errors/currency-immutable.error.js';
+import { EventLanguageNotEditableError } from '../../../shared/domain/errors/event-language-not-editable.error.js';
 import { BusinessRuleViolationError } from '../../../shared/domain/errors/business-rule-violation.error.js';
 import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
 import type { EventUseCaseContext } from './context.js';
@@ -42,6 +46,21 @@ export class UpdateEventUseCase {
 
     const existing = await this.events.findByIdForOwner(eventId, ownerId);
     if (!existing) throw new NotFoundError('Event not found');
+
+    // US-082 AC-04 / VR-03: si se intenta modificar `languageCode` sobre un evento en estado
+    // terminal (`completed` / `cancelled`), responder 409 EVENT_LANGUAGE_NOT_EDITABLE. Se
+    // antepone al bloqueo genérico de mutabilidad para que el FE muestre el mensaje específico
+    // y oculte el selector.
+    if (input.languageCode !== undefined && !isMutable(existing.status)) {
+      const terminal = existing.status as 'completed' | 'cancelled';
+      this.audit.emit('event.language.not_editable_violation', {
+        correlationId: ctx.correlationId,
+        actorId: ownerId,
+        eventId,
+        currentStatus: terminal,
+      });
+      throw new EventLanguageNotEditableError(terminal);
+    }
 
     if (!isMutable(existing.status)) {
       this.audit.emit('event.lifecycle_transition_rejected', {
@@ -77,6 +96,18 @@ export class UpdateEventUseCase {
 
     const view = await this.events.update(eventId, patch);
     this.audit.emit('event.updated', { correlationId: ctx.correlationId, actorId: ownerId, eventId });
+    // US-082: si el idioma cambió efectivamente (no es no-op), auditar la transición con
+    // `fromLanguage` (existente) → `toLanguage` (nuevo). Ignora casos donde el body incluye
+    // el mismo valor previo.
+    if (input.languageCode !== undefined && input.languageCode !== existing.languageCode) {
+      this.audit.emit('event.language.changed', {
+        correlationId: ctx.correlationId,
+        actorId: ownerId,
+        eventId,
+        fromLanguage: existing.languageCode,
+        toLanguage: input.languageCode,
+      });
+    }
     return view;
   }
 }

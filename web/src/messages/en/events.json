@@ -96,6 +96,10 @@
     "cancelEdit": "Discard",
     "terminalBlocked": "Completed or cancelled events cannot be edited."
   },
+  "language": {
+    "help": "Used as the default language for the event's AI suggestions. You can change it later.",
+    "locked": "The language cannot be changed after completing or cancelling the event."
+  },
   "validation": {
     "typeRequired": "Select an event type.",
     "dateFormat": "The date must be in YYYY-MM-DD format.",
@@ -113,6 +117,7 @@
     "VALIDATION_ERROR": "Please review the details you entered.",
     "NOT_FOUND": "This event does not exist or is not available.",
     "INVALID_STATE": "The action is not valid for the event's current status.",
-    "CURRENCY_IMMUTABLE": "The currency cannot be changed."
+    "CURRENCY_IMMUTABLE": "The currency cannot be changed.",
+    "EVENT_LANGUAGE_NOT_EDITABLE": "The event language cannot be changed after closing the event."
   }
 }

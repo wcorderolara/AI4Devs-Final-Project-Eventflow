@@ -1,7 +1,8 @@
-// Request DTO — Crear evento (US-095 / BE-001). AC-01; VR-01..VR-06, VR-08.
+// Request DTO — Crear evento (US-095 / BE-001; US-082 D3). AC-01; VR-01..VR-06, VR-08.
 // Contrato Doc 16: `eventTypeCode` (enum), `locationId` (FK), `guestsCount`, `estimatedBudget`,
-// `currencyCode`, `languageCode`, opcionales `name`/`notes`. La existencia de EventType/Location
-// se valida en el use case (EC-04). `currencyCode` se fija aquí y es inmutable en PATCH (AC-05).
+// `currencyCode`, `languageCode` (opcional desde US-082 — hereda del organizer con fallback
+// es-LATAM), opcionales `name`/`notes`. La existencia de EventType/Location se valida en el use
+// case (EC-04). `currencyCode` se fija aquí y es inmutable en PATCH (AC-05).
 import { z } from 'zod';
 import { SUPPORTED_CURRENCIES } from '../../../shared/constants/currencies.js';
 import { SUPPORTED_LANGUAGES } from '../../../shared/constants/languages.js';
@@ -26,7 +27,9 @@ export const CreateEventRequestSchema = z
     locationId: z.string().uuid(),
     estimatedBudget: decimalStringSchema,
     currencyCode: z.enum(SUPPORTED_CURRENCIES),
-    languageCode: z.enum(SUPPORTED_LANGUAGES),
+    // US-082 D3: opcional. Si se omite, el use case aplica default heredado
+    // `organizer.preferredLanguage`, con fallback final `es-LATAM` (EC-01).
+    languageCode: z.enum(SUPPORTED_LANGUAGES).optional(),
     name: z.string().min(1).max(120).trim().optional(),
     notes: z.string().max(2000).optional(),
   })

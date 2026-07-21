@@ -3,6 +3,7 @@
 import type { PrismaClient } from '@prisma/client';
 import type {
   EventAccessReader,
+  EventLanguageReader,
   OwnedEvent,
   VendorProfileReader,
   ActiveVendorProfile,
@@ -11,6 +12,8 @@ import type {
   QuoteRequestEventReader,
 } from '../../shared/access/readers.js';
 import type { SupportedCurrency } from '../../shared/constants/currencies.js';
+import type { SupportedLanguage } from '../../shared/constants/languages.js';
+import { PRISMA_TO_API_LANGUAGE, type PrismaLanguage } from '../../shared/constants/languages.js';
 import { prisma as defaultPrisma } from '../prisma/client.js';
 
 export class PrismaEventAccessReader implements EventAccessReader {
@@ -92,5 +95,23 @@ export class PrismaQuoteRequestEventReader implements QuoteRequestEventReader {
       select: { eventId: true },
     });
     return qr?.eventId ?? null;
+  }
+}
+
+/**
+ * US-082 (PB-P1-047). Adapter Prisma de `EventLanguageReader`. Traduce el enum Prisma al código
+ * API (`es-LATAM`, `es-ES`, `pt`, `en`). Retorna `null` si el evento no existe (el UC decide el
+ * fallback — típicamente conserva el `languageCode` provisto por el cliente).
+ */
+export class PrismaEventLanguageReader implements EventLanguageReader {
+  constructor(private readonly prisma: PrismaClient = defaultPrisma) {}
+
+  async getLanguage(eventId: string): Promise<SupportedLanguage | null> {
+    const e = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      select: { language: true },
+    });
+    if (!e) return null;
+    return PRISMA_TO_API_LANGUAGE[e.language as PrismaLanguage] ?? null;
   }
 }

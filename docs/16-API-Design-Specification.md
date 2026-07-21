@@ -935,7 +935,9 @@ type CreateEventRequestDto = {
   locationId: string;
   estimatedBudget: string; // decimal as string
   currencyCode: "GTQ" | "EUR" | "MXN" | "COP" | "USD";
-  languageCode: "es-LATAM" | "es-ES" | "pt" | "en";
+  // US-082 D3: opcional. Si se omite, el use case deriva el valor de `organizer.preferredLanguage`;
+  // si el organizer no tiene preferencia resoluble, cae a `'es-LATAM'` (EC-01).
+  languageCode?: "es-LATAM" | "es-ES" | "pt" | "en";
   notes?: string;
 };
 
@@ -981,7 +983,13 @@ type EventResponseDto = {
 ### 24.7 Errores
 
 - `409 CURRENCY_IMMUTABLE` si se intenta enviar `currencyCode` en PATCH.
+- `409 EVENT_LANGUAGE_NOT_EDITABLE` (US-082 · PB-P1-047) si se intenta enviar `languageCode` en PATCH cuando `event.status ∈ {completed, cancelled}` (AC-04, VR-03). Respuesta incluye `details: [{ field: 'current_status', message: '<completed|cancelled>' }]`.
 - `422 BUSINESS_RULE_VIOLATION` si la transición de estado es inválida.
+
+> **US-082 · `event.languageCode` (PB-P1-047).**
+> - **POST `/events`** — el body ahora acepta `languageCode` opcional (D3). Resolución del use case: `body.languageCode ?? organizer.preferredLanguage ?? 'es-LATAM'` (EC-01). Se registra el origen del valor resuelto en el log estructurado `event.language.set` (`languageSource ∈ { 'body' | 'inherited' | 'default' }`).
+> - **PATCH `/events/:eventId`** — el body acepta `languageCode` opcional. En estados no terminales el cambio se persiste y se registra en `event.language.changed` (con `fromLanguage`/`toLanguage`). En `completed`/`cancelled` responde `409 EVENT_LANGUAGE_NOT_EDITABLE` **antes** que el bloqueo genérico `422 BUSINESS_RULE_VIOLATION` (permite al FE mostrar mensaje específico y ocultar el selector).
+> - **AI binding (D5 / AC-05).** Los AI use cases event-scoped y quote-request-scoped derivan `locale = event.languageCode` del reader `EventLanguageReader` (implementado centralmente en `GenerateAiRecommendationUseCase`); el `languageCode` del body del cliente queda como fallback defensivo si el reader no está disponible. Verificado por el UT `us082-ai-language-binding.spec.ts` con `event_plan` (US-017) como feature representativa.
 
 ---
 
