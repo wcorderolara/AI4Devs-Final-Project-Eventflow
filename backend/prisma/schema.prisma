@@ -940,6 +940,14 @@ model AIRecommendation {
   outputPayload     Json                   @map("output_payload") @db.JsonB
   // US-097: metadatos del provider (provider/promptVersion/latencyMs/fallbackUsed/languageCode).
   aiMeta            Json?                  @map("ai_meta") @db.JsonB
+  // US-084 (PB-P1-049 / DB-001 · AC-03): locale efectivo del evento en el momento de la
+  // generación, denormalizado desde `ai_meta.languageCode` para auditoría/agregaciones/i18n.
+  // Formato del contrato API (`es-LATAM`/`es-ES`/`pt`/`en`), no del enum Prisma.
+  locale            String                 @default("es-LATAM")
+  // US-084 (DB-001 · AC-05): true si la ejecución degradó a template estático por error/timeout
+  // del provider real o por output detectado fuera de idioma. Espejo denormalizado de
+  // `ai_meta.fallbackUsed`, con columna dedicada para filtrar/observar sin parsear JSONB.
+  localeFallback    Boolean                @default(false) @map("locale_fallback")
   status            AIRecommendationStatus @default(pending)
   // expires_at: expiración de la recomendación para índice parcial idx_ai_rec_pending_expires
   // (US-101 / Doc 18 §25; job de expiración de AIRecommendation).
@@ -967,6 +975,8 @@ model AIRecommendation {
   @@index([requestedByUserId])
   @@index([vendorProfileId])
   @@index([quoteRequestId])
+  // US-084 (DB-001): índice para dashboards/agregaciones por locale y ventana temporal.
+  @@index([locale, createdAt(sort: Desc)], map: "ai_recommendations_locale_created_at_idx")
   @@map("ai_recommendations")
 }
 

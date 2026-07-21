@@ -1,5 +1,6 @@
 // Tipos de la capa de ejecución AI (US-123 / BE-001, PB-P0-011). Timeout + fallback controlado.
 // Application no importa SDKs; usa el port `LLMProvider` y factories aprobadas de PB-P0-009.
+import type { SupportedLanguage } from '../../../../shared/constants/languages.js';
 import type { AiFeatureType } from '../../domain/ai-features.js';
 import type { ProviderId } from '../../ports/ai-contract.js';
 
@@ -7,7 +8,8 @@ import type { ProviderId } from '../../ports/ai-contract.js';
 export interface AIExecutionInput {
   feature: AiFeatureType;
   input: Record<string, unknown>;
-  languageCode: string;
+  // US-084 (BE-002 · AC-01): idioma tipado estrictamente para alinear con `LLMProvider.generate`.
+  languageCode: SupportedLanguage;
   correlationId?: string;
   /** Contexto de composición; NO decide fallback por sí mismo (eso lo hace la config). */
   preferMock?: boolean;

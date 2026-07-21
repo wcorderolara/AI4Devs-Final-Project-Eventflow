@@ -39,8 +39,13 @@ export function execConfig(overrides: Partial<AIExecutionConfig> = {}): AIExecut
   };
 }
 
-export const execInput = {
-  feature: 'event_plan' as const,
+import type { AIExecutionInput } from '../../src/modules/ai-assistance/application/ai-execution/ai-execution-types.js';
+
+// US-084 (BE-002 · AC-01): `languageCode` tipado sobre `SupportedLanguage`. `as const` inferiría
+// el string literal `'es-LATAM'` compatible pero anotar el objeto elimina cualquier ambigüedad
+// para consumidores que reciban el fixture con widening implícito.
+export const execInput: AIExecutionInput = {
+  feature: 'event_plan',
   input: { eventType: 'wedding' },
   languageCode: 'es-LATAM',
   correlationId: 'corr-123',

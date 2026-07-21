@@ -1199,6 +1199,14 @@ sequenceDiagram
 * El frontend envía `locale` activo al backend en requests IA (`POST /api/events/:id/ai/generate-plan` con header `Accept-Language` o body).
 * El backend genera contenido en ese locale (o degrada a `es-LATAM`).
 
+> **US-084 (PB-P1-049).** Para features event-scoped y quote-request-scoped el binding del
+> locale al provider IA se resuelve **server-side** desde `event.languageCode` (US-082
+> `EventLanguageReader`), no desde el `locale` del cliente. El `languageCode` del body/header
+> queda como fallback defensivo. El adapter inyecta `composeLocaleInstruction(locale)` como
+> primer mensaje `system` del prompt (helper compartido `backend/src/shared/i18n/locale-label.ts`)
+> — ver docs/14 §20.1. La `AIRecommendation` persiste `locale` y `locale_fallback` como
+> columnas dedicadas (además del blob `ai_meta`) para auditoría i18n.
+
 ### 31.5 SEO localizado (Future)
 
 * Estructura prevista: `/en/vendors/[slug]`, `/pt/vendors/[slug]`. **No MVP**.

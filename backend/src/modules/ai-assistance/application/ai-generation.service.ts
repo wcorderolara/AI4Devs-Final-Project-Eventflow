@@ -234,7 +234,15 @@ export class AiGenerationService {
     if (!(SUPPORTED_LANGUAGES as readonly string[]).includes(lang)) throw new UnsupportedLanguageError();
 
     const sanitizedInput = sanitize(rawInput);
-    const result = await this.provider.generate({ feature, input: sanitizedInput, languageCode: lang, preferMock });
+    // US-084 (BE-002): `LLMProvider.generate.languageCode` está tipado sobre `SupportedLanguage`.
+    // La guarda `SUPPORTED_LANGUAGES.includes(lang)` de arriba estrecha el string a la union
+    // para el TS strict check.
+    const result = await this.provider.generate({
+      feature,
+      input: sanitizedInput,
+      languageCode: lang as SupportedLanguage,
+      preferMock,
+    });
 
     const parsed = OUTPUT_SCHEMAS[feature].safeParse(result.output);
     if (!parsed.success) throw new AiInvalidOutputError();
