@@ -248,6 +248,235 @@
   },
   "openapi": "3.0.3",
   "paths": {
+    "/api/v1/admin/admin-actions": {
+      "get": {
+        "operationId": "adminListAdminActions",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "admin_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "target_type",
+            "required": false,
+            "schema": {
+              "enum": [
+                "review",
+                "vendor_profile",
+                "service_category",
+                "event_type",
+                "event"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "target_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "action",
+            "required": false,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "created_at_from",
+            "required": false,
+            "schema": {
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "created_at_to",
+            "required": false,
+            "schema": {
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 512,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "items": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "action": {
+                                "type": "string"
+                              },
+                              "admin": {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "businessName": {
+                                    "nullable": true,
+                                    "type": "string"
+                                  },
+                                  "email": {
+                                    "nullable": true,
+                                    "type": "string"
+                                  },
+                                  "id": {
+                                    "format": "uuid",
+                                    "nullable": true,
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "businessName",
+                                  "email"
+                                ],
+                                "type": "object"
+                              },
+                              "created_at": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "format": "uuid",
+                                "type": "string"
+                              },
+                              "payload": {
+                                "additionalProperties": {
+                                  "nullable": true
+                                },
+                                "nullable": true,
+                                "type": "object"
+                              },
+                              "reason": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "target_id": {
+                                "format": "uuid",
+                                "type": "string"
+                              },
+                              "target_type": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "admin",
+                              "target_type",
+                              "target_id",
+                              "action",
+                              "reason",
+                              "payload",
+                              "created_at"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "pagination": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "nextCursor": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "pageSize": {
+                              "maximum": 50,
+                              "minimum": 1,
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "nextCursor",
+                            "pageSize"
+                          ],
+                          "type": "object"
+                        }
+                      },
+                      "required": [
+                        "items",
+                        "pagination"
+                      ],
+                      "type": "object"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "US-080 · Admin list AdminAction audit log (filtros combinados + cursor keyset, inmutable, sin self-log)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
     "/api/v1/admin/events": {
       "get": {
         "operationId": "adminListEvents",

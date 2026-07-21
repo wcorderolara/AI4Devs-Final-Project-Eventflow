@@ -96,6 +96,8 @@ import {
 // filtros combinados + cursor keyset paridad US-077. Se usa el schema base (sin `superRefine`).
 import { AdminVendorsQueryBaseSchema } from '../modules/admin-governance/interface/admin-vendors-query.dto.js';
 import { AdminEventsQueryBaseSchema } from '../modules/admin-governance/interface/admin-events-query.dto.js';
+// US-080 (PB-P1-046 / BE-003): visor admin del audit log AdminAction.
+import { AdminActionsQueryBaseSchema } from '../modules/admin-governance/interface/admin-actions-query.dto.js';
 import {
   AiBaseRequestSchema,
   ApplyAiRecommendationSchema,
@@ -107,6 +109,7 @@ import {
   AdminEventReadResponseSchema,
   AdminEventIdOpenApiParamSchema,
   AdminEventsListResponseSchema,
+  AdminActionsListResponseSchema,
 } from '../modules/admin-governance/dto/index.js';
 
 extendZodWithOpenApi(z);
@@ -290,6 +293,9 @@ op({ method: 'get', path: '/admin/events', operationId: 'adminListEvents', tags:
 op({ method: 'get', path: '/admin/events/{id}', operationId: 'adminGetEvent', tags: ['Admin'], summary: 'Ver evento (admin, read-only, auditado; US-078 counts + budgetSummary)', secured: true, params: AdminEventIdOpenApiParamSchema, success: { status: 200, schema: envelope(AdminEventReadResponseSchema) }, errors: [400, 401, 403, 404] });
 op({ method: 'patch', path: '/admin/events/{id}', operationId: 'adminEventPatchForbidden', tags: ['Admin'], summary: 'Bloqueado: escritura admin no permitida (AC-02)', secured: true, params: AdminEventIdOpenApiParamSchema, success: { status: 403, description: 'FORBIDDEN_WRITE' }, errors: [401, 403] });
 op({ method: 'delete', path: '/admin/events/{id}', operationId: 'adminEventDeleteForbidden', tags: ['Admin'], summary: 'Bloqueado: escritura admin no permitida (AC-02)', secured: true, params: AdminEventIdOpenApiParamSchema, success: { status: 403, description: 'FORBIDDEN_WRITE' }, errors: [401, 403] });
+
+// ── US-080 (PB-P1-046) — Visor admin del audit log AdminAction ───────────────
+op({ method: 'get', path: '/admin/admin-actions', operationId: 'adminListAdminActions', tags: ['Admin'], summary: 'US-080 · Admin list AdminAction audit log (filtros combinados + cursor keyset, inmutable, sin self-log)', secured: true, query: AdminActionsQueryBaseSchema, success: { status: 200, schema: envelope(AdminActionsListResponseSchema) }, errors: [400, 401, 403] });
 
 // ── QUOTE-FLOW ──────────────────────────────────────────────────────────────────
 op({ method: 'get', path: '/events/{eventId}/quote-requests', operationId: 'listEventQuoteRequests', tags: ['QuoteRequests'], summary: 'Listar QuoteRequests del evento', secured: true, params: QfEventIdParamSchema, query: ListQuoteRequestsQuerySchema, success: { status: 200, schema: listEnvelope(QuoteRequestResponseSchema) }, errors: [401, 403, 404, 422] });

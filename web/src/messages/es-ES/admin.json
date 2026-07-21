@@ -459,5 +459,59 @@
       "hidden": "Ocultas",
       "removed": "Retiradas"
     }
+  },
+  "admin-actions": {
+    "list": {
+      "title": "Registro de acciones admin",
+      "subtitle": "Auditoría inmutable de todas las acciones administrativas. Solo lectura.",
+      "loading": "Cargando registros…",
+      "loadingMore": "Cargando más…",
+      "error": "No hemos podido cargar el registro. Inténtalo de nuevo.",
+      "empty": "No hay acciones registradas con estos filtros.",
+      "caption": "Registro admin — vista solo lectura, inmutable.",
+      "view": "Ver detalle",
+      "collapse": "Ocultar detalle",
+      "loadMore": "Cargar más",
+      "col": {
+        "createdAt": "Fecha",
+        "admin": "Administrador",
+        "targetType": "Tipo",
+        "targetId": "ID objetivo",
+        "action": "Acción",
+        "actions": "Detalle"
+      },
+      "admin": {
+        "system": "Sistema"
+      },
+      "expansion": {
+        "reasonLabel": "Motivo",
+        "payloadLabel": "Payload",
+        "payloadEmpty": "Sin payload adicional."
+      }
+    },
+    "filters": {
+      "formAriaLabel": "Filtros del registro de acciones admin",
+      "adminIdLabel": "ID de administrador",
+      "adminIdPlaceholder": "UUID del administrador",
+      "adminIdHint": "Filtra por el UUID del actor admin.",
+      "targetTypeLabel": "Tipo de objetivo",
+      "targetTypeAny": "Todos",
+      "targetIdLabel": "ID del objetivo",
+      "targetIdPlaceholder": "UUID del recurso",
+      "actionLabel": "Acción (exacta)",
+      "actionPlaceholder": "hide, approve, reject…",
+      "createdAtFromLabel": "Fecha desde",
+      "createdAtToLabel": "Fecha hasta",
+      "reset": "Limpiar filtros",
+      "apply": "Aplicar",
+      "errorDateRange": "La fecha inicial debe ser menor o igual a la final."
+    },
+    "targetType": {
+      "review": "Reseña",
+      "vendor_profile": "Proveedor",
+      "service_category": "Categoría",
+      "event_type": "Tipo de evento",
+      "event": "Evento"
+    }
   }
 }

@@ -19,6 +19,7 @@ import { adminVendorsHandlers } from './admin-vendors';
 import { adminCategoriesHandlers } from './admin-categories';
 import { adminEventTypesHandlers } from './admin-event-types';
 import { adminMetricsHandlers } from './admin-metrics';
+import { adminActionsHandlers } from './admin-actions';
 
 // Catch-all: cualquier `/api/v1/*` sin handler dedicado → 501 visible (falla ruidosamente).
 // DEBE ir al final del array; cada feature agrega su handler ANTES de este.
@@ -50,6 +51,7 @@ export const handlers = [
   ...adminCategoriesHandlers,
   ...adminEventTypesHandlers,
   ...adminMetricsHandlers,
+  ...adminActionsHandlers,
   ...vendorQrHandlers,
   ...eventsHandlers,
   ...tasksHandlers,

@@ -123,6 +123,7 @@
       "vendors": "Aprobación de proveedores",
       "reviews": "Moderación de reseñas",
       "users": "Usuarios",
+      "adminActions": "Registro admin",
       "seed": "Seed-Demo"
     }
   },

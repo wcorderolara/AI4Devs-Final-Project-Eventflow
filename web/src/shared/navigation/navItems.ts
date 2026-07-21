@@ -5,6 +5,7 @@ import {
   Calendar,
   Database,
   FileText,
+  History,
   LayoutDashboard,
   type LucideIcon,
   MessageSquare,
@@ -46,5 +47,6 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
   { href: '/admin/vendors', labelKey: 'sidebar.admin.vendors', icon: Store },
   { href: '/admin/reviews', labelKey: 'sidebar.admin.reviews', icon: MessageSquare },
   { href: '/admin/users', labelKey: 'sidebar.admin.users', icon: Users },
+  { href: '/admin/admin-actions', labelKey: 'sidebar.admin.adminActions', icon: History },
   { href: '/admin/seed', labelKey: 'sidebar.admin.seed', icon: Database },
 ];
