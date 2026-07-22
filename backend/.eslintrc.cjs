@@ -102,6 +102,12 @@ module.exports = {
         // La misma excepción cubre el UC (importe TYPE-ONLY del handler para tipar el
         // constructor + delegación pura al `.handle()` — no acopla implementación).
         'src/modules/quote-flow/application/create-quote-request.us049.use-case.ts',
+        // Excepción documentada (US-069 PB-P2-006): mismo patrón que US-068 pero para el
+        // `OnQuoteSentHandler` (canal organizer `type='quote_received'`). El composition
+        // root del vendor-scoped router y el UC `RespondQuoteRequestUs052UseCase` importan
+        // el handler por inyección/tipo — wire cross-module, no lógica.
+        'src/modules/quote-flow/interface/us051-vendor-quote-requests.routes.ts',
+        'src/modules/quote-flow/application/respond-quote-request.us052.use-case.ts',
       ],
       rules: {
         'boundaries/element-types': 'off',

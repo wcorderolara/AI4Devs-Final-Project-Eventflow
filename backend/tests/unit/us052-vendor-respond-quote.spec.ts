@@ -2,9 +2,13 @@
 // Cobertura:
 //   - DTO `respondQuoteRequestBodySchema`: refines exhaustivos (total>0, breakdown 1..20,
 //     label 1..150, amount>=0, sum±0.01), currency_code aceptado pero ignorado por el UC.
-//   - `RespondQuoteRequestUs052UseCase`: happy path (transición + Notification x2 + log),
-//     vendor hidden/missing, QR ajena, QR expirada, QR status inválido, Quote ya existente,
-//     currency override server-side (SEC-04), valid_until fuera de rango.
+//   - `RespondQuoteRequestUs052UseCase`: happy path (transición + delegación al
+//     `OnQuoteSentHandler` in-tx + log), vendor hidden/missing, QR ajena, QR expirada,
+//     QR status inválido, Quote ya existente, currency override server-side (SEC-04),
+//     valid_until fuera de rango.
+// US-069 (BE-005): el UC ya no invoca `QuoteNotificationSenderPort` directamente;
+// delega en `OnQuoteSentHandler` la creación de las 2 filas canónicas
+// `type='quote_received'` con payload rico + log `[EMAIL] notif.quoteReceived`.
 import { QuoteRequestStatus, QuoteStatus } from '@prisma/client';
 import { describe, expect, it, vi } from 'vitest';
 import { respondQuoteRequestBodySchema } from '../../src/modules/quote-flow/dto/respond-quote.us052.request.js';
@@ -19,9 +23,12 @@ import type {
   VendorProfileReader,
   ActiveVendorProfile,
 } from '../../src/shared/access/readers.js';
-import type { QuoteNotificationSenderPort } from '../../src/shared/application/quote-notification-sender.port.js';
 import type { DomainEventLogger } from '../../src/shared/observability/domain-event-logger.js';
 import type { ClockPort } from '../../src/shared/domain/clock.port.js';
+import type {
+  OnQuoteSentHandler,
+  OnQuoteSentInput,
+} from '../../src/modules/notifications/application/on-quote-sent.handler.js';
 
 const USER_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 const QR_ID = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
@@ -192,7 +199,12 @@ interface FakeTxSetup {
         expires_at: Date | null;
       }
     | null;
-  eventRow?: { user_id: string; currency: 'GTQ' | 'USD' | 'EUR' | 'MXN' | 'COP' } | null;
+  eventRow?: {
+    user_id: string;
+    currency: 'GTQ' | 'USD' | 'EUR' | 'MXN' | 'COP';
+    language?: string;
+    owner_status?: 'active' | 'suspended';
+  } | null;
   existingQuote?: { id: string } | null;
   createdQuoteId?: string;
 }
@@ -208,6 +220,7 @@ function makeUcWithFakeTx(
   overrides: {
     findActive?: () => Promise<ActiveVendorProfile | null>;
     now?: Date;
+    handlerImpl?: (input: OnQuoteSentInput) => Promise<void>;
   } = {},
 ) {
   const vendors: VendorProfileReader = {
@@ -215,15 +228,26 @@ function makeUcWithFakeTx(
     existsActive: async () => true,
     findActiveByUserId: overrides.findActive ?? (async () => activeVendorProfile()),
   };
-  const notify = vi.fn(async () => {});
-  const notifications: QuoteNotificationSenderPort = { notify };
+  const handle = vi.fn(overrides.handlerImpl ?? (async () => {}));
+  const onQuoteSentHandler = { handle } as unknown as OnQuoteSentHandler;
   const emit = vi.fn();
   const logger: DomainEventLogger = { emit };
   const clock: ClockPort = { now: () => overrides.now ?? new Date('2026-07-16T12:00:00Z') };
 
+  // US-069 (BE-005): el eventRow ahora incluye `language` + `owner_status` para el handler.
+  const eventRow = setup.eventRow
+    ? {
+        user_id: setup.eventRow.user_id,
+        currency: setup.eventRow.currency,
+        language: setup.eventRow.language ?? 'es_LATAM',
+        owner_status: setup.eventRow.owner_status ?? 'active',
+      }
+    : null;
+
   const createdQuoteId = setup.createdQuoteId ?? 'q0000000-0000-0000-0000-000000052001';
   const create = vi.fn(async (args: { data: { amount: unknown; validUntil: Date } }) => ({
     id: createdQuoteId,
+    status: QuoteStatus.sent,
     amount: {
       toFixed: (n: number) => Number(args.data.amount).toFixed(n),
     },
@@ -238,7 +262,7 @@ function makeUcWithFakeTx(
     async $queryRaw<T>(): Promise<T> {
       const idx = queryCallIdx++;
       if (idx === 0) return (setup.qrRow ? [setup.qrRow] : []) as T;
-      if (idx === 1) return (setup.eventRow ? [setup.eventRow] : []) as T;
+      if (idx === 1) return (eventRow ? [eventRow] : []) as T;
       return [] as T;
     },
     quote: { create, findFirst },
@@ -251,8 +275,14 @@ function makeUcWithFakeTx(
     },
   } as unknown as import('@prisma/client').PrismaClient;
 
-  const uc = new RespondQuoteRequestUs052UseCase(vendors, notifications, clock, logger, prismaStub);
-  return { uc, notify, emit, create, findFirst, update };
+  const uc = new RespondQuoteRequestUs052UseCase(
+    vendors,
+    clock,
+    logger,
+    onQuoteSentHandler,
+    prismaStub,
+  );
+  return { uc, handle, emit, create, findFirst, update };
 }
 
 describe('US-052 · RespondQuoteRequestUs052UseCase', () => {
@@ -273,8 +303,8 @@ describe('US-052 · RespondQuoteRequestUs052UseCase', () => {
     expires_at: null,
   };
 
-  it('happy path: crea Quote, UPDATE QR → responded, 2 notifications + log', async () => {
-    const { uc, notify, emit, create, update, findFirst } = makeUcWithFakeTx({
+  it('happy path: crea Quote, UPDATE QR → responded, delega en OnQuoteSentHandler + log', async () => {
+    const { uc, handle, emit, create, update, findFirst } = makeUcWithFakeTx({
       qrRow: sentQr,
       eventRow: { user_id: ORGANIZER_ID, currency: 'GTQ' },
     });
@@ -295,15 +325,21 @@ describe('US-052 · RespondQuoteRequestUs052UseCase', () => {
         data: expect.objectContaining({ status: QuoteRequestStatus.responded }),
       }),
     );
-    expect(notify).toHaveBeenCalledTimes(2);
-    expect(notify).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({ channel: 'in_app', deliveryStatus: 'delivered' }),
-    );
-    expect(notify).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({ channel: 'email_simulated', deliveryStatus: 'simulated' }),
-    );
+
+    // US-069 (BE-005): la emisión de notifs se delega al handler in-tx con el
+    // shape mínimo requerido para `type='quote_received'`.
+    expect(handle).toHaveBeenCalledTimes(1);
+    const handlerInput = handle.mock.calls[0]![0] as OnQuoteSentInput;
+    expect(handlerInput).toMatchObject({
+      quote: { id: view.id, status: QuoteStatus.sent },
+      quoteRequest: { id: QR_ID },
+      vendorProfile: { id: VP_ID },
+      event: { id: EVENT_ID, ownerId: ORGANIZER_ID, language: 'es_LATAM' },
+      organizerUser: { id: ORGANIZER_ID, status: 'active' },
+      correlationId: 'corr-52',
+    });
+    expect(handlerInput.tx).toBeDefined();
+
     expect(emit).toHaveBeenCalledWith(
       'quote.sent',
       expect.objectContaining({
@@ -312,6 +348,46 @@ describe('US-052 · RespondQuoteRequestUs052UseCase', () => {
         quoteRequestId: QR_ID,
       }),
     );
+  });
+
+  it('US-069 (BE-005 / AC-06): fallo del handler propaga → tx rollback (Quote no queda `sent`)', async () => {
+    const { uc, handle, update } = makeUcWithFakeTx(
+      {
+        qrRow: sentQr,
+        eventRow: { user_id: ORGANIZER_ID, currency: 'GTQ' },
+      },
+      {
+        handlerImpl: async () => {
+          throw new Error('boom');
+        },
+      },
+    );
+    await expect(uc.execute(USER_ID, QR_ID, validBody, {})).rejects.toThrow('boom');
+    // El fake tx en este spec no revierte automáticamente los mocks; lo que sí verificamos
+    // es que el error del handler burbujea y detiene el flujo del UC (los IT ejercitan
+    // el rollback real contra Postgres).
+    expect(handle).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledTimes(1);
+  });
+
+  it('US-069 (BE-005 / AC-04): pasa `event.language` como fallback al handler', async () => {
+    const { uc, handle } = makeUcWithFakeTx({
+      qrRow: sentQr,
+      eventRow: { user_id: ORGANIZER_ID, currency: 'GTQ', language: 'pt' },
+    });
+    await uc.execute(USER_ID, QR_ID, validBody, {});
+    const handlerInput = handle.mock.calls[0]![0] as OnQuoteSentInput;
+    expect(handlerInput.event.language).toBe('pt');
+  });
+
+  it('US-069 (BE-005 / D6): mapea `owner_status=suspended` como `suspended` para el handler', async () => {
+    const { uc, handle } = makeUcWithFakeTx({
+      qrRow: sentQr,
+      eventRow: { user_id: ORGANIZER_ID, currency: 'GTQ', owner_status: 'suspended' },
+    });
+    await uc.execute(USER_ID, QR_ID, validBody, {});
+    const handlerInput = handle.mock.calls[0]![0] as OnQuoteSentInput;
+    expect(handlerInput.organizerUser.status).toBe('suspended');
   });
 
   it('AC-03 SEC-04: `currency_code` del body es ignorado — se persiste currency del evento', async () => {
@@ -398,13 +474,13 @@ describe('US-052 · RespondQuoteRequestUs052UseCase', () => {
   });
 
   it('409 QR_NOT_RESPONDABLE cuando el QR está `responded`', async () => {
-    const { uc, notify } = makeUcWithFakeTx({
+    const { uc, handle } = makeUcWithFakeTx({
       qrRow: { ...sentQr, status: QuoteRequestStatus.responded },
     });
     await expect(uc.execute(USER_ID, QR_ID, validBody, {})).rejects.toBeInstanceOf(
       QrNotRespondableError,
     );
-    expect(notify).not.toHaveBeenCalled();
+    expect(handle).not.toHaveBeenCalled();
   });
 
   it('409 QR_NOT_RESPONDABLE cuando el QR expiró (lazy)', async () => {

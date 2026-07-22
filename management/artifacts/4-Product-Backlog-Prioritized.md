@@ -1723,7 +1723,7 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 | MoSCoW | Should Have |
 | Dependencies | PB-P1-031 |
 | Acceptance Summary | - Notif inmediata in-app + email simulado.<br>- Idempotente. |
-| Traceability | FR-NOTIF-002 · BR-NOTIF-002 |
+| Traceability | FR-QUOTE-017 · FR-NOTIF-001 · FR-NOTIF-003 · BR-QUOTE-018 · BR-NOTIF-001 · BR-NOTIF-002 · BR-NOTIF-003 · BR-NOTIF-005 · BR-NOTIF-007 · UC-QUOTE-004 · Decisión PO US-069 |
 | Notes | — |
 
 ---

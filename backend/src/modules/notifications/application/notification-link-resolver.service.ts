@@ -3,6 +3,10 @@
 //
 // US-068 (PB-P2-005 / BE-002) extendido con la estrategia `quote_request_received`
 // → `/vendor/quote-requests/{quoteRequestId}` con batch-lookup contra `quote_requests`.
+// US-069 (PB-P2-006 / BE-002) extendido con la estrategia `quote_received`
+// → `/organizer/quote-requests/{quoteRequestId}/comparator` con batch-lookup
+// reutilizando el mismo `NotificationLinkQuoteRequestReader` (el `quoteRequestId`
+// viaja en `payload` para ambos types).
 //
 // Contract:
 //   * Nunca lanza — errores/payload malformado → `null`.
@@ -17,11 +21,15 @@ const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Tipos con estrategia registrada. Otros → `null`. */
-export type ResolvableNotificationType = 'task_due_soon' | 'quote_request_received';
+export type ResolvableNotificationType =
+  | 'task_due_soon'
+  | 'quote_request_received'
+  | 'quote_received';
 
 const LINK_STRATEGY_BY_TYPE: Record<ResolvableNotificationType, true> = {
   task_due_soon: true,
   quote_request_received: true,
+  quote_received: true,
 };
 
 function extractUuidField(payload: Record<string, unknown>, key: string): string | null {
@@ -60,6 +68,15 @@ export class BatchNotificationLinkResolver implements NotificationLinkResolver {
         const id = extractUuidField(row.payload, 'quoteRequestId');
         quoteRequestIdsPerRow.set(row.id, id);
         if (id) quoteRequestIdsToCheck.push(id);
+      } else if (
+        row.type === 'quote_received' &&
+        LINK_STRATEGY_BY_TYPE.quote_received
+      ) {
+        // US-069 (BE-002): mismo `payload.quoteRequestId` que `quote_request_received`
+        // — se reutiliza el mismo batch-lookup contra `quote_requests`.
+        const id = extractUuidField(row.payload, 'quoteRequestId');
+        quoteRequestIdsPerRow.set(row.id, id);
+        if (id) quoteRequestIdsToCheck.push(id);
       }
     }
 
@@ -89,6 +106,14 @@ export class BatchNotificationLinkResolver implements NotificationLinkResolver {
         result.set(
           row.id,
           qrId && existingQrs.has(qrId) ? `/vendor/quote-requests/${qrId}` : null,
+        );
+      } else if (row.type === 'quote_received') {
+        const qrId = quoteRequestIdsPerRow.get(row.id) ?? null;
+        result.set(
+          row.id,
+          qrId && existingQrs.has(qrId)
+            ? `/organizer/quote-requests/${qrId}/comparator`
+            : null,
         );
       } else {
         result.set(row.id, null);
