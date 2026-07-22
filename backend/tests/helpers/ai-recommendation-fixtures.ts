@@ -68,6 +68,12 @@ export class FakeAIRecommendationRepository implements AIRecommendationRepositor
     this.promptVersions.add(row.id);
   }
 
+  // US-059 (PB-P2-001 / BE-002): fake trivial — retorna null (los tests que lo requieran usan
+  // el fake extendido `FakeAIRecommendationRepositoryWithLatest` definido en su propio spec).
+  async findLatestByEventTypeAndCategory(): Promise<AiRecommendationView | null> {
+    return null;
+  }
+
   private view(input: PersistAiRecommendationInput, status: 'pending'): AiRecommendationView {
     return {
       id: `rec-${(counter += 1)}`,

@@ -12,13 +12,18 @@
 // US-022 (FE-002 / AC-01 + D6): botón "Resumir con IA" visible con ≥ 2 quotes activas
 // (`sent`/`accepted`) que abre el panel lateral `AIComparisonSummary`. El panel se cierra desde
 // su propio header; el trigger se convierte en control (aria-expanded/aria-controls).
-import { useMemo, useState } from 'react';
+//
+// US-059 (FE-003 / D3, D7): siempre que existan ≥ 2 quotes activas, el panel se abre por
+// defecto en desktop (colapsado en mobile con toggle) y consume `useLatestQuoteSummary` para
+// mostrar el último resumen persistido, un empty state con CTA o un banner "stale". El CTA/
+// regenerar reusa la mutación `useGenerateAIQuoteSummary` (US-022) desde el mismo componente.
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useCompareQuotes } from '../hooks/quotesQueries';
 import { QuoteComparisonTable } from './QuoteComparisonTable';
 import { QuoteComparisonCards } from './QuoteComparisonCards';
-import { AIComparisonSummary } from '@/features/ai/quote-summary';
+import { AIComparisonSummary, useLatestQuoteSummary } from '@/features/ai/quote-summary';
 import type { ApiError } from '@/shared/api-client';
 
 export interface QuoteComparatorProps {
@@ -49,7 +54,6 @@ export function QuoteComparator({ eventId, categoryCode }: QuoteComparatorProps)
   const tAi = useTranslations('organizer.ai.quote_summary');
   const backHref = `/organizer/events/${encodeURIComponent(eventId)}`;
   const { data, isLoading, isError, error } = useCompareQuotes({ eventId, categoryCode });
-  const [aiOpen, setAiOpen] = useState(false);
 
   // US-022 (D7 / VR-02): activo si hay ≥ 2 quotes con status `sent` / `accepted`.
   const activeQuotes = useMemo(
@@ -63,6 +67,22 @@ export function QuoteComparator({ eventId, categoryCode }: QuoteComparatorProps)
     for (const q of activeQuotes) map[q.quoteId] = q.vendor.businessName;
     return map;
   }, [activeQuotes]);
+
+  // US-059 (FE-003 / D3): panel abierto por defecto en desktop una vez que hay ≥ 2 quotes;
+  // el toggle sigue disponible para colapsarlo en mobile.
+  const [aiOpen, setAiOpen] = useState(false);
+  useEffect(() => {
+    if (aiTriggerAvailable) setAiOpen(true);
+  }, [aiTriggerAvailable]);
+
+  // US-059 (FE-001 / AC-01): fetch del último resumen persistido. `enabled` sólo cuando el
+  // comparador tiene la categoría lista y ≥ 2 quotes elegibles (evita 404 ruidosos al vuelo).
+  const latest = useLatestQuoteSummary({
+    eventId,
+    categoryCode,
+    currentQuoteIds,
+    enabled: aiTriggerAvailable,
+  });
 
   if (isLoading) {
     return (
@@ -190,6 +210,9 @@ export function QuoteComparator({ eventId, categoryCode }: QuoteComparatorProps)
               vendorLabelByQuoteId={vendorLabelByQuoteId}
               open={aiOpen}
               onClose={() => setAiOpen(false)}
+              initialData={latest.data}
+              initialLoading={latest.isLoading}
+              initialNotFound={latest.notFound}
             />
           </div>
         )}

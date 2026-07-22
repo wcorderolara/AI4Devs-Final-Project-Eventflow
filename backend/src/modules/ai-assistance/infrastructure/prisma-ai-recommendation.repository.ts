@@ -178,6 +178,29 @@ export class PrismaAIRecommendationRepository implements AIRecommendationReposit
     return count > 0;
   }
 
+  /**
+   * US-059 (PB-P2-001 / BE-002): último `AIRecommendation` por `(event_id, kind,
+   * inputPayload.category_code)` ordenado por `createdAt DESC`. Usa Prisma JSON filter
+   * `path: ['category_code']` sobre `input_payload` — apoyado por el índice combinado
+   * `(event_id, recommendation_type, created_at DESC)` para la selección; el filtro por
+   * `category_code` reduce el resultset dentro del cubo (event, kind).
+   */
+  async findLatestByEventTypeAndCategory(input: {
+    eventId: string;
+    kind: string;
+    categoryCode: string;
+  }): Promise<AiRecommendationView | null> {
+    const rec = await this.prisma.aIRecommendation.findFirst({
+      where: {
+        eventId: input.eventId,
+        kind: input.kind,
+        inputPayload: { path: ['category_code'], equals: input.categoryCode },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return rec ? toView(rec) : null;
+  }
+
   async upsertPromptVersion(row: AIPromptVersionSyncRow, options?: RepositoryWriteOptions): Promise<void> {
     // Idempotente por (promptKey, version); no muta versiones históricas de forma insegura.
     await this.db(options).aIPromptVersion.upsert({

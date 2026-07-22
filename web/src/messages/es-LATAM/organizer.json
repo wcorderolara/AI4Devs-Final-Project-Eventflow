@@ -113,6 +113,7 @@
         "loading": "Analizando cotizaciones…",
         "loadingHint": "Esto puede tomar hasta 60 segundos.",
         "emptyPrompt": "Genera un resumen para ver pros, contras e información faltante por cotización.",
+        "emptyPersistedPrompt": "Aún no hay resumen IA generado para esta categoría. Genera uno cuando tengas ≥2 cotizaciones activas.",
         "generateCta": "Generar resumen IA",
         "hitlNotice": "La IA informa; tú decides. Marca la cotización preferida cuando estés listo.",
         "localeFallbackNotice": "Resumen IA temporalmente no disponible. Compara manualmente las cotizaciones en la tabla.",
