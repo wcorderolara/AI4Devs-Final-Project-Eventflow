@@ -20,6 +20,7 @@ import type {
   CountUnreadByUserInput,
 } from '../../src/modules/notifications/ports/list-notifications.repository.js';
 import type { NotificationLinkEventReader } from '../../src/modules/notifications/ports/notification-link-event-reader.js';
+import type { NotificationLinkQuoteRequestReader } from '../../src/modules/notifications/ports/notification-link-quote-request-reader.js';
 
 class FakeRepo implements ListNotificationsRepository {
   rows: NotificationRow[] = [];
@@ -75,6 +76,13 @@ class FakeEventReader implements NotificationLinkEventReader {
   }
 }
 
+class FakeQuoteRequestReader implements NotificationLinkQuoteRequestReader {
+  existing = new Set<string>();
+  filterExistingQuoteRequestIds(ids: string[]): Promise<Set<string>> {
+    return Promise.resolve(new Set(ids.filter((id) => this.existing.has(id))));
+  }
+}
+
 const UUID_EVENT_1 = '11111111-1111-1111-1111-111111111111';
 const UUID_EVENT_2 = '22222222-2222-2222-2222-222222222222';
 
@@ -98,9 +106,13 @@ function row(overrides: Partial<NotificationRow>): NotificationRow {
 function build() {
   const repo = new FakeRepo();
   const eventReader = new FakeEventReader();
-  const linkResolver = new BatchNotificationLinkResolver(eventReader);
+  const quoteRequestReader = new FakeQuoteRequestReader();
+  const linkResolver = new BatchNotificationLinkResolver({
+    eventReader,
+    quoteRequestReader,
+  });
   const useCase = new ListMyNotificationsUseCase({ repo, linkResolver });
-  return { repo, eventReader, useCase };
+  return { repo, eventReader, quoteRequestReader, useCase };
 }
 
 describe('US-071 — Zod schema (BE-001)', () => {

@@ -2,13 +2,15 @@
 // Cobertura:
 //   - DTO Zod `createQuoteRequestUs049BodySchema`: shape, defaults, límites, `.strict()`.
 //   - `CreateQuoteRequestUs049UseCase` (con Prisma mock): branches happy/vendor/event/duplicado/límite,
-//     verificación de que se llama `notifications.notify` exactamente 2 veces (in_app + email_simulated)
-//     y del logger `quote_request.created`.
+//     verificación de que se invoca `onQrCreatedHandler.handle` exactamente 1 vez con el shape
+//     esperado (US-068 BE-005 refactor: reemplaza las 2 llamadas directas a `notifications.notify`
+//     `quote_request.created` por el handler único que emite el `type` canónico
+//     `quote_request_received` in-tx).
 //   - Smoke contract (BE-007): shape del response 201.
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { createQuoteRequestUs049BodySchema } from '../../src/modules/quote-flow/dto/create-quote-request.us049.request.js';
 import { CreateQuoteRequestUs049UseCase } from '../../src/modules/quote-flow/application/create-quote-request.us049.use-case.js';
-import type { QuoteNotificationSenderPort } from '../../src/shared/application/quote-notification-sender.port.js';
+import type { OnQuoteRequestCreatedHandler } from '../../src/modules/notifications/application/on-quote-request-created.handler.js';
 import type { DomainEventLogger } from '../../src/shared/observability/domain-event-logger.js';
 import {
   EventNotFoundError,
@@ -104,6 +106,8 @@ interface MockTx {
     count: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
   };
+  /** US-068 (BE-005): el UC ahora consulta `tx.user.findUnique` para hidratar `vendorUser.status`. */
+  user: { findUnique: ReturnType<typeof vi.fn> };
 }
 
 interface MockPrisma {
@@ -113,10 +117,11 @@ interface MockPrisma {
 function makeTx(overrides: Partial<{
   event: { user_id: string; status: string; currency: string } | null;
   vendor: { user_id: string; status: string; deleted_at: Date | null } | null;
-  category: { id: string } | null;
+  category: { id: string; code?: string } | null;
   duplicate: { id: string } | null;
   activeCount: number;
   createdQrId: string;
+  vendorUser: { id: string; status: 'active' | 'suspended' } | null;
 }> = {}): MockTx {
   const event = overrides.event === undefined
     ? {
@@ -128,15 +133,20 @@ function makeTx(overrides: Partial<{
         location_id: null,
         guests_count: 100,
         id: UUID_A,
+        // US-068 (BE-005): campo agregado por el refactor para pasar al handler.
+        language: 'es_LATAM',
       }
     : overrides.event;
   const vendor = overrides.vendor === undefined
     ? { id: UUID_B, user_id: 'vendor-user-1', status: 'approved', deleted_at: null }
     : overrides.vendor;
-  const category = overrides.category === undefined ? { id: UUID_C } : overrides.category;
+  const category =
+    overrides.category === undefined ? { id: UUID_C, code: 'catering' } : overrides.category;
   const duplicate = overrides.duplicate ?? null;
   const activeCount = overrides.activeCount ?? 0;
   const createdQrId = overrides.createdQrId ?? 'qr-1';
+  const vendorUser =
+    overrides.vendorUser === undefined ? { id: 'vendor-user-1', status: 'active' as const } : overrides.vendorUser;
 
   return {
     $queryRaw: vi
@@ -156,6 +166,7 @@ function makeTx(overrides: Partial<{
         createdAt: new Date('2026-07-16T12:00:00Z'),
       }),
     },
+    user: { findUnique: vi.fn().mockResolvedValue(vendorUser) },
   };
 }
 
@@ -165,17 +176,17 @@ function makePrisma(tx: MockTx): MockPrisma {
 
 function makeSut(tx: MockTx): {
   useCase: CreateQuoteRequestUs049UseCase;
-  notifications: QuoteNotificationSenderPort & { notify: ReturnType<typeof vi.fn> };
+  handler: { handle: ReturnType<typeof vi.fn> };
   logger: DomainEventLogger & { emit: ReturnType<typeof vi.fn> };
 } {
-  const notifications = { notify: vi.fn().mockResolvedValue(undefined) };
+  const handler = { handle: vi.fn().mockResolvedValue(undefined) };
   const logger = { emit: vi.fn() };
   const useCase = new CreateQuoteRequestUs049UseCase(
     makePrisma(tx) as unknown as never,
-    notifications as unknown as QuoteNotificationSenderPort,
+    handler as unknown as OnQuoteRequestCreatedHandler,
     logger as unknown as DomainEventLogger,
   );
-  return { useCase, notifications, logger };
+  return { useCase, handler, logger };
 }
 
 const validBody = {
@@ -189,9 +200,9 @@ const validBody = {
 describe('US-049 · CreateQuoteRequestUs049UseCase', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('AC-01/AC-04: happy path — crea QR sent, hereda currency del evento, dispara 2 notifications', async () => {
+  it('AC-01/AC-04: happy path — crea QR sent, hereda currency del evento, invoca OnQrCreatedHandler in-tx (US-068 BE-005)', async () => {
     const tx = makeTx();
-    const { useCase, notifications, logger } = makeSut(tx);
+    const { useCase, handler, logger } = makeSut(tx);
 
     const response = await useCase.execute('org-user-1', validBody, { correlationId: 'cid-1' });
 
@@ -208,19 +219,18 @@ describe('US-049 · CreateQuoteRequestUs049UseCase', () => {
     });
     expect(typeof response.sent_at).toBe('string');
 
-    // 2 notifications (in_app + email_simulated) atómicas en tx.
-    expect(notifications.notify).toHaveBeenCalledTimes(2);
-    expect(notifications.notify.mock.calls[0]?.[0]).toMatchObject({
-      channel: 'in_app',
-      recipientUserId: 'vendor-user-1',
-      event: 'quote_request.created',
-      deliveryStatus: 'delivered',
+    // US-068 (BE-005): 1 invocación al handler con shape completo (vendorProfile + vendorUser + event + category).
+    expect(handler.handle).toHaveBeenCalledTimes(1);
+    const call = handler.handle.mock.calls[0]?.[0];
+    expect(call).toMatchObject({
+      quoteRequest: { id: 'qr-1' },
+      vendorProfile: { id: UUID_B, status: 'approved', userId: 'vendor-user-1' },
+      vendorUser: { id: 'vendor-user-1', status: 'active' },
+      event: { id: UUID_A, ownerId: 'org-user-1', language: 'es_LATAM' },
+      serviceCategoryCode: 'catering',
+      correlationId: 'cid-1',
     });
-    expect(notifications.notify.mock.calls[1]?.[0]).toMatchObject({
-      channel: 'email_simulated',
-      recipientUserId: 'vendor-user-1',
-      deliveryStatus: 'simulated',
-    });
+    expect(call.tx).toBeDefined();
 
     // Logger emitido con metadatos seguros.
     expect(logger.emit).toHaveBeenCalledWith(
@@ -248,9 +258,9 @@ describe('US-049 · CreateQuoteRequestUs049UseCase', () => {
 
   it('SEC-05: evento inexistente ⇒ EventNotFoundError (uniforme)', async () => {
     const tx = makeTx({ event: null });
-    const { useCase, notifications } = makeSut(tx);
+    const { useCase, handler } = makeSut(tx);
     await expect(useCase.execute('org-user-1', validBody)).rejects.toBeInstanceOf(EventNotFoundError);
-    expect(notifications.notify).not.toHaveBeenCalled();
+    expect(handler.handle).not.toHaveBeenCalled();
   });
 
   it('SEC-05: evento de otro organizer ⇒ EventNotFoundError (no revela ownership)', async () => {
@@ -311,11 +321,11 @@ describe('US-049 · CreateQuoteRequestUs049UseCase', () => {
 
   it('AC-02: duplicado activo (event, vendor) ⇒ QuoteRequestAlreadyActiveError con existing_id', async () => {
     const tx = makeTx({ duplicate: { id: 'existing-qr' } });
-    const { useCase, notifications } = makeSut(tx);
+    const { useCase, handler } = makeSut(tx);
     await expect(useCase.execute('org-user-1', validBody)).rejects.toMatchObject({
       existingQuoteRequestId: 'existing-qr',
     });
-    expect(notifications.notify).not.toHaveBeenCalled();
+    expect(handler.handle).not.toHaveBeenCalled();
   });
 
   it('EC-05: >=5 QRs activas en (event, category) ⇒ QuoteRequestCategoryLimitReachedError', async () => {
@@ -328,10 +338,11 @@ describe('US-049 · CreateQuoteRequestUs049UseCase', () => {
 
   it('AC-03: reactivación tras cancelled/expired/rejected — con duplicate=null y 0 activas ⇒ crea nueva', async () => {
     const tx = makeTx({ duplicate: null, activeCount: 0 });
-    const { useCase, notifications } = makeSut(tx);
+    const { useCase, handler } = makeSut(tx);
     const response = await useCase.execute('org-user-1', validBody);
     expect(response.status).toBe('sent');
-    expect(notifications.notify).toHaveBeenCalledTimes(2);
+    // US-068 (BE-005): 1 invocación al handler (que a su vez emite 2 notifs + log).
+    expect(handler.handle).toHaveBeenCalledTimes(1);
   });
 
   it('EC-03 defensa: budget "-1" no llega al UC (Zod lo rechaza) pero validamos rama del UC via parseo directo', async () => {

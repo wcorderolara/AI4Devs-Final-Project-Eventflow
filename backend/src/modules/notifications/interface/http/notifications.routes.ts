@@ -13,10 +13,14 @@ import { ListMyNotificationsUseCase } from '../../application/list-my-notificati
 import { BatchNotificationLinkResolver } from '../../application/notification-link-resolver.service.js';
 import { PrismaListNotificationsRepository } from '../../infrastructure/prisma-list-notifications.repository.js';
 import { PrismaNotificationLinkEventReader } from '../../infrastructure/prisma-notification-link-event-reader.js';
+import { PrismaNotificationLinkQuoteRequestReader } from '../../infrastructure/prisma-notification-link-quote-request-reader.js';
 import { NotificationsController } from './notifications.controller.js';
 
 const repository = new PrismaListNotificationsRepository();
-const linkResolver = new BatchNotificationLinkResolver(new PrismaNotificationLinkEventReader());
+const linkResolver = new BatchNotificationLinkResolver({
+  eventReader: new PrismaNotificationLinkEventReader(),
+  quoteRequestReader: new PrismaNotificationLinkQuoteRequestReader(),
+});
 const useCase = new ListMyNotificationsUseCase({ repo: repository, linkResolver });
 const controller = new NotificationsController(useCase);
 
