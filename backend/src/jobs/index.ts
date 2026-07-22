@@ -24,6 +24,14 @@ import { QuoteEventNotificationService } from '../modules/quote-flow/services/qu
 import { ExpireQuoteRequestsJob } from './expire-quote-requests.job.js';
 import { ExpireQuoteRequestsUs055UseCase } from '../modules/quote-flow/application/expire-quote-requests.us055.use-case.js';
 import { StructuredDomainEventLogger } from '../infrastructure/observability/structured-domain-event-logger.js';
+// US-034 (PB-P2-004 / OPS-001): registro del `EmitT7NotificationsJob` en el mismo
+// bootstrap. Consume la fuente `America/Guatemala` (D1) vía `ScheduleOptions.timezone`.
+import { EmitT7NotificationsJob } from './emit-t7-notifications.job.js';
+import { EmitT7NotificationsUseCase } from '../modules/notifications/application/emit-t7-notifications.use-case.js';
+import { PrismaEventTaskT7Repository } from '../modules/task-management/infrastructure/prisma-event-task-t7.repository.js';
+import { PrismaNotificationT7Repository } from '../modules/notifications/infrastructure/prisma-notification-t7.repository.js';
+import { LoggingSimulatedT7EmailAdapter } from '../modules/notifications/infrastructure/logging-simulated-t7-email.adapter.js';
+import { PrismaOrganizerLanguageLookup } from '../modules/event-planning/infrastructure/prisma-organizer-language.lookup.js';
 import { NodeCronScheduler } from './node-cron-scheduler.js';
 import type { Scheduler, ScheduledTaskHandle } from './scheduler.port.js';
 
@@ -40,6 +48,7 @@ export interface RegisterJobsDeps {
   autoCompleteUseCase?: AutoCompletePastEventsUseCase;
   expireQuotesUseCase?: ExpireQuotesUs053UseCase;
   expireQuoteRequestsUseCase?: ExpireQuoteRequestsUs055UseCase;
+  emitT7UseCase?: EmitT7NotificationsUseCase;
   now?: () => Date;
 }
 
@@ -117,13 +126,51 @@ export function registerJobs(deps: RegisterJobsDeps = {}): JobRegistryHandle {
     scheduler.schedule(config.JOBS_EXPIRE_QUOTE_REQUESTS_CRON, () => expireQuoteRequestsJob.run()),
   );
 
+  // US-034 (PB-P2-004 / OPS-001): `EmitT7NotificationsJob`. Cron único diario a 08:00
+  // hora local de Guatemala (D1). Se registra únicamente si `JOBS_EMIT_T7_ENABLED=true`
+  // dentro del gate global `JOBS_ENABLED`.
+  const emitT7Jobs: string[] = [];
+  if (config.JOBS_EMIT_T7_ENABLED) {
+    const emitT7UseCase =
+      deps.emitT7UseCase ??
+      new EmitT7NotificationsUseCase({
+        clock,
+        taskRepo: new PrismaEventTaskT7Repository(),
+        notificationRepo: new PrismaNotificationT7Repository(),
+        languageLookup: new PrismaOrganizerLanguageLookup(),
+        emailAdapter: new LoggingSimulatedT7EmailAdapter(),
+        logger,
+        batchSize: config.JOBS_EMIT_T7_BATCH_SIZE,
+      });
+    const emitT7Job = new EmitT7NotificationsJob({
+      useCase: emitT7UseCase,
+      clock,
+      logger,
+      cadence: config.JOBS_EMIT_T7_CRON,
+    });
+    handles.push(
+      scheduler.schedule(config.JOBS_EMIT_T7_CRON, () => emitT7Job.run(), {
+        timezone: config.JOBS_EMIT_T7_TZ,
+      }),
+    );
+    emitT7Jobs.push('emit-t7-notifications');
+  }
+
   logger.info({
     event: 'jobs.registry.enabled',
-    jobs: ['auto-complete-past-events', 'expire-quotes', 'expire-quote-requests'],
+    jobs: [
+      'auto-complete-past-events',
+      'expire-quotes',
+      'expire-quote-requests',
+      ...emitT7Jobs,
+    ],
     cadence: {
       autoComplete: config.JOBS_AUTOCOMPLETE_CRON,
       expireQuotes: config.JOBS_EXPIRE_QUOTES_CRON,
       expireQuoteRequests: config.JOBS_EXPIRE_QUOTE_REQUESTS_CRON,
+      emitT7: config.JOBS_EMIT_T7_ENABLED
+        ? `${config.JOBS_EMIT_T7_CRON} (${config.JOBS_EMIT_T7_TZ})`
+        : 'disabled',
     },
   });
 

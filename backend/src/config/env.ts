@@ -176,6 +176,21 @@ export const configSchema = z.object({
   // Días de antigüedad de `sent_at` (== `created_at`, ver US-049) desde los cuales una QR
   // activa (`status IN ('sent','viewed')`) pasa a `expired`. Default 30 (decisión D3).
   QR_EXPIRATION_DAYS: z.coerce.number().int().min(1).max(365).default(30),
+
+  // JOBS — US-034 / PB-P2-004 (`EmitT7NotificationsJob`).
+  // Cadencia diaria del emisor T-7. Default `0 8 * * *` (D1 — 08:00 hora local de
+  // Guatemala). El `timezone` se pasa por separado al scheduler (`JOBS_EMIT_T7_TZ`).
+  // `node-cron` valida la expresión al schedule; una inválida hace fail-fast en bootstrap.
+  JOBS_EMIT_T7_CRON: z.string().min(1).default('0 8 * * *'),
+  // Timezone del cron (D1). Default `America/Guatemala` (mercado piloto, `docs/1`).
+  // Cambio de default requiere ADR (multi-timezone es Future).
+  JOBS_EMIT_T7_TZ: z.string().min(1).default('America/Guatemala'),
+  // Tamaño de chunk del `findT7Candidates`. Default 100 (tech spec §7).
+  JOBS_EMIT_T7_BATCH_SIZE: z.coerce.number().int().min(1).max(1000).default(100),
+  // Gate operativo específico del emisor T-7 dentro de `JOBS_ENABLED=true`. Permite
+  // deshabilitar sólo este job (por ejemplo, para verificación manual en dev sin
+  // ruido de logs). Default `true`: si `JOBS_ENABLED=true`, el emisor se registra.
+  JOBS_EMIT_T7_ENABLED: booleanFromEnv.default(true),
 });
 
 /** `Secure` efectivo: explícito si se define; si no, activo en producción (no-local). */

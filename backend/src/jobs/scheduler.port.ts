@@ -8,11 +8,25 @@ export interface ScheduledTaskHandle {
   stop(): void;
 }
 
+export interface ScheduleOptions {
+  /**
+   * IANA timezone opcional (ej. `America/Guatemala`) aplicada al `cronExpression`. Si
+   * no se provee, `node-cron` interpreta la expresión en la timezone del proceso (`TZ`).
+   * US-034 (PB-P2-004 / D1) usa `America/Guatemala` para el emisor T-7.
+   */
+  timezone?: string;
+}
+
 export interface Scheduler {
   /**
    * Registra `task` para ejecutarse según `cronExpression`. Si la expresión es inválida el
    * adapter DEBE lanzar antes de retornar; el caller (jobs/index.ts) trata el error como
-   * fail-fast de bootstrap.
+   * fail-fast de bootstrap. `options.timezone` fija la timezone del cron (ver
+   * `ScheduleOptions`).
    */
-  schedule(cronExpression: string, task: () => Promise<void> | void): ScheduledTaskHandle;
+  schedule(
+    cronExpression: string,
+    task: () => Promise<void> | void,
+    options?: ScheduleOptions,
+  ): ScheduledTaskHandle;
 }
