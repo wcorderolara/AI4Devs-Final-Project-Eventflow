@@ -39,6 +39,11 @@ import { adminMetricsRouter } from './modules/admin-governance/interface/admin-m
 // Guards: sessionAuth + roleMiddleware(['admin']); UseCase read-only con filtros combinados +
 // cursor keyset. SOLO expone GET (AC-03 inmutabilidad arquitectónica). Sin self-log (AC-04).
 import { adminActionsRouter } from './modules/admin-governance/interface/admin-actions.routes.js';
+import { adminUsersRouter } from './modules/admin-governance/interface/admin-users.routes.js';
+import {
+  organizerMetricsRouter,
+  vendorMetricsRouter,
+} from './modules/admin-governance/interface/actor-metrics.routes.js';
 import { budgetRouter, budgetItemMutationRouter } from './modules/budget-management/interface/index.js';
 import {
   vendorProfileRouter,
@@ -222,6 +227,12 @@ export function createApp(): Express {
   // self-log al consultar (AC-04, Decisión PO D6) — sólo emite log estructurado
   // `admin.admin_actions.viewed`. Cierra EPIC-ADM-001.
   apiV1.use('/admin/admin-actions', adminActionsRouter);
+  // Listado admin de usuarios (`GET /admin/users`). Lectura pura, cursor keyset, filtros por
+  // role/status/q. Guards: sessionAuth + roleMiddleware(['admin']).
+  apiV1.use('/admin/users', adminUsersRouter);
+  // Dashboards por rol — agregados solo-lectura scoped al actor. Análogos a /admin/metrics.
+  apiV1.use('/organizer', organizerMetricsRouter);
+  apiV1.use('/vendor', vendorMetricsRouter);
   app.use('/api/v1', apiV1);
 
   app.use(notFoundMiddleware); // 8. penúltimo: 404 catch-all

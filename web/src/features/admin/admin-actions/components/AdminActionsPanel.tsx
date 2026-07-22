@@ -5,11 +5,12 @@
 // no expone mutaciones (AC-03).
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { DEFAULT_PAGE_SIZE, PageSizeSelector, type PageSize } from '@/shared/ui';
 import type { AdminActionsListFilters } from '../api/adminActionsApi.types';
 import { AdminActionsFiltersPanel } from './AdminActionsFiltersPanel';
 import { AdminActionsTable } from './AdminActionsTable';
 
-const DEFAULT_FILTERS: AdminActionsListFilters = {};
+const DEFAULT_FILTERS: AdminActionsListFilters = { pageSize: DEFAULT_PAGE_SIZE };
 
 export function AdminActionsPanel(): React.JSX.Element {
   const t = useTranslations('admin.admin-actions.list');
@@ -25,6 +26,13 @@ export function AdminActionsPanel(): React.JSX.Element {
       </header>
 
       <AdminActionsFiltersPanel value={filters} onChange={setFilters} />
+
+      <div className="flex justify-end">
+        <PageSizeSelector
+          value={(filters.pageSize ?? DEFAULT_PAGE_SIZE) as PageSize}
+          onChange={(size) => setFilters((f) => ({ ...f, pageSize: size }))}
+        />
+      </div>
 
       <AdminActionsTable filters={filters} />
     </section>

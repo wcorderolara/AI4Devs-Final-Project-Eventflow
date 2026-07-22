@@ -160,5 +160,62 @@
     "starRating": {
       "optionLabel": "{value} de 5 estrellas"
     }
+  },
+  "dashboard": {
+    "title": "Panel del organizador",
+    "subtitle": "Resumen de tu actividad: eventos, tareas, cotizaciones y notificaciones.",
+    "error": "No pudimos cargar tu resumen. Intenta nuevamente.",
+    "weekBanner": "{count, plural, one {# evento} other {# eventos}} esta semana",
+    "actions": {
+      "refresh": "Actualizar",
+      "refreshing": "Actualizando…"
+    },
+    "cards": {
+      "events": {
+        "title": "Eventos organizados",
+        "breakdownTitle": "Por estado",
+        "link": "Ver eventos",
+        "status": {
+          "draft": "Borrador",
+          "active": "Activos",
+          "completed": "Completados",
+          "cancelled": "Cancelados"
+        }
+      },
+      "tasks": {
+        "title": "Tareas pendientes",
+        "aria": "{count} tareas pendientes",
+        "hint": "En todos tus eventos activos."
+      },
+      "quotes": {
+        "title": "Cotizaciones solicitadas",
+        "breakdownTitle": "Estado",
+        "received": "Por revisar",
+        "accepted": "Aceptadas",
+        "footer": "Total de solicitudes que enviaste."
+      },
+      "bookings": {
+        "title": "Reservas confirmadas",
+        "aria": "{count} reservas confirmadas",
+        "hint": "Compromisos formales con proveedores."
+      },
+      "reviews": {
+        "title": "Reseñas publicadas",
+        "aria": "{count} reseñas escritas",
+        "hint": "Reseñas que has dejado a proveedores."
+      },
+      "notifications": {
+        "title": "Notificaciones sin leer",
+        "aria": "{count} notificaciones sin leer",
+        "link": "Ver todas"
+      }
+    },
+    "quickLinks": {
+      "title": "Accesos rápidos",
+      "newEvent": "Crear evento",
+      "browseVendors": "Explorar proveedores",
+      "tasks": "Revisar tareas",
+      "notifications": "Ver notificaciones"
+    }
   }
 }

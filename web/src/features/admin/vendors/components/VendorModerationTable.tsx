@@ -15,6 +15,7 @@
 // - Empty/loading/error/next-page states con i18n.
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { DEFAULT_PAGE_SIZE, PageSizeSelector, type PageSize } from '@/shared/ui';
 import { useAdminVendorsList } from '../hooks/adminVendorsQueries';
 import type {
   AdminVendorListFilters,
@@ -26,7 +27,7 @@ import { VendorModerationDialog, type VendorModerationDialogVendor } from './Ven
 import { VendorFiltersPanel } from './VendorFiltersPanel';
 
 /** Filtro operativo por defecto — Decisión PO D5: el panel abre en `status=pending`. */
-const DEFAULT_FILTERS: AdminVendorListFilters = { status: ['pending'] };
+const DEFAULT_FILTERS: AdminVendorListFilters = { status: ['pending'], pageSize: DEFAULT_PAGE_SIZE };
 
 export function VendorModerationTable(): React.JSX.Element {
   const t = useTranslations('admin.vendor.panel');
@@ -51,6 +52,13 @@ export function VendorModerationTable(): React.JSX.Element {
       </header>
 
       <VendorFiltersPanel value={filters} onChange={setFilters} />
+
+      <div className="flex justify-end">
+        <PageSizeSelector
+          value={(filters.pageSize ?? DEFAULT_PAGE_SIZE) as PageSize}
+          onChange={(size) => setFilters((f) => ({ ...f, pageSize: size }))}
+        />
+      </div>
 
       {query.isPending ? (
         <p role="status" className="text-sm text-neutral-600">

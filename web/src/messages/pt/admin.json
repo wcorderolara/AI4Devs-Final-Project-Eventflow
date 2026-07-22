@@ -425,7 +425,7 @@
         "confirmed": "Confirmadas",
         "cancelled": "Canceladas"
       },
-      "ai": {
+      "aiCard": {
         "totalAria": "Total de recomendações IA: {total}",
         "empty": "Ainda não há recomendações de IA.",
         "tableCaption": "Detalhamento de recomendações IA por tipo com taxa de sucesso.",
@@ -512,6 +512,81 @@
       "service_category": "Categoria",
       "event_type": "Tipo de evento",
       "event": "Evento"
+    }
+  },
+  "users": {
+    "title": "Usuários",
+    "subtitle": "Diretório de contas registradas. Somente leitura.",
+    "error": "Não foi possível carregar os usuários. Tente novamente.",
+    "empty": "Nenhum usuário corresponde aos filtros.",
+    "pageSize": "{count, plural, one {# usuário} other {# usuários}} nesta página",
+    "actions": {
+      "refresh": "Atualizar",
+      "refreshing": "Atualizando…"
+    },
+    "filters": {
+      "role": "Papel",
+      "status": "Status",
+      "search": "Buscar",
+      "searchPlaceholder": "Email ou nome…",
+      "all": "Todos"
+    },
+    "status": {
+      "active": "Ativo",
+      "suspended": "Suspenso"
+    },
+    "columns": {
+      "name": "Nome",
+      "email": "Email",
+      "role": "Papel",
+      "status": "Status",
+      "language": "Idioma",
+      "createdAt": "Criado"
+    },
+    "pagination": {
+      "prev": "Anterior",
+      "next": "Próximo"
+    }
+  },
+  "seed": {
+    "title": "Dados demo (Seed)",
+    "subtitle": "Estado do seed e reset cirúrgico. Disponível apenas fora de produção.",
+    "warning": "O reset apaga todos os registros marcados como is_seed=true e os recria do zero com UUIDs determinísticos. Dados reais criados por usuários não são tocados.",
+    "actions": {
+      "refresh": "Atualizar",
+      "refreshing": "Atualizando…",
+      "reset": "Resetar dados demo"
+    },
+    "status": {
+      "title": "Estado",
+      "lastRunAt": "Última execução",
+      "preset": "Preset",
+      "counts": "Registros por entidade"
+    },
+    "errors": {
+      "statusLoad": "Não foi possível carregar o estado do seed. Verifique se SEED_DEMO_ENABLED=true no backend."
+    },
+    "reset": {
+      "title": "Confirmar reset de dados demo",
+      "warning": "Esta ação é irreversível: apaga todos os dados demo e os recria.",
+      "bullets": {
+        "deletes": "Elimina todo registro com is_seed=true.",
+        "reseeds": "Recria catálogo, identidades e transações demo.",
+        "audited": "Registrado como AdminAction com o motivo informado."
+      },
+      "reasonLabel": "Motivo (opcional)",
+      "reasonPlaceholder": "Ex.: preparar demo para reunião de PO",
+      "confirmLabel": "Digite {token} para confirmar",
+      "cancel": "Cancelar",
+      "confirm": "Resetar agora",
+      "resetting": "Resetando…",
+      "error": "Não foi possível completar o reset. Verifique os logs do backend."
+    },
+    "report": {
+      "title": "Reset concluído",
+      "duration": "Duração: {ms}ms",
+      "deleted": "Removidos",
+      "reseeded": "Recriados"
     }
   }
 }

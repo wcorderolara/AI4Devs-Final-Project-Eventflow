@@ -39,3 +39,29 @@ export function issueSessionCookie(res: Response, sessionId: string): void {
 export function clearSessionCookie(res: Response): void {
   res.clearCookie(SESSION_COOKIE_NAME, baseCookieOptions());
 }
+
+// Cookie UX `eventflow_role` (US-105 FE consumer). Claim NO firmado y NO HttpOnly: el middleware
+// de Next.js la lee para el role guard de routing. El backend sigue siendo la única fuente de
+// autoridad (valida cada request); esta cookie es solo un hint UX para evitar flashes de contenido.
+export const ROLE_COOKIE_NAME = 'eventflow_role';
+
+function roleCookieOptions(): CookieOptions {
+  return {
+    httpOnly: false,
+    signed: false,
+    secure: isSecure(),
+    sameSite: config.SESSION_COOKIE_SAMESITE,
+    path: '/',
+  };
+}
+
+export function issueRoleCookie(res: Response, role: string): void {
+  res.cookie(ROLE_COOKIE_NAME, role, {
+    ...roleCookieOptions(),
+    maxAge: SESSION_MAX_AGE_MS,
+  });
+}
+
+export function clearRoleCookie(res: Response): void {
+  res.clearCookie(ROLE_COOKIE_NAME, roleCookieOptions());
+}

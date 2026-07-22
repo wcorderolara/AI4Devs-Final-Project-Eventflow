@@ -160,5 +160,59 @@
     "starRating": {
       "optionLabel": "{value} out of 5 stars"
     }
+  },
+  "dashboard": {
+    "title": "Organizer dashboard",
+    "subtitle": "Snapshot of your activity: events, tasks, quotes and notifications.",
+    "error": "We couldn't load your summary. Please try again.",
+    "weekBanner": "{count, plural, one {# event} other {# events}} this week",
+    "actions": { "refresh": "Refresh", "refreshing": "Refreshing…" },
+    "cards": {
+      "events": {
+        "title": "Events organized",
+        "breakdownTitle": "By status",
+        "link": "View events",
+        "status": {
+          "draft": "Draft",
+          "active": "Active",
+          "completed": "Completed",
+          "cancelled": "Cancelled"
+        }
+      },
+      "tasks": {
+        "title": "Pending tasks",
+        "aria": "{count} pending tasks",
+        "hint": "Across all your active events."
+      },
+      "quotes": {
+        "title": "Quote requests",
+        "breakdownTitle": "Status",
+        "received": "To review",
+        "accepted": "Accepted",
+        "footer": "Total requests you have sent."
+      },
+      "bookings": {
+        "title": "Confirmed bookings",
+        "aria": "{count} confirmed bookings",
+        "hint": "Formal commitments with vendors."
+      },
+      "reviews": {
+        "title": "Reviews written",
+        "aria": "{count} reviews written",
+        "hint": "Reviews you left for vendors."
+      },
+      "notifications": {
+        "title": "Unread notifications",
+        "aria": "{count} unread notifications",
+        "link": "See all"
+      }
+    },
+    "quickLinks": {
+      "title": "Quick links",
+      "newEvent": "Create event",
+      "browseVendors": "Browse vendors",
+      "tasks": "Review tasks",
+      "notifications": "See notifications"
+    }
   }
 }

@@ -1,11 +1,5 @@
-import { useTranslations } from 'next-intl';
+import { SeedDemoPanel } from '@/features/admin/seed';
 
-export default function AdminSeedPage() {
-  const t = useTranslations('navigation');
-  return (
-    <>
-      <h1 className="text-2xl font-bold">{t('placeholder.adminSeed.title')}</h1>
-      <p className="mt-2 text-neutral-600">{t('placeholder.adminSeed.body')}</p>
-    </>
-  );
+export default function AdminSeedPage(): React.JSX.Element {
+  return <SeedDemoPanel />;
 }

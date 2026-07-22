@@ -1,11 +1,5 @@
-import { useTranslations } from 'next-intl';
+import { redirect } from 'next/navigation';
 
-export default function AdminPage() {
-  const t = useTranslations('navigation');
-  return (
-    <>
-      <h1 className="text-2xl font-bold">{t('placeholder.admin.title')}</h1>
-      <p>{t('placeholder.admin.body')}</p>
-    </>
-  );
+export default function AdminRootPage(): never {
+  redirect('/admin/metrics');
 }

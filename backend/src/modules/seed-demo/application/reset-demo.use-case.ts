@@ -46,10 +46,31 @@ const DELETE_ORDER: ReadonlyArray<{ entity: string; deleteMany: (tx: Prisma.Tran
       tx.vendorProfileCategory.deleteMany({ where: { vendorProfile: { isSeed: true } } }),
   },
   { entity: 'vendorProfiles', deleteMany: (tx) => tx.vendorProfile.deleteMany({ where: { isSeed: true } }) },
-  { entity: 'adminActions', deleteMany: (tx) => tx.adminAction.deleteMany({ where: { isSeed: true } }) },
+  // Admin actions: (a) las marcadas isSeed=true (baseline) y (b) las creadas por/sobre usuarios
+  // seed durante la operación normal (p. ej. la propia AdminAction del reset). Sin (b), la FK
+  // `admin_actions_admin_user_id_fkey` bloquea el `user.deleteMany` posterior.
+  {
+    entity: 'adminActions',
+    deleteMany: (tx) =>
+      tx.adminAction.deleteMany({
+        where: { OR: [{ isSeed: true }, { adminUser: { isSeed: true } }] },
+      }),
+  },
   { entity: 'serviceCategories', deleteMany: (tx) => tx.serviceCategory.deleteMany({ where: { isSeed: true } }) },
   { entity: 'eventTypes', deleteMany: (tx) => tx.eventType.deleteMany({ where: { isSeed: true } }) },
   { entity: 'locations', deleteMany: (tx) => tx.location.deleteMany({ where: { isSeed: true } }) },
+  // Sesiones activas de usuarios seed: FK `sessions_user_id_fkey` es `onDelete: Restrict`; sin
+  // limpiarlas antes, el `user.deleteMany` explota con violación de FK. No hay `isSeed` en
+  // `sessions`, así que se filtra por `user.isSeed=true`.
+  {
+    entity: 'sessions',
+    deleteMany: (tx) => tx.session.deleteMany({ where: { user: { isSeed: true } } }),
+  },
+  // Password reset tokens también referencian usuarios seed (mismo motivo que sessions).
+  {
+    entity: 'passwordResetTokens',
+    deleteMany: (tx) => tx.passwordResetToken.deleteMany({ where: { user: { isSeed: true } } }),
+  },
   { entity: 'users', deleteMany: (tx) => tx.user.deleteMany({ where: { isSeed: true } }) },
 ];
 
@@ -162,13 +183,24 @@ export class ResetDemoUseCase {
       metadata: Record<string, unknown>;
     },
   ): Promise<void> {
+    // El actor puede ser un admin seed que se borró durante el propio reset (el reseed le da
+    // un UUID nuevo). Si no existe post-reseed, guardamos la auditoría con `adminUserId=null`
+    // (columna nullable) y preservamos el UUID original en `metadata.actorAdminIdOriginal`.
+    const actorStillExists =
+      (await prisma.user.count({ where: { id: input.actorAdminId } })) > 0;
+
     await prisma.adminAction.create({
       data: {
-        adminUserId: input.actorAdminId,
+        adminUserId: actorStillExists ? input.actorAdminId : null,
         action: input.action,
         targetEntity: SEED_DEMO_TARGET_ENTITY,
         targetId: SEED_DEMO_TARGET_ID,
-        metadata: { ...input.metadata, correlationId: input.correlationId, reason: input.reason ?? null } as Prisma.InputJsonValue,
+        metadata: {
+          ...input.metadata,
+          correlationId: input.correlationId,
+          reason: input.reason ?? null,
+          ...(actorStillExists ? {} : { actorAdminIdOriginal: input.actorAdminId }),
+        } as Prisma.InputJsonValue,
         isSeed: false,
       },
     });

@@ -20,7 +20,7 @@ function formatRate(success: number, total: number): string {
 }
 
 export function AIMetricsCard({ id, title, ai }: Props): React.JSX.Element {
-  const t = useTranslations('admin.metrics.sections.ai');
+  const t = useTranslations('admin.metrics.sections.aiCard');
   const headingId = `${id}-title`;
   const captionId = `${id}-caption`;
   const rows = Object.entries(ai.by_type).sort(([a], [b]) => a.localeCompare(b));

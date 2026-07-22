@@ -13,6 +13,7 @@
 // - Empty/loading/error/next-page states con i18n.
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { DEFAULT_PAGE_SIZE, PageSizeSelector, type PageSize } from '@/shared/ui';
 import { useAdminReviewsList } from '../hooks/adminReviewsQueries';
 import type {
   AdminReviewListFilters,
@@ -26,7 +27,7 @@ import { ReviewFiltersPanel } from './ReviewFiltersPanel';
 export function ReviewModerationTable(): React.JSX.Element {
   const t = useTranslations('admin.review.panel');
 
-  const [filters, setFilters] = useState<AdminReviewListFilters>({});
+  const [filters, setFilters] = useState<AdminReviewListFilters>({ pageSize: DEFAULT_PAGE_SIZE });
   const [selected, setSelected] = useState<ModerationDialogReview | null>(null);
 
   const query = useAdminReviewsList(filters);
@@ -46,6 +47,13 @@ export function ReviewModerationTable(): React.JSX.Element {
       </header>
 
       <ReviewFiltersPanel value={filters} onChange={setFilters} />
+
+      <div className="flex justify-end">
+        <PageSizeSelector
+          value={(filters.pageSize ?? DEFAULT_PAGE_SIZE) as PageSize}
+          onChange={(size) => setFilters((f) => ({ ...f, pageSize: size }))}
+        />
+      </div>
 
       {query.isPending ? (
         <p role="status" className="text-sm text-neutral-600">

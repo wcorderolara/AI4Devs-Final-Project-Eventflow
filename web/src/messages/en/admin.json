@@ -425,7 +425,7 @@
         "confirmed": "Confirmed",
         "cancelled": "Cancelled"
       },
-      "ai": {
+      "aiCard": {
         "totalAria": "Total AI recommendations: {total}",
         "empty": "No AI recommendations yet.",
         "tableCaption": "AI recommendations breakdown by type with success rate.",
@@ -512,6 +512,81 @@
       "service_category": "Category",
       "event_type": "Event type",
       "event": "Event"
+    }
+  },
+  "users": {
+    "title": "Users",
+    "subtitle": "Directory of registered accounts. Read-only.",
+    "error": "We couldn't load users. Please try again.",
+    "empty": "No users match the current filters.",
+    "pageSize": "{count, plural, one {# user} other {# users}} on this page",
+    "actions": {
+      "refresh": "Refresh",
+      "refreshing": "Refreshing…"
+    },
+    "filters": {
+      "role": "Role",
+      "status": "Status",
+      "search": "Search",
+      "searchPlaceholder": "Email or name…",
+      "all": "All"
+    },
+    "status": {
+      "active": "Active",
+      "suspended": "Suspended"
+    },
+    "columns": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "language": "Language",
+      "createdAt": "Created"
+    },
+    "pagination": {
+      "prev": "Previous",
+      "next": "Next"
+    }
+  },
+  "seed": {
+    "title": "Demo data (Seed)",
+    "subtitle": "Seed status and surgical reset. Only available outside production.",
+    "warning": "Reset wipes every record flagged is_seed=true and rebuilds them from scratch with deterministic UUIDs. Real data created by users is untouched.",
+    "actions": {
+      "refresh": "Refresh",
+      "refreshing": "Refreshing…",
+      "reset": "Reset demo data"
+    },
+    "status": {
+      "title": "Status",
+      "lastRunAt": "Last run",
+      "preset": "Preset",
+      "counts": "Records per entity"
+    },
+    "errors": {
+      "statusLoad": "Could not load seed status. Verify SEED_DEMO_ENABLED=true on the backend."
+    },
+    "reset": {
+      "title": "Confirm demo data reset",
+      "warning": "This action is irreversible: it wipes all demo data and repopulates it.",
+      "bullets": {
+        "deletes": "Deletes every record with is_seed=true.",
+        "reseeds": "Recreates catalog, identities and demo transactions.",
+        "audited": "Recorded as an AdminAction with the given reason."
+      },
+      "reasonLabel": "Reason (optional)",
+      "reasonPlaceholder": "e.g. prepare demo for PO meeting",
+      "confirmLabel": "Type {token} to confirm",
+      "cancel": "Cancel",
+      "confirm": "Reset now",
+      "resetting": "Resetting…",
+      "error": "Reset failed. Check backend logs."
+    },
+    "report": {
+      "title": "Reset completed",
+      "duration": "Duration: {ms}ms",
+      "deleted": "Deleted",
+      "reseeded": "Recreated"
     }
   }
 }

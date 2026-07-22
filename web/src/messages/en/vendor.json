@@ -461,5 +461,61 @@
         "UNEXPECTED": "An unexpected error occurred. Please try again."
       }
     }
+  },
+  "dashboard": {
+    "title": "Vendor dashboard",
+    "subtitle": "Snapshot of your business: requests, bookings, reviews and rating.",
+    "error": "We couldn't load your summary. Please try again.",
+    "weekBanner": "{count, plural, one {# booking} other {# bookings}} this week",
+    "actions": { "refresh": "Refresh", "refreshing": "Refreshing…" },
+    "onboarding": {
+      "title": "You don't have a vendor profile yet",
+      "body": "Complete onboarding to start receiving quote requests.",
+      "cta": "Go to onboarding"
+    },
+    "cards": {
+      "newRequests": {
+        "title": "New requests",
+        "aria": "{count} unseen requests",
+        "link": "See requests"
+      },
+      "quotes": {
+        "title": "Quotes to respond",
+        "breakdownTitle": "In progress",
+        "awaitingDecision": "Awaiting organizer decision",
+        "hint": "sent/viewed requests without a quote yet."
+      },
+      "bookings": {
+        "title": "Bookings this week",
+        "breakdownTitle": "Historic",
+        "completed": "Completed events",
+        "hint": "Confirmed commitments with upcoming event."
+      },
+      "reviews": {
+        "title": "Reviews received",
+        "breakdownTitle": "By status",
+        "published": "Published",
+        "hidden": "Hidden",
+        "removed": "Removed",
+        "rating": "Average rating: {rating}"
+      },
+      "notifications": {
+        "title": "Unread notifications",
+        "aria": "{count} unread notifications",
+        "link": "See all"
+      },
+      "rating": {
+        "title": "Average rating",
+        "aria": "{count} reviews, {rating} average",
+        "footer": "out of 5 stars"
+      }
+    },
+    "quickLinks": {
+      "title": "Quick links",
+      "quotes": "Manage quotes",
+      "portfolio": "Edit portfolio",
+      "reviews": "See reviews",
+      "notifications": "See notifications"
+    }
   }
 }
