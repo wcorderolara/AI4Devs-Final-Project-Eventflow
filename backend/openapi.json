@@ -5282,6 +5282,163 @@
         ]
       }
     },
+    "/api/v1/events/{eventId}/ai/task-priority": {
+      "post": {
+        "operationId": "aiTaskPriority",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "eventId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "input": {
+                    "additionalProperties": {
+                      "nullable": true
+                    },
+                    "type": "object"
+                  },
+                  "languageCode": {
+                    "type": "string"
+                  },
+                  "preferMock": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "input"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "ai_recommendation_id": {
+                          "format": "uuid",
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "cache_hit": {
+                          "type": "boolean"
+                        },
+                        "generated_at": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "locale": {
+                          "type": "string"
+                        },
+                        "locale_fallback": {
+                          "type": "boolean"
+                        },
+                        "rationale_summary": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "top": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "reason": {
+                                "type": "string"
+                              },
+                              "task_id": {
+                                "format": "uuid",
+                                "type": "string"
+                              },
+                              "urgency_score": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "task_id",
+                              "reason",
+                              "urgency_score"
+                            ],
+                            "type": "object"
+                          },
+                          "maxItems": 3,
+                          "type": "array"
+                        }
+                      },
+                      "required": [
+                        "ai_recommendation_id",
+                        "top",
+                        "rationale_summary",
+                        "locale",
+                        "locale_fallback",
+                        "cache_hit",
+                        "generated_at"
+                      ],
+                      "type": "object"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/ProviderUnavailable"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Top 3 tareas urgentes IA (AI-008 US-024, HITL informativo + cache 5min)",
+        "tags": [
+          "AI"
+        ]
+      }
+    },
     "/api/v1/events/{eventId}/ai/vendor-categories": {
       "post": {
         "operationId": "aiRecommendVendorCategories",

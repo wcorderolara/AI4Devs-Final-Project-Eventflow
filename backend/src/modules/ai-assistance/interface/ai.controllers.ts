@@ -7,6 +7,7 @@ import {
   toGenerationResponse,
   toRecommendationDetail,
   toQuoteSummaryResponse,
+  toTaskPriorityResponse,
 } from '../dto/index.js';
 import type {
   AiBaseRequest,
@@ -19,6 +20,7 @@ import type { AiFeatureType } from '../domain/ai-features.js';
 import type { GenerateAiRecommendationUseCase } from '../application/generate-ai-recommendation.use-case.js';
 import type { GenerateQuoteSummaryUseCase } from '../application/generate-quote-summary.us022.use-case.js';
 import type { GetLatestQuoteSummaryUseCase } from '../application/get-latest-quote-summary.us059.use-case.js';
+import type { PrioritizeTasksUseCase } from '../application/prioritize-tasks.us024.use-case.js';
 import type {
   GetAIRecommendationUseCase,
   DiscardAIRecommendationUseCase,
@@ -48,6 +50,8 @@ export class AIAssistanceController {
     // US-059 (PB-P2-001 / BE-004): fetch del último `AIRecommendation` `quote_compare_summary`
     // por (evento, category_code) para el surface del panel (5 estados en FE).
     private readonly getLatestQuoteSummary?: GetLatestQuoteSummaryUseCase,
+    // US-024 (PB-P2-002 / BE-006): priorización IA top 3 con cache signature + snapshot HITL.
+    private readonly prioritizeTasks?: PrioritizeTasksUseCase,
   ) {}
 
   /** Factory: handler para un feature, tomando el contexto del param indicado (o ninguno). */
@@ -93,6 +97,22 @@ export class AIAssistanceController {
       correlationId: req.correlationId,
     });
     res.status(200).json(success(toQuoteSummaryResponse(view), req.correlationId ?? ''));
+  };
+
+  // US-024 (PB-P2-002 / BE-006): AI task priority top 3 event-scope con cache signature + snapshot.
+  // Distinto de `taskPrioritization` (feature `task_prioritization` con shape `prioritized[]` de
+  // US-097). Response shape espejo del contrato del tech spec §7 (`top`, `cache_hit`, `locale`).
+  taskPriority = async (req: Request, res: Response): Promise<void> => {
+    if (!this.prioritizeTasks) throw new Error('PrioritizeTasksUseCase not configured');
+    const params = (req.validated?.params ?? {}) as { eventId: string };
+    const body = req.validated?.body as AiBaseRequest;
+    const view = await this.prioritizeTasks.execute({
+      userId: userId(req),
+      eventId: params.eventId,
+      preferMock: body.preferMock,
+      correlationId: req.correlationId,
+    });
+    res.status(200).json(success(toTaskPriorityResponse(view), req.correlationId ?? ''));
   };
 
   // US-059 (PB-P2-001 / BE-004): surface del último `AIRecommendation` `quote_compare_summary`.

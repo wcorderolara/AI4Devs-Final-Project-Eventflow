@@ -144,6 +144,34 @@
         "FORBIDDEN": "Your role cannot generate this summary.",
         "UNEXPECTED": "An unexpected error occurred. Please try again."
       }
+    },
+    "task_priority": {
+      "title": "AI Priorities",
+      "subtitle": "Up to 3 urgent tasks. AI suggests; you decide.",
+      "mark_done": "Go to task",
+      "regenerate": "Regenerate",
+      "regenerating": "Regenerating…",
+      "retry": "Retry",
+      "urgency": "Urgency",
+      "cache_hit": "Cached result (last 5 minutes)",
+      "cache_hit_short": "Cached",
+      "fallback": "Fallback suggestion — AI didn't respond in time",
+      "fallback_short": "Fallback",
+      "empty_state": {
+        "body": "There are no urgent tasks to prioritize right now.",
+        "cta": "Generate AI checklist"
+      },
+      "errors": {
+        "AI_TIMEOUT": "AI took too long to respond. Please try again.",
+        "AI_INVALID_OUTPUT": "AI returned an unexpected response. Please try again.",
+        "AI_PROVIDER_ERROR": "The AI provider is unavailable right now. Please try in a few minutes.",
+        "AI_RATE_LIMITED": "You have reached the AI generation limit. Please try again later.",
+        "RATE_LIMIT_EXCEEDED": "You have reached the AI generation limit. Please try again later.",
+        "EVENT_NOT_FOUND": "We couldn't find that event or you don't have permission to view it.",
+        "AUTHENTICATION_REQUIRED": "You need to sign in to view AI priorities.",
+        "FORBIDDEN": "Your role cannot query AI priorities.",
+        "UNEXPECTED": "An unexpected error occurred. Please try again."
+      }
     }
   },
   "booking": {

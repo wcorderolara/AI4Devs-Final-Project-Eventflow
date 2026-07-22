@@ -166,6 +166,34 @@ export const aiQuoteSummaryFixture = {
   category_code: 'catering',
 } as const;
 
+/** US-024 (FE-002): fixture MSW de la priorización IA top 3. HITL informativo — solo sugiere. */
+export const aiTaskPriorityFixture = {
+  ai_recommendation_id: 'aa024024-0024-4024-8024-000000000024',
+  top: [
+    {
+      task_id: '11111111-1111-4111-8111-111111111111',
+      reason: 'Vence en menos de 7 días y bloquea otras tareas del checklist.',
+      urgency_score: 10,
+    },
+    {
+      task_id: '22222222-2222-4222-8222-222222222222',
+      reason: 'Prioridad alta pendiente de arranque; conviene iniciarla esta semana.',
+      urgency_score: 8,
+    },
+    {
+      task_id: '33333333-3333-4333-8333-333333333333',
+      reason: 'Tarea en progreso próxima al vencimiento; conviene cerrarla pronto.',
+      urgency_score: 6,
+    },
+  ],
+  rationale_summary:
+    'Priorización enfocada en fechas próximas y prioridad alta; el organizador decide acciones concretas.',
+  locale: 'es-LATAM',
+  locale_fallback: false,
+  cache_hit: false,
+  generated_at: '2026-07-22T00:00:00.000Z',
+} as const;
+
 export const aiHandlers = [
   http.post('*/api/v1/events/:eventId/ai/event-plan', () =>
     HttpResponse.json({ data: aiEventPlanFixture, meta }, { status: 200 }),
@@ -185,5 +213,11 @@ export const aiHandlers = [
   // US-022 (FE-003 / AC-01..AC-05): resumen IA del comparador. Handler default 200 con snapshot fijo.
   http.post('*/api/v1/events/:eventId/ai/quote-summary', () =>
     HttpResponse.json({ data: aiQuoteSummaryFixture, meta }, { status: 200 }),
+  ),
+  // US-024 (FE-002 / AC-01..AC-07): AI task priority top 3 con cache signature. Handler default
+  // 200 con fixture fijo — los tests que verifican cache hit/miss, fallback o AUTH usan
+  // `server.use(...)` para overridear puntualmente.
+  http.post('*/api/v1/events/:eventId/ai/task-priority', () =>
+    HttpResponse.json({ data: aiTaskPriorityFixture, meta }, { status: 200 }),
   ),
 ];

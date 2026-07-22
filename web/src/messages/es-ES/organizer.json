@@ -144,6 +144,34 @@
         "FORBIDDEN": "Tu rol no puede generar este resumen.",
         "UNEXPECTED": "Se ha producido un error inesperado. Inténtalo de nuevo."
       }
+    },
+    "task_priority": {
+      "title": "Prioridades IA",
+      "subtitle": "Hasta 3 tareas urgentes. La IA sugiere; tú decides.",
+      "mark_done": "Ir a la tarea",
+      "regenerate": "Regenerar",
+      "regenerating": "Regenerando…",
+      "retry": "Reintentar",
+      "urgency": "Urgencia",
+      "cache_hit": "Resultado en caché (últimos 5 minutos)",
+      "cache_hit_short": "En caché",
+      "fallback": "Sugerencia por defecto — la IA no respondió a tiempo",
+      "fallback_short": "Modo alternativo",
+      "empty_state": {
+        "body": "No hay tareas urgentes por priorizar en este momento.",
+        "cta": "Generar checklist IA"
+      },
+      "errors": {
+        "AI_TIMEOUT": "La IA ha tardado demasiado en responder. Inténtalo de nuevo.",
+        "AI_INVALID_OUTPUT": "La IA ha devuelto una respuesta inesperada. Inténtalo de nuevo.",
+        "AI_PROVIDER_ERROR": "El proveedor de IA no está disponible por el momento. Inténtalo en unos minutos.",
+        "AI_RATE_LIMITED": "Has alcanzado el límite de generaciones IA. Inténtalo más tarde.",
+        "RATE_LIMIT_EXCEEDED": "Has alcanzado el límite de generaciones IA. Inténtalo más tarde.",
+        "EVENT_NOT_FOUND": "No encontramos ese evento o no tienes permiso para verlo.",
+        "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para ver las prioridades IA.",
+        "FORBIDDEN": "Tu rol no puede consultar prioridades IA.",
+        "UNEXPECTED": "Se ha producido un error inesperado. Inténtalo de nuevo."
+      }
     }
   },
   "booking": {

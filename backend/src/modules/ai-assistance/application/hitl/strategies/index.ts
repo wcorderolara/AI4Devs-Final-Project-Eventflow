@@ -171,6 +171,18 @@ export class TaskPrioritizationApplyStrategy implements ApplyStrategy {
   }
 }
 
+// ── task_priority → HITL informativo (US-024; no materializa entidad) ─────────
+// La priorización top 3 NO altera el checklist oficial (HITL strict, D6/AC-01). El organizador
+// decide qué hacer con cada sugerencia (marcar hecho, reprogramar, delegar) vía US-030. `apply`
+// solo deja audit trail; el AIRecommendation pasa a `accepted` sin side effect (mismo diseño
+// que `quote_compare_summary` en US-022).
+export class TaskPriorityApplyStrategy implements ApplyStrategy {
+  readonly type = 'task_priority' as const;
+  async applyInTransaction(_args: ApplyStrategyArgs): Promise<ApplyStrategyOutcome> {
+    return { appliedEntityType: null, appliedEntityId: null };
+  }
+}
+
 export const MVP_APPLY_STRATEGIES = [
   new EventPlanApplyStrategy(),
   new ChecklistApplyStrategy(),
@@ -181,4 +193,5 @@ export const MVP_APPLY_STRATEGIES = [
   new QuoteCompareSummaryApplyStrategy(),
   new VendorBioApplyStrategy(),
   new TaskPrioritizationApplyStrategy(),
+  new TaskPriorityApplyStrategy(),
 ] as const;

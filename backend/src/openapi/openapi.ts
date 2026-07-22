@@ -460,6 +460,33 @@ for (const [path, opId, summary] of [
   op({ method: 'post', path: `/events/{eventId}/ai/${path}`, operationId: opId, tags: ['AI'], summary, secured: true, params: AiEventIdParamSchema, body: AiBaseRequestSchema, success: { status: 200, schema: AiGenerationResponse }, errors: [400, 401, 403, 404, 422, 429, 503] });
 }
 op({ method: 'post', path: '/quote-requests/{quoteRequestId}/ai/comparison-summary', operationId: 'aiCompareQuotes', tags: ['AI'], summary: 'Generar comparación de cotizaciones (AI-006)', secured: true, params: AiQuoteRequestIdParamSchema, body: AiBaseRequestSchema, success: { status: 200, schema: AiGenerationResponse }, errors: [400, 401, 403, 404, 422, 429, 503] });
+// US-024 (PB-P2-002 / BE-006): endpoint dedicado AI task priority top 3 (HITL + cache signature).
+// Shape específico (`top[]` con `task_id + reason + urgency_score`, `cache_hit`) distinto del
+// generation response genérico; se documenta con `AiTaskPriorityResponse`.
+const AiTaskPriorityResponse = envelope(
+  z
+    .object({
+      ai_recommendation_id: z.string().uuid().nullable(),
+      top: z
+        .array(
+          z
+            .object({
+              task_id: z.string().uuid(),
+              reason: z.string(),
+              urgency_score: z.number().int(),
+            })
+            .strict(),
+        )
+        .max(3),
+      rationale_summary: z.string().nullable(),
+      locale: z.string(),
+      locale_fallback: z.boolean(),
+      cache_hit: z.boolean(),
+      generated_at: z.string().datetime(),
+    })
+    .strict(),
+);
+op({ method: 'post', path: '/events/{eventId}/ai/task-priority', operationId: 'aiTaskPriority', tags: ['AI'], summary: 'Top 3 tareas urgentes IA (AI-008 US-024, HITL informativo + cache 5min)', secured: true, params: AiEventIdParamSchema, body: AiBaseRequestSchema, success: { status: 200, schema: AiTaskPriorityResponse }, errors: [400, 401, 403, 404, 422, 429, 503] });
 op({ method: 'post', path: '/vendors/me/ai/bio', operationId: 'aiGenerateVendorBio', tags: ['AI'], summary: 'Generar bio de vendor (AI-007)', secured: true, body: AiBaseRequestSchema, success: { status: 200, schema: AiGenerationResponse }, errors: [400, 401, 403, 422, 429, 503] });
 op({ method: 'get', path: '/ai-recommendations/{aiRecommendationId}', operationId: 'getAiRecommendation', tags: ['AI'], summary: 'Obtener AIRecommendation', secured: true, params: AiRecommendationIdParamSchema, success: { status: 200, schema: AiDetailResponse }, errors: [401, 403, 404] });
 op({ method: 'post', path: '/ai-recommendations/{aiRecommendationId}/apply', operationId: 'applyAiRecommendation', tags: ['AI'], summary: 'Aplicar AIRecommendation (human-in-the-loop)', secured: true, params: AiRecommendationIdParamSchema, body: ApplyAiRecommendationSchema, success: { status: 200, schema: AiDetailResponse }, errors: [401, 403, 404, 422] });

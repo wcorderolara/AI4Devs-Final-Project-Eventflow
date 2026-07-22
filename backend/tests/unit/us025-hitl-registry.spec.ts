@@ -41,7 +41,7 @@ describe('US-025 / QA-001 — AIRecommendationApplyStrategyRegistry', () => {
     expect(() => registry.register(MVP_APPLY_STRATEGIES[0])).toThrow(/Duplicate apply strategy/);
   });
 
-  it('cobertura completa: MVP_APPLY_STRATEGIES cubre todos los AI_FEATURE_TYPES (9 tras US-022)', () => {
+  it('cobertura completa: MVP_APPLY_STRATEGIES cubre todos los AI_FEATURE_TYPES (10 tras US-022 + US-024)', () => {
     const registry = new AIRecommendationApplyStrategyRegistry([...MVP_APPLY_STRATEGIES]);
     const registered = new Set(registry.registeredTypes());
     for (const t of AI_FEATURE_TYPES) {

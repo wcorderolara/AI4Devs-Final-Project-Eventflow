@@ -15,6 +15,11 @@ export const AI_FEATURE_TYPES = [
   'quote_compare_summary',
   'vendor_bio',
   'task_prioritization',
+  // US-024 (PB-P2-002 / AI-008): priorización HITL informativa top 3 con cache signature 5min y
+  // locale binding. Distinta de `task_prioritization` (US-097 baseline con shape `prioritized[]`):
+  // esta feature devuelve `top[]` con `task_id + reason + urgency_score` y nunca reordena tareas
+  // oficiales — el organizador decide vía deep-link a US-030.
+  'task_priority',
 ] as const;
 export type AiFeatureType = (typeof AI_FEATURE_TYPES)[number];
 
@@ -95,6 +100,23 @@ export const OUTPUT_SCHEMAS = {
   task_prioritization: z.object({
     prioritized: z.array(z.object({ title: z.string().min(1), rank: z.number().int().positive(), rationale: z.string().min(1) }).strict()).min(1),
   }).strict(),
+  // US-024 (AC-01/EC-04): `top` con hasta 3 items — `task_id` UUID, `reason` ≤ 200 chars,
+  // `urgency_score` entero 1..10. `rationale_summary` opcional (≤ 300 chars). El vacío se acepta
+  // (AC-02 empty state ⇒ `top: []`).
+  task_priority: z.object({
+    top: z
+      .array(
+        z
+          .object({
+            task_id: z.string().uuid(),
+            reason: z.string().min(1).max(200),
+            urgency_score: z.number().int().min(1).max(10),
+          })
+          .strict(),
+      )
+      .max(3),
+    rationale_summary: z.string().max(300).optional(),
+  }).strict(),
 } as const satisfies Record<AiFeatureType, z.ZodType>;
 
 export const FEATURE_SCOPE = {
@@ -109,4 +131,7 @@ export const FEATURE_SCOPE = {
   quote_compare_summary: 'event',
   vendor_bio: 'vendor',
   task_prioritization: 'event',
+  // US-024 (D6/AC-01): event-scope (organizer owner). El use case dedicado carga tareas
+  // elegibles del `eventId`, computa signature y consulta cache antes de invocar al provider.
+  task_priority: 'event',
 } as const satisfies Record<AiFeatureType, AiFeatureScope>;
