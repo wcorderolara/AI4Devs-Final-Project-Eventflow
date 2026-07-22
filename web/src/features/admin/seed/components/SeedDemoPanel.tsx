@@ -18,7 +18,17 @@ function formatDateTime(iso: string | null, locale: string): string {
   }
 }
 
-function CountsTable({ counts, caption }: { counts: Record<string, number>; caption: string }): React.JSX.Element {
+function CountsTable({
+  counts,
+  caption,
+  entityLabel,
+  countLabel,
+}: {
+  counts: Record<string, number>;
+  caption: string;
+  entityLabel: string;
+  countLabel: string;
+}): React.JSX.Element {
   const entries = Object.entries(counts).sort(([a], [b]) => a.localeCompare(b));
   return (
     <div className="overflow-x-auto rounded-md border border-neutral-200">
@@ -27,10 +37,10 @@ function CountsTable({ counts, caption }: { counts: Record<string, number>; capt
         <thead className="bg-neutral-50 text-xs font-semibold uppercase tracking-wide text-neutral-600">
           <tr>
             <th scope="col" className="px-3 py-2 text-left">
-              Entity
+              {entityLabel}
             </th>
             <th scope="col" className="px-3 py-2 text-right">
-              Count
+              {countLabel}
             </th>
           </tr>
         </thead>
@@ -123,7 +133,12 @@ export function SeedDemoPanel(): React.JSX.Element {
 
           <div>
             <h2 className="mb-2 text-sm font-semibold text-neutral-700">{t('status.counts')}</h2>
-            <CountsTable counts={data.recordCount} caption={t('status.counts')} />
+            <CountsTable
+              counts={data.recordCount}
+              caption={t('status.counts')}
+              entityLabel={t('status.entity')}
+              countLabel={t('status.count')}
+            />
           </div>
         </div>
       ) : null}
@@ -141,13 +156,23 @@ export function SeedDemoPanel(): React.JSX.Element {
               <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-red-700">
                 {t('report.deleted')}
               </h3>
-              <CountsTable counts={lastReport.entitiesDeleted} caption={t('report.deleted')} />
+              <CountsTable
+                counts={lastReport.entitiesDeleted}
+                caption={t('report.deleted')}
+                entityLabel={t('status.entity')}
+                countLabel={t('status.count')}
+              />
             </div>
             <div>
               <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-green-700">
                 {t('report.reseeded')}
               </h3>
-              <CountsTable counts={lastReport.entitiesReseeded} caption={t('report.reseeded')} />
+              <CountsTable
+                counts={lastReport.entitiesReseeded}
+                caption={t('report.reseeded')}
+                entityLabel={t('status.entity')}
+                countLabel={t('status.count')}
+              />
             </div>
           </div>
         </div>

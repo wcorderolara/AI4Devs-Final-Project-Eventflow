@@ -11,11 +11,15 @@ import type { SeedReport } from '../../src/modules/seed-demo/domain/seed-report.
 // US-042: `vendorProfileCategory` se agrega antes de `vendorProfile` (FK ON DELETE RESTRICT).
 // Su where usa el filtro navegable `{ vendorProfile: { isSeed: true } }` porque la M:N no tiene
 // columna `isSeed` propia — igualmente surgical (SEC-04).
+// `session` y `passwordResetToken` fueron añadidos posteriormente al orden de deletes: sus FK
+// `onDelete: Restrict` sobre `users` obligan a limpiarlos antes del `user.deleteMany`. Ninguna
+// tabla tiene columna `isSeed` propia — se filtran por el navegable `{ user: { isSeed: true } }`.
 const DELETE_MODELS = [
   'notification', 'aIRecommendation', 'review', 'bookingIntent', 'quote', 'quoteRequest',
   'budgetItem', 'budget', 'eventTask', 'attachment', 'event', 'vendorService',
   'vendorProfileCategory', 'vendorProfile',
-  'adminAction', 'serviceCategory', 'eventType', 'location', 'user',
+  'adminAction', 'serviceCategory', 'eventType', 'location',
+  'session', 'passwordResetToken', 'user',
 ] as const;
 
 /** Construye un tx fake donde cada modelo registra las llamadas a deleteMany (con su where). */
@@ -53,13 +57,17 @@ interface AuditData {
   metadata: { correlationId: string };
 }
 
-function buildPrisma(txHolder: { tx: unknown }) {
+function buildPrisma(txHolder: { tx: unknown }, opts: { actorExists?: boolean } = {}) {
   const adminActionCreate = vi.fn(async (_args: { data: AuditData }) => ({ id: 'admin-action-1' }));
+  // `writeAudit` consulta `prisma.user.count()` para decidir si el actor sobrevive al reset
+  // (nullable `adminUserId` en caso contrario). Default: existe (happy path original).
+  const userCount = vi.fn(async () => (opts.actorExists === false ? 0 : 1));
   const prisma = {
     $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(txHolder.tx)),
     adminAction: { create: adminActionCreate },
+    user: { count: userCount },
   };
-  return { prisma, adminActionCreate };
+  return { prisma, adminActionCreate, userCount };
 }
 
 describe('US-086 — ResetDemoUseCase', () => {
@@ -81,18 +89,20 @@ describe('US-086 — ResetDemoUseCase', () => {
     expect(report.seedVersion).toBe('1.0.0');
     expect(report.durationMs).toBeGreaterThanOrEqual(0);
     expect(report.entitiesReseeded.users).toBe(19);
-    // Todos los deletes filtran por is_seed=true (surgical, SEC-04). Excepción documentada:
-    // `vendorProfileCategory` (US-042) usa el filtro navegable `{ vendorProfile: { isSeed: true } }`
-    // porque la tabla M:N no tiene columna `isSeed` propia — igualmente surgical.
-    expect(
-      calls.every((c) => {
-        const w = JSON.stringify(c.where);
-        return (
-          w === JSON.stringify({ isSeed: true }) ||
-          w === JSON.stringify({ vendorProfile: { isSeed: true } })
-        );
-      }),
-    ).toBe(true);
+    // Todos los deletes filtran por is_seed=true (surgical, SEC-04). Excepciones documentadas:
+    // - `vendorProfileCategory` (US-042) usa el filtro navegable `{ vendorProfile: { isSeed: true } }`
+    //   porque la tabla M:N no tiene columna `isSeed` propia.
+    // - `session` y `passwordResetToken` usan `{ user: { isSeed: true } }` por la misma razón.
+    // - `adminAction` usa `{ OR: [{ isSeed: true }, { adminUser: { isSeed: true } }] }` para incluir
+    //   auditorías creadas sobre usuarios seed durante la operación (p. ej. el propio reset).
+    // Todas son igualmente surgical.
+    const allowedWheres = [
+      JSON.stringify({ isSeed: true }),
+      JSON.stringify({ vendorProfile: { isSeed: true } }),
+      JSON.stringify({ user: { isSeed: true } }),
+      JSON.stringify({ OR: [{ isSeed: true }, { adminUser: { isSeed: true } }] }),
+    ];
+    expect(calls.every((c) => allowedWheres.includes(JSON.stringify(c.where)))).toBe(true);
     // Orden FK descendente: notification primero, user último.
     expect(calls[0]!.model).toBe('notification');
     expect(calls[calls.length - 1]!.model).toBe('user');

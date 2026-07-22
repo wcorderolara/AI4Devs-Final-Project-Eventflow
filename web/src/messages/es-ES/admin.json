@@ -546,6 +546,9 @@
     "pagination": {
       "prev": "Anterior",
       "next": "Siguiente"
+    },
+    "badges": {
+      "seed": "seed"
     }
   },
   "seed": {
@@ -561,7 +564,9 @@
       "title": "Estado",
       "lastRunAt": "Última ejecución",
       "preset": "Preset",
-      "counts": "Registros por entidad"
+      "counts": "Registros por entidad",
+      "entity": "Entidad",
+      "count": "Cantidad"
     },
     "errors": {
       "statusLoad": "No hemos podido cargar el estado del seed. Verifica que SEED_DEMO_ENABLED=true en el backend."

@@ -546,6 +546,9 @@
     "pagination": {
       "prev": "Previous",
       "next": "Next"
+    },
+    "badges": {
+      "seed": "seed"
     }
   },
   "seed": {
@@ -561,7 +564,9 @@
       "title": "Status",
       "lastRunAt": "Last run",
       "preset": "Preset",
-      "counts": "Records per entity"
+      "counts": "Records per entity",
+      "entity": "Entity",
+      "count": "Count"
     },
     "errors": {
       "statusLoad": "Could not load seed status. Verify SEED_DEMO_ENABLED=true on the backend."

@@ -6,7 +6,10 @@ module.exports = {
   rules: {
     // US-104 AC-10 / Doc 15 §31.3: prohibido hardcodear strings en JSX. Usar `t('clave')`.
     // allowList mínima de símbolos no traducibles; los atributos (aria-label, etc.) no se revisan.
-    'react/jsx-no-literals': ['error', { allowedStrings: ['·', '/', '&', '—', ':'] }],
+    'react/jsx-no-literals': [
+      'error',
+      { allowedStrings: ['·', '/', '&', '—', ':', '→', '(', ')'] },
+    ],
   },
   overrides: [
     {
