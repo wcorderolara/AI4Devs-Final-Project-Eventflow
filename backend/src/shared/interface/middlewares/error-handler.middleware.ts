@@ -74,6 +74,9 @@ import {
   Us022InsufficientQuotesError,
   Us022InvalidCategoryError,
 } from '../../../modules/ai-assistance/domain/us022.errors.js';
+// US-026 (PB-P2-003, AC-02): `Us026RegenerationLimitError` → 429 REGENERATION_LIMIT con
+// `details: {current_count, max}`. Distinto de `RATE_LIMIT_EXCEEDED` (throttle temporal).
+import { Us026RegenerationLimitError } from '../../../modules/ai-assistance/domain/us026.errors.js';
 // US-060 (PB-P1-036): creación atómica de BookingIntent. `DisclaimerRequiredError` → 400,
 // `QuoteNotAcceptableError` → 409 con `details.current_status`, `BookingIntentAlreadyExistsError`
 // → 409 con `details.booking_intent_id`.
@@ -481,6 +484,17 @@ function mapError(err: unknown): MappedError {
       code: ErrorCodes.INVALID_CATEGORY,
       message: err.message,
       details: [{ field: 'categoryCode', message: err.categoryCode }],
+    };
+  }
+  if (err instanceof Us026RegenerationLimitError) {
+    return {
+      status: 429,
+      code: ErrorCodes.REGENERATION_LIMIT,
+      message: err.message,
+      details: [
+        { field: 'current_count', message: String(err.currentCount) },
+        { field: 'max', message: String(err.max) },
+      ],
     };
   }
   // US-058 (PB-P1-035): toggle preferred de Quote.

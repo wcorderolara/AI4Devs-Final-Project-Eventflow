@@ -1781,6 +1781,55 @@ Estas decisiones técnicas no bloquean el FRD; quedan para la fase de implementa
 
 ---
 
+## 30bis. UC-AI-010 — Regenerar sugerencia con feedback (cross-cutting, US-026)
+
+**Aplica a:** cualquier `AIRecommendation` — `event_plan`, `checklist`, `budget_suggestion`,
+`vendor_categories`, `quote_brief`, `quote_comparison`, `quote_compare_summary`, `vendor_bio`,
+`task_prioritization`, `task_priority` (10 features MVP).
+
+**Endpoint:** `POST /api/v1/ai-recommendations/:id/regenerate` con body `{feedback?, preferMock?}`.
+Respuesta `201` con child `AIRecommendation` heredando type/locale + snapshot del linaje.
+
+**Cap de regeneraciones:** `AI_MAX_REGENERATIONS_PER_LINEAGE` env var (default `5`, D10).
+Se cuenta contra los hijos del `root_recommendation_id` (D2 — evita escape walking por parent
+chain). El backfill de DB-001 marca cada fila histórica como raíz de su propio linaje
+(`root_recommendation_id = id`).
+
+**Autorización polimórfica (D7 / SEC-01):** el `AIRecommendationOwnerResolver` deriva el owner
+desde `FEATURE_SCOPE[type]` (US-097) — sin mapping duplicado — y aplica:
+- `event`         → organizer dueño del `parent.event_id` (via `EventAccessReader`).
+- `vendor`        → vendor cuyo `VendorProfile.userId === currentUser.id` **y**
+                    `VendorProfile.id === parent.vendor_profile_id` (fuente autoritativa, no
+                    campo del payload — deviation D-03 del execution record).
+- `quote_request` → organizer del evento asociado (via `QuoteRequestEventReader`).
+
+Mismatch ⇒ `404 AI_RECOMMENDATION_NOT_FOUND` uniforme (SEC-02 — evita enumeration).
+
+**Locale binding (D5 / AC-06):** el child hereda `parent.locale` — no re-mira `event.language`.
+Esto preserva la coherencia de experiencia aunque el organizer haya cambiado el idioma del
+evento entre generar y regenerar.
+
+**Feedback (D6 / AC-03 / EC-04):** texto libre ≤ 500 chars, opcional. Se hace `.trim()`; vacío
+o whitespace-only ⇒ helper `injectFeedbackForRegeneration` usa placeholder
+`(sin feedback adicional)`. El texto se persiste en la columna `regeneration_feedback` (DB-001)
++ como clave auditable `__regeneration_feedback` en `input_payload`.
+
+**Fallback (AC-08):** si el pipeline AI falla (timeout, output malformado, unsupported language)
+⇒ payload fallback determinista (`baseOutput` por feature) + `locale_fallback=true`. El child
+SÍ persiste (audit trail) y **cuenta para el cap del linaje** (D9).
+
+**Rate limit (AC-07):** compartido con las demás features AI (`aiGenerationRateLimit` /
+US-110). Se diferencia del `REGENERATION_LIMIT` (cap por linaje):
+- `429 RATE_LIMIT_EXCEEDED` = throttle temporal (ventana + user).
+- `429 REGENERATION_LIMIT`  = cap absoluto por linaje raíz (independiente del tiempo).
+
+**Persistencia HITL:** `AIRecommendation` child con `status='pending'`, mismas columnas que el
+padre + `parent_recommendation_id + root_recommendation_id + regeneration_feedback` (DB-001).
+La aplicación efectiva sigue el flujo HITL estándar de US-025/US-037 (apply strategies por
+type).
+
+---
+
 ## 31. Resumen final
 
 Este documento especifica las **funcionalidades de IA del MVP de EventFlow** a partir de la lectura, extracción, clasificación y validación de los seis documentos fuente. Las decisiones clave son:

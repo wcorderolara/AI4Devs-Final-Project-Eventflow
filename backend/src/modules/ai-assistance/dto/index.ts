@@ -9,3 +9,6 @@ export * from './quote-summary.response.js';
 export * from './latest-quote-summary.query.js';
 // US-024 (PB-P2-002 / BE-006): response DTO del endpoint task-priority (HITL top 3 + cache).
 export * from './task-priority.response.js';
+// US-026 (PB-P2-003 / BE-001, BE-007): DTO body + response DTO del endpoint regenerate (cross-cutting).
+export * from './regenerate.request.js';
+export * from './regenerate.response.js';

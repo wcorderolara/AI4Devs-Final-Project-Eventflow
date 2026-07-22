@@ -491,6 +491,29 @@ op({ method: 'post', path: '/vendors/me/ai/bio', operationId: 'aiGenerateVendorB
 op({ method: 'get', path: '/ai-recommendations/{aiRecommendationId}', operationId: 'getAiRecommendation', tags: ['AI'], summary: 'Obtener AIRecommendation', secured: true, params: AiRecommendationIdParamSchema, success: { status: 200, schema: AiDetailResponse }, errors: [401, 403, 404] });
 op({ method: 'post', path: '/ai-recommendations/{aiRecommendationId}/apply', operationId: 'applyAiRecommendation', tags: ['AI'], summary: 'Aplicar AIRecommendation (human-in-the-loop)', secured: true, params: AiRecommendationIdParamSchema, body: ApplyAiRecommendationSchema, success: { status: 200, schema: AiDetailResponse }, errors: [401, 403, 404, 422] });
 op({ method: 'post', path: '/ai-recommendations/{aiRecommendationId}/discard', operationId: 'discardAiRecommendation', tags: ['AI'], summary: 'Descartar AIRecommendation', secured: true, params: AiRecommendationIdParamSchema, success: { status: 204 }, errors: [401, 403, 404, 422] });
+// US-026 (PB-P2-003 / BE-007): POST /ai-recommendations/{id}/regenerate cross-cutting.
+// HITL iterativo con cap 5/linaje (429 REGENERATION_LIMIT) + rate limit shared (429
+// RATE_LIMIT_EXCEEDED). Auth polimórfica por type — el body es opcional (`feedback` ≤ 500).
+const AiRegenerateBody = z.object({
+  feedback: z.string().max(500).optional(),
+  preferMock: z.boolean().optional(),
+}).strict();
+const AiRegenerateResponse = envelope(
+  z
+    .object({
+      id: z.string().uuid(),
+      parent_recommendation_id: z.string().uuid(),
+      root_recommendation_id: z.string().uuid(),
+      recommendation_type: z.string(),
+      regeneration_feedback: z.string().nullable(),
+      payload: z.record(z.unknown()),
+      locale: z.string(),
+      locale_fallback: z.boolean(),
+      created_at: z.string().datetime(),
+    })
+    .strict(),
+);
+op({ method: 'post', path: '/ai-recommendations/{aiRecommendationId}/regenerate', operationId: 'regenerateAiRecommendation', tags: ['AI'], summary: 'Regenerar AIRecommendation con feedback (US-026 HITL iterativo, cap 5/linaje)', secured: true, params: AiRecommendationIdParamSchema, body: AiRegenerateBody, success: { status: 201, schema: AiRegenerateResponse }, errors: [400, 401, 403, 404, 422, 429, 503] });
 
 // ── Documento ────────────────────────────────────────────────────────────────
 export const OPENAPI_TAGS = ['Auth', 'Users', 'Events', 'QuoteRequests', 'Quotes', 'BookingIntents', 'AI'] as const;

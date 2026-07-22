@@ -194,6 +194,22 @@ export const aiTaskPriorityFixture = {
   generated_at: '2026-07-22T00:00:00.000Z',
 } as const;
 
+/** US-026 (FE-002): fixture MSW de child regenerado. HITL iterativo — hereda type + locale del parent. */
+export const aiRegenerateFixture = {
+  id: 'aa026026-0026-4026-8026-000000000026',
+  parent_recommendation_id: 'aa000000-0000-4000-8000-000000000000',
+  root_recommendation_id: 'aa000000-0000-4000-8000-000000000000',
+  recommendation_type: 'event_plan',
+  regeneration_feedback: 'Necesito un plan más informal.',
+  payload: {
+    summary: 'Plan regenerado más informal para el evento.',
+    phases: [{ name: 'Preparación', tasks: ['Definir la fecha', 'Reservar el lugar'] }],
+  },
+  locale: 'es-LATAM',
+  locale_fallback: false,
+  created_at: '2026-07-22T20:00:00.000Z',
+} as const;
+
 export const aiHandlers = [
   http.post('*/api/v1/events/:eventId/ai/event-plan', () =>
     HttpResponse.json({ data: aiEventPlanFixture, meta }, { status: 200 }),
@@ -219,5 +235,11 @@ export const aiHandlers = [
   // `server.use(...)` para overridear puntualmente.
   http.post('*/api/v1/events/:eventId/ai/task-priority', () =>
     HttpResponse.json({ data: aiTaskPriorityFixture, meta }, { status: 200 }),
+  ),
+  // US-026 (FE-002 / AC-01): regeneración cross-cutting. Handler default 201 con child
+  // sintético — los tests que verifican REGENERATION_LIMIT / RATE_LIMIT_EXCEEDED / fallback
+  // usan `server.use(...)` para overridear con el error code correspondiente.
+  http.post('*/api/v1/ai-recommendations/:recommendationId/regenerate', () =>
+    HttpResponse.json({ data: aiRegenerateFixture, meta }, { status: 201 }),
   ),
 ];

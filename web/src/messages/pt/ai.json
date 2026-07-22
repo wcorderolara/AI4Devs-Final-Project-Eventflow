@@ -247,6 +247,31 @@
       "payloadTooLarge": "O conteúdo editado é grande demais (máx. 256KB)."
     }
   },
+  "regenerate": {
+    "title": "Regenerar sugestão IA",
+    "description": "Solicite uma nova versão com feedback opcional. Mantém o mesmo tipo, idioma e contexto da sugestão original.",
+    "feedback_label": "Feedback (opcional)",
+    "feedback_placeholder": "Ex.: Preciso de um plano mais informal, com menos atividades formais.",
+    "feedback_hint": "O feedback ajuda a IA a ajustar a proposta. Você pode deixar em branco.",
+    "feedback_counter": "{count}/{max} caracteres",
+    "regenerate": "Regenerar",
+    "regenerating": "Regenerando…",
+    "cancel": "Cancelar",
+    "errors": {
+      "REGENERATION_LIMIT": "Você atingiu o máximo de regenerações para esta sugestão (5). Descarte a sugestão ou continue com a versão atual.",
+      "RATE_LIMIT_EXCEEDED": "Você atingiu o limite de gerações IA. Tente novamente mais tarde.",
+      "AI_RATE_LIMITED": "Você atingiu o limite de gerações IA. Tente novamente mais tarde.",
+      "AI_PROVIDER_ERROR": "O provedor de IA não está disponível no momento. Tente novamente em alguns minutos.",
+      "AI_PROVIDER_TIMEOUT": "A IA demorou muito para responder. Tente novamente.",
+      "AI_INVALID_OUTPUT": "A IA devolveu uma resposta inesperada. Tente novamente.",
+      "RESOURCE_NOT_FOUND": "Não encontramos a sugestão original ou ela não está mais disponível.",
+      "AI_RECOMMENDATION_NOT_FOUND": "Não encontramos a sugestão original ou ela não está mais disponível.",
+      "AUTHENTICATION_REQUIRED": "Você precisa fazer login para regenerar a sugestão.",
+      "FORBIDDEN": "Você não pode regenerar esta sugestão.",
+      "VALIDATION_ERROR": "O feedback excede os 500 caracteres permitidos.",
+      "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
+    }
+  },
   "budgetApply": {
     "title": "Aplicar sugestão IA ao orçamento",
     "description": "Revise cada item, edite os valores se necessário e escolha quais incluir. Nada é salvo até você pressionar Aplicar.",

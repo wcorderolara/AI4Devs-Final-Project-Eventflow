@@ -74,6 +74,39 @@ export class FakeAIRecommendationRepository implements AIRecommendationRepositor
     return null;
   }
 
+  // US-026 (PB-P2-003 / BE-006): fakes triviales — los tests de regeneración usan mocks
+  // dedicados (`vi.fn()`) para tener control fino de branches; este fake sólo asegura que la
+  // interfaz sigue implementada por los tests históricos de US-122.
+  async countLineageChildren(): Promise<number> {
+    return 0;
+  }
+  async createRegeneration(
+    input: CreateAiRecommendationData & {
+      parentRecommendationId: string;
+      rootRecommendationId: string;
+      regenerationFeedback: string | null;
+    },
+  ): Promise<AiRecommendationView> {
+    return {
+      id: `rec-${(counter += 1)}`,
+      type: input.type,
+      status: 'pending',
+      requestedByUserId: input.requestedByUserId,
+      eventId: input.eventId ?? null,
+      vendorProfileId: input.vendorProfileId ?? null,
+      quoteRequestId: input.quoteRequestId ?? null,
+      input: input.input,
+      output: input.output,
+      aiMeta: input.aiMeta,
+      locale: input.aiMeta.languageCode,
+      localeFallback: input.aiMeta.fallbackUsed,
+      createdAt: '2026-07-09T00:00:00.000Z',
+    };
+  }
+  async findByIdWithLineage(): Promise<null> {
+    return null;
+  }
+
   private view(input: PersistAiRecommendationInput, status: 'pending'): AiRecommendationView {
     return {
       id: `rec-${(counter += 1)}`,

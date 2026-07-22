@@ -247,6 +247,31 @@
       "payloadTooLarge": "El contenido editado es demasiado grande (máx. 256KB)."
     }
   },
+  "regenerate": {
+    "title": "Regenerar sugerencia IA",
+    "description": "Solicita una nueva versión con comentario opcional. Se aplica el mismo tipo, idioma y contexto que la sugerencia original.",
+    "feedback_label": "Comentario (opcional)",
+    "feedback_placeholder": "Ej.: Necesito un plan más informal, con menos actividades formales.",
+    "feedback_hint": "El comentario ayuda a la IA a ajustar la propuesta. Puedes dejarlo vacío.",
+    "feedback_counter": "{count}/{max} caracteres",
+    "regenerate": "Regenerar",
+    "regenerating": "Regenerando…",
+    "cancel": "Cancelar",
+    "errors": {
+      "REGENERATION_LIMIT": "Has alcanzado el máximo de regeneraciones para esta sugerencia (5). Descarta la sugerencia o continúa con la versión actual.",
+      "RATE_LIMIT_EXCEEDED": "Has alcanzado el límite de generaciones IA. Vuelve a intentarlo más tarde.",
+      "AI_RATE_LIMITED": "Has alcanzado el límite de generaciones IA. Vuelve a intentarlo más tarde.",
+      "AI_PROVIDER_ERROR": "El proveedor de IA no está disponible ahora mismo. Vuelve a intentarlo en unos minutos.",
+      "AI_PROVIDER_TIMEOUT": "La IA ha tardado demasiado en responder. Inténtalo de nuevo.",
+      "AI_INVALID_OUTPUT": "La IA ha devuelto una respuesta inesperada. Inténtalo de nuevo.",
+      "RESOURCE_NOT_FOUND": "No encontramos la sugerencia original o ya no está disponible.",
+      "AI_RECOMMENDATION_NOT_FOUND": "No encontramos la sugerencia original o ya no está disponible.",
+      "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para regenerar la sugerencia.",
+      "FORBIDDEN": "No puedes regenerar esta sugerencia.",
+      "VALIDATION_ERROR": "El comentario supera los 500 caracteres permitidos.",
+      "UNEXPECTED": "Se ha producido un error inesperado. Inténtalo de nuevo."
+    }
+  },
   "budgetApply": {
     "title": "Aplicar sugerencia IA al presupuesto",
     "description": "Revisa cada partida, edita los importes si es necesario y elige cuáles incluir. Nada se guarda hasta que pulses Aplicar.",

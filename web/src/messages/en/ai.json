@@ -247,6 +247,31 @@
       "payloadTooLarge": "The edited content is too large (max 256KB)."
     }
   },
+  "regenerate": {
+    "title": "Regenerate AI suggestion",
+    "description": "Request a new version with optional feedback. Same type, language and context as the original suggestion apply.",
+    "feedback_label": "Feedback (optional)",
+    "feedback_placeholder": "E.g. I need a more casual plan, with fewer formal activities.",
+    "feedback_hint": "Feedback helps the AI adjust the suggestion. You can leave it empty.",
+    "feedback_counter": "{count}/{max} characters",
+    "regenerate": "Regenerate",
+    "regenerating": "Regenerating…",
+    "cancel": "Cancel",
+    "errors": {
+      "REGENERATION_LIMIT": "You reached the maximum regenerations for this suggestion (5). Discard the suggestion or keep the current version.",
+      "RATE_LIMIT_EXCEEDED": "You reached the AI generation limit. Please try again later.",
+      "AI_RATE_LIMITED": "You reached the AI generation limit. Please try again later.",
+      "AI_PROVIDER_ERROR": "The AI provider is unavailable right now. Please try again in a few minutes.",
+      "AI_PROVIDER_TIMEOUT": "AI took too long to respond. Please try again.",
+      "AI_INVALID_OUTPUT": "AI returned an unexpected response. Please try again.",
+      "RESOURCE_NOT_FOUND": "We couldn't find the original suggestion or it is no longer available.",
+      "AI_RECOMMENDATION_NOT_FOUND": "We couldn't find the original suggestion or it is no longer available.",
+      "AUTHENTICATION_REQUIRED": "You need to sign in to regenerate the suggestion.",
+      "FORBIDDEN": "You cannot regenerate this suggestion.",
+      "VALIDATION_ERROR": "Feedback exceeds the 500-character limit.",
+      "UNEXPECTED": "An unexpected error occurred. Please try again."
+    }
+  },
   "budgetApply": {
     "title": "Apply AI budget suggestion",
     "description": "Review each item, edit amounts if needed and choose which ones to include. Nothing is saved until you press Apply.",

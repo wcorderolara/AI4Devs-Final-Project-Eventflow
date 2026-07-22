@@ -3157,6 +3157,7 @@ Endpoints de generación asistida por LLM. **Todas las salidas requieren confirm
 | GET | `/ai-recommendations/:aiRecommendationId` | Sí | organizer/vendor (own) | Obtiene recomendación. | 200 | 401, 403, 404 |
 | POST | `/ai-recommendations/:aiRecommendationId/apply` | Sí | organizer/vendor (own) | Aplica (acepta). | 200 | 400, 401, 403, 404, 409, 422 |
 | POST | `/ai-recommendations/:aiRecommendationId/discard` | Sí | organizer/vendor (own) | Descarta. | 204 | 401, 403, 404 |
+| POST | `/ai-recommendations/:aiRecommendationId/regenerate` | Sí | organizer OR vendor (owner del type — polimórfico) | US-026 UC-AI-010: HITL iterativo cross-cutting. Body `{feedback?, preferMock?}` (`feedback` ≤ 500 chars, opcional). Response `201 {id, parent_recommendation_id, root_recommendation_id, recommendation_type, regeneration_feedback, payload, locale, locale_fallback, created_at}`. Locale hereda del parent (AC-06). Cap `AI_MAX_REGENERATIONS_PER_LINEAGE=5` por linaje raíz (AC-02 → 429 REGENERATION_LIMIT distinto de RATE_LIMIT_EXCEEDED). Auth polimórfica por type via `AIRecommendationOwnerResolver` (event/vendor/quote_request scope, derivado de `FEATURE_SCOPE`). | 201 | 400 VALIDATION_ERROR, 401, 403, 404 RESOURCE_NOT_FOUND (uniforme), 422, 429 REGENERATION_LIMIT / RATE_LIMIT_EXCEEDED, 503 |
 
 #### 35.3.a Catálogo de errores del `/apply` por type (US-037 y siguientes)
 
