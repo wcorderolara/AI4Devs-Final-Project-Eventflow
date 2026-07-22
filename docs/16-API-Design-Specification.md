@@ -3125,11 +3125,12 @@ type PaginatedNotificationsResponse = {
 
 #### Link generation by type (US-071 DOC-003)
 
-| `type`                       | Patrón del `link`                                          | Fallback (`null`)                       |
-| ---------------------------- | ---------------------------------------------------------- | --------------------------------------- |
-| `task_due_soon`              | `/organizer/events/{payload.eventId}/tasks?range=7d`       | Evento inexistente/soft-deleted (EC-03) |
-| `quote_request_received`     | `/vendor/quote-requests/{payload.quoteRequestId}`          | QR inexistente (US-068 DOC-001)         |
-| _otros_                      | Definido por la US propietaria del tipo                    | Por defecto `null`                       |
+| `type`                       | Patrón del `link`                                                 | Fallback (`null`)                       |
+| ---------------------------- | ----------------------------------------------------------------- | --------------------------------------- |
+| `task_due_soon`              | `/organizer/events/{payload.eventId}/tasks?range=7d`              | Evento inexistente/soft-deleted (EC-03) |
+| `quote_request_received`     | `/vendor/quote-requests/{payload.quoteRequestId}`                 | QR inexistente (US-068 DOC-001)         |
+| `quote_received`             | `/organizer/quote-requests/{payload.quoteRequestId}/comparator`   | QR inexistente (US-069 DOC-001)         |
+| _otros_                      | Definido por la US propietaria del tipo                           | Por defecto `null`                       |
 
 ### 34.4 Reglas
 

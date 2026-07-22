@@ -252,9 +252,11 @@ describe('US-071 — ListMyNotificationsUseCase (BE-004)', () => {
     expect(result.items[0]?.link).toBe(null);
   });
 
-  it('UT-06c: NotificationLinkResolver retorna null para tipos no cubiertos por US-071', async () => {
+  it('UT-06c: NotificationLinkResolver retorna null para tipos no cubiertos por LINK_STRATEGY_BY_TYPE', async () => {
+    // US-069 (BE-002) agregó `quote_received` a las estrategias; se usa `payment_reminder`
+    // (aún no registrado) para validar el path del default null.
     const { repo, eventReader, useCase } = build();
-    repo.rows = [row({ id: 'n1', type: 'quote_received', payload: { channel: 'in_app', eventId: UUID_EVENT_1 } })];
+    repo.rows = [row({ id: 'n1', type: 'payment_reminder', payload: { channel: 'in_app', eventId: UUID_EVENT_1 } })];
     eventReader.existing.add(UUID_EVENT_1);
     const result = await useCase.execute({
       userId: 'u1',

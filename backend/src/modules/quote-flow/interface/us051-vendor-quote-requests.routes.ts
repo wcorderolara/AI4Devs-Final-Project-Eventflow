@@ -22,6 +22,12 @@ import { MarkVendorQrViewedUs051UseCase } from '../application/mark-vendor-qr-vi
 import { RespondQuoteRequestUs052UseCase } from '../application/respond-quote-request.us052.use-case.js';
 import { toQuoteRequestResponse } from '../dto/quote-request.response.js';
 import { prisma } from '../../../infrastructure/prisma/client.js';
+// US-069 (PB-P2-006 / BE-005): composition root del `OnQuoteSentHandler` in-tx.
+import { OnQuoteSentHandler } from '../../notifications/application/on-quote-sent.handler.js';
+import { PrismaNotificationQuoteReceivedRepository } from '../../notifications/infrastructure/prisma-notification-quote-received.repository.js';
+import { LoggingSimulatedQuoteReceivedEmailAdapter } from '../../notifications/infrastructure/logging-simulated-quote-received-email.adapter.js';
+import { PrismaOrganizerLanguageLookup } from '../../event-planning/infrastructure/prisma-organizer-language.lookup.js';
+import { logger as sharedLogger } from '../../../shared/infrastructure/logger/index.js';
 import { us051QrIdParamSchema, type Us051QrIdParam } from '../dto/us051-qr-id.param.js';
 import {
   respondQuoteRequestBodySchema,
@@ -41,6 +47,16 @@ const notifications = new PrismaQuoteNotificationSenderAdapter(prisma);
 const logger = new StructuredDomainEventLogger();
 const quoteRequests = new PrismaQuoteRequestRepository(prisma);
 
+// US-069 (BE-005): `PrismaOrganizerLanguageLookup` se reutiliza structurally como
+// `OrganizerLanguagePreferenceReader` (mismo shape). Los adapters aceptan el `tx`
+// opcional cuando el handler los invoque dentro de la transacción del UC.
+const onQuoteSentHandler = new OnQuoteSentHandler({
+  notificationRepo: new PrismaNotificationQuoteReceivedRepository(prisma),
+  languageLookup: new PrismaOrganizerLanguageLookup(prisma),
+  emailAdapter: new LoggingSimulatedQuoteReceivedEmailAdapter(sharedLogger),
+  logger: sharedLogger,
+});
+
 const getDetailUseCase = new GetVendorQrDetailUs051UseCase(quoteRequests, vendors);
 const markViewedUseCase = new MarkVendorQrViewedUs051UseCase(
   vendors,
@@ -51,9 +67,9 @@ const markViewedUseCase = new MarkVendorQrViewedUs051UseCase(
 );
 const respondUseCase = new RespondQuoteRequestUs052UseCase(
   vendors,
-  notifications,
   clock,
   logger,
+  onQuoteSentHandler,
   prisma,
 );
 

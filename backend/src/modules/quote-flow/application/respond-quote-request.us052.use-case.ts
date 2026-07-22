@@ -16,11 +16,15 @@
 //   6. INSERT 2 notifications (in_app + email_simulated) — mismo patrón que US-049.
 //   7. Log estructurado `quote.sent` con `{correlationId, actorId, quoteId, quoteRequestId}`.
 import { Prisma, type PrismaClient, QuoteStatus, QuoteRequestStatus } from '@prisma/client';
-import type { QuoteNotificationSenderPort } from '../../../shared/application/quote-notification-sender.port.js';
 import type { VendorProfileReader } from '../../../shared/access/readers.js';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import type { ClockPort } from '../../../shared/domain/clock.port.js';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
+// US-069 (PB-P2-006 / BE-005): handler `quote_received` in-tx. Reemplaza las
+// 2 llamadas legacy `notifications.notify({ event: 'quote.sent' })` por la
+// notif canónica `type='quote_received'` con payload rico, idempotencia y
+// resolución de idioma (paralelo al refactor US-068 en US-049).
+import type { OnQuoteSentHandler } from '../../notifications/application/on-quote-sent.handler.js';
 import {
   QrNotFoundError,
   QrNotRespondableError,
@@ -44,6 +48,10 @@ interface QuoteRequestLockRow {
 interface EventReadRow {
   user_id: string;
   currency: SupportedCurrency;
+  /** US-069 (BE-005): idioma del evento como fallback intermedio para el handler `quote_received`. */
+  language: string;
+  /** US-069 (BE-005): status del organizer para guards defensivos del handler (D6). */
+  owner_status: 'active' | 'suspended';
 }
 
 const RESPONDABLE_STATUSES: readonly QuoteRequestStatus[] = [
@@ -76,9 +84,9 @@ export interface RespondQuoteRequestCtx {
 export class RespondQuoteRequestUs052UseCase {
   constructor(
     private readonly vendors: VendorProfileReader,
-    private readonly notifications: QuoteNotificationSenderPort,
     private readonly clock: ClockPort,
     private readonly logger: DomainEventLogger,
+    private readonly onQuoteSentHandler: OnQuoteSentHandler,
     private readonly prisma: PrismaClient = defaultPrisma,
   ) {}
 
@@ -132,8 +140,17 @@ export class RespondQuoteRequestUs052UseCase {
         }
 
         // 4) Lee currency + organizer del evento (fuente de verdad — DEV-04).
+        // US-069 (BE-005): se agrega `language::text` (fallback D5 del handler) y
+        // `owner_status` (guard defensivo D6) en el mismo query para evitar un
+        // roundtrip extra dentro de la tx.
         const eventRows = await tx.$queryRaw<EventReadRow[]>(
-          Prisma.sql`SELECT user_id, currency FROM events WHERE id = ${qr.event_id}::uuid`,
+          Prisma.sql`SELECT e.user_id,
+                            e.currency,
+                            e.language::text AS language,
+                            u.status::text AS owner_status
+                       FROM events e
+                       JOIN users u ON u.id = e.user_id
+                      WHERE e.id = ${qr.event_id}::uuid`,
         );
         const event = eventRows[0];
         if (!event) {
@@ -167,29 +184,28 @@ export class RespondQuoteRequestUs052UseCase {
           data: { status: QuoteRequestStatus.responded },
         });
 
-        // 7) 2 notifications al organizer dentro del mismo tx.
-        const notificationPayload = {
-          quote_id: quote.id,
-          quote_request_id: qrId,
-          vendor_profile_id: vendorProfile.id,
-          total_price: body.total_price,
-          currency_code: event.currency,
-          valid_until: validUntil.toISOString(),
-        };
-        await this.notifications.notify({
-          channel: 'in_app',
-          recipientUserId: event.user_id,
-          event: 'quote.sent',
-          deliveryStatus: 'delivered',
-          payload: notificationPayload,
-          tx,
-        });
-        await this.notifications.notify({
-          channel: 'email_simulated',
-          recipientUserId: event.user_id,
-          event: 'quote.sent',
-          deliveryStatus: 'simulated',
-          payload: notificationPayload,
+        // 7) US-069 (BE-005): delegar la emisión al `OnQuoteSentHandler` in-tx.
+        // El handler aplica idempotencia (`existsQuoteReceivedForQuote` por
+        // `payload->>'quoteId'`), resolución de idioma (fallback ladder D5),
+        // guards defensivos D6 (quote no-`sent` / owner deactivated / owner_id null
+        // → warn + skip sin abortar la tx) y crea las 2 filas
+        // `Notification(type='quote_received', channel=in_app|email_simulated)`
+        // con `payload` rico + emite log `[EMAIL] notif.quoteReceived`. Cualquier
+        // fallo del handler propaga → rollback (AC-06 US-069).
+        await this.onQuoteSentHandler.handle({
+          quote: { id: quote.id, status: quote.status },
+          quoteRequest: { id: qrId },
+          vendorProfile: { id: vendorProfile.id },
+          event: {
+            id: qr.event_id,
+            ownerId: event.user_id,
+            language: event.language,
+          },
+          organizerUser: {
+            id: event.user_id,
+            status: event.owner_status === 'suspended' ? 'suspended' : 'active',
+          },
+          correlationId: ctx.correlationId ?? `req-quote-sent-${quote.id}`,
           tx,
         });
 
