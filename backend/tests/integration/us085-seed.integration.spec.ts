@@ -96,15 +96,15 @@ describe.skipIf(!dbUp)('US-085 — Seed reproducible e idempotente', () => {
     }
   });
 
-  it('TS-06: AIRecommendation deterministas — 9 accepted (features) + 1 pending budget (US-037 SEED-001)', async () => {
+  it('TS-06: AIRecommendation deterministas — 10 accepted (features) + 1 pending budget (US-037 SEED-001)', async () => {
     const recs = await prisma.aIRecommendation.findMany({ where: { isSeed: true } });
     // US-037 SEED-001: además de una AIRecommendation `accepted` por cada feature del pipeline
-    // (US-022 amplió a 9: +`quote_compare_summary`), el seed agrega una `budget_suggestion` extra
-    // en `status='pending'` para demoar el flujo HITL.
-    expect(recs).toHaveLength(10);
+    // (US-022 amplió a 9: +`quote_compare_summary`; US-024 amplió a 10: +`task_priority`), el seed
+    // agrega una `budget_suggestion` extra en `status='pending'` para demoar el flujo HITL.
+    expect(recs).toHaveLength(11);
     const accepted = recs.filter((r) => r.status === 'accepted');
     const pending = recs.filter((r) => r.status === 'pending');
-    expect(accepted).toHaveLength(9);
+    expect(accepted).toHaveLength(10);
     expect(pending).toHaveLength(1);
     expect(pending[0]?.kind).toBe('budget_suggestion');
     expect(recs.every((r) => r.isSeed)).toBe(true);
