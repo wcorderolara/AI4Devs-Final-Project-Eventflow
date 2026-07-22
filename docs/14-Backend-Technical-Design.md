@@ -689,15 +689,16 @@ Nuevo sub-módulo `backend/src/modules/event-catalog` que espeja la superficie d
 ### 10.11 Notifications
 
 - **Responsabilidad:** notificaciones in-app y email simulado por logs estructurados.
-- **In-scope:** persistencia, listado por usuario, marcar leída.
+- **In-scope:** persistencia, listado por usuario, marcar leída, handlers in-tx invocados por use cases de otros módulos.
 - **Out-of-scope:** SMTP real, SMS, push, WhatsApp.
-- **Main use cases:** `CreateNotificationUseCase` (interno; llamado por otros módulos), `ListMyNotificationsUseCase`, `MarkNotificationAsReadUseCase`, `MarkAllAsReadUseCase`.
-- **Domain services / policies:** `NotificationRoutingService` (opcional; decide tipos y destinos).
-- **Repository ports:** `NotificationRepository`.
-- **Adapters:** `NotificationSenderPort` con `InAppNotificationAdapter` (escribe Notification) y `SimulatedEmailAdapter` (escribe log estructurado).
-- **Validaciones:** tipo ∈ enum de notificación.
-- **Authorization:** lectura sobre las propias.
-- **Testing focus:** triggers, masking de PII en logs.
+- **Main use cases:** `CreateNotificationUseCase` (interno; llamado por otros módulos), `ListMyNotificationsUseCase` (US-071 surface organizer con `channel`/`status`/`page`/`pageSize`), `MarkNotificationAsReadUseCase`, `MarkAllAsReadUseCase`.
+- **Handlers in-tx (US-068 DOC-003):** `OnQuoteRequestCreatedHandler` — invocado desde `CreateQuoteRequestUseCase` (US-049 refactor BE-005) DENTRO de la misma `prisma.$transaction`. Aplica guards defensivos (vendor no-approved / user suspended / user_id null → warn + skip sin abortar la tx), chequeo de idempotencia via `existsQuoteRequestReceivedForQR`, resolución de idioma (fallback ladder `User.preferredLanguage → event.language → en`), doble INSERT (`type='quote_request_received'`, `channel='in_app'|'email_simulated'`) con `payload` rico (`{channel, languageCode, quoteRequestId, eventId, organizerId, categoryCode, title, body}`) y log estructurado `event='email_simulated' template='notif.qrReceived'` con set exacto de claves permitidas (SEC-02 no-PII: nunca `email`, `displayName`, `brief content`, `vendorName`, `eventNotes`). Cualquier fallo del handler → rollback de la QR (AC-06). Patrón: futuros handlers per-type (e.g. `OnBookingConfirmedHandler` para US-062, `OnReviewPublishedHandler` para US-065) siguen la misma convención.
+- **Domain services / policies:** `NotificationRoutingService` (opcional; decide tipos y destinos), `BatchNotificationLinkResolver` (US-071/US-068 — genera `link` server-side por type con batch-lookup para evitar N+1; registro `LINK_STRATEGY_BY_TYPE` extendido en cada US propietaria).
+- **Repository ports:** `NotificationRepository` (generic), `NotificationT7Repository` (US-034 T-7), `NotificationQrReceivedRepository` (US-068), `ListNotificationsRepository` (US-071).
+- **Adapters:** `NotificationSenderPort` con `InAppNotificationAdapter` (escribe Notification) y `SimulatedEmailAdapter` (escribe log estructurado). Adapters especializados por type: `LoggingSimulatedT7EmailAdapter` (US-034), `LoggingSimulatedQrReceivedEmailAdapter` (US-068).
+- **Validaciones:** tipo ∈ enum de notificación (`task_due_soon`, `quote_request_received`, …).
+- **Authorization:** lectura sobre las propias (`WHERE user_id = session.userId`).
+- **Testing focus:** triggers, masking de PII en logs, aislamiento BR-NOTIF-005, idempotencia.
 
 ### 10.12 AI Assistance
 

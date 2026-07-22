@@ -20,7 +20,7 @@ import {
 import { PrismaQuoteRequestActiveCounterAdapter } from '../../src/infrastructure/quote-flow/prisma-quote-request-active-counter.adapter.js';
 import type { QuoteRequestActiveCounterPort } from '../../src/shared/application/quote-request-active-counter.port.js';
 import type { DomainEventLogger } from '../../src/shared/observability/domain-event-logger.js';
-import type { QuoteNotificationSenderPort } from '../../src/shared/application/quote-notification-sender.port.js';
+import type { OnQuoteRequestCreatedHandler } from '../../src/modules/notifications/application/on-quote-request-created.handler.js';
 
 const UUID_A = '11111111-1111-1111-1111-111111111111';
 const UUID_B = '22222222-2222-2222-2222-222222222222';
@@ -220,9 +220,12 @@ describe('US-050 · quote_request.limit_reached (US-049 UC BE-005)', () => {
       },
     };
     const prisma = { $transaction: (cb: (tx: unknown) => Promise<unknown>) => cb(tx) };
-    const notifications = { notify: vi.fn() } as unknown as QuoteNotificationSenderPort;
+    // US-068 (BE-005): el UC recibe un handler en lugar del notifications sender port.
+    // El test verifica el warning `quote_request.limit_reached` que se emite ANTES del throw,
+    // por lo que el handler nunca se invoca (el throw revierte la tx).
+    const handler = { handle: vi.fn() } as unknown as OnQuoteRequestCreatedHandler;
     const logger = { emit: vi.fn() } as unknown as DomainEventLogger;
-    const uc = new CreateQuoteRequestUs049UseCase(prisma as never, notifications, logger);
+    const uc = new CreateQuoteRequestUs049UseCase(prisma as never, handler, logger);
 
     await expect(
       uc.execute(
@@ -249,7 +252,7 @@ describe('US-050 · quote_request.limit_reached (US-049 UC BE-005)', () => {
         limit: 5,
       }),
     ]);
-    // Notifications no deben dispararse porque el rollback ocurre por el throw.
-    expect((notifications.notify as ReturnType<typeof vi.fn>)).not.toHaveBeenCalled();
+    // Handler no debe dispararse porque el rollback ocurre por el throw (US-068 BE-005).
+    expect((handler.handle as ReturnType<typeof vi.fn>)).not.toHaveBeenCalled();
   });
 });

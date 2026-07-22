@@ -37,9 +37,12 @@ export function NotificationItem({ notification }: NotificationItemProps): React
     router.push(notification.link);
   };
 
+  // US-068 (PB-P2-005): destacado visual también para `quote_request_received` (vendor).
+  const isQrReceived = notification.type === 'quote_request_received';
   const containerClass = [
     'group flex w-full flex-col items-start gap-1 border-b border-gray-100 px-4 py-3 text-left outline-none focus-visible:bg-gray-50',
     isT7 ? 'border-l-4 border-l-amber-500 bg-amber-50/40' : '',
+    isQrReceived ? 'border-l-4 border-l-emerald-500 bg-emerald-50/40' : '',
     isUnread ? 'bg-blue-50/60' : '',
     disabled ? 'cursor-default opacity-60' : 'cursor-pointer hover:bg-gray-50',
   ].join(' ');

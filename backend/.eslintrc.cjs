@@ -92,6 +92,16 @@ module.exports = {
         'src/modules/reviews-moderation/interface/organizer-review.routes.ts',
         'src/modules/admin-governance/application/moderate-vendor.use-case.ts',
         'src/modules/admin-governance/interface/admin-vendor.routes.ts',
+        // Excepción documentada (US-068 PB-P2-005): el composition root de `quote-flow`
+        // (`us049-quote-requests.routes.ts`) enlaza el `OnQuoteRequestCreatedHandler` del
+        // módulo `notifications` como colaborador in-tx del `CreateQuoteRequestUseCase`.
+        // El `CreateQuoteRequestUseCase` recibe el handler por inyección (contrato en shared —
+        // el use case sólo depende del `handle()` polimórfico). Es wire cross-module (no
+        // lógica de negocio) — patrón consistente con US-065/US-047.
+        'src/modules/quote-flow/interface/us049-quote-requests.routes.ts',
+        // La misma excepción cubre el UC (importe TYPE-ONLY del handler para tipar el
+        // constructor + delegación pura al `.handle()` — no acopla implementación).
+        'src/modules/quote-flow/application/create-quote-request.us049.use-case.ts',
       ],
       rules: {
         'boundaries/element-types': 'off',
