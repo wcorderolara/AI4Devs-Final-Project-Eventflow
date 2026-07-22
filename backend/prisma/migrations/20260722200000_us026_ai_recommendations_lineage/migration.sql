@@ -24,18 +24,18 @@ ALTER TABLE "ai_recommendations"
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'fk_ai_rec_parent'
+    SELECT 1 FROM pg_constraint WHERE conname = 'ai_recommendations_parent_recommendation_id_fkey'
   ) THEN
     ALTER TABLE "ai_recommendations"
-      ADD CONSTRAINT "fk_ai_rec_parent"
+      ADD CONSTRAINT "ai_recommendations_parent_recommendation_id_fkey"
       FOREIGN KEY ("parent_recommendation_id") REFERENCES "ai_recommendations"("id")
       ON DELETE SET NULL ON UPDATE NO ACTION;
   END IF;
   IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'fk_ai_rec_root'
+    SELECT 1 FROM pg_constraint WHERE conname = 'ai_recommendations_root_recommendation_id_fkey'
   ) THEN
     ALTER TABLE "ai_recommendations"
-      ADD CONSTRAINT "fk_ai_rec_root"
+      ADD CONSTRAINT "ai_recommendations_root_recommendation_id_fkey"
       FOREIGN KEY ("root_recommendation_id") REFERENCES "ai_recommendations"("id")
       ON DELETE SET NULL ON UPDATE NO ACTION;
   END IF;
