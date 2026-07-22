@@ -1681,8 +1681,8 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 | MoSCoW | Should Have |
 | Dependencies | PB-P1-018, PB-P2-009 |
 | Acceptance Summary | - Job a 08:00 hora local.<br>- Idempotente.<br>- Solo tareas `pending/in_progress`. |
-| Traceability | FR-NOTIF-004, FR-TASK-011 · Decisión PO US-034 |
-| Notes | — |
+| Traceability | FR-TASK-010, FR-NOTIF-001, FR-NOTIF-003 · Decisión PO US-034 |
+| Notes | US-034 (DOC-001) — corrección de IDs canónicos (FR-NOTIF-004/FR-TASK-011 no existen); referencias anteriores eran alias documentales sin equivalente en `docs/9`. |
 
 ---
 

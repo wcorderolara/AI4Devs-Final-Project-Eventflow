@@ -336,7 +336,7 @@ Los NFRs explícitamente excluyen requerimientos de marketplace transaccional, p
 | NFR-OBS-001 | Toda acción administrativa relevante (aprobación/rechazo de vendor, eliminación de reseña, edición de catálogo, vista de detalle de evento) debe registrarse en `AdminAction`. | Observability / Data | Must Have | MVP | Explicit | Inspección de tabla `AdminAction` por acción. | FR-ADMIN-008, FR-EVENT-010, FR-REVIEW-003, BR-ADMIN-004/011 |
 | NFR-OBS-002 | El sistema debe loggear errores de proveedor IA, timeouts, JSON inválido y uso de fallback con contexto suficiente para diagnóstico. | Observability / AI | Must Have | MVP | Explicit | Inspección de logs en flujo IA simulado fallido. | FR-AI-009/010, BR-AI-007 |
 | NFR-OBS-003 | El sistema debe loggear fallos de autenticación, autorización y captcha de manera estructurada. | Observability / Security | Must Have | MVP | Derived | Inspección de logs por intento fallido. | FR-AUTH-002, BR-AUTH-011 |
-| NFR-OBS-004 | Las notificaciones por email deben simularse mediante log estructurado en MVP (sin enviar emails reales). | Observability / Reliability | Must Have | MVP | Explicit | Log `[EMAIL] to=… subject=…` por cada notificación disparada. | FR-NOTIF-002, BR-NOTIF-003 |
+| NFR-OBS-004 | Las notificaciones por email deben simularse mediante log estructurado en MVP (sin enviar emails reales). | Observability / Reliability | Must Have | MVP | Explicit | Log `[EMAIL] to=… subject=…` por cada notificación disparada. | FR-NOTIF-003, BR-NOTIF-003 |
 | NFR-OBS-005 | Los cambios de estado críticos (cotización vencida, evento auto-completado, BookingIntent cancelado, attachment soft-deleted) deben registrarse en logs o en `AdminAction` cuando aplica. | Observability / Data | Must Have | MVP | Derived | Inspección cruzada de logs + tablas. | FR-EVENT-009, FR-QUOTE-005, BR-PRIVACY-011 |
 | NFR-OBS-006 | El sistema NO debe requerir observabilidad enterprise (distributed tracing, APM, ELK) en MVP. Logging estructurado a stdout es suficiente. | Observability | Should Have | MVP | Derived | Ausencia de dependencias APM en stack. | 3-MVP §9.4 |
 
@@ -576,7 +576,7 @@ Los NFRs explícitamente excluyen requerimientos de marketplace transaccional, p
 | NFR-OBS-001 | FR-ADMIN-008, FR-EVENT-010, FR-REVIEW-003 | UC-ADMIN-* | BR-ADMIN-004/011, BR-EVENT-014 | AdminAction | — | 4-BR §ADMIN |
 | NFR-OBS-002 | FR-AI-009, FR-AI-010 | UC-AI-* | BR-AI-007 | AIRecommendation | All AI | 4-BR §AI |
 | NFR-OBS-003 | FR-AUTH-002 | UC-AUTH-* | BR-AUTH-011 | — | — | 4-BR §AUTH |
-| NFR-OBS-004 | FR-NOTIF-002 | UC-NOTIF-* | BR-NOTIF-003 | Notification | — | 4-BR §NOTIF |
+| NFR-OBS-004 | FR-NOTIF-003 | UC-NOTIF-* | BR-NOTIF-003 | Notification | — | 4-BR §NOTIF |
 | NFR-OBS-005 | FR-EVENT-009, FR-QUOTE-005 | UC-EVENT-009, UC-QUOTE-010 | BR-EVENT-013, BR-QUOTE-016, BR-PRIVACY-011 | Event, Quote, Attachment | — | 4-BR |
 | NFR-DATA-001 | FR-EVENT-014 | UC-EVENT-002 | BR-EVENT-007 | Event | — | 8.1 decisión #7 |
 | NFR-DATA-002 | FR-EVENT-009 | UC-EVENT-009 | BR-EVENT-013 | Event | — | 8.1 decisión #6 |

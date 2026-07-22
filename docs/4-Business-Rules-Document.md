@@ -391,7 +391,7 @@ Donde:
 | BR-NOTIF-004 | Acuse de lectura in-app | Las notificaciones in-app deben incluir un campo `read_at` que se actualice al ser visualizadas por el usuario. | Notificaciones | Should Have | MVP | Derived | QA valida la actualización del campo. |
 | BR-NOTIF-005 | Notificaciones solo al destinatario | Cada notificación se entrega exclusivamente al usuario destinatario. No existen notificaciones broadcast cross-rol en MVP. | Notificaciones, privacidad | Must Have | MVP | Derived | QA verifica el aislamiento de notificaciones. |
 | BR-NOTIF-006 | WhatsApp fuera de alcance | Cualquier integración con WhatsApp (Business API u otros) queda explícitamente fuera del MVP. | Notificaciones | Must Have | Out of Scope | Explicit | Confirmar ausencia de integraciones WhatsApp. |
-| BR-NOTIF-007 | Idioma de la notificación | El contenido de las notificaciones debe respetar el idioma preferido del destinatario o el del evento asociado, según corresponda. | Notificaciones, i18n | Should Have | MVP | Derived | QA valida la coherencia idiomática. |
+| BR-NOTIF-007 | Idioma de la notificación | El contenido de las notificaciones debe respetar el idioma preferido del destinatario o el del evento asociado, según corresponda. **Aclaración US-034 (DOC-003):** cuando la notificación se dirige al propio organizador del evento (por ejemplo, `EmitT7NotificationsJob`), prevalece `User.preferredLanguage`; cuando se dirige a un tercero (vendor, invitado), prevalece el idioma de la entidad disparadora (`Event.language`, `Vendor.language`). Fallback final `es-LATAM` si ninguno está catalogado. | Notificaciones, i18n | Should Have | MVP | Derived | QA valida la coherencia idiomática. |
 
 ---
 

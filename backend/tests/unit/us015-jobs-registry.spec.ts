@@ -6,19 +6,28 @@
 // * Cadencia inválida → NodeCronScheduler adapter falla fail-fast (EC-03 operativo).
 // * No existe ruta HTTP `/jobs/auto-complete*` en el árbol de routers (SEC-03).
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { Scheduler, ScheduledTaskHandle } from '../../src/jobs/scheduler.port.js';
+import type {
+  Scheduler,
+  ScheduledTaskHandle,
+  ScheduleOptions,
+} from '../../src/jobs/scheduler.port.js';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 interface RecordedTask {
   cron: string;
   task: () => Promise<void> | void;
+  options?: ScheduleOptions;
 }
 
 class RecordingScheduler implements Scheduler {
   tasks: RecordedTask[] = [];
-  schedule(cronExpression: string, task: () => Promise<void> | void): ScheduledTaskHandle {
-    this.tasks.push({ cron: cronExpression, task });
+  schedule(
+    cronExpression: string,
+    task: () => Promise<void> | void,
+    options?: ScheduleOptions,
+  ): ScheduledTaskHandle {
+    this.tasks.push({ cron: cronExpression, task, options });
     return { stop: (): void => undefined };
   }
 }
@@ -42,22 +51,40 @@ describe('US-015 — registerJobs gated por JOBS_ENABLED', () => {
     expect(handle.handles).toHaveLength(0);
   });
 
-  it('JOBS_ENABLED=true: registra AutoComplete + ExpireQuotes + ExpireQuoteRequests con sus cadencias', async () => {
+  it('JOBS_ENABLED=true: registra AutoComplete + ExpireQuotes + ExpireQuoteRequests + EmitT7 con sus cadencias', async () => {
     // US-053 (PB-P1-031): `registerJobs` agrega `ExpireQuotesJob`.
-    // US-055 (PB-P1-033): `registerJobs` agrega `ExpireQuoteRequestsJob`. Los tres jobs
-    // comparten el `Scheduler` port de US-015.
+    // US-055 (PB-P1-033): `registerJobs` agrega `ExpireQuoteRequestsJob`.
+    // US-034 (PB-P2-004): `registerJobs` agrega `EmitT7NotificationsJob` con timezone
+    // `America/Guatemala` (D1). Los cuatro jobs comparten el `Scheduler` port de US-015.
     const { registerJobs } = await loadRegistry({
       JOBS_ENABLED: 'true',
       JOBS_AUTOCOMPLETE_CRON: '30 0 * * *',
       JOBS_EXPIRE_QUOTES_CRON: '0 1 * * *',
       JOBS_EXPIRE_QUOTE_REQUESTS_CRON: '0 1 * * *',
+      JOBS_EMIT_T7_CRON: '0 8 * * *',
+      JOBS_EMIT_T7_TZ: 'America/Guatemala',
+      JOBS_EMIT_T7_ENABLED: 'true',
+    });
+    const scheduler = new RecordingScheduler();
+    const handle = registerJobs({ scheduler });
+    expect(scheduler.tasks).toHaveLength(4);
+    const crons = scheduler.tasks.map((t) => t.cron).sort();
+    expect(crons).toEqual(['0 1 * * *', '0 1 * * *', '0 8 * * *', '30 0 * * *']);
+    // US-034: la tarea T-7 se registra con `timezone: 'America/Guatemala'` (D1).
+    const t7 = scheduler.tasks.find((t) => t.cron === '0 8 * * *');
+    expect(t7?.options?.timezone).toBe('America/Guatemala');
+    expect(handle.handles).toHaveLength(4);
+    handle.stopAll();
+  });
+
+  it('US-034: JOBS_EMIT_T7_ENABLED=false → sólo se registran los 3 jobs previos, no el emisor T-7', async () => {
+    const { registerJobs } = await loadRegistry({
+      JOBS_ENABLED: 'true',
+      JOBS_EMIT_T7_ENABLED: 'false',
     });
     const scheduler = new RecordingScheduler();
     const handle = registerJobs({ scheduler });
     expect(scheduler.tasks).toHaveLength(3);
-    const crons = scheduler.tasks.map((t) => t.cron).sort();
-    expect(crons).toEqual(['30 0 * * *', '0 1 * * *', '0 1 * * *'].sort());
-    expect(handle.handles).toHaveLength(3);
     handle.stopAll();
   });
 });

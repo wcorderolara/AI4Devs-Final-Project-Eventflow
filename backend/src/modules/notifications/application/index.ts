@@ -1,3 +1,9 @@
-// Placeholder de capa (US-090). Sin lógica de feature; la implementación pertenece a la
-// feature story de este bounded context. `export {}` mantiene el módulo compilable con `tsc`.
-export {};
+// US-034 (PB-P2-004). Application layer del módulo `notifications`.
+export {
+  EmitT7NotificationsUseCase,
+  calculateT7TargetDate,
+  type EmitT7NotificationsDeps,
+  type EmitT7Logger,
+  type EmitT7Result,
+  type EmitT7RunInput,
+} from './emit-t7-notifications.use-case.js';
