@@ -22,6 +22,10 @@ import { PrismaQuoteRepository } from '../../quote-flow/infrastructure/prisma-qu
 import { GenerateQuoteSummaryUseCase } from '../application/generate-quote-summary.us022.use-case.js';
 // US-059 (PB-P2-001 / BE-002): use case de solo lectura para el surface del panel.
 import { GetLatestQuoteSummaryUseCase } from '../application/get-latest-quote-summary.us059.use-case.js';
+// US-024 (PB-P2-002 / BE-005/006): use case dedicado + cache in-memory + reader Prisma.
+import { PrioritizeTasksUseCase } from '../application/prioritize-tasks.us024.use-case.js';
+import { TaskPriorityCacheService } from '../infrastructure/task-priority-cache.service.js';
+import { PrismaEligibleTasksReader } from '../infrastructure/prisma-eligible-tasks.reader.js';
 import { StructuredDomainEventLogger } from '../../../infrastructure/observability/structured-domain-event-logger.js';
 import { PrismaAIRecommendationRepository } from '../infrastructure/prisma-ai-recommendation.repository.js';
 import { PrismaAIRecommendationHitlRepository } from '../infrastructure/prisma-ai-recommendation-hitl.repository.js';
@@ -80,10 +84,20 @@ const getLatestQuoteSummaryUseCase = new GetLatestQuoteSummaryUseCase(
   repo,
   new PrismaEventAccessReader(),
 );
+// US-024 (PB-P2-002 / BE-004/005): cache instance a nivel módulo (singleton por proceso) para que
+// requests seguidas del mismo evento reutilicen la misma signature dentro del TTL 5min.
+const taskPriorityCache = new TaskPriorityCacheService();
+const prioritizeTasksUseCase = new PrioritizeTasksUseCase(
+  new PrismaEventAccessReader(),
+  new PrismaEligibleTasksReader(),
+  taskPriorityCache,
+  generateUseCase,
+);
 const assistance = new AIAssistanceController(
   generateUseCase,
   generateQuoteSummaryUseCase,
   getLatestQuoteSummaryUseCase,
+  prioritizeTasksUseCase,
 );
 
 // US-025 HITL registry — se sustituye la strategy `budget_suggestion` placeholder por la V2 de US-037.
@@ -148,6 +162,20 @@ aiAssistanceRouter.post(
     rateLimit: aiGenerationRateLimit,
     validation: v(z.object({ params: QuoteRequestIdParamSchema, body: AiBaseRequestSchema })),
     handler: asyncHandler(assistance.comparisonSummary),
+  }),
+);
+
+// ── US-024 (PB-P2-002 / BE-006): AI task priority top 3 event-scope con cache signature.
+// HITL informativo con `top[]` (task_id + reason + urgency_score). Distinta de la ruta
+// `/ai/task-prioritization` heredada (US-097 baseline, shape `prioritized[]`).
+aiAssistanceRouter.post(
+  '/events/:eventId/ai/task-priority',
+  ...composeProtectedRoute({
+    auth: sessionAuth,
+    role: organizer,
+    rateLimit: aiGenerationRateLimit,
+    validation: v(z.object({ params: EventIdParamSchema, body: AiBaseRequestSchema })),
+    handler: asyncHandler(assistance.taskPriority),
   }),
 );
 

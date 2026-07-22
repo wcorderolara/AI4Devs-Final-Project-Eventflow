@@ -7,3 +7,5 @@ export * from './quote-summary.request.js';
 export * from './quote-summary.response.js';
 // US-059 (PB-P2-001 / BE-001): query DTO del GET latest quote summary.
 export * from './latest-quote-summary.query.js';
+// US-024 (PB-P2-002 / BE-006): response DTO del endpoint task-priority (HITL top 3 + cache).
+export * from './task-priority.response.js';

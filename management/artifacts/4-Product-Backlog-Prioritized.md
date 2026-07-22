@@ -1639,7 +1639,7 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 | MoSCoW | Should Have |
 | Dependencies | PB-P1-018, PB-P0-009..011 |
 | Acceptance Summary | - Top 3 con racional.<br>- Refresh on-demand.<br>- HITL informativo. |
-| Traceability | FR-AI-020 · UC-AI-008 |
+| Traceability | FR-AI-008 · FR-I18N-005 · UC-AI-008 · BR-AI-001 · BR-AI-002 · BR-AI-011 · BR-TASK-009 (housekeeping US-024: `FR-AI-020` era referencia obsoleta; el requerimiento funcional canónico es `FR-AI-008` — la priorización de tareas urgentes es parte de la familia AI-008). |
 | Notes | Refuerza demo. |
 
 ---

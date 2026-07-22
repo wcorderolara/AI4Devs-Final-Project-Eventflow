@@ -18,6 +18,8 @@ export const MVP_ACTIVE_FEATURE_ALLOWLIST: readonly AiFeatureType[] = [
   // US-022 (PB-P2-001 / AI-006): promovida al MVP con prompt v1 y schema Zod estricto.
   'quote_compare_summary',
   'task_prioritization',
+  // US-024 (PB-P2-002 / AI-008): promovida al MVP con prompt v1 en 4 locales y schema Zod estricto.
+  'task_priority',
 ] as const;
 
 /** Features clasificadas como Future/P4: no pueden estar `active` en MVP. */

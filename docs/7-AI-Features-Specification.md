@@ -1107,6 +1107,24 @@ Organizer.
 - Priorizar tareas irrelevantes para el contexto del evento.
 - Recomendar acciones imposibles (e.g., "reservar venue" cuando el evento es mañana).
 
+#### Implementación MVP US-024 (PB-P2-002 — cierra AI-008)
+
+> Nota de alineación: US-024 concreta AI-008 con un contrato específico HITL informativo y cache
+> por signature. El shape del output difiere del esquema histórico documentado arriba (que quedó
+> como referencia): la implementación real usa `top[]` con `{ task_id, reason, urgency_score }` y
+> no incluye `suggested_timing` (la urgencia se codifica en el score 1..10).
+
+- **Feature registrada:** `task_priority` (event-scope) en `AI_FEATURE_TYPES`, distinto del feature histórico `task_prioritization` (US-097 baseline con shape `prioritized[]`, que se conserva para compatibilidad).
+- **Prompt `TaskPriorityPrompt v1`:** activo en 4 locales (`es-LATAM`, `es-ES`, `pt`, `en`) — `promptKey='task_priority.<locale>@V1'` — con instrucciones HITL strict (`INFORMATIVE only — NEVER mark a task as done, NEVER reorder or rename tasks in the official checklist`). Hash `sha256` verificado por el registry (US-121 disciplina).
+- **Cache signature 5min (D4):** `TaskPriorityCacheService` in-memory shared (paridad `MetricsCacheService` US-079). Key `${eventId}:${signature}`; `signature = sha256(sorted(id|status|updated_at.toISOString()))` (`computeChecklistSignature`). Cache hit dentro del TTL ⇒ reutiliza el mismo `ai_recommendation_id` sin invocar al provider (AC-04). Cualquier mutación observable (nueva tarea, cambio de status, edición que actualiza `updated_at`) produce otra signature ⇒ cache miss (AC-05).
+- **Use case dedicado:** `PrioritizeTasksUseCase` orquesta ownership + carga de elegibles + signature + cache lookup + delegación al motor genérico (`GenerateAiRecommendationUseCase`) + safety valve (filtra `task_ids ∉ set elegible`; EC-04) + cache populate.
+- **Filtro de elegibilidad (D3, alineado al schema real):** `deleted_at IS NULL AND status IN ('pending','active','in_progress') AND (ai_generated = false OR confirmed_by_user_id IS NOT NULL)`. `is_ai_pending` de la user story se mapea al equivalente real "no IA-generada o ya confirmada por el usuario" — no hay columna dedicada.
+- **Locale binding US-084:** el motor genérico deriva el locale del provider IA desde `event.languageCode` vía `PrismaEventLanguageReader`; el output se persiste con las columnas denormalizadas `locale` y `locale_fallback`. Prompts en 4 locales + fallback de template estático si el provider falla (AC-07 — `locale_fallback=true`, sin `ai_recommendation_id`, no se cachea para permitir reintento).
+- **Persistencia HITL:** `AIRecommendation.kind='task_priority'`, `status='pending'`, `inputPayload.task_ids_snapshot + signature + prompt_version='v1'` (D8/AC-04). El `apply` HITL (`TaskPriorityApplyStrategy` en `MVP_APPLY_STRATEGIES`) marca `accepted` sin side effect: el organizador actúa vía deep-link a US-030 (mark done por task), nunca desde el card.
+- **Rate limit:** heredado de US-022/US-110 (shared `aiGenerationRateLimit`).
+- **Endpoint:** `POST /api/v1/events/:eventId/ai/task-priority` (organizer + ownership + rate limit + validación). Response shape (§16 M07): `{ ai_recommendation_id, top[], rationale_summary?, locale, locale_fallback, cache_hit, generated_at }`.
+- **Frontend:** `AITaskPriorityCard` (Client Component) — `role="region"`, `role="list"`, `axe` sin violaciones. Pill "En caché" cuando `cache_hit=true`; badge "Modo alternativo" cuando `locale_fallback=true`. i18n en 4 locales bajo `organizer.ai.task_priority.*`. Deep-link a la tarea (US-030) por item — el card NO altera estado (HITL strict enforced en UI).
+
 #### Criterios de aceptación
 1. Dado un evento con tareas y `event_date` futura, cuando el organizador abre el dashboard, entonces el sistema devuelve `top_actions` con ≤3 elementos.
 2. Cada acción tiene `reason` y `suggested_timing`.

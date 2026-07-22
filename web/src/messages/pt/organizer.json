@@ -144,6 +144,34 @@
         "FORBIDDEN": "Seu perfil não pode gerar este resumo.",
         "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
       }
+    },
+    "task_priority": {
+      "title": "Prioridades IA",
+      "subtitle": "Até 3 tarefas urgentes. A IA sugere; você decide.",
+      "mark_done": "Ir para a tarefa",
+      "regenerate": "Regenerar",
+      "regenerating": "Regenerando…",
+      "retry": "Tentar novamente",
+      "urgency": "Urgência",
+      "cache_hit": "Resultado em cache (últimos 5 minutos)",
+      "cache_hit_short": "Em cache",
+      "fallback": "Sugestão padrão — a IA não respondeu a tempo",
+      "fallback_short": "Modo alternativo",
+      "empty_state": {
+        "body": "Não há tarefas urgentes para priorizar no momento.",
+        "cta": "Gerar checklist IA"
+      },
+      "errors": {
+        "AI_TIMEOUT": "A IA demorou muito para responder. Tente novamente.",
+        "AI_INVALID_OUTPUT": "A IA devolveu uma resposta inesperada. Tente novamente.",
+        "AI_PROVIDER_ERROR": "O provedor de IA não está disponível no momento. Tente em alguns minutos.",
+        "AI_RATE_LIMITED": "Você atingiu o limite de gerações IA. Tente mais tarde.",
+        "RATE_LIMIT_EXCEEDED": "Você atingiu o limite de gerações IA. Tente mais tarde.",
+        "EVENT_NOT_FOUND": "Não encontramos esse evento ou você não tem permissão para vê-lo.",
+        "AUTHENTICATION_REQUIRED": "Você precisa fazer login para ver as prioridades IA.",
+        "FORBIDDEN": "Seu perfil não pode consultar prioridades IA.",
+        "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
+      }
     }
   },
   "booking": {

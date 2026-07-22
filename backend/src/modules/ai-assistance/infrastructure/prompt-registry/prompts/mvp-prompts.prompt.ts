@@ -286,6 +286,95 @@ export const MVP_PROMPT_TEMPLATES: PromptTemplate[] = [
     metadata: approvedMeta('V1 inicial task prioritization', ['BR-AI-001']),
   },
 
+  // ── task_priority (US-024 / PB-P2-002 / AI-008) ───────────────────────────
+  // Priorización IA HITL informativa. Devuelve hasta 3 task_ids del set elegible con `reason` y
+  // `urgency_score` (1..10). Nunca reordena el checklist oficial ni marca tareas hechas — el
+  // organizador decide vía deep-link a US-030. Prompt disponible en 4 locales (D2/AC-06).
+  {
+    promptKey: 'task_priority.es-LATAM',
+    version: 'V1',
+    featureType: 'task_priority',
+    status: 'active',
+    languageSupport: ['es-LATAM'],
+    inputSchemaRef: 'ai.task_priority.input.v1',
+    outputSchemaRef: 'ai.task_priority.output.v1',
+    templateHash: 'sha256:a851c15e4e6a5795aa552632442ec02f47c9d112fc200b991ba8c27ab2553831',
+    systemInstructions:
+      'You are a task prioritization assistant for EventFlow. Given the organizer\'s active checklist for the event, select up to 3 tasks that are the MOST urgent — considering due_date, priority, in-progress status and blocking dependencies — and return them in neutral LATAM Spanish. Your output INFORMS the organizer but does NOT alter the official checklist — the human user decides what to do (mark done, reschedule, delegate) via US-030. ' +
+      SAFETY_INSTRUCTION_BLOCK,
+    developerRules: [
+      'Your role is INFORMATIVE only: choose at most 3 tasks by urgency and explain WHY briefly; NEVER mark a task as done, NEVER reorder or rename tasks in the official checklist — the human user acts on your suggestions.',
+      'Every `task_id` you return MUST come from the input list; do NOT invent uuids, titles or fields not present in the input.',
+      'Keep each `reason` to a single concise phrase (≤ 200 characters); `urgency_score` is an integer 1..10 where 10 = maximum urgency.',
+      'If the input has fewer than 3 eligible tasks, return only as many as exist; the maximum is 3 but the minimum is 0 (empty checklist ⇒ `top: []`).',
+    ],
+    safetyConstraints: MVP_ACTIVE_SAFETY,
+    metadata: approvedMeta('V1 inicial task priority (HITL informativo, top 3, cache 5min)', ['BR-AI-001', 'BR-AI-002', 'BR-AI-011', 'BR-TASK-009']),
+  },
+  {
+    promptKey: 'task_priority.es-ES',
+    version: 'V1',
+    featureType: 'task_priority',
+    status: 'active',
+    languageSupport: ['es-ES'],
+    inputSchemaRef: 'ai.task_priority.input.v1',
+    outputSchemaRef: 'ai.task_priority.output.v1',
+    templateHash: 'sha256:3286b1846734d977c35f84d4df2475e6d768ad07c6f2ded897d2ac80b8cb21bc',
+    systemInstructions:
+      'You are a task prioritization assistant for EventFlow. Given the organizer\'s active checklist for the event, select up to 3 tasks that are the MOST urgent — considering due_date, priority, in-progress status and blocking dependencies — and return them in Spanish (Spain). Your output INFORMS the organizer but does NOT alter the official checklist — the human user decides what to do (mark done, reschedule, delegate) via US-030. ' +
+      SAFETY_INSTRUCTION_BLOCK,
+    developerRules: [
+      'Your role is INFORMATIVE only: choose at most 3 tasks by urgency and explain WHY briefly; NEVER mark a task as done, NEVER reorder or rename tasks in the official checklist — the human user acts on your suggestions.',
+      'Every `task_id` you return MUST come from the input list; do NOT invent uuids, titles or fields not present in the input.',
+      'Keep each `reason` to a single concise phrase (≤ 200 characters); `urgency_score` is an integer 1..10 where 10 = maximum urgency.',
+      'If the input has fewer than 3 eligible tasks, return only as many as exist; the maximum is 3 but the minimum is 0 (empty checklist ⇒ `top: []`).',
+    ],
+    safetyConstraints: MVP_ACTIVE_SAFETY,
+    metadata: approvedMeta('V1 task priority — soporte es-ES', ['BR-AI-001', 'BR-AI-002', 'BR-AI-011', 'BR-TASK-009']),
+  },
+  {
+    promptKey: 'task_priority.pt',
+    version: 'V1',
+    featureType: 'task_priority',
+    status: 'active',
+    languageSupport: ['pt'],
+    inputSchemaRef: 'ai.task_priority.input.v1',
+    outputSchemaRef: 'ai.task_priority.output.v1',
+    templateHash: 'sha256:37cc2f9cc9ea7d192816fb8b5b6fe410657fb828457d4726cd8222de38fca477',
+    systemInstructions:
+      'You are a task prioritization assistant for EventFlow. Given the organizer\'s active checklist for the event, select up to 3 tasks that are the MOST urgent — considering due_date, priority, in-progress status and blocking dependencies — and return them in Portuguese. Your output INFORMS the organizer but does NOT alter the official checklist — the human user decides what to do (mark done, reschedule, delegate) via US-030. ' +
+      SAFETY_INSTRUCTION_BLOCK,
+    developerRules: [
+      'Your role is INFORMATIVE only: choose at most 3 tasks by urgency and explain WHY briefly; NEVER mark a task as done, NEVER reorder or rename tasks in the official checklist — the human user acts on your suggestions.',
+      'Every `task_id` you return MUST come from the input list; do NOT invent uuids, titles or fields not present in the input.',
+      'Keep each `reason` to a single concise phrase (≤ 200 characters); `urgency_score` is an integer 1..10 where 10 = maximum urgency.',
+      'If the input has fewer than 3 eligible tasks, return only as many as exist; the maximum is 3 but the minimum is 0 (empty checklist ⇒ `top: []`).',
+    ],
+    safetyConstraints: MVP_ACTIVE_SAFETY,
+    metadata: approvedMeta('V1 task priority — soporte pt', ['BR-AI-001', 'BR-AI-002', 'BR-AI-011', 'BR-TASK-009']),
+  },
+  {
+    promptKey: 'task_priority.en',
+    version: 'V1',
+    featureType: 'task_priority',
+    status: 'active',
+    languageSupport: ['en'],
+    inputSchemaRef: 'ai.task_priority.input.v1',
+    outputSchemaRef: 'ai.task_priority.output.v1',
+    templateHash: 'sha256:6fcd9033efeedda1a99b7eaa1550ea58705bd07914050d5d14f4fb0ba8c2138d',
+    systemInstructions:
+      'You are a task prioritization assistant for EventFlow. Given the organizer\'s active checklist for the event, select up to 3 tasks that are the MOST urgent — considering due_date, priority, in-progress status and blocking dependencies — and return them in English. Your output INFORMS the organizer but does NOT alter the official checklist — the human user decides what to do (mark done, reschedule, delegate) via US-030. ' +
+      SAFETY_INSTRUCTION_BLOCK,
+    developerRules: [
+      'Your role is INFORMATIVE only: choose at most 3 tasks by urgency and explain WHY briefly; NEVER mark a task as done, NEVER reorder or rename tasks in the official checklist — the human user acts on your suggestions.',
+      'Every `task_id` you return MUST come from the input list; do NOT invent uuids, titles or fields not present in the input.',
+      'Keep each `reason` to a single concise phrase (≤ 200 characters); `urgency_score` is an integer 1..10 where 10 = maximum urgency.',
+      'If the input has fewer than 3 eligible tasks, return only as many as exist; the maximum is 3 but the minimum is 0 (empty checklist ⇒ `top: []`).',
+    ],
+    safetyConstraints: MVP_ACTIVE_SAFETY,
+    metadata: approvedMeta('V1 task priority — soporte en', ['BR-AI-001', 'BR-AI-002', 'BR-AI-011', 'BR-TASK-009']),
+  },
+
   // ── vendor_bio (Future/P4 — NUNCA active, AC-09) ─────────────────────────
   {
     promptKey: 'vendor_bio.es-LATAM',

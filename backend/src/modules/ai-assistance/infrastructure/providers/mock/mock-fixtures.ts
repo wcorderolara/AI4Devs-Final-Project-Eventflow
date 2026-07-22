@@ -67,6 +67,32 @@ export function baseOutput(feature: AiFeatureType, input: Record<string, unknown
       return { bio: 'Somos un proveedor con amplia experiencia.', highlights: ['Puntualidad', 'Calidad'] };
     case 'task_prioritization':
       return { prioritized: [{ title: 'Reservar lugar', rank: 1, rationale: 'Es la restricción principal' }] };
+    // US-024 (AC-01 / AI-008): fixture determinista con `top` ≤ 3 usando task_ids reales del
+    // input (`__task_ids`) para que las pruebas puedan enlazar el snapshot con la respuesta.
+    case 'task_priority': {
+      const ids = Array.isArray(input.__task_ids) ? (input.__task_ids as string[]) : [];
+      const sample = ids.length > 0 ? ids.slice(0, 3) : [
+        '00000000-0000-4000-8000-000000000001',
+        '00000000-0000-4000-8000-000000000002',
+        '00000000-0000-4000-8000-000000000003',
+      ];
+      const reasons = [
+        'Vence en menos de 7 días y bloquea otras tareas del checklist.',
+        'Prioridad alta pendiente de arranque; conviene iniciarla esta semana.',
+        'Tarea en progreso próxima al vencimiento; conviene cerrarla pronto.',
+      ];
+      const scores = [10, 8, 6];
+      const top = sample.map((task_id, i) => ({
+        task_id,
+        reason: reasons[i] ?? reasons[0],
+        urgency_score: scores[i] ?? 5,
+      }));
+      return {
+        top,
+        rationale_summary:
+          'Priorización enfocada en fechas próximas y prioridad alta; el organizador decide acciones concretas.',
+      };
+    }
     default:
       return {};
   }

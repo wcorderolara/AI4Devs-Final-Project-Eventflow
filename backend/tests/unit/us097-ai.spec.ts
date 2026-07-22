@@ -49,9 +49,10 @@ describe('AiGenerationService (VR-02/03/05, EC-05..08)', () => {
 });
 
 describe('Feature registry', () => {
-  it('cada feature tiene schema y scope (extendido a 9 con quote_compare_summary en US-022)', () => {
-    // US-022 (PB-P2-001) amplía el registry: `quote_compare_summary` (event-scope).
-    expect(AI_FEATURE_TYPES.length).toBe(9);
+  it('cada feature tiene schema y scope (extendido a 10 con task_priority en US-024)', () => {
+    // US-022 (PB-P2-001) amplía el registry con `quote_compare_summary` (event-scope);
+    // US-024 (PB-P2-002) agrega `task_priority` (event-scope, shape `top[]`).
+    expect(AI_FEATURE_TYPES.length).toBe(10);
     for (const f of AI_FEATURE_TYPES as readonly AiFeatureType[]) {
       expect(OUTPUT_SCHEMAS[f]).toBeDefined();
     }
