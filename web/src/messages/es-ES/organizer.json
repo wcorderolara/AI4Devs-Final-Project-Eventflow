@@ -113,6 +113,7 @@
         "loading": "Analizando presupuestos…",
         "loadingHint": "Puede tardar hasta 60 segundos.",
         "emptyPrompt": "Genera un resumen para ver pros, contras e información pendiente por presupuesto.",
+        "emptyPersistedPrompt": "Aún no hay resumen IA generado para esta categoría. Genera uno cuando tengas ≥2 presupuestos activos.",
         "generateCta": "Generar resumen IA",
         "hitlNotice": "La IA informa; tú decides. Marca el presupuesto preferido cuando estés listo.",
         "localeFallbackNotice": "Resumen IA temporalmente no disponible. Compara manualmente los presupuestos en la tabla.",

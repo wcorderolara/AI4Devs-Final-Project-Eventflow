@@ -904,6 +904,21 @@ Organizer.
 - **Errores del contrato:** `INVALID_FILTERS` (falta `category_code`), `INSUFFICIENT_QUOTES`, `INVALID_CATEGORY`, `EVENT_NOT_FOUND`, `AI_PROVIDER_TIMEOUT`, `AI_INVALID_OUTPUT`, `RATE_LIMIT_EXCEEDED` (heredado US-110). Los códigos `LLM_UNAVAILABLE`/`INVALID_JSON`/`MIXED_CURRENCIES` del "diseño de doc" mapean a los códigos canónicos existentes (`AI_PROVIDER_UNAVAILABLE`, `AI_INVALID_OUTPUT`, y — para currency mixta — se preserva como observación textual en el summary, sin bloquear).
 - **FE:** `AIComparisonSummary` panel lateral `role="complementary"` con Disclosure por quote + banner snapshot mismatch (`payload.quote_ids_snapshot ≠ currentQuoteIds`, EC-05) + fallback notice cuando `locale_fallback=true` (EC-03). i18n `organizer.ai.quote_summary.*` en 4 locales.
 
+#### Surface del último resumen persistido (US-059, PB-P2-001 — cierra AI-006)
+
+> Superficie GET del feature. Distinto de la generación de US-022 (POST): el panel abre por
+> defecto cuando hay ≥ 2 quotes activas y consume el último `AIRecommendation` persistido; el
+> CTA "Resumir con IA" reusa la mutación de US-022 sin duplicar lógica.
+
+- **Endpoints canónicos:**
+  - `GET /api/v1/events/:eventId/ai/quote-summary?category_code=<slug>` — devuelve el shape del contrato POST (US-022) para el par (evento, categoría). `404` uniforme si no existe → **empty state + CTA** en la UI (AC-02).
+  - `GET /api/v1/ai-recommendations/:aiRecommendationId` — reuso 100% del endpoint de US-097 (audit / deep-link con ownership `requestedByUserId`).
+- **Use case:** `GetLatestQuoteSummaryUseCase` (solo lectura) — enforce ownership uniforme del evento vía `EventAccessReader.getOwnerId`; query `AIRecommendation` por `(eventId, kind='quote_compare_summary', inputPayload.category_code=X)` ordenado por `createdAt DESC`, reusando el índice `(event_id, recommendation_type, created_at DESC)` — el filtro por `category_code` (JSON path) reduce el resultset dentro del cubo (event, kind).
+- **Hook FE:** `useLatestQuoteSummary({eventId, categoryCode, currentQuoteIds, enabled})` — TanStack Query con `retry:false` (el 404 es estado válido) + `isStale` computado como diferencia set-simétrica entre `quote_ids_snapshot` y `currentQuoteIds` (orden-independiente).
+- **Panel `AIComparisonSummary` extendido** con 3 props opcionales: `initialData` (persistido), `initialLoading` (skeleton), `initialNotFound` (empty state con copy dedicado). La mutación de generación toma precedencia sobre `initialData` en cuanto termina, sin refetch adicional. Los 5 estados (loading / empty+CTA / filled / stale / fallback badge) son ahora renderizables tanto driveados por mutation como por query.
+- **UX default:** en desktop el panel abre automáticamente cuando el comparador tiene ≥ 2 quotes activas; en mobile el toggle sigue disponible para colapsarlo (drawer). La CTA "Regenerar" y el banner de snapshot mismatch reusan la mutación `useGenerateAIQuoteSummary` de US-022.
+- **Errores:** `INVALID_FILTERS` (falta `category_code`), `404` uniforme (ajeno o inexistente), `401`/`403` estándar. No hay `AI_RECOMMENDATION_NOT_FOUND` como código dedicado — se preserva `RESOURCE_NOT_FOUND` para consistencia con US-097 (deviation D-01 documentada en el execution record de US-059).
+
 ---
 
 ### AI-007 — Generación de bio y paquetes del proveedor

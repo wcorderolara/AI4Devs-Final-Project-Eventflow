@@ -51,6 +51,20 @@ export interface AIComparisonSummaryProps {
   vendorLabelByQuoteId?: Record<string, string>;
   /** Alternativa para tests: inyecta la mutación en vez del hook TanStack. */
   useMutationHook?: typeof useGenerateAIQuoteSummary;
+  /**
+   * US-059 (FE-002): resumen persistido cargado por `useLatestQuoteSummary`. Cuando la mutación
+   * de generación aún no ha corrido y hay `initialData`, éste se muestra como estado "filled"
+   * o "stale" (si `quote_ids_snapshot` difiere de `currentQuoteIds`). Ninguna generación se
+   * dispara automáticamente — el CTA queda a criterio del usuario.
+   */
+  initialData?: import('../api/aiApi').GenerateQuoteSummaryResponse;
+  /** US-059 (FE-002): fetch inicial en vuelo → skeleton en lugar de empty state. */
+  initialLoading?: boolean;
+  /**
+   * US-059 (FE-002 · AC-02): `true` cuando el GET latest devolvió 404. La UI muestra empty state
+   * + CTA. Cuando el mutation runs se sobreescribe con su propio `data`.
+   */
+  initialNotFound?: boolean;
 }
 
 interface SummarySectionProps {
@@ -123,11 +137,18 @@ export function AIComparisonSummary({
   onClose,
   vendorLabelByQuoteId,
   useMutationHook,
+  initialData,
+  initialLoading = false,
+  initialNotFound = false,
 }: AIComparisonSummaryProps): React.JSX.Element | null {
   const t = useTranslations('organizer.ai.quote_summary');
   const useMutationImpl = useMutationHook ?? useGenerateAIQuoteSummary;
   const mutation = useMutationImpl();
-  const { data, isPending, isError, error, mutate, reset } = mutation;
+  const { data: mutationData, isPending, isError, error, mutate, reset } = mutation;
+
+  // US-059 (FE-002): la mutación toma precedencia sobre `initialData` — al regenerar, el usuario
+  // ve inmediatamente el nuevo resultado sin refetchs innecesarios.
+  const data = mutationData ?? initialData;
 
   const handleGenerate = (): void => {
     mutate({ eventId, categoryCode });
@@ -184,7 +205,7 @@ export function AIComparisonSummary({
         </div>
       )}
 
-      {isPending && !data && (
+      {(isPending || (initialLoading && !data)) && !data && (
         <div
           role="status"
           aria-live="polite"
@@ -200,9 +221,14 @@ export function AIComparisonSummary({
         </div>
       )}
 
-      {!data && !isPending && !isError && (
-        <div className="mt-3 flex flex-col gap-3">
-          <p className="text-sm text-neutral-700">{t('panel.emptyPrompt')}</p>
+      {!data && !isPending && !isError && !initialLoading && (
+        <div
+          className="mt-3 flex flex-col gap-3"
+          data-testid={initialNotFound ? 'ai-quote-summary-empty-persisted' : 'ai-quote-summary-empty'}
+        >
+          <p className="text-sm text-neutral-700">
+            {initialNotFound ? t('panel.emptyPersistedPrompt') : t('panel.emptyPrompt')}
+          </p>
           <button
             type="button"
             onClick={handleGenerate}

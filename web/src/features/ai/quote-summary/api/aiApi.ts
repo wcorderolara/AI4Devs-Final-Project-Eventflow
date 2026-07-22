@@ -1,9 +1,8 @@
-// Cliente API — AI Quote Comparison Summary (US-022 / PB-P2-001 / FE-003).
-// Contrato: `POST /api/v1/events/:eventId/ai/quote-summary` con body `{category_code, preferMock?}`.
-// Response espejo del tech spec §7:
-//   { ai_recommendation_id, summaries[], overall_observations?, locale, locale_fallback,
-//     generated_at, quote_ids_snapshot, category_code }
-import { httpPost } from '@/shared/api-client';
+// Cliente API — AI Quote Comparison Summary.
+//   POST /api/v1/events/:eventId/ai/quote-summary (US-022 / FE-003) — genera el resumen.
+//   GET  /api/v1/events/:eventId/ai/quote-summary?category_code= (US-059 / BE-004) — surface del último.
+// Ambos endpoints devuelven el mismo shape para que la UI use un tipo único.
+import { httpGet, httpPost } from '@/shared/api-client';
 
 export interface QuoteSummaryItem {
   quote_id: string;
@@ -35,6 +34,11 @@ interface QuoteSummaryEnvelope {
   meta: { correlationId: string; timestamp: string };
 }
 
+export interface LatestQuoteSummaryInput {
+  eventId: string;
+  categoryCode: string;
+}
+
 export const aiQuoteSummaryApi = {
   /**
    * US-022 / AC-01: genera el resumen IA para el comparador de Quotes. Timeout del cliente 65s
@@ -49,6 +53,18 @@ export const aiQuoteSummaryApi = {
       isAI: true,
       timeoutMs: 65_000,
     });
+    return envelope.data;
+  },
+
+  /**
+   * US-059 / AC-01: surface del último `AIRecommendation` `quote_compare_summary` persistido
+   * para el par (evento, categoría). 404 uniforme si no existe — el hook lo interpreta como
+   * "empty state + CTA" en la UI (AC-02).
+   */
+  async getLatest(input: LatestQuoteSummaryInput): Promise<GenerateQuoteSummaryResponse> {
+    const envelope = await httpGet<QuoteSummaryEnvelope>(
+      `/events/${input.eventId}/ai/quote-summary?category_code=${encodeURIComponent(input.categoryCode)}`,
+    );
     return envelope.data;
   },
 };

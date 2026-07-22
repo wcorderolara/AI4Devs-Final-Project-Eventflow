@@ -113,6 +113,7 @@
         "loading": "Analyzing quotes…",
         "loadingHint": "This can take up to 60 seconds.",
         "emptyPrompt": "Generate a summary to see pros, cons and missing info per quote.",
+        "emptyPersistedPrompt": "No AI summary yet for this category. Generate one when you have ≥2 active quotes.",
         "generateCta": "Generate AI summary",
         "hitlNotice": "AI informs; you decide. Mark the preferred quote when you are ready.",
         "localeFallbackNotice": "AI summary temporarily unavailable. Compare the quotes manually in the table.",

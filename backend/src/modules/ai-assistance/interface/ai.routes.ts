@@ -20,6 +20,8 @@ import {
 // US-022 (PB-P2-001 / BE-004): reader de Quotes existente reusado para preflight ≥2 elegibles.
 import { PrismaQuoteRepository } from '../../quote-flow/infrastructure/prisma-quote.repository.js';
 import { GenerateQuoteSummaryUseCase } from '../application/generate-quote-summary.us022.use-case.js';
+// US-059 (PB-P2-001 / BE-002): use case de solo lectura para el surface del panel.
+import { GetLatestQuoteSummaryUseCase } from '../application/get-latest-quote-summary.us059.use-case.js';
 import { StructuredDomainEventLogger } from '../../../infrastructure/observability/structured-domain-event-logger.js';
 import { PrismaAIRecommendationRepository } from '../infrastructure/prisma-ai-recommendation.repository.js';
 import { PrismaAIRecommendationHitlRepository } from '../infrastructure/prisma-ai-recommendation-hitl.repository.js';
@@ -47,6 +49,7 @@ import {
   AiRecommendationIdParamSchema,
   ApplyAiRecommendationSchema,
   QuoteSummaryBodySchema,
+  LatestQuoteSummaryQuerySchema,
 } from '../dto/index.js';
 import { AIAssistanceController, AIRecommendationsController } from './ai.controllers.js';
 
@@ -72,7 +75,16 @@ const generateQuoteSummaryUseCase = new GenerateQuoteSummaryUseCase(
   new PrismaQuoteRepository(),
   generateUseCase,
 );
-const assistance = new AIAssistanceController(generateUseCase, generateQuoteSummaryUseCase);
+// US-059 (PB-P2-001 / BE-002): fetch del último resumen para el surface del panel (5 estados FE).
+const getLatestQuoteSummaryUseCase = new GetLatestQuoteSummaryUseCase(
+  repo,
+  new PrismaEventAccessReader(),
+);
+const assistance = new AIAssistanceController(
+  generateUseCase,
+  generateQuoteSummaryUseCase,
+  getLatestQuoteSummaryUseCase,
+);
 
 // US-025 HITL registry — se sustituye la strategy `budget_suggestion` placeholder por la V2 de US-037.
 const budgetSuggestionV2 = new BudgetSuggestionApplyStrategyV2({
@@ -150,6 +162,22 @@ aiAssistanceRouter.post(
     rateLimit: aiGenerationRateLimit,
     validation: v(z.object({ params: EventIdParamSchema, body: QuoteSummaryBodySchema })),
     handler: asyncHandler(assistance.quoteSummary),
+  }),
+);
+
+// ── US-059 (PB-P2-001 / BE-004): surface del último `AIRecommendation` `quote_compare_summary`.
+// Solo lectura (sin rate limit AI): cadena `auth → organizer → validation`. 404 uniforme si no
+// existe → el FE lo interpreta como "empty state + CTA" (AC-02). El endpoint by-id se reusa de
+// US-097 (`GET /ai-recommendations/:aiRecommendationId`, ya montado abajo).
+aiAssistanceRouter.get(
+  '/events/:eventId/ai/quote-summary',
+  ...composeProtectedRoute({
+    auth: sessionAuth,
+    role: organizer,
+    validation: v(
+      z.object({ params: EventIdParamSchema, query: LatestQuoteSummaryQuerySchema }),
+    ),
+    handler: asyncHandler(assistance.latestQuoteSummary),
   }),
 );
 

@@ -31,4 +31,16 @@ export interface AIRecommendationRepository {
   existsPromptVersion(promptVersionId: string, options?: RepositoryWriteOptions): Promise<boolean>;
   /** US-122 (EMERGENT-122-001): upsert idempotente del export `AIPromptVersion` de US-121. */
   upsertPromptVersion(row: AIPromptVersionSyncRow, options?: RepositoryWriteOptions): Promise<void>;
+
+  /**
+   * US-059 (PB-P2-001 / BE-002): último `AIRecommendation` por (`eventId`, `kind`,
+   * `inputPayload.category_code`), ordenado por `createdAt DESC`. Retorna `null` si no existe —
+   * el use case lo mapea a `404` uniforme. Reusa el índice existente
+   * `(event_id, recommendation_type, created_at DESC)`.
+   */
+  findLatestByEventTypeAndCategory(input: {
+    eventId: string;
+    kind: string;
+    categoryCode: string;
+  }): Promise<AiRecommendationView | null>;
 }

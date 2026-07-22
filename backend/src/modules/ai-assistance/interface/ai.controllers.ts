@@ -13,10 +13,12 @@ import type {
   ApplyAiRecommendation,
   AiRecommendationIdParam,
   QuoteSummaryBody,
+  LatestQuoteSummaryQuery,
 } from '../dto/index.js';
 import type { AiFeatureType } from '../domain/ai-features.js';
 import type { GenerateAiRecommendationUseCase } from '../application/generate-ai-recommendation.use-case.js';
 import type { GenerateQuoteSummaryUseCase } from '../application/generate-quote-summary.us022.use-case.js';
+import type { GetLatestQuoteSummaryUseCase } from '../application/get-latest-quote-summary.us059.use-case.js';
 import type {
   GetAIRecommendationUseCase,
   DiscardAIRecommendationUseCase,
@@ -43,6 +45,9 @@ export class AIAssistanceController {
     // US-022 (PB-P2-001 / BE-005): use case dedicado con preflight (≥2 quotes, categoría existente,
     // snapshot). Delega al motor genérico para el ciclo auth+locale+validation+persist.
     private readonly generateQuoteSummary?: GenerateQuoteSummaryUseCase,
+    // US-059 (PB-P2-001 / BE-004): fetch del último `AIRecommendation` `quote_compare_summary`
+    // por (evento, category_code) para el surface del panel (5 estados en FE).
+    private readonly getLatestQuoteSummary?: GetLatestQuoteSummaryUseCase,
   ) {}
 
   /** Factory: handler para un feature, tomando el contexto del param indicado (o ninguno). */
@@ -86,6 +91,21 @@ export class AIAssistanceController {
       categoryCode: body.category_code,
       preferMock: body.preferMock,
       correlationId: req.correlationId,
+    });
+    res.status(200).json(success(toQuoteSummaryResponse(view), req.correlationId ?? ''));
+  };
+
+  // US-059 (PB-P2-001 / BE-004): surface del último `AIRecommendation` `quote_compare_summary`.
+  // Devuelve el mismo shape del POST (US-022) para que el FE consuma `mutation.data` e
+  // `initialData` con el mismo tipo `GenerateQuoteSummaryResponse` — 404 uniforme si no existe.
+  latestQuoteSummary = async (req: Request, res: Response): Promise<void> => {
+    if (!this.getLatestQuoteSummary) throw new Error('GetLatestQuoteSummaryUseCase not configured');
+    const query = req.validated?.query as LatestQuoteSummaryQuery;
+    const params = (req.validated?.params ?? {}) as { eventId: string };
+    const view = await this.getLatestQuoteSummary.execute({
+      userId: userId(req),
+      eventId: params.eventId,
+      categoryCode: query.category_code,
     });
     res.status(200).json(success(toQuoteSummaryResponse(view), req.correlationId ?? ''));
   };
