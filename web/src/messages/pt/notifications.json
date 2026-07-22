@@ -1,0 +1,15 @@
+{
+  "title": "Notificações",
+  "empty": "Você não tem notificações no momento.",
+  "error": "Não conseguimos carregar suas notificações.",
+  "retry": "Tentar de novo",
+  "loading": "Carregando notificações…",
+  "loadMore": "Mostrar mais ({current} de {total})",
+  "unreadOnly": "Ver só não lidas",
+  "showAll": "Ver todas",
+  "bellAria": "Notificações, {count} não lidas",
+  "unreadCountAria": "{count} notificações não lidas",
+  "menuAria": "Menu de notificações",
+  "itemAria": "Notificação: {title}",
+  "linkUnavailable": "Não disponível"
+}

@@ -1,0 +1,15 @@
+{
+  "title": "Notifications",
+  "empty": "You have no notifications right now.",
+  "error": "We couldn't load your notifications.",
+  "retry": "Retry",
+  "loading": "Loading notifications…",
+  "loadMore": "Show more ({current} of {total})",
+  "unreadOnly": "Show unread only",
+  "showAll": "Show all",
+  "bellAria": "Notifications, {count} unread",
+  "unreadCountAria": "{count} unread notifications",
+  "menuAria": "Notifications menu",
+  "itemAria": "Notification: {title}",
+  "linkUnavailable": "Not available"
+}
