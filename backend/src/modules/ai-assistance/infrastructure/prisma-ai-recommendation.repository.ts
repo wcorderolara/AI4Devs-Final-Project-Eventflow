@@ -201,6 +201,74 @@ export class PrismaAIRecommendationRepository implements AIRecommendationReposit
     return rec ? toView(rec) : null;
   }
 
+  // ── US-026 (PB-P2-003) — Linaje de regeneración ───────────────────────────
+
+  async countLineageChildren(input: {
+    rootRecommendationId: string;
+    options?: RepositoryWriteOptions;
+  }): Promise<number> {
+    const client = this.db(input.options);
+    // Cuenta descendientes del linaje (excluye la raíz para preservar la semántica del cap D2:
+    // "hasta 5 REGENERACIONES por linaje raíz" — la raíz misma no cuenta como regeneración).
+    return client.aIRecommendation.count({
+      where: {
+        rootRecommendationId: input.rootRecommendationId,
+        id: { not: input.rootRecommendationId },
+      },
+    });
+  }
+
+  async createRegeneration(
+    input: CreateAiRecommendationData & {
+      parentRecommendationId: string;
+      rootRecommendationId: string;
+      regenerationFeedback: string | null;
+    },
+    options?: RepositoryWriteOptions,
+  ): Promise<AiRecommendationView> {
+    // Reuso del placeholder promptVersion de US-097 — el registry real (PB-P0-010) sirve la
+    // versión "real" en aiMeta.promptVersion; el `aiPromptVersionId` es un FK obligatorio del
+    // schema (invariante US-099) que se satisface con el placeholder estático.
+    const aiPromptVersionId = await this.placeholderPromptVersionId();
+    const rec = await this.db(options).aIRecommendation.create({
+      data: {
+        requestedByUserId: input.requestedByUserId,
+        aiPromptVersionId,
+        eventId: input.eventId,
+        vendorProfileId: input.vendorProfileId,
+        quoteRequestId: input.quoteRequestId,
+        kind: input.type,
+        inputPayload: input.input as Prisma.InputJsonValue,
+        outputPayload: input.output as Prisma.InputJsonValue,
+        aiMeta: input.aiMeta as unknown as Prisma.InputJsonValue,
+        status: 'pending',
+        locale: input.aiMeta.languageCode,
+        localeFallback: input.aiMeta.fallbackUsed,
+        // US-026 (DB-001): linaje explícito.
+        parentRecommendationId: input.parentRecommendationId,
+        rootRecommendationId: input.rootRecommendationId,
+        regenerationFeedback: input.regenerationFeedback,
+      },
+    });
+    return toView(rec);
+  }
+
+  async findByIdWithLineage(id: string): Promise<{
+    view: AiRecommendationView;
+    parentRecommendationId: string | null;
+    rootRecommendationId: string | null;
+    regenerationFeedback: string | null;
+  } | null> {
+    const rec = await this.prisma.aIRecommendation.findUnique({ where: { id } });
+    if (!rec) return null;
+    return {
+      view: toView(rec),
+      parentRecommendationId: rec.parentRecommendationId ?? null,
+      rootRecommendationId: rec.rootRecommendationId ?? null,
+      regenerationFeedback: rec.regenerationFeedback ?? null,
+    };
+  }
+
   async upsertPromptVersion(row: AIPromptVersionSyncRow, options?: RepositoryWriteOptions): Promise<void> {
     // Idempotente por (promptKey, version); no muta versiones históricas de forma insegura.
     await this.db(options).aIPromptVersion.upsert({

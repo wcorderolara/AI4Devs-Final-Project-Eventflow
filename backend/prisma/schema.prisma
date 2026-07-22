@@ -956,6 +956,16 @@ model AIRecommendation {
   timeoutMs         Int                    @default(60000) @map("timeout_ms")
   retryCount        Int                    @default(0) @map("retry_count")
 
+  // US-026 (PB-P2-003 / DB-001): linaje de regeneración cross-cutting. `parent` es el padre
+  // directo (navegación); `root` es la raíz del linaje (count por `root_id` limitado a
+  // AI_MAX_REGENERATIONS_PER_LINEAGE = 5, D2/D10). `regenerationFeedback` es texto libre ≤ 500
+  // provisto por el usuario en la request (D6). ON DELETE SET NULL preserva el historial de
+  // hijos cuando el padre se elimina (los hijos siguen siendo válidos; el 404 al *regenerar*
+  // desde un padre eliminado se cubre en aplicación, D-01 del execution record).
+  parentRecommendationId String? @map("parent_recommendation_id") @db.Uuid
+  rootRecommendationId   String? @map("root_recommendation_id")   @db.Uuid
+  regenerationFeedback   String? @map("regeneration_feedback")
+
   event         Event?          @relation(fields: [eventId], references: [id], onDelete: Restrict)
   promptVersion AIPromptVersion @relation(fields: [aiPromptVersionId], references: [id], onDelete: Restrict)
   requestedBy   User            @relation(fields: [requestedByUserId], references: [id], onDelete: Restrict)
@@ -965,6 +975,11 @@ model AIRecommendation {
   eventTasks    EventTask[]     @relation("EventTaskAIRecommendation")
   // US-037 (PB-P1-021): relación inversa con `budget_items.ai_recommendation_id`.
   budgetItems   BudgetItem[]    @relation("BudgetItemAIRecommendation")
+  // US-026 (PB-P2-003): relaciones inversas del linaje self-referente.
+  parent        AIRecommendation?  @relation("AIRecommendationLineage", fields: [parentRecommendationId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  children      AIRecommendation[] @relation("AIRecommendationLineage")
+  root          AIRecommendation?  @relation("AIRecommendationRoot", fields: [rootRecommendationId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  rootChildren  AIRecommendation[] @relation("AIRecommendationRoot")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -977,6 +992,9 @@ model AIRecommendation {
   @@index([quoteRequestId])
   // US-084 (DB-001): índice para dashboards/agregaciones por locale y ventana temporal.
   @@index([locale, createdAt(sort: Desc)], map: "ai_recommendations_locale_created_at_idx")
+  // US-026 (PB-P2-003 / DB-001): índices de linaje (count por root, navegación por parent).
+  @@index([rootRecommendationId], map: "ai_recommendations_root_recommendation_id_idx")
+  @@index([parentRecommendationId], map: "ai_recommendations_parent_recommendation_id_idx")
   @@map("ai_recommendations")
 }
 

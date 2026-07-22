@@ -213,6 +213,11 @@ export const ErrorCodes = {
   // US-022 (PB-P2-001, EC-01, VR-02): resumen IA del comparador requiere ≥ 2 quotes activas en
   // la categoría (`sent`/`accepted`) → 400 con `details.eligible_count`.
   INSUFFICIENT_QUOTES: 'INSUFFICIENT_QUOTES',
+  // US-026 (PB-P2-003, AC-02, VR-02): límite de regeneraciones por linaje raíz alcanzado
+  // (default 5, env `AI_MAX_REGENERATIONS_PER_LINEAGE`) → 429 con
+  // `details: {current_count, max}`. Se distingue de `RATE_LIMIT_EXCEEDED` (throttle por
+  // ventana de tiempo) — ambos son 429 pero por razones ortogonales.
+  REGENERATION_LIMIT: 'REGENERATION_LIMIT',
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

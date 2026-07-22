@@ -43,4 +43,42 @@ export interface AIRecommendationRepository {
     kind: string;
     categoryCode: string;
   }): Promise<AiRecommendationView | null>;
+
+  /**
+   * US-026 (PB-P2-003 / BE-006): cuenta hijos del linaje (excluyendo la raíz). Usa el índice
+   * `ai_recommendations_root_recommendation_id_idx` (DB-001). Se llama con la row raíz o con
+   * cualquier descendiente — el caller resuelve `rootId` como `parent.rootRecommendationId ??
+   * parent.id`. `< max` habilita generar; `>= max` bloquea con `Us026RegenerationLimitError`.
+   */
+  countLineageChildren(input: {
+    rootRecommendationId: string;
+    options?: RepositoryWriteOptions;
+  }): Promise<number>;
+
+  /**
+   * US-026 (PB-P2-003 / BE-006): persiste un `AIRecommendation` hijo del linaje. Reutiliza el
+   * pipeline de `createPending()` (US-097) para heredar el promptVersion placeholder y agrega
+   * las columnas dedicadas `parent_recommendation_id`, `root_recommendation_id`,
+   * `regeneration_feedback` (DB-001).
+   */
+  createRegeneration(
+    input: CreateAiRecommendationData & {
+      parentRecommendationId: string;
+      rootRecommendationId: string;
+      regenerationFeedback: string | null;
+    },
+    options?: RepositoryWriteOptions,
+  ): Promise<AiRecommendationView>;
+
+  /**
+   * US-026 (PB-P2-003 / BE-006): vista extendida del `AIRecommendation` con las columnas de
+   * linaje (parent/root/feedback). El use case necesita `rootRecommendationId` del parent para
+   * calcular el linaje objetivo; `findById` sólo expone la vista sanitizada.
+   */
+  findByIdWithLineage(id: string): Promise<{
+    view: AiRecommendationView;
+    parentRecommendationId: string | null;
+    rootRecommendationId: string | null;
+    regenerationFeedback: string | null;
+  } | null>;
 }

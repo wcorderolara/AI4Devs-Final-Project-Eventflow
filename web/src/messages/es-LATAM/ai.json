@@ -247,6 +247,31 @@
       "payloadTooLarge": "El contenido editado es demasiado grande (máx. 256KB)."
     }
   },
+  "regenerate": {
+    "title": "Regenerar sugerencia IA",
+    "description": "Solicita una nueva versión con feedback opcional. Se aplica el mismo tipo, idioma y contexto que la sugerencia original.",
+    "feedback_label": "Feedback (opcional)",
+    "feedback_placeholder": "Ej: Necesito un plan más informal, con menos actividades formales.",
+    "feedback_hint": "El feedback ayuda a la IA a ajustar la propuesta. Puedes dejarlo vacío.",
+    "feedback_counter": "{count}/{max} caracteres",
+    "regenerate": "Regenerar",
+    "regenerating": "Regenerando…",
+    "cancel": "Cancelar",
+    "errors": {
+      "REGENERATION_LIMIT": "Alcanzaste el máximo de regeneraciones para esta sugerencia (5). Descarta la sugerencia o continúa con la versión actual.",
+      "RATE_LIMIT_EXCEEDED": "Alcanzaste el límite de generaciones IA. Vuelve a intentar más tarde.",
+      "AI_RATE_LIMITED": "Alcanzaste el límite de generaciones IA. Vuelve a intentar más tarde.",
+      "AI_PROVIDER_ERROR": "El proveedor de IA no está disponible por el momento. Intenta en unos minutos.",
+      "AI_PROVIDER_TIMEOUT": "La IA tardó demasiado en responder. Intenta de nuevo.",
+      "AI_INVALID_OUTPUT": "La IA devolvió una respuesta inesperada. Intenta de nuevo.",
+      "RESOURCE_NOT_FOUND": "No encontramos la sugerencia original o ya no está disponible.",
+      "AI_RECOMMENDATION_NOT_FOUND": "No encontramos la sugerencia original o ya no está disponible.",
+      "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para regenerar la sugerencia.",
+      "FORBIDDEN": "No puedes regenerar esta sugerencia.",
+      "VALIDATION_ERROR": "El feedback supera los 500 caracteres permitidos.",
+      "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
+    }
+  },
   "budgetApply": {
     "title": "Aplicar sugerencia IA al presupuesto",
     "description": "Revisa cada partida, edita los montos si es necesario y elige cuáles incluir. Nada se guarda hasta que presiones Aplicar.",

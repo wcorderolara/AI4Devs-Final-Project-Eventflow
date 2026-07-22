@@ -26,6 +26,12 @@ import { GetLatestQuoteSummaryUseCase } from '../application/get-latest-quote-su
 import { PrioritizeTasksUseCase } from '../application/prioritize-tasks.us024.use-case.js';
 import { TaskPriorityCacheService } from '../infrastructure/task-priority-cache.service.js';
 import { PrismaEligibleTasksReader } from '../infrastructure/prisma-eligible-tasks.reader.js';
+// US-026 (PB-P2-003 / BE-002/006/007): regeneración cross-cutting.
+import { RegenerateAIRecommendationUseCase } from '../application/regenerate/regenerate-ai-recommendation.use-case.js';
+import { AIRecommendationOwnerResolver } from '../application/regenerate/owner-resolver.js';
+import { OutputSchemaResolver } from '../application/regenerate/type-resolvers.js';
+import { resolveAIRegenerateConfig } from '../application/regenerate/regenerate-config.js';
+import { RegenerateAiRecommendationBodySchema } from '../dto/regenerate.request.js';
 import { StructuredDomainEventLogger } from '../../../infrastructure/observability/structured-domain-event-logger.js';
 import { PrismaAIRecommendationRepository } from '../infrastructure/prisma-ai-recommendation.repository.js';
 import { PrismaAIRecommendationHitlRepository } from '../infrastructure/prisma-ai-recommendation-hitl.repository.js';
@@ -116,10 +122,28 @@ const hitlApplyUseCase = new HitlApplyAIRecommendationUseCase(
   new OutputDtoResolver(),
   new AIRecommendationOwnershipPolicy(),
 );
+// US-026 (PB-P2-003 / BE-002/006/007): resolver polimórfico + UC de regeneración cross-cutting.
+// Los readers son los mismos que usa `GenerateAiRecommendationUseCase` para preservar la matriz
+// de autorización — no hay adapters nuevos, evita drift de auth entre generar y regenerar.
+const regenerateOwnerResolver = new AIRecommendationOwnerResolver(
+  new PrismaEventAccessReader(),
+  new PrismaVendorProfileReader(),
+  new PrismaQuoteRequestEventReader(),
+);
+const regenerateConfig = resolveAIRegenerateConfig();
+const regenerateUseCase = new RegenerateAIRecommendationUseCase(
+  repo,
+  generationService,
+  regenerateOwnerResolver,
+  new OutputSchemaResolver(),
+  regenerateConfig,
+  logger,
+);
 const recommendations = new AIRecommendationsController({
   get: new GetAIRecommendationUseCase(repo),
   apply: hitlApplyUseCase,
   discard: new DiscardAIRecommendationUseCase(repo, logger),
+  regenerate: regenerateUseCase,
 });
 
 const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
@@ -247,5 +271,25 @@ aiAssistanceRouter.post(
     role: owner,
     validation: v(z.object({ params: AiRecommendationIdParamSchema })),
     handler: asyncHandler(recommendations.discard),
+  }),
+);
+// US-026 (PB-P2-003 / BE-007): POST /ai-recommendations/:id/regenerate — cross-cutting.
+// Acepta organizer OR vendor (owner) porque la ownership real se resuelve dentro del use case
+// vía `AIRecommendationOwnerResolver` según el `AiFeatureType` del parent (D7 / SEC-01). El
+// rate limit shared (US-110 · aiGenerationRateLimit) es AC-07; el cap por linaje (AC-02) lo
+// aplica el use case y mapea a `429 REGENERATION_LIMIT` en el error handler.
+aiAssistanceRouter.post(
+  '/ai-recommendations/:aiRecommendationId/regenerate',
+  ...composeProtectedRoute({
+    auth: sessionAuth,
+    role: owner,
+    rateLimit: aiGenerationRateLimit,
+    validation: v(
+      z.object({
+        params: AiRecommendationIdParamSchema,
+        body: RegenerateAiRecommendationBodySchema,
+      }),
+    ),
+    handler: asyncHandler(recommendations.regenerate),
   }),
 );

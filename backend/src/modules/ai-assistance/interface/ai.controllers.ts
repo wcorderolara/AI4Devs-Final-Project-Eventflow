@@ -8,6 +8,7 @@ import {
   toRecommendationDetail,
   toQuoteSummaryResponse,
   toTaskPriorityResponse,
+  toRegenerateResponse,
 } from '../dto/index.js';
 import type {
   AiBaseRequest,
@@ -15,12 +16,14 @@ import type {
   AiRecommendationIdParam,
   QuoteSummaryBody,
   LatestQuoteSummaryQuery,
+  RegenerateAiRecommendationBody,
 } from '../dto/index.js';
 import type { AiFeatureType } from '../domain/ai-features.js';
 import type { GenerateAiRecommendationUseCase } from '../application/generate-ai-recommendation.use-case.js';
 import type { GenerateQuoteSummaryUseCase } from '../application/generate-quote-summary.us022.use-case.js';
 import type { GetLatestQuoteSummaryUseCase } from '../application/get-latest-quote-summary.us059.use-case.js';
 import type { PrioritizeTasksUseCase } from '../application/prioritize-tasks.us024.use-case.js';
+import type { RegenerateAIRecommendationUseCase } from '../application/regenerate/regenerate-ai-recommendation.use-case.js';
 import type {
   GetAIRecommendationUseCase,
   DiscardAIRecommendationUseCase,
@@ -135,6 +138,8 @@ export interface RecommendationUseCases {
   get: GetAIRecommendationUseCase;
   apply: HitlApplyAIRecommendationUseCase;
   discard: DiscardAIRecommendationUseCase;
+  // US-026 (PB-P2-003 / BE-007): regeneración cross-cutting (organizer OR vendor según type).
+  regenerate?: RegenerateAIRecommendationUseCase;
 }
 
 export class AIRecommendationsController {
@@ -144,6 +149,22 @@ export class AIRecommendationsController {
     const { aiRecommendationId } = req.validated?.params as AiRecommendationIdParam;
     const view = await this.uc.get.execute(userId(req), aiRecommendationId);
     res.status(200).json(success(toRecommendationDetail(view), req.correlationId ?? ''));
+  };
+
+  // US-026 (PB-P2-003 / BE-007): POST /ai-recommendations/:id/regenerate — HITL iterativo
+  // cross-cutting con cap 5/linaje + rate limit shared + auth polimórfica por type.
+  regenerate = async (req: Request, res: Response): Promise<void> => {
+    if (!this.uc.regenerate) throw new Error('RegenerateAIRecommendationUseCase not configured');
+    const { aiRecommendationId } = req.validated?.params as AiRecommendationIdParam;
+    const body = (req.validated?.body ?? {}) as RegenerateAiRecommendationBody;
+    const result = await this.uc.regenerate.execute({
+      currentUserId: userId(req),
+      recommendationId: aiRecommendationId,
+      feedback: body.feedback,
+      preferMock: body.preferMock,
+      correlationId: req.correlationId,
+    });
+    res.status(201).json(success(toRegenerateResponse(result), req.correlationId ?? ''));
   };
 
   apply = async (req: Request, res: Response): Promise<void> => {
