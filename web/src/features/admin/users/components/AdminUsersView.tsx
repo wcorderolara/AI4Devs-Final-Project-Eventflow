@@ -188,7 +188,7 @@ export function AdminUsersView(): React.JSX.Element {
                       {u.name ?? '—'}
                       {u.isSeed ? (
                         <span className="ml-2 rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-blue-700">
-                          seed
+                          {t('badges.seed')}
                         </span>
                       ) : null}
                     </td>
