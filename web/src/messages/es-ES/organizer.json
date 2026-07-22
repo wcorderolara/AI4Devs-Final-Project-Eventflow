@@ -97,6 +97,54 @@
       }
     }
   },
+  "ai": {
+    "quote_summary": {
+      "trigger": {
+        "cta": "Resumir con IA",
+        "ariaOpen": "Abrir resumen IA del comparador",
+        "ariaClose": "Cerrar resumen IA del comparador",
+        "disabledTooltip": "Disponible con al menos 2 presupuestos activos."
+      },
+      "panel": {
+        "title": "Resumen IA del comparador",
+        "close": "Cerrar",
+        "regenerate": "Regenerar",
+        "generatedAt": "Generado el {date}",
+        "loading": "Analizando presupuestos…",
+        "loadingHint": "Puede tardar hasta 60 segundos.",
+        "emptyPrompt": "Genera un resumen para ver pros, contras e información pendiente por presupuesto.",
+        "generateCta": "Generar resumen IA",
+        "hitlNotice": "La IA informa; tú decides. Marca el presupuesto preferido cuando estés listo.",
+        "localeFallbackNotice": "Resumen IA temporalmente no disponible. Compara manualmente los presupuestos en la tabla.",
+        "headings": {
+          "pros": "Puntos a favor",
+          "cons": "Puntos en contra",
+          "missingInfo": "Información pendiente",
+          "notes": "Notas",
+          "overall": "Observaciones generales"
+        }
+      },
+      "snapshotBanner": {
+        "title": "Los presupuestos han cambiado desde este resumen.",
+        "description": "Regenera el resumen para reflejar el estado actual del comparador.",
+        "action": "Regenerar"
+      },
+      "errors": {
+        "INSUFFICIENT_QUOTES": "Necesitas al menos 2 presupuestos activos en la categoría para generar el resumen.",
+        "INVALID_FILTERS": "Selecciona la categoría antes de generar el resumen.",
+        "INVALID_CATEGORY": "La categoría seleccionada no está disponible.",
+        "AI_TIMEOUT": "La IA ha tardado demasiado en responder. Inténtalo de nuevo.",
+        "AI_INVALID_OUTPUT": "La IA ha devuelto una respuesta inesperada. Inténtalo de nuevo.",
+        "AI_PROVIDER_ERROR": "El proveedor de IA no está disponible por el momento. Inténtalo en unos minutos.",
+        "AI_RATE_LIMITED": "Has alcanzado el límite de generaciones IA. Inténtalo más tarde.",
+        "RATE_LIMIT_EXCEEDED": "Has alcanzado el límite de generaciones IA. Inténtalo más tarde.",
+        "EVENT_NOT_FOUND": "No encontramos ese evento o no tienes permiso para verlo.",
+        "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para generar el resumen.",
+        "FORBIDDEN": "Tu rol no puede generar este resumen.",
+        "UNEXPECTED": "Se ha producido un error inesperado. Inténtalo de nuevo."
+      }
+    }
+  },
   "booking": {
     "create": {
       "title": "Crear intención de reserva",

@@ -97,6 +97,54 @@
       }
     }
   },
+  "ai": {
+    "quote_summary": {
+      "trigger": {
+        "cta": "Summarize with AI",
+        "ariaOpen": "Open the AI quote comparison summary",
+        "ariaClose": "Close the AI quote comparison summary",
+        "disabledTooltip": "Available when there are at least 2 active quotes."
+      },
+      "panel": {
+        "title": "AI comparison summary",
+        "close": "Close",
+        "regenerate": "Regenerate",
+        "generatedAt": "Generated on {date}",
+        "loading": "Analyzing quotes…",
+        "loadingHint": "This can take up to 60 seconds.",
+        "emptyPrompt": "Generate a summary to see pros, cons and missing info per quote.",
+        "generateCta": "Generate AI summary",
+        "hitlNotice": "AI informs; you decide. Mark the preferred quote when you are ready.",
+        "localeFallbackNotice": "AI summary temporarily unavailable. Compare the quotes manually in the table.",
+        "headings": {
+          "pros": "Pros",
+          "cons": "Cons",
+          "missingInfo": "Missing info",
+          "notes": "Notes",
+          "overall": "Overall observations"
+        }
+      },
+      "snapshotBanner": {
+        "title": "Quotes have changed since this summary.",
+        "description": "Regenerate the summary to reflect the current state of the comparator.",
+        "action": "Regenerate"
+      },
+      "errors": {
+        "INSUFFICIENT_QUOTES": "You need at least 2 active quotes in the category to generate the summary.",
+        "INVALID_FILTERS": "Select the category before generating the summary.",
+        "INVALID_CATEGORY": "The selected category is unavailable.",
+        "AI_TIMEOUT": "AI took too long to respond. Please try again.",
+        "AI_INVALID_OUTPUT": "AI returned an unexpected response. Please try again.",
+        "AI_PROVIDER_ERROR": "The AI provider is not available right now. Please try again shortly.",
+        "AI_RATE_LIMITED": "You have reached the AI generation limit. Please try again later.",
+        "RATE_LIMIT_EXCEEDED": "You have reached the AI generation limit. Please try again later.",
+        "EVENT_NOT_FOUND": "We couldn't find that event or you don't have permission to view it.",
+        "AUTHENTICATION_REQUIRED": "You need to sign in to generate the summary.",
+        "FORBIDDEN": "Your role cannot generate this summary.",
+        "UNEXPECTED": "An unexpected error occurred. Please try again."
+      }
+    }
+  },
   "booking": {
     "create": {
       "title": "Create booking intent",

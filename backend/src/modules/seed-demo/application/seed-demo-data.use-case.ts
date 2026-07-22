@@ -29,6 +29,10 @@ export const SEED_AI_FEATURES = [
   'vendor_categories',
   'quote_brief',
   'quote_comparison',
+  // US-022 (PB-P2-001): incluido en la unión estructural para preservar compatibilidad con
+  // `MockAIProvider` (misma cardinalidad que `AiFeatureType`). El seed actual no invoca esta
+  // feature — se mantiene aquí sólo por paridad de tipo.
+  'quote_compare_summary',
   'vendor_bio',
   'task_prioritization',
 ] as const;

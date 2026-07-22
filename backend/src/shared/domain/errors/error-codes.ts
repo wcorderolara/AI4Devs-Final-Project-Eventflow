@@ -210,6 +210,9 @@ export const ErrorCodes = {
   // reutilizan (mismo shape catálogo-wide) y solo se agregan los específicos del dominio.
   EVENT_TYPE_NOT_FOUND: 'EVENT_TYPE_NOT_FOUND', // 404 uniforme (D7, VR-08)
   EVENT_TYPE_IN_USE: 'EVENT_TYPE_IN_USE', // 409 (EC-01, VR-06); details.usage_count
+  // US-022 (PB-P2-001, EC-01, VR-02): resumen IA del comparador requiere ≥ 2 quotes activas en
+  // la categoría (`sent`/`accepted`) → 400 con `details.eligible_count`.
+  INSUFFICIENT_QUOTES: 'INSUFFICIENT_QUOTES',
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

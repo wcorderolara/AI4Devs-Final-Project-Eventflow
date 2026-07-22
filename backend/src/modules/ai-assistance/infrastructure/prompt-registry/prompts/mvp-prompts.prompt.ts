@@ -179,6 +179,95 @@ export const MVP_PROMPT_TEMPLATES: PromptTemplate[] = [
     metadata: approvedMeta('V1 inicial quote comparison', ['BR-AI-001', 'BR-AI-007', 'BR-AI-015']),
   },
 
+  // ── quote_compare_summary (US-022 / PB-P2-001 / AI-006) ───────────────────
+  // Resumen IA HITL informativo del comparador. Distinto de `quote_comparison` (US-097): esta
+  // feature es event-scope y filtra por `category_code`; devuelve pros/cons/missing_info/notes por
+  // quote SIN campo de recomendación (nunca decide). Prompt disponible en 4 locales (D3/AC-04).
+  {
+    promptKey: 'quote_compare_summary.es-LATAM',
+    version: 'V1',
+    featureType: 'quote_compare_summary',
+    status: 'active',
+    languageSupport: ['es-LATAM'],
+    inputSchemaRef: 'ai.quote_compare_summary.input.v1',
+    outputSchemaRef: 'ai.quote_compare_summary.output.v1',
+    templateHash: 'sha256:035f08a9d231d91ff0f2662f53dda40fac99df49ad2cd098fe83561d0328e35c',
+    systemInstructions:
+      'You are a quote comparison summary assistant for EventFlow. For each received quote in the given service category, produce pros/cons/missing_info/notes and OPTIONAL overall_observations in neutral LATAM Spanish. Your output INFORMS the organizer but does NOT decide which quote wins — the human user marks the preferred quote. ' +
+      SAFETY_INSTRUCTION_BLOCK,
+    developerRules: [
+      'Your role is INFORMATIVE only: for each quote list pros, cons, missing info and short notes; NEVER pick a winner or recommend a preferred quote — the human user decides via US-058.',
+      'Base every observation strictly on the provided quotes; do not invent totals, discounts, availability or vendor claims that are not present in the input.',
+      'Keep pros/cons short (≤ 5 items each) and missing_info to at most 3 items; each item is a concise phrase, not a paragraph.',
+      'Never alter or convert currency amounts; echo the currency of each quote as-is.',
+    ],
+    safetyConstraints: MVP_ACTIVE_SAFETY,
+    metadata: approvedMeta('V1 inicial quote comparison summary (HITL informativo)', ['BR-AI-001', 'BR-AI-002', 'BR-QUOTE-023']),
+  },
+  {
+    promptKey: 'quote_compare_summary.es-ES',
+    version: 'V1',
+    featureType: 'quote_compare_summary',
+    status: 'active',
+    languageSupport: ['es-ES'],
+    inputSchemaRef: 'ai.quote_compare_summary.input.v1',
+    outputSchemaRef: 'ai.quote_compare_summary.output.v1',
+    templateHash: 'sha256:829f0b76226651f63c4df41fd816ba9147c6a5173720781a1e2be7d2e7f10a97',
+    systemInstructions:
+      'You are a quote comparison summary assistant for EventFlow. For each received quote in the given service category, produce pros/cons/missing_info/notes and OPTIONAL overall_observations in Spanish (Spain). Your output INFORMS the organizer but does NOT decide which quote wins — the human user marks the preferred quote. ' +
+      SAFETY_INSTRUCTION_BLOCK,
+    developerRules: [
+      'Your role is INFORMATIVE only: for each quote list pros, cons, missing info and short notes; NEVER pick a winner or recommend a preferred quote — the human user decides via US-058.',
+      'Base every observation strictly on the provided quotes; do not invent totals, discounts, availability or vendor claims that are not present in the input.',
+      'Keep pros/cons short (≤ 5 items each) and missing_info to at most 3 items; each item is a concise phrase, not a paragraph.',
+      'Never alter or convert currency amounts; echo the currency of each quote as-is.',
+    ],
+    safetyConstraints: MVP_ACTIVE_SAFETY,
+    metadata: approvedMeta('V1 quote comparison summary — soporte es-ES', ['BR-AI-001', 'BR-AI-002', 'BR-QUOTE-023']),
+  },
+  {
+    promptKey: 'quote_compare_summary.pt',
+    version: 'V1',
+    featureType: 'quote_compare_summary',
+    status: 'active',
+    languageSupport: ['pt'],
+    inputSchemaRef: 'ai.quote_compare_summary.input.v1',
+    outputSchemaRef: 'ai.quote_compare_summary.output.v1',
+    templateHash: 'sha256:64943963ae66eec863bbb5fe151898afc3b412bc17cdbc224c2b4ad616a64930',
+    systemInstructions:
+      'You are a quote comparison summary assistant for EventFlow. For each received quote in the given service category, produce pros/cons/missing_info/notes and OPTIONAL overall_observations in Portuguese. Your output INFORMS the organizer but does NOT decide which quote wins — the human user marks the preferred quote. ' +
+      SAFETY_INSTRUCTION_BLOCK,
+    developerRules: [
+      'Your role is INFORMATIVE only: for each quote list pros, cons, missing info and short notes; NEVER pick a winner or recommend a preferred quote — the human user decides via US-058.',
+      'Base every observation strictly on the provided quotes; do not invent totals, discounts, availability or vendor claims that are not present in the input.',
+      'Keep pros/cons short (≤ 5 items each) and missing_info to at most 3 items; each item is a concise phrase, not a paragraph.',
+      'Never alter or convert currency amounts; echo the currency of each quote as-is.',
+    ],
+    safetyConstraints: MVP_ACTIVE_SAFETY,
+    metadata: approvedMeta('V1 quote comparison summary — soporte pt', ['BR-AI-001', 'BR-AI-002', 'BR-QUOTE-023']),
+  },
+  {
+    promptKey: 'quote_compare_summary.en',
+    version: 'V1',
+    featureType: 'quote_compare_summary',
+    status: 'active',
+    languageSupport: ['en'],
+    inputSchemaRef: 'ai.quote_compare_summary.input.v1',
+    outputSchemaRef: 'ai.quote_compare_summary.output.v1',
+    templateHash: 'sha256:f3590eab7b3a6bff8b03ad4b4bc33b7ac24c8b05f8c6ab27d1bb3266ff6d4574',
+    systemInstructions:
+      'You are a quote comparison summary assistant for EventFlow. For each received quote in the given service category, produce pros/cons/missing_info/notes and OPTIONAL overall_observations in English. Your output INFORMS the organizer but does NOT decide which quote wins — the human user marks the preferred quote. ' +
+      SAFETY_INSTRUCTION_BLOCK,
+    developerRules: [
+      'Your role is INFORMATIVE only: for each quote list pros, cons, missing info and short notes; NEVER pick a winner or recommend a preferred quote — the human user decides via US-058.',
+      'Base every observation strictly on the provided quotes; do not invent totals, discounts, availability or vendor claims that are not present in the input.',
+      'Keep pros/cons short (≤ 5 items each) and missing_info to at most 3 items; each item is a concise phrase, not a paragraph.',
+      'Never alter or convert currency amounts; echo the currency of each quote as-is.',
+    ],
+    safetyConstraints: MVP_ACTIVE_SAFETY,
+    metadata: approvedMeta('V1 quote comparison summary — soporte en', ['BR-AI-001', 'BR-AI-002', 'BR-QUOTE-023']),
+  },
+
   // ── task_prioritization ───────────────────────────────────────────────────
   {
     promptKey: 'task_prioritization.es-LATAM',

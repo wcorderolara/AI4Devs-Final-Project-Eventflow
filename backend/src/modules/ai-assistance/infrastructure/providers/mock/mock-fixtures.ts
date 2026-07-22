@@ -37,6 +37,32 @@ export function baseOutput(feature: AiFeatureType, input: Record<string, unknown
       return { brief: 'Brief de cotización', requirements: ['Servicio para 100 personas'], questions: ['¿Incluye montaje?'], constraints: [] };
     case 'quote_comparison':
       return { summary: 'Comparación de cotizaciones', perQuote: [], recommendation: 'Revisar la opción con mejor relación precio/valor.' };
+    // US-022 (AI-006 / AC-01): fixture base determinista es-LATAM. Se enriquece por locale abajo.
+    // El fixture usa los `quote_id` reales del input cuando están disponibles (`__quote_ids`) para
+    // que las pruebas puedan enlazar `summaries[i].quote_id` con el snapshot persistido.
+    case 'quote_compare_summary': {
+      const ids = Array.isArray(input.__quote_ids) ? (input.__quote_ids as string[]) : [];
+      const [first, second] = ids.length >= 2 ? ids : ['00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000002'];
+      return {
+        summaries: [
+          {
+            quote_id: first,
+            pros: ['Precio competitivo dentro del presupuesto.'],
+            cons: ['Menús con menos opciones vegetarianas.'],
+            missing_info: ['Política de cancelación por escrito.'],
+            notes: 'Confirmar con el proveedor la disponibilidad para la fecha.',
+          },
+          {
+            quote_id: second,
+            pros: ['Servicio con más opciones incluidas.'],
+            cons: ['Total ligeramente por encima del promedio.'],
+            missing_info: ['Detalle del cronograma de montaje.'],
+            notes: 'Solicitar breakdown por bloque de servicio.',
+          },
+        ],
+        overall_observations: 'Ambas cotizaciones cubren los requisitos básicos; el organizador decide según prioridad de menú vs. logística.',
+      };
+    }
     case 'vendor_bio':
       return { bio: 'Somos un proveedor con amplia experiencia.', highlights: ['Puntualidad', 'Calidad'] };
     case 'task_prioritization':

@@ -884,6 +884,26 @@ Organizer.
 4. Las `Quote` originales permanecen inalteradas (BR-QUOTE-024).
 5. Si hay menos de 2 cotizaciones, la API devuelve `INSUFFICIENT_QUOTES` y la UI invita a esperar más respuestas.
 
+#### Implementación MVP (US-022, PB-P2-001)
+
+> Nota de alineación: US-022 concreta AI-006 con un contrato específico para HITL informativo y
+> event-scope (filtrado por `category_code`). El shape del output difiere del "diseño de doc"
+> anterior (`strengths/risks/missing_information/non_binding_recommendation`) por decisión PO
+> aprobada (D1..D9) para reforzar HITL strict — la IA NO recomienda ganadora.
+
+- **Endpoint canónico:** `POST /api/v1/events/:eventId/ai/quote-summary` con body `{category_code, preferMock?}` (`.strict()`) — organizer owner, `aiGenerationRateLimit` shared (US-110, 10/h/user).
+- **Feature registrada:** `quote_compare_summary` (event-scope) en `AI_FEATURE_TYPES`, distinto del feature histórico `quote_comparison` (quote_request-scope) del contrato US-097.
+- **Prompt `QuoteCompareSummaryPrompt v1`:** activo en 4 locales (`es-LATAM`, `es-ES`, `pt`, `en`) — `promptKey='quote_compare_summary.<locale>@V1'` — con instrucción HITL strict (`INFORMATIVE only — NEVER pick a winner`).
+- **Output Zod strict:** `{ summaries: Array<{ quote_id: uuid, pros: string[≤5], cons: string[≤5], missing_info: string[≤3], notes: string(≤500) }>, overall_observations?: string(≤500) }`. Sin campo de recomendación automática.
+- **Locale binding (US-084):** el motor genérico `GenerateAiRecommendationUseCase` deriva `languageCode` desde `event.languageCode` vía `PrismaEventLanguageReader` — el body del cliente NO controla el locale (SEC + auditoría).
+- **Persistencia HITL:** `AIRecommendation.kind='quote_compare_summary'`, `status='pending'`, `inputPayload.quote_ids_snapshot + category_code + prompt_version='v1'` (AC-02/D2/D4/D8); columnas denormalizadas `locale` y `locale_fallback` (US-084).
+- **Preflight específico (`GenerateQuoteSummaryUseCase`):**
+  1. Ownership uniforme (`404 EVENT_NOT_FOUND`).
+  2. Categoría activa por code (`400 INVALID_CATEGORY`, reuso US-057).
+  3. ≥ 2 quotes elegibles (`status ∈ {sent, accepted}`); en caso contrario `400 INSUFFICIENT_QUOTES` con `details.eligible_count`.
+- **Errores del contrato:** `INVALID_FILTERS` (falta `category_code`), `INSUFFICIENT_QUOTES`, `INVALID_CATEGORY`, `EVENT_NOT_FOUND`, `AI_PROVIDER_TIMEOUT`, `AI_INVALID_OUTPUT`, `RATE_LIMIT_EXCEEDED` (heredado US-110). Los códigos `LLM_UNAVAILABLE`/`INVALID_JSON`/`MIXED_CURRENCIES` del "diseño de doc" mapean a los códigos canónicos existentes (`AI_PROVIDER_UNAVAILABLE`, `AI_INVALID_OUTPUT`, y — para currency mixta — se preserva como observación textual en el summary, sin bloquear).
+- **FE:** `AIComparisonSummary` panel lateral `role="complementary"` con Disclosure por quote + banner snapshot mismatch (`payload.quote_ids_snapshot ≠ currentQuoteIds`, EC-05) + fallback notice cuando `locale_fallback=true` (EC-03). i18n `organizer.ai.quote_summary.*` en 4 locales.
+
 ---
 
 ### AI-007 — Generación de bio y paquetes del proveedor

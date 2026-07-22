@@ -121,11 +121,22 @@ export class QuoteBriefApplyStrategy implements ApplyStrategy {
   }
 }
 
-// ── quote_comparison → adopción (US-022; sin repositorio destino aún) ────────
+// ── quote_comparison → adopción (US-097; scope quote_request) ────────────────
 export class QuoteComparisonApplyStrategy implements ApplyStrategy {
   readonly type = 'quote_comparison' as const;
   async applyInTransaction(_args: ApplyStrategyArgs): Promise<ApplyStrategyOutcome> {
-    // TODO(US-022): registrar adopción de la comparación. No materializa entidad por diseño.
+    // Feature histórica (US-097) sin repositorio destino. Trazabilidad marcada por el use case.
+    return { appliedEntityType: null, appliedEntityId: null };
+  }
+}
+
+// ── quote_compare_summary → HITL informativo (US-022; no materializa entidad) ─
+// El resumen NO decide: el organizador marca la Quote preferida vía US-058 (`PATCH
+// /quotes/:id/preferred`). Registrar `apply` deja únicamente audit trail; el AIRecommendation
+// pasa a `accepted` sin side effect (mismo diseño que `quote_comparison`).
+export class QuoteCompareSummaryApplyStrategy implements ApplyStrategy {
+  readonly type = 'quote_compare_summary' as const;
+  async applyInTransaction(_args: ApplyStrategyArgs): Promise<ApplyStrategyOutcome> {
     return { appliedEntityType: null, appliedEntityId: null };
   }
 }
@@ -167,6 +178,7 @@ export const MVP_APPLY_STRATEGIES = [
   new VendorCategoriesApplyStrategy(),
   new QuoteBriefApplyStrategy(),
   new QuoteComparisonApplyStrategy(),
+  new QuoteCompareSummaryApplyStrategy(),
   new VendorBioApplyStrategy(),
   new TaskPrioritizationApplyStrategy(),
 ] as const;
