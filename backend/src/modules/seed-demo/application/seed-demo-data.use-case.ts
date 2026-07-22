@@ -82,6 +82,19 @@ export function relativeSeedDate(daysOffset: number): Date {
   return d;
 }
 
+/**
+ * US-034 (PB-P2-004 / SEED-001): calcula `dueDate` para la tarea T-7 demo. Devuelve
+ * `event.eventDate - 7 días` a medianoche UTC. Si `eventDate` es nulo (evento demo
+ * sin fecha), devuelve `null` — el emisor T-7 excluye tareas sin `due_date` (EC-06).
+ */
+export function calculateT7SeedDueDate(eventDate: Date | null): Date | null {
+  if (!eventDate) return null;
+  const d = new Date(eventDate.getTime());
+  d.setUTCDate(d.getUTCDate() - 7);
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
+}
+
 async function ensure<T>(
   find: () => Promise<T | null>,
   create: () => Promise<T>,
@@ -679,10 +692,26 @@ export class SeedDemoDataUseCase {
           counts,
         );
       }
-      // Una tarea por evento.
+      // Una tarea por evento. US-034 (PB-P2-004 / SEED-001): setear `dueDate =
+      // event.eventDate - 7 días` para que el `EmitT7NotificationsJob` pueda emitir
+      // una notificación T-7 sobre el organizer demo cuando el clock se posicione en
+      // `event.eventDate - 14 días` (según §15 Seed / Demo Data Impact del tech spec).
+      // Sólo se calcula si `eventDate` existe; no se agregan filas nuevas ni se cambia
+      // la cardinalidad — `us085-seed.integration.spec.ts` no verifica `event_tasks.count`.
+      const taskDueDate = calculateT7SeedDueDate(eventDate);
       await ensure(
         () => tx.eventTask.findFirst({ where: { eventId: event.id, title: 'Confirmar proveedores', isSeed: true } }),
-        () => tx.eventTask.create({ data: { eventId: event.id, title: 'Confirmar proveedores', status: 'pending', origin: 'manual', isSeed: true } }),
+        () =>
+          tx.eventTask.create({
+            data: {
+              eventId: event.id,
+              title: 'Confirmar proveedores',
+              status: 'pending',
+              origin: 'manual',
+              dueDate: taskDueDate,
+              isSeed: true,
+            },
+          }),
         counts,
       );
       events.push({ id: event.id, userId: organizer.id });
