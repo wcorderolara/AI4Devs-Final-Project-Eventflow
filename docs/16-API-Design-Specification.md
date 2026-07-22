@@ -3087,34 +3087,48 @@ Centralizar notificaciones in-app del usuario. **No** envía SMS, push, WhatsApp
 
 | Método | Path | Auth | Roles | Propósito | Success | Errores |
 | --- | --- | --- | --- | --- | --- | --- |
-| GET | `/notifications` | Sí | organizer, vendor, admin | Lista paginada. | 200 | 401 |
-| PATCH | `/notifications/:notificationId/read` | Sí | organizer, vendor, admin | Marca como leída. | 204 | 401, 403, 404 |
-| POST | `/notifications/mark-all-read` | Sí | organizer, vendor, admin | Marca todas. | 204 | 401 |
+| GET | `/notifications` | Sí | organizer, vendor, admin | Lista paginada. Query params opcionales: `page` (int ≥ 1, default 1), `pageSize` (int 1–50, default 10), `status` (`unread`\|`all`, default `all`), `channel` (`in_app`\|`email_simulated`\|`all`, default `in_app` — dedup del emisor T-7, US-071 D5). | 200 | 400 `INVALID_QUERY_PARAM` / `INVALID_PAGINATION`, 401 |
+| PATCH | `/notifications/:notificationId/read` | Sí | organizer, vendor, admin | Marca como leída (US-072). | 204 | 401, 403, 404 |
+| POST | `/notifications/mark-all-read` | Sí | organizer, vendor, admin | Marca todas (US-072). | 204 | 401 |
 
 ### 34.3 DTOs
 
 ```ts
 type NotificationResponseDto = {
   id: string;
-  userId: string;
   type:
     | "quote_request_received"
     | "quote_received"
     | "quote_rejected"
     | "quote_expired"
     | "booking_confirmed"
-    | "task_due"
+    | "task_due_soon"           // US-071 DOC-001: canónico (reemplaza `task_due` heredado)
     | "vendor_approved"
     | "vendor_rejected"
     | "review_received";
   title: string;
   body: string;
-  link: string | null;
-  readAt: string | null;
+  status: "unread" | "read";
+  link: string | null;          // server-side, ver tabla `Link generation by type`
+  channel: "in_app" | "email_simulated";
+  languageCode: string;
+  sent_at: string;              // ISO 8601 — equivalente semántico a createdAt (US-034 D-01)
+  read_at: string | null;
   emailSimulated: boolean;
-  createdAt: string;
+};
+
+type PaginatedNotificationsResponse = {
+  items: NotificationResponseDto[];
+  unreadCount: number;          // Fuente del badge unread (US-071 AC-01)
 };
 ```
+
+#### Link generation by type (US-071 DOC-003)
+
+| `type`             | Patrón del `link`                                       | Fallback (`null`)                       |
+| ------------------ | ------------------------------------------------------- | --------------------------------------- |
+| `task_due_soon`    | `/organizer/events/{payload.eventId}/tasks?range=7d`    | Evento inexistente/soft-deleted (EC-03) |
+| _otros_            | Definido por la US propietaria del tipo                 | Por defecto `null` en US-071             |
 
 ### 34.4 Reglas
 

@@ -69,6 +69,11 @@ import ptPublicVendor from '../../messages/pt/public-vendor.json';
 import ptQuotes from '../../messages/pt/quotes.json';
 import ptOrganizer from '../../messages/pt/organizer.json';
 import ptBooking from '../../messages/pt/booking.json';
+// US-071 (PB-P2-004): catálogo del surface organizer de notificaciones.
+import enNotifications from '../../messages/en/notifications.json';
+import esEsNotifications from '../../messages/es-ES/notifications.json';
+import esLatamNotifications from '../../messages/es-LATAM/notifications.json';
+import ptNotifications from '../../messages/pt/notifications.json';
 
 export type Messages = Record<string, unknown>;
 
@@ -90,6 +95,7 @@ const REGISTRY: Record<Locale, Messages> = {
     quotes: esLatamQuotes,
     organizer: esLatamOrganizer,
     booking: esLatamBooking,
+    notifications: esLatamNotifications,
   },
   'es-ES': {
     common: esEsCommon,
@@ -108,6 +114,7 @@ const REGISTRY: Record<Locale, Messages> = {
     quotes: esEsQuotes,
     organizer: esEsOrganizer,
     booking: esEsBooking,
+    notifications: esEsNotifications,
   },
   pt: {
     common: ptCommon,
@@ -126,6 +133,7 @@ const REGISTRY: Record<Locale, Messages> = {
     quotes: ptQuotes,
     organizer: ptOrganizer,
     booking: ptBooking,
+    notifications: ptNotifications,
   },
   en: {
     common: enCommon,
@@ -144,6 +152,7 @@ const REGISTRY: Record<Locale, Messages> = {
     quotes: enQuotes,
     organizer: enOrganizer,
     booking: enBooking,
+    notifications: enNotifications,
   },
 };
 

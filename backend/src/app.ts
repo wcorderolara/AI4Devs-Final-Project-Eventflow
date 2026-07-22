@@ -45,6 +45,11 @@ import {
   vendorMetricsRouter,
 } from './modules/admin-governance/interface/actor-metrics.routes.js';
 import { budgetRouter, budgetItemMutationRouter } from './modules/budget-management/interface/index.js';
+// US-071 (PB-P2-004 / BE-005): surface organizer del listado de notificaciones
+// (`GET /api/v1/notifications`). Extiende el use case con query params opcionales
+// (`page`, `pageSize`, `status`, `channel`) y genera `link` server-side por tipo.
+// Consume las filas emitidas por `EmitT7NotificationsJob` (US-034).
+import { notificationsRouter } from './modules/notifications/interface/http/notifications.routes.js';
 import {
   vendorProfileRouter,
   vendorServiceRouter,
@@ -149,6 +154,9 @@ export function createApp(): Express {
   // no declara `deletedAt`); auditoría vía log estructurado `budget.item.deleted`.
   apiV1.use(budgetItemMutationRouter);
   apiV1.use('/booking-intents', bookingIntentRouter);
+  // US-071 (PB-P2-004 / BE-005): surface organizer del listado de notificaciones. Al montarse
+  // a nivel `/api/v1`, expone `GET /api/v1/notifications` con `sessionAuth` (401 sin cookie).
+  apiV1.use(notificationsRouter);
   // US-065 (PB-P1-038 / BE-004): crear Review verificada.
   apiV1.use('/organizer/reviews', organizerReviewRouter);
   // US-066 (PB-P1-039 / BE-003): listar reviews de un vendor con cursor pagination + admin
