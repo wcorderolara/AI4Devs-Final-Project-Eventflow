@@ -11,8 +11,11 @@ import { seedEmail } from '../domain/seed-key.js';
 import { type DomainCounts, emptyCounts, type SeedReport } from '../domain/seed-report.js';
 
 const SCRIPT_VERSION = '1.0.0';
-// Hash placeholder determinista (no verifica; el seed no crea sesiones reales). Sin PII.
-const SEED_PASSWORD_HASH = '$2b$10$seedseedseedseedseedseeQ0seedseedseedseedseedseedse';
+// Hash bcrypt REAL de la contraseña demo `Demo1234!` (cost=12). Permite login efectivo con
+// usuarios seed (`admin@seed.eventflow.test`, `organizerN@…`, `vendorN@…`) sin pasos manuales
+// post-reset. La contraseña es intencionalmente pública y para uso EXCLUSIVO en entornos demo
+// (SEED_DEMO_ENABLED=true, nunca en producción).
+const SEED_PASSWORD_HASH = '$2b$12$F.WAgAMCJz/k9w29z9jT9ezKIPVZV6DH3Z5VZdtPbdnyTOYa1SQWu';
 const TX_OPTS = { timeout: 30_000, maxWait: 10_000 } as const;
 
 type Tx = Prisma.TransactionClient;

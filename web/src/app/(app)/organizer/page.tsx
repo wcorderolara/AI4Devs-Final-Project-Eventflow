@@ -1,11 +1,5 @@
-import { useTranslations } from 'next-intl';
+import { OrganizerDashboard } from '@/features/organizer/dashboard';
 
-export default function OrganizerPage() {
-  const t = useTranslations('navigation');
-  return (
-    <>
-      <h1 className="text-2xl font-bold">{t('placeholder.organizer.title')}</h1>
-      <p>{t('placeholder.organizer.body')}</p>
-    </>
-  );
+export default function OrganizerPage(): React.JSX.Element {
+  return <OrganizerDashboard />;
 }

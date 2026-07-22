@@ -4,7 +4,9 @@
 
 EventFlow es un MVP de planificación de eventos asistida por IA y gestión simplificada de cotizaciones de proveedores, orientado inicialmente al mercado de Guatemala con visión futura hacia España y LATAM. La documentación disponible posiciona el producto como un workspace web responsive para organizadores, proveedores y administradores, con foco en plan, checklist, presupuesto y flujo estructurado de cotizaciones, evitando documentarlo como marketplace transaccional completo en v1.
 
-Este repositorio contiene una entrega académica de **documentación y planificación técnica** del proyecto. La fase actual cubre, de extremo a extremo:
+Este repositorio contiene una entrega académica **con documentación técnica completa e implementación funcional en curso** del proyecto. La fase actual cubre, de extremo a extremo:
+
+**Documentación (Entregable 1 — completada):**
 
 - Descubrimiento de dominio y decisiones de producto.
 - Definición del alcance MVP, reglas de negocio y matriz de roles/permisos.
@@ -21,8 +23,194 @@ Este repositorio contiene una entrega académica de **documentación y planifica
 - Estrategia de testing (Vitest + Supertest + MSW + Playwright + tests deterministas con `MockAIProvider`).
 - Diseño de despliegue y DevOps (AWS Amplify + App Runner + RDS + S3 + GitHub Actions).
 - Registro formal de 46 ADRs.
+- UI/UX Foundations: Visual Language Reference, UI Foundations, Design Tokens y Component Foundations en [`docs/ux-ui/`](./docs/ux-ui/).
 
-La entrega **no incluye** implementación funcional, despliegue en URL pública, capturas finales, PRs reales mergeados ni demos ejecutables. Todas esas secciones están explícitamente marcadas como pendientes en este README y en cada deliverable.
+**Implementación (Entregable 2 — en curso, foundation P0 y MVP P1 mayoritariamente mergeados):**
+
+- Backend Node.js + Express + TypeScript funcional bajo [`backend/`](./backend/) — bootstrap modular monolith, validación Zod, envelope de error unificado, cookies HTTP-only firmadas, captcha, rate limiting, RBAC + ownership + suite negativa, `LLMProvider` con adapters OpenAI/Mock/Anthropic-stub, PromptOps, seed demo, Docker multi-stage, snapshot OpenAPI 3.x determinista y ~50 endpoints REST bajo `/api/v1`.
+- Frontend Next.js 14 App Router + TypeScript funcional bajo [`web/`](./web/) — i18n `next-intl` con 4 locales (`es-LATAM`, `es-ES`, `pt`, `en`), route groups por rol (`(public)`, `(auth)`, `(app)`, `(admin)`), TanStack Query + `httpClient` + MSW, layouts autenticados, navegación, `<RoleGuard>` UX-only, features de dominio del organizer, vendor y admin.
+- Prisma schema declarativo, migraciones baseline + índices críticos + constraints físicos, seed demo LATAM idempotente (`is_seed=true`) con reset quirúrgico.
+- CI con GitHub Actions (lint, typecheck, unit, integration, e2e, drift de OpenAPI, drift de migraciones, seed idempotency).
+- 49 pull requests reales mergeados a `main` (ver [Pull Requests](#pull-requests--historial-real-de-merges) más abajo).
+
+**Pendiente en esta entrega académica:**
+
+- Despliegue a URL pública AWS (Amplify + App Runner + RDS + S3) — provisioning y pipeline CD (PB-P0-017/018 y US-137/139).
+- Video demo grabado end-to-end sobre entorno desplegado.
+- Cierre de las user stories P1 restantes y del bloque P2/P3 completo.
+
+---
+
+## Local Setup — Cómo levantar el entorno para revisión
+
+> **Guía crítica para el evaluador.** Estas instrucciones permiten levantar EventFlow (backend + base de datos + frontend) de forma local, sin depender de infraestructura desplegada. Todo el stack está en el repositorio y se ejecuta con Node.js + Docker.
+
+### 0. Prerrequisitos
+
+| Herramienta | Versión mínima | Notas |
+| ----------- | -------------- | ----- |
+| Node.js | **20 LTS** (frontend) · **22+** (backend) | Usar `nvm` para alternar (`.nvmrc` en cada carpeta). |
+| npm | 10+ | Gestor canónico (Doc 21 §9.2). No usar pnpm ni yarn. |
+| Docker | 24+ | Para PostgreSQL local aislado (opcional pero recomendado). |
+| Git | 2.40+ | Para clonar el repositorio. |
+
+Sistemas operativos verificados: macOS (Apple Silicon + Intel), Linux (Debian/Ubuntu). Windows via WSL2.
+
+### 1. Clonar el repositorio
+
+```bash
+git clone https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow.git
+cd AI4Devs-Final-Project-Eventflow
+```
+
+### 2. Levantar PostgreSQL local (Docker)
+
+**Elige tu propia contraseña — nunca commitees credenciales reales.**
+
+```bash
+docker run -d --name ef-eventflow \
+  -e POSTGRES_USER=AdminEF \
+  -e POSTGRES_PASSWORD=<TU_PASSWORD_SEGURA> \
+  -e POSTGRES_DB=eventflow \
+  -p 5433:5432 postgres:16
+```
+
+> El puerto `5433` evita conflicto con un Postgres del host en `5432`. Si prefieres `5432`, ajústalo en el comando y en `DATABASE_URL` más abajo.
+
+Para limpiar el contenedor al terminar: `docker rm -f ef-eventflow`.
+
+### 3. Backend — instalar, migrar, sembrar y arrancar
+
+```bash
+cd backend
+cp .env.example .env
+```
+
+Edita `backend/.env` y ajusta como mínimo:
+
+```env
+DATABASE_URL="postgresql://AdminEF:<TU_PASSWORD_SEGURA>@localhost:5433/eventflow?schema=public"
+SESSION_SECRET="dev_session_secret_min_32_chars_change_me_please_ok"
+JWT_SECRET="dev_jwt_secret_min_32_chars_change_me_please_ok_1234"
+LLM_PROVIDER=mock            # sin costo de red, determinista
+CAPTCHA_PROVIDER=mock        # token válido: '__test__'
+SEED_DEMO_ENABLED=true
+NODE_ENV=development
+CORS_ORIGINS="http://localhost:3000"
+```
+
+Instalar dependencias, aplicar migraciones y sembrar datos demo:
+
+```bash
+npm ci
+npm run db:generate
+npm run db:migrate:deploy
+SEED_DEMO_ENABLED=true LLM_PROVIDER=mock NODE_ENV=development npm run seed
+```
+
+Levantar el backend en `http://localhost:3000`:
+
+```bash
+npm run dev
+# health check
+curl http://localhost:3000/health   # → {"status":"ok"}
+```
+
+**Verificar** que todo pasa localmente:
+
+```bash
+npm test                       # unit + integration (los DB-gated se auto-omiten si no hay Postgres)
+npm run typecheck              # strict TypeScript
+npm run openapi:check          # el snapshot OpenAPI está actualizado
+```
+
+Guía operativa completa: [`backend/README.md`](./backend/README.md) — cubre Docker, migraciones, seed, endpoints AUTH/Event/Quote/AI y snapshot OpenAPI.
+
+### 4. Frontend — instalar y arrancar
+
+En otra terminal:
+
+```bash
+cd web
+nvm use                        # selecciona Node 20 (ver .nvmrc)
+cp .env.local.example .env.local
+```
+
+Edita `web/.env.local` y ajusta:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3000/api/v1
+NEXT_PUBLIC_APP_ENV=local
+NEXT_PUBLIC_SITE_URL=http://localhost:3001
+NEXT_PUBLIC_API_MOCKING=disabled   # apuntar al backend real, no a MSW
+```
+
+> **Puerto del frontend.** Next.js por defecto usa `3000`, pero el backend también corre allí. Arranca Next en `3001` con `PORT=3001 npm run dev` (o cambia el puerto del backend en `backend/.env` a `PORT=3001` y deja Next en `3000`; recuerda ajustar `CORS_ORIGINS` y `NEXT_PUBLIC_API_BASE_URL` acordemente).
+
+Instalar y arrancar:
+
+```bash
+npm ci
+PORT=3001 npm run dev
+# abrir http://localhost:3001
+```
+
+**Verificar** la suite del frontend:
+
+```bash
+npm run lint
+npm run typecheck
+npm test                        # unit + component (Vitest + Testing Library)
+npm run test:e2e:install        # descarga chromium (una vez)
+npm run test:e2e                # Playwright E2E
+```
+
+Guía completa: [`web/README.md`](./web/README.md).
+
+### 5. Credenciales demo (post-seed)
+
+Después de ejecutar `npm run seed`, la base contiene usuarios demo para probar cada rol. La convención de credenciales y la lista de cuentas están en [`docs/operations/seed.md`](./backend/docs/operations/seed.md) (`backend/docs/operations/seed.md`). Al iniciar sesión, el captcha en modo `mock` acepta el token literal `__test__`.
+
+### 6. Troubleshooting rápido
+
+| Síntoma | Causa probable | Solución |
+| ------- | -------------- | -------- |
+| `EADDRINUSE :3000` en Next | Backend usando el mismo puerto | Arrancar Next con `PORT=3001` (ver arriba). |
+| Backend falla al boot con `SESSION_SECRET must be at least 32 chars` | Secret demasiado corto en `.env` | Usar cualquier string ≥ 32 caracteres. |
+| `prisma migrate deploy` no conecta | `DATABASE_URL` apuntando al puerto/host equivocado | Verificar `docker ps` y que el contenedor `ef-eventflow` está `Up`. |
+| Frontend muestra `401` en login válido | Cookies HTTP-only bloqueadas | Confirmar `CORS_CREDENTIALS=true` en backend y `CORS_ORIGINS=http://localhost:3001`. |
+| `npm run seed` termina con exit `2` | Falta `SEED_DEMO_ENABLED=true` o hay drift de migraciones | Reejecutar con la variable + validar `npm run db:migrate:status`. |
+| Tests E2E fallan con "browser not installed" | Playwright chromium no descargado | `npm run test:e2e:install`. |
+
+### 7. Pipeline canónico local (todo en verde)
+
+```bash
+# Backend
+cd backend && npm ci && npm run typecheck && npm test && npm run openapi:check
+
+# Frontend
+cd ../web && npm ci && npm run lint && npm run typecheck && npm test && npm run build
+```
+
+Este es el mismo pipeline que corre en GitHub Actions en cada PR (Doc 21 §9.2). Si todo termina en verde localmente, el entorno está listo para revisar la aplicación en el browser.
+
+---
+
+## Evaluator Flows Guide — flujos principales por rol
+
+Una vez el entorno local está arriba, la guía [`docs/Evaluator-Flows-Guide.md`](./docs/Evaluator-Flows-Guide.md) propone un **guion de pruebas paso a paso** para que el evaluador recorra las capacidades MVP sin tener que reconstruirlas desde el backlog. Contiene:
+
+- Credenciales demo listas para usar (`admin@seed.eventflow.test`, `organizer0..5@seed.eventflow.test`, `vendor0..11@seed.eventflow.test`, contraseña compartida `Demo1234!`).
+- **§1 Flujo público** — landing, directorio de vendors, SEO, locale switcher.
+- **§2 Flujo Auth** — registro, login, logout, forgot/reset password, rate limits y captcha.
+- **§3 Flujo Organizer** — crear evento → IA HITL (plan/checklist/presupuesto/categorías) → cotizaciones → comparador → aceptar Quote → BookingIntent → review verificado.
+- **§4 Flujo Vendor** — onboarding, portafolio, servicios, AI bio, responder cotizaciones, confirmar/cancelar bookings.
+- **§5 Flujo Admin** — moderación de vendors y reviews, CRUD de catálogos, vista read-only de eventos, dashboard de métricas, log de `AdminAction`, reset demo.
+- **§6 Flujos negativos** — evidencia rápida de guardrails (401/403/404 masked/409/410/429/503) y drift gates.
+- **§7 Verificación no-visual** — comandos exactos para correr las suites de pruebas (backend + frontend + E2E).
+- **§8 Trazabilidad** — mapeo de cada flujo a las User Stories, Documentos y ADRs de origen.
+
+Cada sección cierra con un checklist ✅ concreto que el evaluador puede marcar.
 
 ---
 
@@ -74,6 +262,17 @@ Documentación completa del proyecto en `/docs`, en orden lógico de generación
 | 21 | Deployment & DevOps Design | AWS (Amplify + App Runner + RDS + S3 + CloudWatch), Docker, GitHub Actions, entornos. | [Ver](./docs/21-Deployment-and-DevOps-Design.md) |
 | 22 | Architecture Decision Records | 46 ADRs formales en 9 categorías (Architecture, Backend, Frontend, DB, AI, Security, API, Testing, DevOps). | [Ver](./docs/22-Architecture-Decision-Records.md) |
 
+### UI/UX Foundations ([`docs/ux-ui/`](./docs/ux-ui/))
+
+Fundamentos visuales y de interacción del MVP, derivados del análisis Figma referencial y trazables a Doc 15 (Frontend Architecture) y Doc 10 (NFR — accesibilidad WCAG 2.1 AA).
+
+| # | Documento | Propósito | Link |
+|---:|---|---|---|
+| UX-0 | Visual Language Reference | Análisis del diseño Figma referencial (solo inspiración; nada de branding ni assets reutilizados). | [Ver](./docs/ux-ui/EventFlow-Visual-Language-Reference.md) |
+| UX-1 | UI Foundations | Fundamentos visuales, de interacción, tono y personalidad UI del MVP (UI-DEC-001..UI-DEC-015). | [Ver](./docs/ux-ui/EventFlow-UI-Foundations.md) |
+| UX-2 | Design Tokens | Tokens primitivos, semánticos y alias mínimo de componente (light theme MVP). | [Ver](./docs/ux-ui/EventFlow-Design-Tokens.md) |
+| UX-3 | Component Foundations | Anatomía, variantes, estados, accesibilidad y binding de tokens de los componentes MVP. | [Ver](./docs/ux-ui/EventFlow-Component-Foundations.md) |
+
 ---
 
 ## Prompt Index
@@ -108,6 +307,15 @@ Prompts usados para generar y mantener la documentación, en `/prompts`:
 | `23-Generate-Epic-Map-Document.md` | EventFlow Epic Map. | AAA prompting + backlog engineering. | [Ver](./prompts/23-Generate-Epic-Map-Document.md) |
 | `24-Generate-User-Stories.md` | Catálogo completo de User Stories MVP (150 historias). | AAA prompting + traceability-first. | [Ver](./prompts/24-Generate-User-Stories.md) |
 | `25-Generate-Product-Backlog-Prioritized.md` | Product Backlog Prioritized (P0–P4). | AAA prompting + prioritization framework. | [Ver](./prompts/25-Generate-Product-Backlog-Prioritized.md) |
+| `26-Generate-Development-Conventions.md` | `DEVELOPMENT_CONVENTIONS.md` root — contrato operativo de código. | AAA prompting + repo-grounded consolidation. | [Ver](./prompts/26-Generate-Development-Conventions.md) |
+| `27-Create-Skill-Execute-Development.md` | Skill `.claude/skills/eventflow-execute-development-tasks/`. | Role-based prompting + skill design contract. | [Ver](./prompts/27-Create-Skill-Execute-Development.md) |
+| `28-Create-ClaudeCode-Command.md` | Comando `/execute-development-tasks` en `.claude/commands/`. | Command-as-thin-wrapper prompting. | [Ver](./prompts/28-Create-ClaudeCode-Command.md) |
+| `29-visual-analysis-figma-design.md` | Visual Language Reference (`docs/ux-ui/EventFlow-Visual-Language-Reference.md`) via Figma MCP. | MCP-grounded visual analysis. | [Ver](./prompts/29-visual-analysis-figma-design.md) |
+| `30-Generate-UI-foundations-Artifact.md` | UI Foundations (`docs/ux-ui/EventFlow-UI-Foundations.md`). | Design decision prompting + traceability. | [Ver](./prompts/30-Generate-UI-foundations-Artifact.md) |
+| `31-Generate-Design-Tokens.md` | Design Tokens (`docs/ux-ui/EventFlow-Design-Tokens.md`). | Token taxonomy prompting. | [Ver](./prompts/31-Generate-Design-Tokens.md) |
+| `32-Generate-Component-Foundations.md` | Component Foundations (`docs/ux-ui/EventFlow-Component-Foundations.md`). | Component contract prompting. | [Ver](./prompts/32-Generate-Component-Foundations.md) |
+
+> Catálogo ejecutivo complementario del autor: [`prompts/wacl-prompts.md`](./prompts/wacl-prompts.md).
 
 ### Prompts de management — User Story Lifecycle
 
@@ -158,6 +366,24 @@ La carpeta [`/.skills/`](./.skills/) contiene las EventFlow Skills reutilizables
 | `eventflow-user-story-approval` | [`.skills/eventflow-user-story-approval/SKILL.md`](./.skills/eventflow-user-story-approval/SKILL.md) | Approval Gate formal PO/BA contra Definition of Ready. | Después del refinement (y decision resolution si aplica), antes de generar Technical Spec. | Status → Approved / Needs Changes / Blocked / Split Required. |
 | `eventflow-user-story-technical-spec` | [`.skills/eventflow-user-story-technical-spec/SKILL.md`](./.skills/eventflow-user-story-technical-spec/SKILL.md) | Technical Specification de la User Story aprobada. No genera código. | Después del Approval Gate, antes del desglose de tareas. | `management/technical-specs/<PRIORITY>/<BACKLOG_ID>/US-<id>-technical-spec.md`. |
 | `eventflow-user-story-to-development-tasks` | [`.skills/eventflow-user-story-to-development-tasks/SKILL.md`](./.skills/eventflow-user-story-to-development-tasks/SKILL.md) | Desglose en Development Tasks listas para Sprint Planning. | Después de la Technical Specification. | `management/development-tasks/<PRIORITY>/<BACKLOG_ID>/US-<id>-development-tasks.md`. |
+| `eventflow-user-story-delivery-workflow` | [`.skills/eventflow-user-story-delivery-workflow/SKILL.md`](./.skills/eventflow-user-story-delivery-workflow/SKILL.md) | Orquesta el ciclo de vida completo end-to-end (refinement → decision resolution → approval → tech spec → dev tasks). | Cuando se quiere procesar una User Story de punta a punta sin invocar cada skill manualmente. | Encadenamiento de artifacts de las skills anteriores. |
+| `eventflow-execute-development-tasks` | [`.claude/skills/eventflow-execute-development-tasks/SKILL.md`](./.claude/skills/eventflow-execute-development-tasks/SKILL.md) — **project-scoped** | Ejecuta las Development Tasks reales sobre el código (backend + frontend), con execution records reanudables, validation gates y actualización del índice global. | Después de tener Tech Spec + Dev Tasks aprobadas, para materializar la User Story en el repositorio. | `management/workflows/development-execution/<PRIORITY>/<BACKLOG_ID>/US-<id>-execution.md` + cambios reales en `backend/`, `web/`, `prisma/`, `tests/`. |
+
+---
+
+## Claude Code Commands
+
+Los comandos en [`.claude/commands/`](./.claude/commands/) son puntos de entrada cortos que invocan las EventFlow Skills. Todos son **user-invocable** vía `/nombre-comando`.
+
+| Comando | Skill invocada | Argumentos | Propósito |
+| ------- | -------------- | ---------- | --------- |
+| [`/refine-user-story`](./.claude/commands/refine-user-story.md) | `eventflow-user-story-refinement` | `<user-story-path>` | Refina una User Story y (si aplica) genera un `refinement-review`. |
+| [`/resolve-user-story-decisions`](./.claude/commands/resolve-user-story-decisions.md) | `eventflow-po-ba-decision-resolver` | `<user-story-path>` | Resuelve blocking questions y produce `decision-resolutions/`. |
+| [`/approve-user-story`](./.claude/commands/approve-user-story.md) | `eventflow-user-story-approval` | `<user-story-path>` | Approval Gate formal (Status → Approved / Needs Changes / Blocked / Split Required). |
+| [`/generate-technical-spec`](./.claude/commands/generate-technical-spec.md) | `eventflow-user-story-technical-spec` | `<user-story-path>` | Genera la Technical Specification. |
+| [`/generate-development-tasks`](./.claude/commands/generate-development-tasks.md) | `eventflow-user-story-to-development-tasks` | `<user-story-path>` `<tech-spec-path>` | Desglosa la US aprobada en tasks por área. |
+| [`/execute-development-tasks`](./.claude/commands/execute-development-tasks.md) | `eventflow-execute-development-tasks` | `<user-story-path>` `<tech-spec-path>` `<tasks-path>` | Ejecuta las Development Tasks reales sobre el repositorio con execution records reanudables. |
+| [`/process-user-story`](./.claude/commands/process-user-story.md) | `eventflow-user-story-delivery-workflow` | `<user-story-path>` | Ejecuta el ciclo completo refinement → approval → tech spec → dev tasks. |
 
 ---
 
@@ -195,7 +421,7 @@ Para cada User Story:
    → invoca eventflow-user-story-to-development-tasks
 ```
 
-Esta fase está **parcialmente completa**: el ciclo end-to-end se ha ejecutado para `US-099` y `US-100` dentro de `PB-P0-001`. Las 148 historias restantes aguardan su turno.
+Esta fase está **completa a nivel de artifacts** (refinement → decision resolution → approval → tech spec → dev tasks) para las **150 User Stories** distribuidas en `PB-P0-*`, `PB-P1-*`, `PB-P2-*` y `PB-P3-*` (PRs #3, #4, #5, #6). La ejecución de código posterior — invocada con `/execute-development-tasks` y la skill `eventflow-execute-development-tasks` — está mergeada para todo el bloque P0 (PRs [#7](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/7)–[#16](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/16)) y la mayor parte del bloque P1 (PRs [#17](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/17)–[#49](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/49)). P2 y P3 tienen tech specs + dev tasks listos y ejecución pendiente.
 
 ### Workflow observations
 
@@ -241,6 +467,77 @@ Este repositorio está organizado para:
 
 ---
 
+## Pull Requests — historial real de merges
+
+Fuente autoritativa: [https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pulls?state=all](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pulls?state=all). A la fecha de esta actualización hay **49 PRs** (48 mergeados a `main`, 1 cerrado sin merge, 0 abiertos). El plan de PRs recomendado sigue en [`deliverables/7-Pull-requests.md`](./deliverables/7-Pull-requests.md); los merges reales siguieron el `Backlog Execution Order` de `management/artifacts/4-Product-Backlog-Prioritized.md`.
+
+### Entregables académicos y foundation de management
+
+| PR | Título | Rama | Estado |
+|---:|---|---|---|
+| [#1](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/1) | Entregable 1 — Documentación base SDLC | `feature/Entregable1-WACL` | Merged |
+| [#2](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/2) | Entregable 2 — Documentación, backlog y workflow de management | `feature/Entregable2-WACL` | Merged |
+| [#3](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/3) | P1 complete lifecycle — 49 PBIs (PB-P1-001..049) ready for sprint planning | `management/refinement-PB-01-documentation` | Merged |
+| [#4](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/4) | P2 backlog lifecycle for PB-P2-001..026 (29 user stories) | `management/refinement-PB-02-documentation` | Merged |
+| [#5](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/5) | P3 delivery lifecycle for demo & academic stories (US-140..146, US-150) | `management/refinement-PB-03-documentation` | Merged |
+| [#6](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/6) | `eventflow-execute-development-tasks` skill + `/execute-development-tasks` command | `management/development_conventions` | Merged |
+
+### Foundation P0 — infraestructura, contratos y quality gates (PRs #7 – #16)
+
+| PR | Backlog Items | Rama | Contenido |
+|---:|---|---|---|
+| [#7](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/7) | PB-P0-001 (US-099..102) | `foundation/PB-P0-001` | Prisma schema, migrations baseline, índices críticos, constraints físicos |
+| [#8](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/8) | PB-P0-002 (US-089/090/091) | `foundation/PB-P0-002` | Backend Modular Monolith Bootstrap |
+| [#9](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/9) | PB-P0-003 (US-092/093) | `foundation/PB-P0-003` | Validación Zod + Error Envelope unificado |
+| [#10](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/10) | PB-P0-004 (US-094..097) | `foundation/PB-P0-004` | REST endpoints foundation AUTH/EVENT/QUOTE/AI |
+| [#11](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/11) | PB-P0-005 (US-098) | `foundation/PB-P0-005` | Snapshot OpenAPI 3.x determinista desde Zod + gate CI |
+| [#12](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/12) | PB-P0-006 (US-108/109) | `foundation/PB-P0-006` | Cookies HTTP-only firmadas + captcha en auth |
+| [#13](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/13) | PB-P0-007/008 (US-110..112) | `foundation/PB-P0-007_PB-P0-008` | Rate limiting + middleware chain order + suite negativa RBAC |
+| [#14](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/14) | PB-P0-009 (US-117..120) | `foundation/PB-P0-009` | `LLMProvider` port + adapters (OpenAI + Mock + Anthropic stub) |
+| [#15](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/15) | PB-P0-010/011 (US-121..124) | `foundation/PB-P0-010_PB-P0-011` | PromptOps, persistencia IA, timeout/fallback y validación JSON |
+| [#16](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/16) | PB-P0-012..018 | `foundation/PB-PO-012_PB-P0-013_PB-P0-014` | Frontend bootstrap, seed demo, QA tooling, Docker, CI, Prisma migrations |
+
+### MVP P1 — features de dominio (PRs #17 – #49)
+
+| PR | Backlog Items | Contenido |
+|---:|---|---|
+| [#17](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/17) | PB-P1-001..004 (US-001..005) | Registro, login, logout y recuperación de contraseña |
+| [#18](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/18) | PB-P1-005..008 (US-006..007, US-009..014) | Perfil, idioma y ciclo de vida de eventos |
+| [#19](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/19) | PB-P1-009/010 | Auto-complete event + admin read-only view |
+| [#21](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/21) | PB-P1-011..020 (US-013..036) | IA HITL + task management + gestión de presupuesto |
+| [#22](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/22) | PB-P1-021 (US-037) | Cierre PB-P1-020 fase 2 |
+| [#23](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/23) | PB-P1-022 (US-038) | Warning con delta + badges per-item de presupuesto |
+| [#24](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/24) | PB-P1-023 (US-039) | Sync atómico `BudgetItem.committed` por BookingIntent |
+| [#25](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/25) | PB-P1-024 (US-040/041) | VendorProfile CRUD (crear + editar + soft-delete) |
+| [#26](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/26) | PB-P1-025 (US-042) | Cambio de categorías del vendor con tope acumulado |
+| [#27](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/27) | PB-P1-026 (US-043/048) | Portafolio del vendor (upload + soft delete) |
+| [#28](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/28) | PB-P1-027 (US-044) | CRUD VendorService (paquetes del vendor) |
+| [#29](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/29) | PB-P1-028 (US-045) | Directorio autenticado de vendors con cursor pagination |
+| [#30](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/30) | PB-P1-029 (US-046) | Perfil público SEO del vendor (SSR + ISR + JSON-LD) |
+| [#31](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/31) | PB-P1-030 (US-049/050) | QuoteRequest atómica + límite BR-QUOTE-009 con UX preventiva |
+| [#32](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/32) | PB-P1-031 (US-051..053) | Vendor visualiza y responde Quote |
+| [#33](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/33) | PB-P1-032 (US-054) | Reject quote transaccional + QuoteNotificationService |
+| [#34](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/34) | PB-P1-033 (US-055) | `ExpireQuoteRequestsJob` + ClockPort + reconciliación cron 01:00 UTC |
+| [#35](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/35) | PB-P1-034 (US-056) | Cancel QuoteRequest transaccional + `QuoteEventNotificationService` |
+| [#36](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/36) | PB-P1-035 (US-057/058) | Comparador Quotes lado a lado + toggle `Quote.is_preferred` |
+| [#37](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/37) | PB-P1-036 (US-060..062) | BookingIntent lifecycle (create/confirm/cancel bilateral) |
+| [#38](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/38) | PB-P1-037 (US-063/064) | BookingDisclaimer bilateral + BudgetSummary cross-domain refresh |
+| [#39](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/39) | PB-P1-038 (US-065) | Create Verified Review + denormalize atómico + service común 9 eventos |
+| [#40](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/40) | PB-P1-039 (US-066) | GET vendor reviews · cursor keyset + anonimato + admin sees-all |
+| [#41](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/41) | PB-P1-040 (US-067/077) | Reviews admin moderation — endpoint atómico + panel global |
+| [#42](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/42) | PB-P1-041 (US-047/074) | Admin moderation of VendorProfile |
+| [#43](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/43) | PB-P1-042 (US-075) | Admin CRUD ServiceCategory + jerarquía 2 niveles + i18n + AdminAction |
+| [#44](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/44) | PB-P1-043 (US-076) | Admin CRUD EventType + público (soft delete guard EXISTS events) |
+| [#45](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/45) | PB-P1-044 (US-078) | Admin events read-only — list + detail counts + UI panel |
+| [#46](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/46) | PB-P1-045 (US-079) | Admin operational metrics dashboard |
+| [#47](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/47) | PB-P1-046 (US-080) | Admin AdminAction log viewer (cierra EPIC-ADM-001) |
+| [#48](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/48) | PB-P1-047 (US-081/082) | Selector de idioma y configuración del evento |
+| [#49](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/49) | PB-P1-048/049 (US-083/084) | Currency display consistente + AI locale enforcement — cierre EPIC-I18N-001 |
+
+> PR [#20](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/20) fue **cerrado sin merge** (revisión R1 sustituida por PR #21 consolidado — trazabilidad honesta del proceso).
+
+---
+
 ## Current Delivery Status
 
 ### Completed documentation
@@ -251,7 +548,9 @@ Este repositorio está organizado para:
 - AI architecture & PromptOps, database physical design.
 - Security & authorization design, testing strategy, deployment & DevOps design.
 - 46 ADRs formalizados en `/docs/22`.
+- UI/UX Foundations (Visual Language Reference, UI Foundations, Design Tokens, Component Foundations) en [`docs/ux-ui/`](./docs/ux-ui/).
 - Paquete académico final en `/deliverables/0` a `/deliverables/7`.
+- `DEVELOPMENT_CONVENTIONS.md` root — contrato operativo de código consumido por skills y coding agents.
 
 ### Completed backlog engineering
 
@@ -259,38 +558,31 @@ Este repositorio está organizado para:
 - 150 User Stories archivadas siguiendo `management/templates/user-story.tpl.md`.
 - User Stories Coverage Matrix.
 - Product Backlog Prioritized (P0–P4).
+- User Story lifecycle **completo end-to-end para los 4 niveles de priorización (P0–P3 + P4 demo)** — refinement, decision resolution, approval, technical specs y development tasks para las 150 US archivadas (PRs #3, #4, #5).
 
-### Completed User Story lifecycle (parcial)
+### Completed implementation (P0 foundation + P1 MVP)
 
-Flujo end-to-end completado para:
+Materializado en el repositorio y verificable con el pipeline canónico (§ [Local Setup](#local-setup--cómo-levantar-el-entorno-para-revisión)):
 
-- **US-099 — Prisma schema declarativo** (Approved 2026-06-09).
-- **US-100 — Prisma migrations baseline + multi-environment** (Approved 2026-06-10).
-
-Ambas dentro del backlog item `PB-P0-001`, con `decision-resolutions/`, `refinement-reviews/`, `technical-specs/P0/PB-P0-001/` y `development-tasks/P0/PB-P0-001/` reales en el repositorio.
-
-### Pending implementation evidence
-
-- No existe código fuente del backend Node.js + Express + TypeScript en este repositorio.
-- No existe código fuente del frontend Next.js + App Router en este repositorio.
-- No existe `prisma/schema.prisma`, migraciones ni scripts de seed implementados.
-- No existen suites de pruebas ejecutables.
+- **Foundation P0** — Prisma schema + migrations + índices + constraints + seed demo LATAM idempotente + backend modular monolith + validación Zod + error envelope + endpoints AUTH/Event/Quote/AI + snapshot OpenAPI + cookies HTTP-only firmadas + captcha + rate limiting + middleware chain order + RBAC + suite negativa + `LLMProvider` con adapters OpenAI/Mock/Anthropic stub + PromptOps + persistencia IA + timeout/fallback + validación JSON + frontend bootstrap + QA tooling + Docker + CI. Backing PRs: [#7](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/7)–[#16](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/16).
+- **MVP P1** — Auth end-to-end, ciclo de vida de eventos, IA HITL, task management, presupuesto, Vendor CRUD + portafolio + servicios + directorio + perfil público SEO, flujo Quote/BookingIntent bilateral + jobs de expiración, Reviews con moderación admin, Admin CRUD ServiceCategory/EventType + panel de eventos read-only + metrics dashboard + AdminAction log viewer, i18n con 4 locales + configuración de idioma por evento + currency display consistente + AI locale enforcement. Backing PRs: [#17](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/17)–[#49](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/49).
+- **Suites de pruebas ejecutables** — Vitest (unit + integration) + Supertest (API) + MSW + Playwright (E2E). Se auto-omiten los tests DB-gated si no hay Postgres; en CI corre Postgres efímero.
+- **49 PRs reales** mergeados o cerrados con trazabilidad en GitHub (ver § anterior).
 
 ### Pending deployment evidence
 
-- No existe URL pública desplegada (Amplify Hosting / App Runner) que demuestre la aplicación.
-- No existen pipelines de GitHub Actions ejecutados.
-- No existen recursos AWS provisionados (RDS, S3, Secrets Manager, CloudWatch).
+- No existe URL pública desplegada (Amplify Hosting / App Runner) que demuestre la aplicación. La revisión de esta entrega se hace **levantando el entorno localmente** (ver § [Local Setup](#local-setup--cómo-levantar-el-entorno-para-revisión)).
+- No existen recursos AWS provisionados (RDS, S3, Secrets Manager, CloudWatch) — corresponden a **US-137/PB-P0-017** y **US-139/PB-P0-018** (pipeline CD), pendientes en esta entrega.
+- El pipeline CI en GitHub Actions **sí** está ejecutándose por PR (lint + typecheck + tests + build + drift OpenAPI + drift migraciones + seed idempotency).
 
-### Pending pull request evidence
+### Pending user stories
 
-- No hay PRs reales mergeados que implementen los módulos descritos en `/deliverables/7-Pull-requests.md`.
-- El documento de PRs funciona como **plan recomendado** y placeholder de evidencia futura.
+- Bloque P2 (US-095..130 remanentes) y P3 (US-140..150) — refinement/tech specs/dev tasks completadas; ejecución de código pendiente.
+- Backlog remanente P1 (algunas US como US-068..073 y otras trazadas al Epic Map) — ver `management/artifacts/4-Product-Backlog-Prioritized.md`.
 
 ### Pending visual/demo evidence
 
-- No existen capturas, mockups ni video demo.
-- No existen artefactos de Figma vinculados.
-- No existe reporte de ejecución de tests ni cobertura.
+- No existe video demo grabado end-to-end.
+- Las capturas del producto real quedan como evidencia complementaria a producir tras el despliegue AWS.
 
-Cualquier ítem marcado como pendiente en este README sólo debe declararse completado cuando exista evidencia verificable en el repositorio.
+Cualquier ítem marcado como pendiente en este README sólo debe declararse completado cuando exista evidencia verificable en el repositorio o en GitHub.

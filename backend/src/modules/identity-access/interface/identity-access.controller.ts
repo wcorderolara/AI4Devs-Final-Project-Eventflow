@@ -4,7 +4,12 @@
 // en el JSON (SEC-03). Reset-request responde 202 genérico (anti-enumeración, decisión US-094).
 import type { Request, Response } from 'express';
 import { success } from '../../../shared/response/index.js';
-import { issueSessionCookie, clearSessionCookie } from '../../../infrastructure/security/session-cookie.js';
+import {
+  issueSessionCookie,
+  clearSessionCookie,
+  issueRoleCookie,
+  clearRoleCookie,
+} from '../../../infrastructure/security/session-cookie.js';
 import { logSessionEvent } from '../../../infrastructure/observability/session-event-logger.js';
 import { resolvePreferredLanguage } from '../../../shared/interface/http/accept-language.js';
 import { toAuthUserResponse } from '../../../shared/dto/auth-user.response.js';
@@ -49,6 +54,7 @@ export class IdentityAccessController {
     );
     // AC-01 (US-001): el registro inicia sesión — cookie HTTP-only firmada; token nunca en el JSON.
     issueSessionCookie(res, sessionId);
+    issueRoleCookie(res, user.role);
     logSessionEvent('session.cookie.issued', { correlationId: req.correlationId, userId: user.id });
     res.status(201).json(success(toAuthUserResponse(user), req.correlationId ?? ''));
   };
@@ -62,6 +68,7 @@ export class IdentityAccessController {
     );
     // Cookie HTTP-only firmada; el token NO viaja en el JSON (SEC-03).
     issueSessionCookie(res, sessionId);
+    issueRoleCookie(res, user.role);
     logSessionEvent('session.cookie.issued', { correlationId: req.correlationId, userId: user.id });
     res.status(200).json(success(toAuthUserResponse(user), req.correlationId ?? ''));
   };
@@ -75,6 +82,7 @@ export class IdentityAccessController {
       );
     }
     clearSessionCookie(res);
+    clearRoleCookie(res);
     logSessionEvent('session.cookie.cleared', { correlationId: req.correlationId, userId: req.user?.id });
     res.status(204).end();
   };

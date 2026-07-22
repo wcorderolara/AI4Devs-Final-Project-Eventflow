@@ -102,6 +102,7 @@
   "sidebar": {
     "organizer": {
       "label": "Navegação do organizador",
+      "dashboard": "Painel",
       "events": "Eventos",
       "vendors": "Fornecedores",
       "notifications": "Notificações",
@@ -119,12 +120,23 @@
     },
     "admin": {
       "label": "Navegação de administração",
+      "dashboard": "Painel",
       "metrics": "Métricas",
+      "events": "Eventos",
+      "categories": "Categorias de serviço",
+      "eventTypes": "Tipos de evento",
       "vendors": "Aprovação de fornecedores",
       "reviews": "Moderação de avaliações",
       "users": "Usuários",
       "adminActions": "Registro admin",
-      "seed": "Seed-Demo"
+      "seed": "Seed-Demo",
+      "groups": {
+        "overview": "Visão geral",
+        "content": "Conteúdo",
+        "moderation": "Moderação",
+        "accounts": "Contas",
+        "system": "Sistema"
+      }
     }
   },
   "topbar": {

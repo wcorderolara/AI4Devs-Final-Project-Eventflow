@@ -5,11 +5,12 @@
 // mutaciones (AC-03).
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { DEFAULT_PAGE_SIZE, PageSizeSelector, type PageSize } from '@/shared/ui';
 import type { AdminEventsListFilters } from '../api/adminEventsApi.types';
 import { AdminEventFiltersPanel } from './AdminEventFiltersPanel';
 import { AdminEventTable } from './AdminEventTable';
 
-const DEFAULT_FILTERS: AdminEventsListFilters = {};
+const DEFAULT_FILTERS: AdminEventsListFilters = { pageSize: DEFAULT_PAGE_SIZE };
 
 export function AdminEventsPanel(): React.JSX.Element {
   const t = useTranslations('admin.events.list');
@@ -25,6 +26,13 @@ export function AdminEventsPanel(): React.JSX.Element {
       </header>
 
       <AdminEventFiltersPanel value={filters} onChange={setFilters} />
+
+      <div className="flex justify-end">
+        <PageSizeSelector
+          value={(filters.pageSize ?? DEFAULT_PAGE_SIZE) as PageSize}
+          onChange={(size) => setFilters((f) => ({ ...f, pageSize: size }))}
+        />
+      </div>
 
       <AdminEventTable filters={filters} />
     </section>

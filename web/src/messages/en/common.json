@@ -18,5 +18,13 @@
     "MXN": "Mexican pesos",
     "COP": "Colombian pesos",
     "USD": "US dollars"
+  },
+  "pagination": {
+    "label": "Pagination",
+    "pageSize": "Per page",
+    "pageSizeAria": "Rows per page",
+    "showing": "{count, plural, one {# result} other {# results}} on this page",
+    "prev": "Previous",
+    "next": "Next"
   }
 }

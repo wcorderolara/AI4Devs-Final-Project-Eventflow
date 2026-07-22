@@ -102,6 +102,7 @@
   "sidebar": {
     "organizer": {
       "label": "Organizer navigation",
+      "dashboard": "Dashboard",
       "events": "Events",
       "vendors": "Vendors",
       "notifications": "Notifications",
@@ -119,12 +120,23 @@
     },
     "admin": {
       "label": "Admin navigation",
+      "dashboard": "Dashboard",
       "metrics": "Metrics",
+      "events": "Events",
+      "categories": "Service categories",
+      "eventTypes": "Event types",
       "vendors": "Vendor approval",
       "reviews": "Review moderation",
       "users": "Users",
       "adminActions": "Admin log",
-      "seed": "Seed-Demo"
+      "seed": "Seed-Demo",
+      "groups": {
+        "overview": "Overview",
+        "content": "Content",
+        "moderation": "Moderation",
+        "accounts": "Accounts",
+        "system": "System"
+      }
     }
   },
   "topbar": {
