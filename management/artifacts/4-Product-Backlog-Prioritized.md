@@ -1618,7 +1618,7 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 | MoSCoW | Should Have |
 | Dependencies | PB-P1-035, PB-P0-009..011 |
 | Acceptance Summary | - Resumen claro y conciso.<br>- HITL informativo (no se persiste como decisión).<br>- Surface en UI del comparador (US-059). |
-| Traceability | FR-AI-019 · UC-AI-006 |
+| Traceability | FR-AI-006 · FR-QUOTE-013 · FR-I18N-005 · UC-AI-006 · UC-QUOTE-006 (housekeeping US-022: `FR-AI-019` era referencia obsoleta; el requerimiento funcional canónico es `FR-AI-006`) |
 | Notes | Decisión PO mantener en MVP como P2. |
 
 ---

@@ -15,7 +15,11 @@ import {
   PrismaEventLanguageReader,
   PrismaVendorProfileReader,
   PrismaQuoteRequestEventReader,
+  PrismaServiceCategoryReader,
 } from '../../../infrastructure/readers/prisma-access-readers.js';
+// US-022 (PB-P2-001 / BE-004): reader de Quotes existente reusado para preflight ≥2 elegibles.
+import { PrismaQuoteRepository } from '../../quote-flow/infrastructure/prisma-quote.repository.js';
+import { GenerateQuoteSummaryUseCase } from '../application/generate-quote-summary.us022.use-case.js';
 import { StructuredDomainEventLogger } from '../../../infrastructure/observability/structured-domain-event-logger.js';
 import { PrismaAIRecommendationRepository } from '../infrastructure/prisma-ai-recommendation.repository.js';
 import { PrismaAIRecommendationHitlRepository } from '../infrastructure/prisma-ai-recommendation-hitl.repository.js';
@@ -42,6 +46,7 @@ import {
   QuoteRequestIdParamSchema,
   AiRecommendationIdParamSchema,
   ApplyAiRecommendationSchema,
+  QuoteSummaryBodySchema,
 } from '../dto/index.js';
 import { AIAssistanceController, AIRecommendationsController } from './ai.controllers.js';
 
@@ -60,7 +65,14 @@ const generateUseCase = new GenerateAiRecommendationUseCase(
   // al provider IA en features event-scoped y quote-request-scoped.
   new PrismaEventLanguageReader(),
 );
-const assistance = new AIAssistanceController(generateUseCase);
+// US-022 (PB-P2-001 / BE-005): composición del use case dedicado del comparador de Quotes.
+const generateQuoteSummaryUseCase = new GenerateQuoteSummaryUseCase(
+  new PrismaEventAccessReader(),
+  new PrismaServiceCategoryReader(),
+  new PrismaQuoteRepository(),
+  generateUseCase,
+);
+const assistance = new AIAssistanceController(generateUseCase, generateQuoteSummaryUseCase);
 
 // US-025 HITL registry — se sustituye la strategy `budget_suggestion` placeholder por la V2 de US-037.
 const budgetSuggestionV2 = new BudgetSuggestionApplyStrategyV2({
@@ -124,6 +136,20 @@ aiAssistanceRouter.post(
     rateLimit: aiGenerationRateLimit,
     validation: v(z.object({ params: QuoteRequestIdParamSchema, body: AiBaseRequestSchema })),
     handler: asyncHandler(assistance.comparisonSummary),
+  }),
+);
+
+// ── US-022 (PB-P2-001 / BE-005): resumen IA del comparador event-scope con `category_code`.
+// AI-006 con HITL informativo, locale binding (US-084) y rate limit shared (US-110). Distinto
+// del endpoint anterior (`quote_comparison` scope quote_request).
+aiAssistanceRouter.post(
+  '/events/:eventId/ai/quote-summary',
+  ...composeProtectedRoute({
+    auth: sessionAuth,
+    role: organizer,
+    rateLimit: aiGenerationRateLimit,
+    validation: v(z.object({ params: EventIdParamSchema, body: QuoteSummaryBodySchema })),
+    handler: asyncHandler(assistance.quoteSummary),
   }),
 );
 

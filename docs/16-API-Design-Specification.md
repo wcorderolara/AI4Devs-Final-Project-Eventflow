@@ -3148,7 +3148,8 @@ Endpoints de generación asistida por LLM. **Todas las salidas requieren confirm
 | POST | `/events/:eventId/ai/budget-suggestion` | Sí | organizer | AI-003: budget. | 200 | 401, 403, 404, 422, 503 |
 | POST | `/events/:eventId/ai/vendor-categories` | Sí | organizer | AI-004: categorías. | 200 | 401, 403, 404, 422, 503 |
 | POST | `/events/:eventId/ai/quote-brief` | Sí | organizer | AI-005: brief. | 200 | 401, 403, 404, 422, 503 |
-| POST | `/quote-requests/:quoteRequestId/ai/comparison-summary` | Sí | organizer | AI-006: comparación. | 200 | 401, 403, 404, 422, 503 |
+| POST | `/quote-requests/:quoteRequestId/ai/comparison-summary` | Sí | organizer | AI-006 (legacy quote_request scope, US-097): comparación. | 200 | 401, 403, 404, 422, 503 |
+| POST | `/events/:eventId/ai/quote-summary` | Sí | organizer | AI-006 (event scope + `category_code`, US-022): resumen HITL informativo del comparador. Body `{category_code, preferMock?}`. Response `{ai_recommendation_id, summaries[], overall_observations?, locale, locale_fallback, generated_at, quote_ids_snapshot, category_code}`. | 200 | 400 (INVALID_FILTERS, INSUFFICIENT_QUOTES, INVALID_CATEGORY), 401, 403, 404 EVENT_NOT_FOUND, 422, 429 RATE_LIMIT_EXCEEDED, 503 |
 | POST | `/vendors/me/ai/bio` | Sí | vendor | AI-007: bio. | 200 | 401, 403, 422, 503 |
 | POST | `/events/:eventId/ai/task-prioritization` | Sí | organizer | AI-008: prioridades. | 200 | 401, 403, 404, 422, 503 |
 | GET | `/ai-recommendations/:aiRecommendationId` | Sí | organizer/vendor (own) | Obtiene recomendación. | 200 | 401, 403, 404 |

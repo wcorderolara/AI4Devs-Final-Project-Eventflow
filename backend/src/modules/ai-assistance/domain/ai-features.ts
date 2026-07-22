@@ -10,6 +10,9 @@ export const AI_FEATURE_TYPES = [
   'vendor_categories',
   'quote_brief',
   'quote_comparison',
+  // US-022 (PB-P2-001 / AI-006): resumen IA del comparador con HITL informativo, event-scope y
+  // filtrado por `category_code`. Distinto de `quote_comparison` (quote_request-scope de US-097).
+  'quote_compare_summary',
   'vendor_bio',
   'task_prioritization',
 ] as const;
@@ -67,6 +70,24 @@ export const OUTPUT_SCHEMAS = {
     ),
     recommendation: z.string().min(1),
   }).strict(),
+  // US-022 (AC-02/AC-03): output HITL informativo — pros/cons/missing_info/notes por quote y
+  // `overall_observations` opcional. Sin campo de decisión automática (el usuario decide en US-058).
+  quote_compare_summary: z.object({
+    summaries: z
+      .array(
+        z
+          .object({
+            quote_id: z.string().uuid(),
+            pros: z.array(z.string().min(1)).max(5),
+            cons: z.array(z.string().min(1)).max(5),
+            missing_info: z.array(z.string().min(1)).max(3),
+            notes: z.string().max(500),
+          })
+          .strict(),
+      )
+      .min(1),
+    overall_observations: z.string().max(500).optional(),
+  }).strict(),
   vendor_bio: z.object({
     bio: z.string().min(1),
     highlights: z.array(z.string().min(1)).min(1),
@@ -83,6 +104,9 @@ export const FEATURE_SCOPE = {
   vendor_categories: 'event',
   quote_brief: 'event',
   quote_comparison: 'quote_request',
+  // US-022 (D6/AC-01): event-scope (organizer owner). El body incluye `category_code` para
+  // filtrar quotes; el use case delegado hace preflight (≥2 elegibles + categoría existente).
+  quote_compare_summary: 'event',
   vendor_bio: 'vendor',
   task_prioritization: 'event',
 } as const satisfies Record<AiFeatureType, AiFeatureScope>;

@@ -66,6 +66,14 @@ import {
 // US-058 (PB-P1-035): endpoint `PATCH /api/v1/quotes/:quoteId/preferred`. `QuoteNotPreferableError`
 // mapea a `409 QUOTE_NOT_PREFERABLE` con `details.current_status`.
 import { QuoteNotPreferableError } from '../../../modules/quote-flow/domain/us058.errors.js';
+// US-022 (PB-P2-001 / AI-006): endpoint `POST /api/v1/events/:eventId/ai/quote-summary`.
+// `Us022CategoryCodeRequiredError` → `400 INVALID_FILTERS` (details.field='category_code');
+// `Us022InsufficientQuotesError` → `400 INSUFFICIENT_QUOTES` (details.eligible_count).
+import {
+  Us022CategoryCodeRequiredError,
+  Us022InsufficientQuotesError,
+  Us022InvalidCategoryError,
+} from '../../../modules/ai-assistance/domain/us022.errors.js';
 // US-060 (PB-P1-036): creación atómica de BookingIntent. `DisclaimerRequiredError` → 400,
 // `QuoteNotAcceptableError` → 409 con `details.current_status`, `BookingIntentAlreadyExistsError`
 // → 409 con `details.booking_intent_id`.
@@ -443,6 +451,31 @@ function mapError(err: unknown): MappedError {
     };
   }
   if (err instanceof CompareQuotesInvalidCategoryError) {
+    return {
+      status: 400,
+      code: ErrorCodes.INVALID_CATEGORY,
+      message: err.message,
+      details: [{ field: 'categoryCode', message: err.categoryCode }],
+    };
+  }
+  // US-022 (PB-P2-001): resumen IA del comparador.
+  if (err instanceof Us022CategoryCodeRequiredError) {
+    return {
+      status: 400,
+      code: ErrorCodes.INVALID_FILTERS,
+      message: err.message,
+      details: [{ field: 'category_code', message: 'required' }],
+    };
+  }
+  if (err instanceof Us022InsufficientQuotesError) {
+    return {
+      status: 400,
+      code: ErrorCodes.INSUFFICIENT_QUOTES,
+      message: err.message,
+      details: [{ field: 'eligible_count', message: String(err.eligibleCount) }],
+    };
+  }
+  if (err instanceof Us022InvalidCategoryError) {
     return {
       status: 400,
       code: ErrorCodes.INVALID_CATEGORY,

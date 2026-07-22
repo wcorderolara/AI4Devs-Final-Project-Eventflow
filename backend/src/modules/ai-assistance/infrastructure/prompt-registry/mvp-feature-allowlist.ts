@@ -15,6 +15,8 @@ export const MVP_ACTIVE_FEATURE_ALLOWLIST: readonly AiFeatureType[] = [
   'vendor_categories',
   'quote_brief',
   'quote_comparison',
+  // US-022 (PB-P2-001 / AI-006): promovida al MVP con prompt v1 y schema Zod estricto.
+  'quote_compare_summary',
   'task_prioritization',
 ] as const;
 

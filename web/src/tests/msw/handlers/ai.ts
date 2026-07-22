@@ -134,6 +134,38 @@ export const aiQuoteBriefFixture = {
   createdAt: '2026-07-13T00:00:00.000Z',
 } as const;
 
+/** US-022 (FE-003): fixture MSW del resumen IA del comparador de Quotes. HITL informativo — sin
+ *  campo de recomendación automática. */
+export const aiQuoteSummaryFixture = {
+  ai_recommendation_id: 'ac022c22-2222-4222-8222-222222222222',
+  summaries: [
+    {
+      quote_id: '11111111-1111-4111-8111-111111111111',
+      pros: ['Precio competitivo dentro del presupuesto.'],
+      cons: ['Menús con menos opciones vegetarianas.'],
+      missing_info: ['Política de cancelación por escrito.'],
+      notes: 'Confirmar con el proveedor la disponibilidad para la fecha.',
+    },
+    {
+      quote_id: '22222222-2222-4222-8222-222222222222',
+      pros: ['Servicio con más opciones incluidas.'],
+      cons: ['Total ligeramente por encima del promedio.'],
+      missing_info: ['Detalle del cronograma de montaje.'],
+      notes: 'Solicitar breakdown por bloque de servicio.',
+    },
+  ],
+  overall_observations:
+    'Ambas cotizaciones cubren los requisitos básicos; el organizador decide según prioridad de menú vs. logística.',
+  locale: 'es-LATAM',
+  locale_fallback: false,
+  generated_at: '2026-07-22T00:00:00.000Z',
+  quote_ids_snapshot: [
+    '11111111-1111-4111-8111-111111111111',
+    '22222222-2222-4222-8222-222222222222',
+  ],
+  category_code: 'catering',
+} as const;
+
 export const aiHandlers = [
   http.post('*/api/v1/events/:eventId/ai/event-plan', () =>
     HttpResponse.json({ data: aiEventPlanFixture, meta }, { status: 200 }),
@@ -149,5 +181,9 @@ export const aiHandlers = [
   ),
   http.post('*/api/v1/events/:eventId/ai/quote-brief', () =>
     HttpResponse.json({ data: aiQuoteBriefFixture, meta }, { status: 200 }),
+  ),
+  // US-022 (FE-003 / AC-01..AC-05): resumen IA del comparador. Handler default 200 con snapshot fijo.
+  http.post('*/api/v1/events/:eventId/ai/quote-summary', () =>
+    HttpResponse.json({ data: aiQuoteSummaryFixture, meta }, { status: 200 }),
   ),
 ];
