@@ -11,5 +11,10 @@
   "unreadCountAria": "{count} unread notifications",
   "menuAria": "Notifications menu",
   "itemAria": "Notification: {title}",
-  "linkUnavailable": "Not available"
+  "linkUnavailable": "Not available",
+  "markAsRead": "Mark as read",
+  "markAsReadAria": "Mark \"{title}\" as read",
+  "markAllAsRead": "Mark all as read",
+  "markAllAsReadAria": "Mark all notifications as read",
+  "markErrorToast": "We couldn't mark that notification. Please try again."
 }

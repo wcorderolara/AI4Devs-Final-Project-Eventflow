@@ -11,5 +11,10 @@
   "unreadCountAria": "{count} notificações não lidas",
   "menuAria": "Menu de notificações",
   "itemAria": "Notificação: {title}",
-  "linkUnavailable": "Não disponível"
+  "linkUnavailable": "Não disponível",
+  "markAsRead": "Marcar como lida",
+  "markAsReadAria": "Marcar \"{title}\" como lida",
+  "markAllAsRead": "Marcar todas como lidas",
+  "markAllAsReadAria": "Marcar todas as notificações como lidas",
+  "markErrorToast": "Não conseguimos marcar essa notificação. Tente novamente."
 }

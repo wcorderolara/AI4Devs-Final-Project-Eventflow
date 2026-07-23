@@ -4,14 +4,40 @@
 // Contrato del envelope: `success(data, correlationId, pagination)` estándar
 // (`docs/16 §Success envelope`). `data` incluye `items` + `unreadCount`; la meta
 // `pagination` reporta `page/pageSize/total/totalPages`.
+//
+// US-072 (PB-P2-008 / BE-005): agrega `markAsRead` (PATCH single) y
+// `markAllAsRead` (POST bulk). Ambos responden `204 No Content` sin envelope
+// (D5). Zod aplica default `channel='in_app'` (D4). `NotFoundError` sube al
+// error-handler global que emite `404 RESOURCE_NOT_FOUND` uniforme (AC-04/AC-05
+// política de no-revelación docs/19).
 import type { Request, Response } from 'express';
 import { success, type PaginationMeta } from '../../../../shared/response/index.js';
 import { UnauthorizedError } from '../../../../shared/domain/errors/unauthorized.error.js';
 import type { ListMyNotificationsUseCase } from '../../application/list-my-notifications.use-case.js';
+import type { MarkNotificationAsReadUseCase } from '../../application/mark-notification-as-read.use-case.js';
+import type { MarkAllNotificationsAsReadUseCase } from '../../application/mark-all-notifications-as-read.use-case.js';
 import { listNotificationsQuerySchema } from './list-notifications.query.schema.js';
+import {
+  markAllReadQuerySchema,
+  notificationIdParamSchema,
+} from './mark-notifications.schemas.js';
+
+export interface NotificationsControllerDeps {
+  list: ListMyNotificationsUseCase;
+  markAsRead: MarkNotificationAsReadUseCase;
+  markAllAsRead: MarkAllNotificationsAsReadUseCase;
+}
 
 export class NotificationsController {
-  constructor(private readonly useCase: ListMyNotificationsUseCase) {}
+  private readonly listUseCase: ListMyNotificationsUseCase;
+  private readonly markAsReadUseCase: MarkNotificationAsReadUseCase;
+  private readonly markAllAsReadUseCase: MarkAllNotificationsAsReadUseCase;
+
+  constructor(deps: NotificationsControllerDeps) {
+    this.listUseCase = deps.list;
+    this.markAsReadUseCase = deps.markAsRead;
+    this.markAllAsReadUseCase = deps.markAllAsRead;
+  }
 
   list = async (req: Request, res: Response): Promise<void> => {
     const actor = req.user;
@@ -21,7 +47,7 @@ export class NotificationsController {
     // Errores → 400 vía ValidationError (mapeado por error handler global).
     const query = listNotificationsQuerySchema.parse(req.query);
 
-    const result = await this.useCase.execute({
+    const result = await this.listUseCase.execute({
       userId: actor.id,
       page: query.page,
       pageSize: query.pageSize,
@@ -45,5 +71,28 @@ export class NotificationsController {
           paginationMeta,
         ),
       );
+  };
+
+  markAsRead = async (req: Request, res: Response): Promise<void> => {
+    const actor = req.user;
+    if (!actor) throw new UnauthorizedError();
+    const { notificationId } = notificationIdParamSchema.parse(req.params);
+    await this.markAsReadUseCase.execute({
+      notificationId,
+      actorUserId: actor.id,
+    });
+    res.status(204).end();
+  };
+
+  markAllAsRead = async (req: Request, res: Response): Promise<void> => {
+    const actor = req.user;
+    if (!actor) throw new UnauthorizedError();
+    const { channel } = markAllReadQuerySchema.parse(req.query);
+    await this.markAllAsReadUseCase.execute({
+      actorUserId: actor.id,
+      channel,
+      correlationId: req.correlationId,
+    });
+    res.status(204).end();
   };
 }

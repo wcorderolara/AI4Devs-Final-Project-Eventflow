@@ -3088,8 +3088,8 @@ Centralizar notificaciones in-app del usuario. **No** envía SMS, push, WhatsApp
 | Método | Path | Auth | Roles | Propósito | Success | Errores |
 | --- | --- | --- | --- | --- | --- | --- |
 | GET | `/notifications` | Sí | organizer, vendor, admin | Lista paginada. Query params opcionales: `page` (int ≥ 1, default 1), `pageSize` (int 1–50, default 10), `status` (`unread`\|`all`, default `all`), `channel` (`in_app`\|`email_simulated`\|`all`, default `in_app` — dedup del emisor T-7, US-071 D5). | 200 | 400 `INVALID_QUERY_PARAM` / `INVALID_PAGINATION`, 401 |
-| PATCH | `/notifications/:notificationId/read` | Sí | organizer, vendor, admin | Marca como leída (US-072). | 204 | 401, 403, 404 |
-| POST | `/notifications/mark-all-read` | Sí | organizer, vendor, admin | Marca todas (US-072). | 204 | 401 |
+| PATCH | `/notifications/:notificationId/read` | Sí | organizer, vendor, admin | Marca como leída UNA notif propia (US-072). Idempotente (AC-06): 204 aunque ya estuviera `read`. Ownership enforcement: notif ajena → 404 uniforme (política de no-revelación docs/19; nunca 403). | 204 | 400 `INVALID_PATH_PARAM`, 401, 404 |
+| POST | `/notifications/mark-all-read` | Sí | organizer, vendor, admin | Marca todas las notifs `unread` del usuario autenticado (US-072). Query param opcional `channel` (`in_app`\|`email_simulated`\|`all`, default `in_app` — paridad con `GET /notifications` D5/US-072 D4). Aislamiento BR-NOTIF-005: sólo afecta `WHERE user_id = session.userId`. 0 filas afectadas retorna 204 igualmente (EC-02). | 204 | 400 `INVALID_QUERY_PARAM`, 401 |
 
 ### 34.3 DTOs
 
