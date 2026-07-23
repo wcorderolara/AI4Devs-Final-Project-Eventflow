@@ -18,6 +18,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ci": "vitest run --reporter=verbose",
+    "test:contract": "vitest run src/tests/contract",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install --with-deps chromium",
     "check-no-msw-in-prod": "node scripts/check-no-msw-in-prod.mjs"

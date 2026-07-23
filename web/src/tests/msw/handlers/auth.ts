@@ -47,7 +47,10 @@ export const authHandlers = [
   // US-004: reset-request SIEMPRE 202 genérico (anti-enumeración); reset 204 sin body.
   http.post('*/api/v1/auth/password/reset-request', () =>
     HttpResponse.json(
-      { data: { message: 'If the email exists, a password reset link has been sent.' }, meta: { correlationId: 'req_msw_forgot' } },
+      {
+        data: { message: 'If the email exists, a password reset link has been sent.' },
+        meta: { correlationId: 'req_msw_forgot', timestamp: '2026-07-10T00:00:00.000Z' },
+      },
       { status: 202 },
     ),
   ),

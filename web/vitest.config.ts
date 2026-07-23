@@ -8,8 +8,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
-    // Vitest solo corre unit/integration (`*.test.ts(x)`). El E2E Playwright usa `*.spec.ts`.
-    include: ['src/tests/{unit,integration}/**/*.test.{ts,tsx}'],
+    // Vitest corre unit/integration/contract (`*.test.ts(x)`). El E2E Playwright usa `*.spec.ts`.
+    include: ['src/tests/{unit,integration,contract}/**/*.test.{ts,tsx}'],
     // Base URL absoluta para que el httpClient construya URLs que MSW (`*/api/v1/*`) intercepta.
     env: {
       NEXT_PUBLIC_API_BASE_URL: 'http://localhost:3001/api/v1',
