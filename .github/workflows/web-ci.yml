@@ -34,8 +34,24 @@ jobs:
       - run: npm run build
       - name: Install Playwright browser
         run: npm run test:e2e:install
-      - name: Smoke E2E
+      # US-128 (PB-P2-016 · AC-05 · OPS-003): split smoke (PR, feedback rápido)
+      # vs suite completa (push a `main`). Ambos son bloqueantes — un fallo
+      # rompe el pipeline. El subset smoke se filtra por tag `@smoke` en los
+      # spec titles (`smoke.spec.ts`, `demo-organizer-smoke.spec.ts`).
+      - name: Smoke E2E (PR)
+        if: github.event_name == 'pull_request'
+        run: npm run test:e2e:smoke
+      - name: Full E2E (push to main)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: npm run test:e2e
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: web/playwright-report/
+          if-no-files-found: warn
+          retention-days: 7
       # npm audit High/Critical sin issue de seguimiento bloquea el merge (SEC-06).
       # Se ejecuta como informativo: el High conocido (advisory agregada de `next`) está
       # documentado en web/README.md § Security como upstream sin fix estable (Next 14 pin).
