@@ -231,6 +231,50 @@ que el mock no importa SDKs de IA, HTTP ni secrets.
 npm test -- us129
 ```
 
+## Suite RBAC negativa extendida (US-130 · PB-P2-018)
+
+`backend/tests/api/us130-*.spec.ts` extiende la suite base RBAC + ownership de US-112
+(PB-P0-008) con casos negativos **por dominio**: organizer / vendor / admin. Alineada con
+`docs/19 §Auth` (RBAC + ownership + assignment), Doc 20 §25.5. El **backend es la única
+fuente de verdad** — todos los tests golpean la API con Supertest (no UI).
+
+**Archivos:**
+
+| Archivo | Cobertura |
+|---|---|
+| `tests/helpers/us130-multi-role.ts` | Fixtures multi-cuenta (organizer A/B, vendor asignado/no asignado, admin) + `activeEvent` / `assignedQuoteRequest` / `seedCommonCatalog`. Admin agent creado directamente vía Prisma + `cookie-signature` (registro público bloquea `role=admin` por SEC-08 US-094). |
+| `tests/api/us130-organizer-negative.spec.ts` | SEC-001 — organizer B → recursos ajenos (events/cancel, quote-requests, quotes/accept\|reject\|prefer, booking-intents, ai-recommendations/discard). Aislamiento entre cuentas (BR-AUTH-009). |
+| `tests/api/us130-vendor-negative.spec.ts` | SEC-002 — vendor no asignado → PATCH/send/quote/viewed sobre QR/Quote ajena (BR-AUTH-007). Vendor asignado → GET /events/:id crudo → 403 (no accede al evento fuera del brief). |
+| `tests/api/us130-admin-negative.spec.ts` | SEC-003 — sweep matricial 401 anónimo + 403 no-admin sobre TODOS los routers `/admin/*` reales. Escalamiento: admin → operaciones organizer/vendor → 403. |
+| `tests/api/us130-envelope-no-leak.spec.ts` | QA-002 — envelope canónico `{error:{code,message,correlationId,details?}}` sin campos extra top-level + no-leak (stack/SQL/secretos + UUID del recurso ajeno). |
+| `tests/api/us130-coverage-gate.spec.ts` | OPS-001 — gate estático: cada endpoint de `PROTECTED_ENDPOINTS` (US-112) tiene ≥1 caso negativo cableado en `tests/api/`. Falla el merge si falta cobertura. |
+
+**Convención 403 vs 404** (Doc 19 §Auth):
+
+| Situación | Status | Justificación |
+|---|---|---|
+| Sin sesión válida | **401** `AUTHENTICATION_REQUIRED` | No se conoce la identidad — precede a todo otro check. |
+| Rol incorrecto sobre endpoint público (existente o no ligado a recurso ajeno) | **403** `FORBIDDEN` | La existencia del endpoint es pública; revelar el rol requerido no filtra info. Aplica a `/admin/*` (rol admin), `/events` POST (rol organizer), `/vendors/me/*` (rol vendor). |
+| Recurso ajeno cuya sola existencia sería información sensible | **404** `RESOURCE_NOT_FOUND` masked | Revelar 403 filtraría que el recurso existe. Aplica a `/events/:id`, `/quote-requests/:id`, `/quotes/:id/accept\|reject\|prefer`, `/booking-intents/:id`, `/ai-recommendations/:id`. |
+| Vendor con rol correcto pero sin assignment sobre QR/Quote específico | **404** masked | Mismo criterio anterior — el QR pertenece a otro flujo bilateral. |
+
+**Matriz endpoint × rol (esperado por control):**
+
+| Control | Ejemplo | Anónimo | organizer | vendor | admin |
+|---|---|---|---|---|---|
+| `auth` | `GET /users/me` | 401 | 200 | 200 | 200 |
+| `role:organizer` | `POST /events` | 401 | 200 | 403 | 403 |
+| `role:vendor` | `POST /vendors/me/ai/bio` | 401 | 403 | 200 | 403 |
+| `role:admin` | `GET /admin/metrics` | 401 | 403 | 403 | 200 |
+| `ownership` | `GET /events/:id` | 401 | 200 (owner) / 404 (otro) | 403 | 403 |
+| `assignment` | `POST /quotes/:id/send` | 401 | 403 | 200 (asignado) / 404 (no asignado) | 403 |
+
+**Correrla aislada:**
+
+```bash
+npm test -- us130
+```
+
 ## Ver el reporte HTML de cobertura
 
 ```bash
