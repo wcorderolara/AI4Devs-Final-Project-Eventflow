@@ -1770,7 +1770,7 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 
 ---
 
-### PB-P2-009 — Surface vendor de notificaciones de rechazo/expiración
+### PB-P2-009 — Bandeja unificada vendor (Surface de notificaciones vendor)
 
 | Campo | Valor |
 |---|---|
@@ -1778,16 +1778,16 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 | Priority | P2 |
 | Epic | EPIC-NOT-001 |
 | Related User Stories | US-073 |
-| Title | Vendor ve notificaciones de Quote rechazada/expirada |
-| Description | UI del centro de notificaciones del vendor con tipos `quote_rejected` y `quote_expired`. Surface de PB-P1-032. |
-| User Value / Delivery Value | Cierre del loop bilateral para el vendor. |
+| Title | Bandeja unificada del vendor con destacado visual por tipo |
+| Description | Bandeja unificada del vendor con destacado visual por tipo, cubriendo `quote_rejected`, `quote_expired`, `quote_request_received`, `booking_confirmed` y futuros types del vendor. Reuso 1:1 del patrón US-071 (componentes + hooks + query keys) y de las mutations de US-072 (mark-as-read single + bulk). Extensión mínima backend: `NotificationLinkResolver` con 2 estrategias adicionales (`quote_rejected` y `quote_expired` → `/vendor/quotes/{payload.quoteId}`). Con D1 US-073 se cierra el gap de bandeja vendor identificado en US-068 D4 y US-070 D4 — sin necesidad de Future US adicional. |
+| User Value / Delivery Value | Cierre del loop bilateral para el vendor y visibilidad simétrica al organizer. |
 | Primary Role | Vendor |
 | Type | Product |
 | MoSCoW | Must Have |
-| Dependencies | PB-P1-032 |
-| Acceptance Summary | - Surface en UI vendor.<br>- Filtros por tipo.<br>- Marcar como leída. |
-| Traceability | FR-NOTIF-005 · Decisión PO 8.1 #13 |
-| Notes | Aunque la decisión PO marca esta capability como Must, se entrega en P2 porque depende del centro de notificaciones. |
+| Dependencies | PB-P1-032, PB-P2-004 (US-071 patrón), PB-P2-008 (US-072 mutations) |
+| Acceptance Summary | - Bandeja unificada del vendor con todas las notifs con `user_id=session.userId`.<br>- Destacado visual por tipo (D4) — color + icono + texto complementario (NFR-A11Y-005 anti color-only).<br>- Deep link por tipo: `quote_rejected` / `quote_expired` → `/vendor/quotes/{quoteId}`; los demás heredan del resolver US-071/068/069/070.<br>- Marcar como leída (single + bulk global) reuso 1:1 de US-072. |
+| Traceability | FR-QUOTE-009 · FR-QUOTE-010 · FR-NOTIF-001 · FR-NOTIF-002 · FR-NOTIF-005 · UC-NOTIF-001 · UC-QUOTE-009 · UC-QUOTE-010 · BR-NOTIF-002 · BR-NOTIF-005 · NFR-PERF-001 · NFR-A11Y-001..005 · Decisión PO 8.1 #13 |
+| Notes | Aunque la decisión PO marca esta capability como Must, se entrega en P2 porque depende del centro de notificaciones. US-073 (D1) amplió el alcance original ("Surface de PB-P1-032") a bandeja unificada del vendor. |
 
 ---
 

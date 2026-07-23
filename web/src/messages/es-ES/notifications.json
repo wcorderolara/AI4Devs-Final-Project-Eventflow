@@ -16,5 +16,12 @@
   "markAsReadAria": "Marcar \"{title}\" como leída",
   "markAllAsRead": "Marcar todas como leídas",
   "markAllAsReadAria": "Marcar todas las notificaciones como leídas",
-  "markErrorToast": "No hemos podido marcar esa notificación. Inténtalo de nuevo."
+  "markErrorToast": "No hemos podido marcar esa notificación. Inténtalo de nuevo.",
+  "variants": {
+    "destructive": { "aria": "Rechazo" },
+    "warning": { "aria": "Aviso" },
+    "info": { "aria": "Información" },
+    "success": { "aria": "Confirmación" },
+    "neutral": { "aria": "Notificación" }
+  }
 }

@@ -15,6 +15,14 @@
 // sin contexto adicional). Batch-lookup contra `booking_intents` via
 // `NotificationLinkBookingIntentReader` dedicado (paridad con QR reader de US-068).
 //
+// US-073 (PB-P2-009 / BE-001) extendido con las estrategias `quote_rejected` y
+// `quote_expired` (D2): ambas apuntan a `/vendor/quotes/{payload.quoteId}` y
+// retornan `null` si `payload.quoteId` es inválido o ausente. Sin batch-lookup
+// contra `quotes` (tech spec §7: `TODO: opcionalmente verificar existencia` —
+// mantenido opcional; el detalle de `/vendor/quotes/{id}` maneja 404 downstream).
+// El parámetro `recipientRole` del payload (US-070 D3) se ignora — el receptor
+// es siempre vendor.
+//
 // Contract:
 //   * Nunca lanza — errores/payload malformado → `null`.
 //   * Estrategias registradas en `LINK_STRATEGY_BY_TYPE`.
@@ -33,13 +41,17 @@ export type ResolvableNotificationType =
   | 'task_due_soon'
   | 'quote_request_received'
   | 'quote_received'
-  | 'booking_confirmed';
+  | 'booking_confirmed'
+  | 'quote_rejected'
+  | 'quote_expired';
 
 const LINK_STRATEGY_BY_TYPE: Record<ResolvableNotificationType, true> = {
   task_due_soon: true,
   quote_request_received: true,
   quote_received: true,
   booking_confirmed: true,
+  quote_rejected: true,
+  quote_expired: true,
 };
 
 function extractUuidField(payload: Record<string, unknown>, key: string): string | null {
@@ -78,6 +90,10 @@ export class BatchNotificationLinkResolver implements NotificationLinkResolver {
     const eventIdsPerRow = new Map<string, string | null>();
     const quoteRequestIdsPerRow = new Map<string, string | null>();
     const bookingConfirmedState = new Map<string, BookingConfirmedRowState>();
+    // US-073 (BE-001): estados `quote_rejected` / `quote_expired` sin batch-lookup.
+    // Ambos comparten el mismo path `/vendor/quotes/{quoteId}` — se resuelven
+    // localmente por fila.
+    const vendorQuoteIdsPerRow = new Map<string, string | null>();
     const eventIdsToCheck: string[] = [];
     const quoteRequestIdsToCheck: string[] = [];
     const bookingIntentIdsToCheck: string[] = [];
@@ -116,6 +132,13 @@ export class BatchNotificationLinkResolver implements NotificationLinkResolver {
         };
         bookingConfirmedState.set(row.id, state);
         if (state.bookingIntentId) bookingIntentIdsToCheck.push(state.bookingIntentId);
+      } else if (
+        (row.type === 'quote_rejected' && LINK_STRATEGY_BY_TYPE.quote_rejected) ||
+        (row.type === 'quote_expired' && LINK_STRATEGY_BY_TYPE.quote_expired)
+      ) {
+        // US-073 (BE-001): `/vendor/quotes/{payload.quoteId}` (D2). Sin
+        // batch-lookup contra `quotes` (tech spec §7 — `TODO` opcional).
+        vendorQuoteIdsPerRow.set(row.id, extractUuidField(row.payload, 'quoteId'));
       }
     }
 
@@ -159,6 +182,11 @@ export class BatchNotificationLinkResolver implements NotificationLinkResolver {
             ? `/organizer/quote-requests/${qrId}/comparator`
             : null,
         );
+      } else if (row.type === 'quote_rejected' || row.type === 'quote_expired') {
+        // US-073 (BE-001): `/vendor/quotes/{quoteId}` (D2). `null` si `quoteId`
+        // ausente o no UUID. El `recipientRole` opcional (US-070 D3) se ignora.
+        const quoteId = vendorQuoteIdsPerRow.get(row.id) ?? null;
+        result.set(row.id, quoteId ? `/vendor/quotes/${quoteId}` : null);
       } else if (row.type === 'booking_confirmed') {
         const state = bookingConfirmedState.get(row.id);
         if (

@@ -89,7 +89,7 @@ Esta matriz documenta la **cobertura completa de cada Epic / Feature del Epic Ma
 | EPIC-NOT-001 | Notif booking | US-070 | Aviso BookingIntent confirmado | Should Have | Draft | — |
 | EPIC-NOT-001 | Surface T-7 | US-071 | Aviso T-7 (organizer) | Should Have | Draft | Consume US-034 |
 | EPIC-NOT-001 | Mark as read | US-072 | Marcar notificación como leída | Should Have | Draft | Single + bulk |
-| EPIC-NOT-001 | Vendor rechazos | US-073 | Vendor recibe aviso rechazo/expire | Must Have | Draft | Surface US-054 |
+| EPIC-NOT-001 | Bandeja vendor | US-073 | Bandeja unificada del vendor con destacado visual por tipo (cubre `quote_rejected`, `quote_expired`, `quote_request_received`, `booking_confirmed` — cierra gap US-068 D4 / US-070 D4) | Must Have | Approved with Minor Notes | Reuso 1:1 patrón US-071 + mutations US-072; extensión mínima resolver server-side |
 | EPIC-ADM-001 | Panel vendors | US-074 | Admin aprueba/rechaza (panel) | Must Have | Draft | UI completa US-047 |
 | EPIC-ADM-001 | CRUD categorías | US-075 | CRUD ServiceCategory 2 niveles | Must Have | Draft | Decisión PO #18 |
 | EPIC-ADM-001 | CRUD EventType | US-076 | Gestionar EventType (no hard delete) | Must Have | Draft | Decisión PO #17 |
