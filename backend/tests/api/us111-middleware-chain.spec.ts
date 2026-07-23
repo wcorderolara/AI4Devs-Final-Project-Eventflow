@@ -13,25 +13,32 @@ import { roleMiddleware } from '../../src/shared/interface/middlewares/role.midd
 const app = createApp();
 
 describe('US-111 QA-002: cadena global determinística (AC-01, AC-04)', () => {
+  // US-116 (PB-P2-013 · AC-06): `/health*` está exento del middleware de correlation-id
+  // por diseño (bypass path-based). Probamos la cadena sobre un path fuera de HEALTH_PATHS
+  // (`/nonexistent-probe` cae al notFoundMiddleware con toda la cadena aplicada).
+  const PROBE_PATH = '/nonexistent-probe';
+
   it('correlationId: genera header de respuesta y ECHOa el entrante', async () => {
-    const gen = await request(app).get('/health');
-    expect(gen.status).toBe(200);
+    const gen = await request(app).get(PROBE_PATH);
+    expect(gen.status).toBe(404);
     expect(gen.headers['x-correlation-id']).toBeDefined();
 
-    const echoed = await request(app).get('/health').set('x-correlation-id', '88888888-8888-4888-8888-888888888888');
+    const echoed = await request(app).get(PROBE_PATH).set('x-correlation-id', '88888888-8888-4888-8888-888888888888');
     expect(echoed.headers['x-correlation-id']).toBe('88888888-8888-4888-8888-888888888888');
   });
 
   it('Helmet aplica security headers globalmente (AC-04, SEC-TS-01)', async () => {
+    // `/health` sí atraviesa Helmet (Helmet corre para todos los paths), sólo el
+    // bypass es de correlation-id/rate-limit/logger — Helmet no fue modificado por US-116.
     const res = await request(app).get('/health');
     expect(res.headers['x-content-type-options']).toBe('nosniff');
-    // Helmet oculta la firma del framework.
     expect(res.headers['x-powered-by']).toBeUndefined();
   });
 });
 
 describe('US-111 QA-005: CORS allowlist y notFound/errorHandler finales (AC-04, AC-05, AC-06)', () => {
   it('CORS rechaza un Origin fuera de la allowlist (SEC-TS-02)', async () => {
+    // CORS aplica en TODOS los paths; usamos `/health` o cualquier path — no importa.
     const res = await request(app).get('/health').set('Origin', 'http://evil.example.com');
     expect(res.status).toBe(403);
   });

@@ -93,6 +93,39 @@ jobs:
       - run: npm run db:generate
       - run: npm test
 
+  # US-126 (PB-P2-014 · AC-03 · AC-05) — Coverage gate bloqueante. Corre `test:coverage`
+  # con umbrales seteados en `vitest.config.ts` (lines/statements/functions ≥55%, branches
+  # ≥75%). Si la cobertura cae por debajo, Vitest sale con exit != 0 y el merge se bloquea.
+  # VR-02/SEC-02: sin `OPENAI_API_KEY` real; el suite usa `MockAIProvider` en `LLM_PROVIDER=mock`.
+  test-backend-coverage:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      # Explícito: sin key real de IA — protección VR-02.
+      LLM_PROVIDER: mock
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run test:coverage
+      - name: Upload coverage report (lcov + json-summary)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-${{ github.run_id }}
+          path: |
+            backend/coverage/lcov.info
+            backend/coverage/coverage-summary.json
+          if-no-files-found: warn
+          retention-days: 7
+
   # AC-04 — Tests frontend (Vitest + Testing Library + MSW).
   test-frontend:
     runs-on: ubuntu-latest

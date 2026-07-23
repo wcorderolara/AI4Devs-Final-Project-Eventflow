@@ -11,26 +11,34 @@ import app from '../../src/app.js';
 const here = dirname(fileURLToPath(import.meta.url));
 
 describe('Pipeline global — CORS, body limit, correlationId (US-091)', () => {
-  it('OBS-001 / AC-01: GET /health devuelve cabecera x-correlation-id', async () => {
-    const res = await request(app).get('/health');
-    expect(res.status).toBe(200);
+  // US-116 (PB-P2-013 · AC-06): `/health` es un endpoint exento del middleware de
+  // correlationId por diseño (bypass path-based via HEALTH_PATHS). Los tests de
+  // pipeline usan un path fuera de HEALTH_PATHS — `/nonexistent-path` cae al
+  // notFoundMiddleware con el resto de la cadena aplicada (correlationId + CORS +
+  // rate limit + error handler), sirve como probe neutro.
+  const PROBE_PATH = '/nonexistent-path';
+
+  it('OBS-001 / AC-01: probe path devuelve cabecera x-correlation-id', async () => {
+    const res = await request(app).get(PROBE_PATH);
+    expect(res.status).toBe(404);
     expect(res.headers['x-correlation-id']).toBeDefined();
   });
 
   it('AC-01: reutiliza el x-correlation-id entrante', async () => {
-    const res = await request(app).get('/health').set('x-correlation-id', '11111111-1111-4111-8111-111111111111');
+    const res = await request(app).get(PROBE_PATH).set('x-correlation-id', '11111111-1111-4111-8111-111111111111');
     expect(res.headers['x-correlation-id']).toBe('11111111-1111-4111-8111-111111111111');
   });
 
   it('NT-09: Origin fuera de la allowlist → 403', async () => {
-    const res = await request(app).get('/health').set('Origin', 'http://evil.example.com');
+    const res = await request(app).get(PROBE_PATH).set('Origin', 'http://evil.example.com');
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('FORBIDDEN');
   });
 
-  it('NT-09: Origin en la allowlist → 200', async () => {
-    const res = await request(app).get('/health').set('Origin', 'http://localhost:3000');
-    expect(res.status).toBe(200);
+  it('NT-09: Origin en la allowlist → response del router (200/404 según path)', async () => {
+    const res = await request(app).get(PROBE_PATH).set('Origin', 'http://localhost:3000');
+    // Con CORS permitido, la request atraviesa hasta el notFoundMiddleware → 404.
+    expect(res.status).toBe(404);
   });
 
   it('NT-08: body JSON que supera JSON_BODY_LIMIT → 413 PAYLOAD_TOO_LARGE con correlationId', async () => {
@@ -83,9 +91,12 @@ describe('Pipeline global — rate limit (US-091 / NT-07)', () => {
   });
 
   it('NT-07: superar RATE_LIMIT_MAX → 429 con cabecera Retry-After', async () => {
-    await request(rateApp).get('/health'); // 1
-    await request(rateApp).get('/health'); // 2 (límite alcanzado)
-    const res = await request(rateApp).get('/health'); // 3 → excede
+    // US-116 (AC-05): `/health*` está en el whitelist del rate limiter; se usa un
+    // path fuera de HEALTH_PATHS (`/nonexistent-path` → 404 tras aplicar rate limit).
+    const PROBE = '/nonexistent-path';
+    await request(rateApp).get(PROBE); // 1
+    await request(rateApp).get(PROBE); // 2 (límite alcanzado)
+    const res = await request(rateApp).get(PROBE); // 3 → excede
     expect(res.status).toBe(429);
     expect(res.body.error.code).toBe('RATE_LIMIT_EXCEEDED');
     const hasRetryAfter =
