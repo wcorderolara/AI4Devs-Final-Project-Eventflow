@@ -43,7 +43,10 @@ test.describe('US-128 · camino demo del organizador (E2E on mocked contract)', 
 
   async function mockBackbone(page: Page): Promise<void> {
     // Sesión + user actual — cualquier página tras login los llama.
-    await page.route('**/api/v1/users/me', (route: Route) =>
+    // Glob `**/users/me` (patrón consolidado del repo desde US-003 · auth-login.spec.ts):
+    // más resiliente que `**/api/v1/users/me` frente a variaciones de
+    // `NEXT_PUBLIC_API_BASE_URL` entre local y CI.
+    await page.route('**/users/me', (route: Route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -52,7 +55,7 @@ test.describe('US-128 · camino demo del organizador (E2E on mocked contract)', 
     );
 
     // Login: cookies para el role-guard (US-105) + envelope de auth user.
-    await page.route('**/api/v1/auth/login', (route: Route) =>
+    await page.route('**/auth/login', (route: Route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
