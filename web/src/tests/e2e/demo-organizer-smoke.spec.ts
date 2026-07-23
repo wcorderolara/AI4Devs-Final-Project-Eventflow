@@ -14,7 +14,11 @@ import { organizerSessionEnvelope } from './fixtures/seed-fixtures';
 test.use({ locale: 'es-419' });
 
 async function mockAuth(page: Page): Promise<void> {
-  await page.route('**/api/v1/auth/login', (route: Route) =>
+  // Glob `**/auth/login` (patrón consolidado del repo desde US-003 · auth-login.spec.ts:25).
+  // Más resiliente que `**/api/v1/auth/login`: matchea tanto rutas absolutas
+  // como relativas independientemente del valor de `NEXT_PUBLIC_API_BASE_URL`
+  // que Next.js baked en el build (CI vs local pueden diferir).
+  await page.route('**/auth/login', (route: Route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -27,7 +31,7 @@ async function mockAuth(page: Page): Promise<void> {
       body: JSON.stringify(organizerSessionEnvelope()),
     }),
   );
-  await page.route('**/api/v1/users/me', (route: Route) =>
+  await page.route('**/users/me', (route: Route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
