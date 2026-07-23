@@ -79,7 +79,11 @@ function signCookie(sid: string): string {
   const signature = require('cookie-signature') as {
     sign: (value: string, secret: string) => string;
   };
-  return `${cookieName}=${encodeURIComponent(signature.sign(sid, cookieSecret))}`;
+  // `cookie-parser` sólo mueve la cookie a `req.signedCookies` cuando el valor
+  // comienza con `s:` (patrón que Express agrega automáticamente en `res.cookie`
+  // cuando `signed:true`). Sin el prefijo, la cookie queda en `req.cookies` y
+  // `sessionAuth` devuelve 401. Formato canónico: `s:<sid>.<hmacBase64>`.
+  return `${cookieName}=${encodeURIComponent(`s:${signature.sign(sid, cookieSecret)}`)}`;
 }
 
 async function cleanup(userIds: string[]): Promise<void> {
