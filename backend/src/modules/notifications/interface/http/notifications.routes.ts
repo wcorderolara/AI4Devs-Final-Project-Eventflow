@@ -9,8 +9,10 @@
 // BR-NOTIF-005 se ejerce dentro de cada use case (`WHERE user_id = session.userId`)
 // — cualquier rol autenticado ve/muta sólo sus notifs.
 import { Router } from 'express';
+import { z } from 'zod';
 import { createSessionAuthMiddleware } from '../../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../../shared/interface/http/async-handler.js';
+import { validateRequestMiddleware } from '../../../../shared/interface/middlewares/validate-request.middleware.js';
 import { sessionRepository, clock } from '../../../../infrastructure/auth-composition.js';
 import { logger as sharedLogger } from '../../../../shared/infrastructure/logger/index.js';
 import { ListMyNotificationsUseCase } from '../../application/list-my-notifications.use-case.js';
@@ -24,6 +26,13 @@ import { PrismaNotificationLinkQuoteRequestReader } from '../../infrastructure/p
 // US-070 (PB-P2-007 / BE-002): batch-lookup contra `booking_intents` para la
 // estrategia `booking_confirmed` con dispatch por rol.
 import { PrismaNotificationLinkBookingIntentReader } from '../../infrastructure/prisma-notification-link-booking-intent-reader.js';
+// US-072 (PB-P2-008 / BE-001): schemas Zod para path + query params. Se aplican
+// via `validateRequestMiddleware` para que los errores se mapeen a
+// `400 VALIDATION_FAILED` — mismo patrón que el resto del repositorio.
+import {
+  markAllReadQuerySchema,
+  notificationIdParamSchema,
+} from './mark-notifications.schemas.js';
 import { NotificationsController } from './notifications.controller.js';
 
 const listRepository = new PrismaListNotificationsRepository();
@@ -52,14 +61,18 @@ const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, c
 export const notificationsRouter = Router();
 
 notificationsRouter.get('/notifications', sessionAuth, asyncHandler(controller.list));
-// US-072 (PB-P2-008 / BE-005): mutations con response `204 No Content`.
+// US-072 (PB-P2-008 / BE-005): mutations con response `204 No Content`. Zod se
+// aplica ANTES del controller para que payloads inválidos disparen 400 uniforme
+// vía `ValidationError` en vez de `ZodError` colapsando a 500.
 notificationsRouter.patch(
   '/notifications/:notificationId/read',
   sessionAuth,
+  validateRequestMiddleware(z.object({ params: notificationIdParamSchema })),
   asyncHandler(controller.markAsRead),
 );
 notificationsRouter.post(
   '/notifications/mark-all-read',
   sessionAuth,
+  validateRequestMiddleware(z.object({ query: markAllReadQuerySchema })),
   asyncHandler(controller.markAllAsRead),
 );
