@@ -915,6 +915,18 @@ Crear y administrar eventos del `organizer`. Lectura controlada por admin.
 
 > **US-079 · No comerciales.** El shape del response NO incluye ningún campo comercial (`revenue`, `gmv`, `arpu`, `conversion_rate_*`, `monetary`, `earnings`, `profit`) por Decisión PO D7 / SEC-02 / AC-05. La única fuente del contrato es el DTO `AdminMetricsResponse` (`backend/src/modules/admin-governance/dto/admin-metrics.response.ts`); QA-005 y el unit test `us079-get-admin-metrics.use-case.spec.ts` asseerean explícitamente la ausencia de esos tokens en el JSON serializado.
 
+#### 24.5.1 Admin AI metrics (US-115 · PB-P2-012)
+
+| Método | Path | Auth | Roles | Descripción | 200 | Errores |
+|---|---|---|---|---|---|---|
+| GET | `/admin/ai-metrics` | Sí | admin | Métricas mínimas de IA por feature y ventana (Decisión PO 4.4 US-115 — formato JSON). Query opcional `?window ∈ {24h, all-time, both}` default `both`. Response con 2 ventanas × 7 features MVP × 4 métricas (`count`, `latencyAvgMs`, `fallbackRate`, `acceptanceRate`). Fill de 7 features canónicas con `count=0, latencyAvgMs=null, fallbackRate=null, acceptanceRate=null` para features sin data (AC-05). Sin cache (Decisión PO D5 · on-the-fly). Sin AdminAction (Decisión PO D7 · READ-ONLY). | 200 | 400 (`VALIDATION_ERROR` para `?window` fuera del enum · EC-03 / SEC-04), 401 (`AUTHENTICATION_REQUIRED`), 403 (`FORBIDDEN`) |
+
+> **US-115 · Shape del envelope.** El response usa el envelope canonical (US-114) con `data.windows[]` (1 o 2 entradas según `?window`) — cada `window` contiene `features[]` con exactamente las 7 features del enum real `AI_FEATURE_TYPES` MVP core (`event_plan`, `checklist`, `budget_suggestion`, `vendor_categories`, `quote_brief`, `quote_compare_summary`, `vendor_bio`) en orden estable. Deviation D-01 del execution record `management/workflows/development-execution/P2/PB-P2-012/US-115-execution.md`: los alias del Tech Spec (`budget_split`, `category_suggestion`, `comparator_summary`) se materializan como los IDs reales del código para no divergir de lo persistido por UC-AI-001..UC-AI-007.
+>
+> **US-115 · No-PII (SEC-02 · SEC-T-01).** El response NO expone `input_payload`, `output_payload`, `correlation_id` por row, ni `prompt_version_id`. Sólo agregados numéricos por type. `meta.correlationId` en el envelope es el correlation ID DEL REQUEST (US-114) — no de una row.
+>
+> **US-115 · Injection defense (SEC-04 · SEC-T-02).** Query param `window` validado por Zod strict (`z.enum([...]).strict()`); payloads maliciosos (`?window=' OR 1=1--`, `?window=; DROP TABLE`, etc.) rechazan con 400 `VALIDATION_ERROR` antes del handler. SQL agregado usa `prisma.$queryRaw` con template literals (parametrización estructural sobre `Prisma.sql`/`Prisma.empty`). Deviation D-02: el SQL agrega sobre `ai_meta->>'latencyMs'`, `ai_meta->>'fallbackUsed'` y `status = 'accepted'` (no hay columnas dedicadas en el schema real).
+
 #### 24.6 Admin AdminAction audit log viewer (US-080 · PB-P1-046)
 
 | Método | Path | Auth | Roles | Descripción | 200 | Errores |

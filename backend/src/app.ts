@@ -35,6 +35,11 @@ import { adminVendorRouter } from './modules/admin-governance/interface/admin-ve
 // (`GET /api/v1/admin/metrics`). Guards: sessionAuth + roleMiddleware(['admin']); UseCase con
 // cache in-memory TTL 60s + 7 sub-queries agregadas. Sin AdminAction (Decisión PO D4).
 import { adminMetricsRouter } from './modules/admin-governance/interface/admin-metrics.routes.js';
+// US-115 (PB-P2-012): métricas mínimas de IA por feature + ventana
+// (`GET /api/v1/admin/ai-metrics`). Guards: sessionAuth + roleMiddleware(['admin']); UseCase
+// read-only con 2 queries agregadas sobre `ai_recommendations` + fill 7 features canónicas
+// (`count=0`/nulls). Sin AdminAction (Decisión PO D7). Sin cache (D5). Sin PII (SEC-02).
+import { adminAIMetricsRouter } from './modules/admin-governance/interface/ai-metrics.routes.js';
 // US-080 (PB-P1-046): visor admin del audit log AdminAction (`GET /api/v1/admin/admin-actions`).
 // Guards: sessionAuth + roleMiddleware(['admin']); UseCase read-only con filtros combinados +
 // cursor keyset. SOLO expone GET (AC-03 inmutabilidad arquitectónica). Sin self-log (AC-04).
@@ -230,6 +235,10 @@ export function createApp(): Express {
   // 7 secciones agregadas + cache in-memory TTL 60s (`Cache-Control: private, max-age=60`).
   // Sin métricas comerciales (SEC-02 / AC-05). Sin AdminAction (Decisión PO D4).
   apiV1.use('/admin/metrics', adminMetricsRouter);
+  // US-115 (PB-P2-012): endpoint admin-only con métricas mínimas de IA por feature en 2
+  // ventanas (24h + all-time). Query param `?window ∈ {24h, all-time, both}` default `both`.
+  // Response con 7 features canónicas (count/latencyAvgMs/fallbackRate/acceptanceRate).
+  apiV1.use('/admin/ai-metrics', adminAIMetricsRouter);
   // US-080 (PB-P1-046): visor admin del audit log AdminAction (`GET /admin/admin-actions`).
   // Módulo arquitectónicamente SOLO lectura — no expone POST/PATCH/DELETE (AC-03). Sin
   // self-log al consultar (AC-04, Decisión PO D6) — sólo emite log estructurado
