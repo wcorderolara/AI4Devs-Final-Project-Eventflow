@@ -7,7 +7,7 @@ import {
 } from '../../src/modules/seed-demo/infrastructure/seed-report-emitter.js';
 
 const report: SeedReport = {
-  correlationId: 'abc-123',
+  correlationId: '22222222-2222-4222-8222-222222222222',
   startedAt: '2026-07-10T00:00:00.000Z',
   finishedAt: '2026-07-10T00:00:01.000Z',
   durationMs: 1000,
@@ -19,7 +19,7 @@ const report: SeedReport = {
 describe('US-085 — SeedReportEmitter', () => {
   it('incluye correlationId, durationMs y tabla por dominio', () => {
     const human = formatSeedReportHuman(report);
-    expect(human).toContain('correlationId: abc-123');
+    expect(human).toContain('correlationId: 22222222-2222-4222-8222-222222222222');
     expect(human).toContain('durationMs: 1000');
     expect(human).toContain('| catalogs | 21 |');
   });
@@ -27,7 +27,7 @@ describe('US-085 — SeedReportEmitter', () => {
   it('NDJSON es parseable y no filtra DATABASE_URL', () => {
     const line = formatSeedReportNdjson(report);
     const parsed = JSON.parse(line);
-    expect(parsed.correlationId).toBe('abc-123');
+    expect(parsed.correlationId).toBe('22222222-2222-4222-8222-222222222222');
     expect(line).not.toContain('postgresql://');
   });
 });

@@ -18,8 +18,8 @@ describe('US-111 QA-002: cadena global determinística (AC-01, AC-04)', () => {
     expect(gen.status).toBe(200);
     expect(gen.headers['x-correlation-id']).toBeDefined();
 
-    const echoed = await request(app).get('/health').set('x-correlation-id', 'my-cid-123');
-    expect(echoed.headers['x-correlation-id']).toBe('my-cid-123');
+    const echoed = await request(app).get('/health').set('x-correlation-id', '88888888-8888-4888-8888-888888888888');
+    expect(echoed.headers['x-correlation-id']).toBe('88888888-8888-4888-8888-888888888888');
   });
 
   it('Helmet aplica security headers globalmente (AC-04, SEC-TS-01)', async () => {
@@ -37,10 +37,10 @@ describe('US-111 QA-005: CORS allowlist y notFound/errorHandler finales (AC-04, 
   });
 
   it('notFound: ruta inexistente → 404 estructurado con correlationId (AC-06)', async () => {
-    const res = await request(app).get('/api/v1/does-not-exist-xyz').set('x-correlation-id', 'nf-cid');
+    const res = await request(app).get('/api/v1/does-not-exist-xyz').set('x-correlation-id', '99999999-9999-4999-8999-999999999999');
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('RESOURCE_NOT_FOUND');
-    expect(res.body.error.correlationId).toBe('nf-cid');
+    expect(res.body.error.correlationId).toBe('99999999-9999-4999-8999-999999999999');
   });
 });
 
@@ -102,9 +102,9 @@ describe('US-111 QA-005/QA-006: errorHandler último, envelope seguro + correlat
     tiny.use(notFoundMiddleware);
     tiny.use(errorHandlerMiddleware);
 
-    const res = await request(tiny).get('/boom').set('x-correlation-id', 'boom-cid');
+    const res = await request(tiny).get('/boom').set('x-correlation-id', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
     expect(res.status).toBe(500);
-    expect(res.body.error.correlationId).toBe('boom-cid');
+    expect(res.body.error.correlationId).toBe('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
     const serialized = JSON.stringify(res.body);
     expect(serialized).not.toContain('super-secret-internal-detail');
     expect(serialized).not.toContain('stack');

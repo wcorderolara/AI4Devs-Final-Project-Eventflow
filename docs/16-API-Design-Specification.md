@@ -500,6 +500,7 @@ correlationId
 | `AI_INVALID_OUTPUT` | 422 | IA | Output del LLM no pasó validación JSON Schema. |
 | `FILE_UPLOAD_ERROR` | 400 / 413 | Adjuntos | MIME inválido, tamaño excedido, etc. |
 | `INTERNAL_ERROR` | 500 | Sistema | Falla inesperada. Detalle solo en logs. |
+| `INVALID_CORRELATION_ID` | 400 | Validación / Observability (US-114) | Header `X-Correlation-Id` recibido con shape distinto de UUID v4 strict. El `error.correlationId` retornado es server-generated (nunca propaga el valor inválido del cliente — SEC-04 · ADR-SEC-001). |
 
 > **Nota de catálogo (2026-07-10, US-001 / DOC-001):** se formalizan `EMAIL_TAKEN`,
 > `CAPTCHA_REQUIRED`, `CAPTCHA_INVALID` y `ALREADY_AUTHENTICATED`, códigos estables ya entregados

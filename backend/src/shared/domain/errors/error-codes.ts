@@ -218,6 +218,11 @@ export const ErrorCodes = {
   // `details: {current_count, max}`. Se distingue de `RATE_LIMIT_EXCEEDED` (throttle por
   // ventana de tiempo) — ambos son 429 pero por razones ortogonales.
   REGENERATION_LIMIT: 'REGENERATION_LIMIT',
+  // US-114 (PB-P2-011 / BE-004, AC-03, EC-02, SEC-02): header `X-Correlation-Id`
+  // recibido con shape distinto de UUID v4 → 400 fail-fast. El response
+  // envelope emite un `correlationId` server-generated (nunca propaga el
+  // valor inválido del cliente). Ver `docs/16 §errores comunes`.
+  INVALID_CORRELATION_ID: 'INVALID_CORRELATION_ID',
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

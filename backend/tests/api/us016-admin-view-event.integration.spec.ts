@@ -139,7 +139,7 @@ describe.skipIf(!dbUp)('US-016 QA-002 — GET /api/v1/admin/events/:id (integrac
     const agent = await adminAgent();
     const res = await agent
       .get(`/api/v1/admin/events/${eventId}`)
-      .set('x-correlation-id', 'cid-happy')
+      .set('x-correlation-id', '55555555-5555-4555-8555-555555555555')
       .expect(200);
     expect(res.body.data.id).toBe(eventId);
     expect(res.body.data.deleted).toBe(false);
@@ -151,7 +151,7 @@ describe.skipIf(!dbUp)('US-016 QA-002 — GET /api/v1/admin/events/:id (integrac
     });
     expect(action).toBeTruthy();
     expect(action?.targetEntity).toBe('event');
-    expect((action?.metadata as Record<string, unknown> | null)?.correlationId).toBe('cid-happy');
+    expect((action?.metadata as Record<string, unknown> | null)?.correlationId).toBe('55555555-5555-4555-8555-555555555555');
   });
 
   it('TS-03 / EC-01: admin lee evento soft-deleted → 200 con deleted=true y AdminAction', async () => {

@@ -44,12 +44,12 @@ describe('response helpers — US-093 QA-001', () => {
 
 describe('correlationIdMiddleware — US-093 QA-001', () => {
   it('UT-04: reutiliza el X-Correlation-Id entrante', () => {
-    const req = createMockRequest({ headers: { 'x-correlation-id': 'existing-id' } });
+    const req = createMockRequest({ headers: { 'x-correlation-id': '33333333-3333-4333-8333-333333333333' } });
     const res = createMockResponse();
     const next = vi.fn();
     correlationIdMiddleware(req, asResponse(res), next);
-    expect(req.correlationId).toBe('existing-id');
-    expect(res.headers['x-correlation-id']).toBe('existing-id');
+    expect(req.correlationId).toBe('33333333-3333-4333-8333-333333333333');
+    expect(res.headers['x-correlation-id']).toBe('33333333-3333-4333-8333-333333333333');
     expect(next).toHaveBeenCalledWith();
   });
 

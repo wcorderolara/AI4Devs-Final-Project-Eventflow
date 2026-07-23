@@ -57,8 +57,8 @@ describe('US-112 QA-001 / AC-01: anonymous → 401 en TODOS los endpoints proteg
   it.each(PROTECTED_ENDPOINTS.map((e) => [`${e.method.toUpperCase()} ${e.path}`, e] as const))(
     '%s sin sesión → 401 AUTHENTICATION_REQUIRED',
     async (_label, e) => {
-      const res = await anon(e.method, e.path).set('x-correlation-id', 'anon-cid');
-      expectAuthError(res, 401, { correlationId: 'anon-cid' });
+      const res = await anon(e.method, e.path).set('x-correlation-id', '66666666-6666-4666-8666-666666666666');
+      expectAuthError(res, 401, { correlationId: '66666666-6666-4666-8666-666666666666' });
       expectNoLeak(res);
     },
   );
@@ -101,8 +101,8 @@ describe('US-112 AC-05: no existen endpoints admin foundation montados', () => {
 
 describe('US-112 AC-07: error envelope seguro y consistente (sin BD)', () => {
   it('401 incluye code, message y correlationId (echo), sin leaks', async () => {
-    const res = await request(app).get('/api/v1/users/me').set('x-correlation-id', 'env-cid');
-    expectAuthError(res, 401, { correlationId: 'env-cid' });
+    const res = await request(app).get('/api/v1/users/me').set('x-correlation-id', '77777777-7777-4777-8777-777777777777');
+    expectAuthError(res, 401, { correlationId: '77777777-7777-4777-8777-777777777777' });
     expect(typeof res.body.error.message).toBe('string');
     expectNoLeak(res);
   });
