@@ -3131,6 +3131,8 @@ type PaginatedNotificationsResponse = {
 | `quote_request_received`     | `/vendor/quote-requests/{payload.quoteRequestId}`                                                                                                                              | QR inexistente (US-068 DOC-001)                      |
 | `quote_received`             | `/organizer/quote-requests/{payload.quoteRequestId}/comparator`                                                                                                                | QR inexistente (US-069 DOC-001)                      |
 | `booking_confirmed`          | Dispatch por `payload.recipientRole` (US-070 DOC-002):<br>• `organizer` → `/organizer/events/{payload.eventId}/bookings/{payload.bookingIntentId}`<br>• `vendor` → `/vendor/bookings/{payload.bookingIntentId}` | BookingIntent inexistente o `recipientRole` inválido |
+| `quote_rejected`             | `/vendor/quotes/{payload.quoteId}` (US-073 DOC-001, D2)                                                                                                                        | `payload.quoteId` ausente/no-UUID                    |
+| `quote_expired`              | `/vendor/quotes/{payload.quoteId}` (US-073 DOC-001, D2)                                                                                                                        | `payload.quoteId` ausente/no-UUID                    |
 | _otros_                      | Definido por la US propietaria del tipo                                                                                                                                        | Por defecto `null`                                    |
 
 ### 34.4 Reglas

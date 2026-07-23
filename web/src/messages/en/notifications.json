@@ -16,5 +16,12 @@
   "markAsReadAria": "Mark \"{title}\" as read",
   "markAllAsRead": "Mark all as read",
   "markAllAsReadAria": "Mark all notifications as read",
-  "markErrorToast": "We couldn't mark that notification. Please try again."
+  "markErrorToast": "We couldn't mark that notification. Please try again.",
+  "variants": {
+    "destructive": { "aria": "Rejection" },
+    "warning": { "aria": "Warning" },
+    "info": { "aria": "Information" },
+    "success": { "aria": "Confirmation" },
+    "neutral": { "aria": "Notification" }
+  }
 }
