@@ -14,12 +14,16 @@ import { BatchNotificationLinkResolver } from '../../application/notification-li
 import { PrismaListNotificationsRepository } from '../../infrastructure/prisma-list-notifications.repository.js';
 import { PrismaNotificationLinkEventReader } from '../../infrastructure/prisma-notification-link-event-reader.js';
 import { PrismaNotificationLinkQuoteRequestReader } from '../../infrastructure/prisma-notification-link-quote-request-reader.js';
+// US-070 (PB-P2-007 / BE-002): batch-lookup contra `booking_intents` para la
+// estrategia `booking_confirmed` con dispatch por rol.
+import { PrismaNotificationLinkBookingIntentReader } from '../../infrastructure/prisma-notification-link-booking-intent-reader.js';
 import { NotificationsController } from './notifications.controller.js';
 
 const repository = new PrismaListNotificationsRepository();
 const linkResolver = new BatchNotificationLinkResolver({
   eventReader: new PrismaNotificationLinkEventReader(),
   quoteRequestReader: new PrismaNotificationLinkQuoteRequestReader(),
+  bookingIntentReader: new PrismaNotificationLinkBookingIntentReader(),
 });
 const useCase = new ListMyNotificationsUseCase({ repo: repository, linkResolver });
 const controller = new NotificationsController(useCase);

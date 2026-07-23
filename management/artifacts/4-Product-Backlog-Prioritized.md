@@ -1737,14 +1737,14 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 | Epic | EPIC-NOT-001 |
 | Related User Stories | US-070 |
 | Title | Notificar a las partes al confirmarse BookingIntent |
-| Description | Organizer recibe notificación in-app + email simulado cuando vendor confirma `BookingIntent`. |
+| Description | Organizer y vendor reciben notificación in-app + email simulado al confirmarse `BookingIntent`. |
 | User Value / Delivery Value | Confirmación inmediata del acuerdo simulado. |
-| Primary Role | Organizer |
+| Primary Role | Organizer + Vendor |
 | Type | Product |
 | MoSCoW | Should Have |
 | Dependencies | PB-P1-036 |
 | Acceptance Summary | - Disparada en transición a `confirmed_intent`.<br>- Email simulado loguea. |
-| Traceability | FR-NOTIF-003 · BR-NOTIF-003 |
+| Traceability | FR-BOOKING-010 · FR-NOTIF-001 · FR-NOTIF-003 · BR-BOOKING-002 · BR-BOOKING-003 · BR-NOTIF-001 · BR-NOTIF-002 · BR-NOTIF-003 · BR-NOTIF-005 · BR-NOTIF-007 · UC-BOOKING-002 · NFR-OBS-004 · NFR-OBS-005 · Decisión PO US-070 (recipients bilaterales) |
 | Notes | — |
 
 ---

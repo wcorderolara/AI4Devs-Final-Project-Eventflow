@@ -21,6 +21,13 @@ import type { EventAccessReader, VendorProfileReader } from '../../../shared/acc
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import type { ClockPort } from '../../../shared/domain/clock.port.js';
 import type { BookingIntentView } from '../domain/booking-intent.js';
+// US-070 (PB-P2-007 / BE-005): handler `booking_confirmed` bilateral in-tx.
+// Se agrega ADEMÁS del fan-out legacy `booking_intent.confirmed` (US-061) porque
+// (a) preserva backwards-compat con consumidores existentes del type histórico y
+// (b) el tech spec §4 explicita que este UC no se modifica más allá de invocar
+// el nuevo handler. Ambos side-effects viven en la misma tx; un fallo del handler
+// revierte intent + committed + fan-out legacy + notifs canónicas juntas (AC-06).
+import type { OnBookingConfirmedHandler } from '../../notifications/application/on-booking-confirmed.handler.js';
 import { canCancelBooking, canConfirmBooking, isAlreadyConfirmed } from '../domain/booking-policies.js';
 import { requireEventOwner, requireVendorProfileId } from '../../../shared/access/authz.js';
 import { NotFoundError } from '../../../shared/domain/errors/not-found.error.js';
@@ -80,6 +87,7 @@ export class ConfirmBookingIntentUseCase {
   private readonly budgetSync: BudgetCommittedSyncPort;
   private readonly tx: TransactionRunner | null;
   private readonly bookingEvents: BookingEventNotifierPort | null;
+  private readonly onBookingConfirmedHandler: OnBookingConfirmedHandler | null;
 
   constructor(
     private readonly bookingIntents: BookingIntentRepository,
@@ -97,11 +105,21 @@ export class ConfirmBookingIntentUseCase {
        * legacy US-096 (sin notifs) — usado en tests unitarios que no requieren fan-out.
        */
       bookingEvents?: BookingEventNotifierPort;
+      /**
+       * US-070 (PB-P2-007 / BE-005): handler `booking_confirmed` bilateral in-tx (organizer +
+       * vendor). Cuando se inyecta, emite 4 Notifications con `type='booking_confirmed'`
+       * canónico (docs/16 §34.3) + 2 `[EMAIL]` sin PII dentro de la MISMA tx del
+       * `applyOnConfirm`. Coexiste con `bookingEvents` (type histórico
+       * `booking_intent.confirmed`) hasta que ese consumidor migre — un fallo del handler
+       * revierte intent + committed + ambos fan-outs juntos (AC-06). Sin adapter ⇒ path legacy.
+       */
+      onBookingConfirmedHandler?: OnBookingConfirmedHandler;
     } = {},
   ) {
     this.budgetSync = options.budgetSync ?? NoopBudgetCommittedSync;
     this.tx = options.transactionRunner ?? null;
     this.bookingEvents = options.bookingEvents ?? null;
+    this.onBookingConfirmedHandler = options.onBookingConfirmedHandler ?? null;
   }
 
   async execute(
@@ -171,6 +189,17 @@ export class ConfirmBookingIntentUseCase {
               tx,
               bookingIntent: v,
               bookingEvents: this.bookingEvents,
+              correlationId: ctx.correlationId,
+            });
+          }
+          if (this.onBookingConfirmedHandler) {
+            // US-070 (BE-005): fan-out canónico bilateral (organizer + vendor) con
+            // `type='booking_confirmed'`. Corre después del legacy y dentro de la
+            // misma tx — comparten el rollback path (AC-06 US-070).
+            await applyBookingConfirmedNotification({
+              tx,
+              bookingIntent: v,
+              handler: this.onBookingConfirmedHandler,
               correlationId: ctx.correlationId,
             });
           }
@@ -262,6 +291,83 @@ async function applyOrganizerNotification(args: {
     quoteId: bookingIntent.quoteId,
     correlationId,
   });
+}
+
+/**
+ * US-070 BE-005: fan-out canónico bilateral con `type='booking_confirmed'`.
+ * Recolecta en una única query intra-tx los datos requeridos por el handler
+ * (`event.ownerId + language + owner.status`, `vendorProfile.userId + vendor.status`,
+ * `quote.quoteRequestId`) y delega la emisión al `OnBookingConfirmedHandler`. El
+ * handler aplica dedup self-notification (D7), idempotencia por recipient (D2),
+ * resolución de idioma (D5) y skip parcial ante `deactivated`/`suspended` (D7).
+ */
+async function applyBookingConfirmedNotification(args: {
+  tx: Prisma.TransactionClient;
+  bookingIntent: BookingIntentView;
+  handler: OnBookingConfirmedHandler;
+  correlationId?: string;
+}): Promise<void> {
+  const { tx, bookingIntent, handler, correlationId } = args;
+  // `BookingIntentView.vendorProfileId` es nullable en el dominio (US-096 legacy) pero un
+  // intent confirmado siempre lo tiene resuelto (US-060/US-061 lo enforce). Se narrow-check
+  // temprano para preservar tipos y colapsar el defensivo a un miss consistente.
+  if (!bookingIntent.vendorProfileId) {
+    throw new BookingIntentNotFoundError();
+  }
+  const vendorProfileId = bookingIntent.vendorProfileId;
+  const [event, quote, vendorProfile] = await Promise.all([
+    tx.event.findUnique({
+      where: { id: bookingIntent.eventId },
+      select: {
+        userId: true,
+        language: true,
+        user: { select: { status: true } },
+      },
+    }),
+    tx.quote.findUnique({
+      where: { id: bookingIntent.quoteId },
+      select: { quoteRequestId: true },
+    }),
+    tx.vendorProfile.findUnique({
+      where: { id: vendorProfileId },
+      select: {
+        userId: true,
+        user: { select: { status: true } },
+      },
+    }),
+  ]);
+  if (!event || !quote || !vendorProfile) {
+    // Consistencia: el intent no puede haberse confirmado sin event/quote/vendor.
+    // Un miss aquí implica corrupción — mismo tratamiento que `applyOrganizerNotification`.
+    throw new BookingIntentNotFoundError();
+  }
+  await handler.handle({
+    bookingIntent: { id: bookingIntent.id, status: bookingIntent.status },
+    quote: { id: bookingIntent.quoteId },
+    quoteRequest: { id: quote.quoteRequestId },
+    event: {
+      id: bookingIntent.eventId,
+      ownerId: event.userId,
+      language: event.language,
+    },
+    vendorProfile: {
+      id: vendorProfileId,
+      userId: vendorProfile.userId,
+    },
+    organizerUserStatus: mapUserStatus(event.user?.status),
+    vendorUserStatus: mapUserStatus(vendorProfile.user?.status),
+    correlationId: correlationId ?? `req-booking-confirmed-${bookingIntent.id}`,
+    tx,
+  });
+}
+
+function mapUserStatus(
+  status: string | undefined | null,
+): 'active' | 'suspended' | 'deactivated' | null {
+  if (status === 'active') return 'active';
+  if (status === 'suspended') return 'suspended';
+  if (status === 'deactivated') return 'deactivated';
+  return null;
 }
 
 /**

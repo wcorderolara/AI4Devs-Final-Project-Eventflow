@@ -107,9 +107,13 @@ function build() {
   const repo = new FakeRepo();
   const eventReader = new FakeEventReader();
   const quoteRequestReader = new FakeQuoteRequestReader();
+  const bookingIntentReader = {
+    filterExistingBookingIntentIds: async () => new Set<string>(),
+  };
   const linkResolver = new BatchNotificationLinkResolver({
     eventReader,
     quoteRequestReader,
+    bookingIntentReader,
   });
   const useCase = new ListMyNotificationsUseCase({ repo, linkResolver });
   return { repo, eventReader, quoteRequestReader, useCase };
