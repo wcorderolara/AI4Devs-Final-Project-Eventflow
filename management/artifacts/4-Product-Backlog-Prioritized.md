@@ -1791,7 +1791,7 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 
 ---
 
-### PB-P2-010 — Logger estructurado JSON
+### PB-P2-010 — Logger estructurado JSON (Pino + redacción + correlationId)
 
 | Campo | Valor |
 |---|---|
@@ -1799,16 +1799,16 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 | Priority | P2 |
 | Epic | EPIC-OBS-001 |
 | Related User Stories | US-113 |
-| Title | Pino / Winston con logs JSON estructurados |
-| Description | Implementar logger estructurado con niveles, redacción de campos sensibles y formato JSON. |
-| User Value / Delivery Value | Observabilidad mínima para debug y métricas. |
+| Title | Logger estructurado JSON con Pino, redacción de secrets/PII y correlationId end-to-end |
+| Description | Implementar logger estructurado con niveles Pino (`trace..silent`), redacción centralizada de secrets (13 campos) + PII (7 campos condicionados a env) + headers HTTP sensibles (5 headers siempre), formato JSON estable `{level, time, service, env, version, correlationId, msg, ...context}`, y propagación de `correlationId` via `AsyncLocalStorage` (D4). Singleton exportado desde `src/shared/logger.ts` para todos los módulos backend. Sink stdout único (NFR-OBS-006). |
+| User Value / Delivery Value | Observabilidad estructurada para todo el backend; auditoría rápida via `docker logs \| jq`; compliance de privacidad (BR-PRIVACY-008/011). |
 | Primary Role | System |
 | Type | Technical |
 | MoSCoW | Should Have |
-| Dependencies | PB-P0-002 |
-| Acceptance Summary | - Logs en JSON.<br>- Redacción de password/token.<br>- Nivel configurable por env. |
-| Traceability | NFR-OBS-* · BR-PRIVACY-* |
-| Notes | — |
+| Dependencies | PB-P0-002 (backend bootstrap con orden de middlewares) |
+| Acceptance Summary | - Logs JSON estructurados a stdout.<br>- Redacción de secrets (13 campos) siempre.<br>- Redacción de PII en test/production (7 campos); dev opt-in con `LOG_INCLUDE_PII=true`.<br>- Redacción de headers HTTP sensibles siempre (`Authorization`, `Cookie`, `Set-Cookie`, `X-Api-Key`, `X-Session-Token`).<br>- `correlationId` propagado via `AsyncLocalStorage` (mixin Pino) — heredado en el request pipeline y disponible como `null` fuera de contexto.<br>- Nivel configurable por env con fail-fast (guards prod). |
+| Traceability | NFR-OBS-004 (email log) · NFR-OBS-005 (cambios críticos) · NFR-OBS-006 (stdout único) · NFR-PRIV-004 (excluir PII/secrets de logs) · BR-PRIVACY-008 (contraseñas nunca en logs) · BR-PRIVACY-011 (retención) · ADR-SEC-001 (Prevent Injection and Token Exposure) · ADR-API-004 (Correlation ID Across Requests/Logs/Errors) · ADR-DEVOPS-001 (AWS) · Decisión Tech Lead US-113 |
+| Notes | Coexistencia con el stub console-based legacy en `src/shared/infrastructure/logger/index.ts` — la migración de consumidores (US-025/034/068..072/108/109/118..124) al nuevo singleton es Future incremental. Ver Deviation D-01 del execution record. |
 
 ---
 

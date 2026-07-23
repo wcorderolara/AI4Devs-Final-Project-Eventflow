@@ -1,7 +1,17 @@
 // Tests unitarios de errorHandlerMiddleware + requestLogger (US-091 / QA-003). AC-07; SEC-001, SEC-002.
+//
+// US-113 (PB-P2-010 / QA-004): el `requestLoggerMiddleware` migrado a Pino
+// escribe a stdout via `SonicBoom` (fd=1) — bypasa `console.info`. La
+// verificación de redacción de headers ahora se hace spyando el singleton
+// Pino (`logger.info`) en vez de `console.info`. La cobertura completa de
+// redacción (headers + secrets + PII + shape JSON + correlationId) vive en
+// `us113-pino-logger.spec.ts` (UT) y `us113-request-logger.integration.spec.ts`
+// (IT); este test se limita a validar el contrato pre-US-091 sobre el nuevo
+// singleton.
 import { describe, it, expect, vi } from 'vitest';
 import { errorHandlerMiddleware } from '../../src/shared/interface/middlewares/error-handler.middleware.js';
 import { requestLoggerMiddleware } from '../../src/shared/interface/middlewares/request-logger.middleware.js';
+import { logger } from '../../src/shared/logger.js';
 import { UnauthorizedError } from '../../src/shared/domain/errors/unauthorized.error.js';
 import { ValidationError } from '../../src/shared/domain/errors/validation.error.js';
 import { createMockRequest, createMockResponse, asResponse } from '../helpers/express-mocks.js';
@@ -43,9 +53,9 @@ describe('errorHandlerMiddleware (US-091)', () => {
   });
 });
 
-describe('requestLoggerMiddleware (US-091 / SEC-002)', () => {
-  it('no registra el header Authorization ni secrets en el log', () => {
-    const spy = vi.spyOn(console, 'info').mockImplementation(() => {});
+describe('requestLoggerMiddleware (US-091 / SEC-002 → US-113 / QA-004)', () => {
+  it('no registra el valor del header Authorization ni secrets en el log line emitido por Pino', () => {
+    const spy = vi.spyOn(logger, 'info').mockImplementation((() => undefined) as never);
     const req = createMockRequest({
       headers: { authorization: 'Bearer super-secret-token' },
       body: { password: 'hunter2', captchaToken: '__test__' },
@@ -59,11 +69,13 @@ describe('requestLoggerMiddleware (US-091 / SEC-002)', () => {
     requestLoggerMiddleware(req, asResponse(res), next);
     res.emit('finish');
 
-    const logged = JSON.stringify(spy.mock.calls).toLowerCase();
-    expect(logged).not.toContain('authorization');
-    expect(logged).not.toContain('super-secret-token');
-    expect(logged).not.toContain('hunter2');
-    expect(JSON.stringify(spy.mock.calls)).toContain('c9');
+    // Todos los argumentos pasados a logger.info se acumulan; verificamos que
+    // (a) NO haya filtración del VALOR del Bearer/password/captcha, y (b) el
+    // header 'authorization' aparece con marker `[REDACTED]` (no filtra el valor).
+    const flat = JSON.stringify(spy.mock.calls);
+    expect(flat).not.toContain('super-secret-token');
+    expect(flat).not.toContain('hunter2');
+    expect(flat).toContain('[REDACTED]');
     expect(next).toHaveBeenCalledOnce();
     spy.mockRestore();
   });

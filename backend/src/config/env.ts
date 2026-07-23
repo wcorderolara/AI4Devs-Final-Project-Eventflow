@@ -125,7 +125,22 @@ export const configSchema = z.object({
   FILE_STORAGE_PATH: z.string().min(1).default('./storage/uploads'),
 
   // LOGGING
-  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+  // US-113 (PB-P2-010 / BE-001): enum ampliado a la lista canónica de Pino
+  // (`trace..silent`). Backward-compat: los valores previos (`debug/info/warn/
+  // error`) siguen siendo válidos. Default constante `info` (D-03 en execution
+  // record — cambiar a env-derivado silenciaría logs en el env de test).
+  LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal', 'silent']).default('info'),
+  // US-113 (PB-P2-010 / BE-001 / VR-02): pretty-print sólo en desarrollo. El
+  // `superRefine` (abajo) hace fail-fast si `LOG_PRETTY=true` en producción.
+  LOG_PRETTY: booleanFromEnv.default(false),
+  // US-113 (PB-P2-010 / BE-001 / VR-03, SEC-02): permite emitir PII (email,
+  // phone, …) sin redactar SÓLO en development. El `superRefine` hace fail-fast
+  // si `true` fuera de development.
+  LOG_INCLUDE_PII: booleanFromEnv.default(false),
+  // US-113 (PB-P2-010 / BE-001 / VR-04): versión del servicio inyectada en cada
+  // log line. Se resuelve desde env; el helper `resolveServiceVersion()` cae a
+  // `package.json.version` si la env var no está seteada.
+  SERVICE_VERSION: z.string().min(1).optional(),
 
   // SEED
   SEED_ENABLED: z.coerce.boolean().default(false),
@@ -313,6 +328,27 @@ const validatedConfigSchema = configSchema.superRefine((cfg, ctx) => {
       code: z.ZodIssueCode.custom,
       path: ['AI_DEMO_MODE'],
       message: 'AI_DEMO_MODE=true no está permitido en producción (NODE_ENV=production).',
+    });
+  }
+
+  // ── LOGGING (US-113 / BE-001; AC-02, EC-02, EC-03, SEC-02) ─────────────────
+  // EC-02 (VR-02): `LOG_PRETTY=true` prohibido fuera de development. `pino-pretty`
+  // aumenta bundle y no debe emitirse en test/prod (los logs deben ser JSON válido
+  // parseable por `docker logs | jq`).
+  if (cfg.NODE_ENV !== 'development' && cfg.LOG_PRETTY) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['LOG_PRETTY'],
+      message: 'LOG_PRETTY=true no está permitido fuera de development (NODE_ENV=development).',
+    });
+  }
+  // EC-03 (VR-03, SEC-02): `LOG_INCLUDE_PII=true` prohibido fuera de development.
+  // Emitir PII (email/phone/…) en test o prod viola BR-PRIVACY-008 y NFR-PRIV-004.
+  if (cfg.NODE_ENV !== 'development' && cfg.LOG_INCLUDE_PII) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['LOG_INCLUDE_PII'],
+      message: 'LOG_INCLUDE_PII=true sólo está permitido en development (NODE_ENV=development).',
     });
   }
 });
