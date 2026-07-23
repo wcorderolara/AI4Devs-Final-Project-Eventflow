@@ -19,14 +19,14 @@ describe('correlationIdMiddleware (US-091)', () => {
   });
 
   it('EC-01: reutiliza el x-correlation-id entrante', () => {
-    const req = createMockRequest({ headers: { 'x-correlation-id': 'abc-123' } });
+    const req = createMockRequest({ headers: { 'x-correlation-id': '22222222-2222-4222-8222-222222222222' } });
     const res = createMockResponse();
     const next = vi.fn();
 
     correlationIdMiddleware(req, asResponse(res), next);
 
-    expect(req.correlationId).toBe('abc-123');
-    expect(res.headers['x-correlation-id']).toBe('abc-123');
+    expect(req.correlationId).toBe('22222222-2222-4222-8222-222222222222');
+    expect(res.headers['x-correlation-id']).toBe('22222222-2222-4222-8222-222222222222');
     expect(next).toHaveBeenCalledOnce();
   });
 });

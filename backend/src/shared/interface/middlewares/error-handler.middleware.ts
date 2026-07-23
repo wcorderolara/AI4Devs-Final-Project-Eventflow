@@ -4,6 +4,7 @@
 // ANIDADO `{ error: { code, message, details?, correlationId } }`. Nunca expone stack/SQL/paths al
 // cliente. Loguea 4xx a `warn` y 5xx a `error` (con stack). Masking 403→404 para recursos privados.
 import type { ErrorRequestHandler } from 'express';
+import { getCorrelationId } from '../../context/correlation-id.js';
 import { AppError } from '../../domain/errors/app.error.js';
 import { ValidationError } from '../../domain/errors/validation.error.js';
 import { AuthenticationError } from '../../domain/errors/authentication.error.js';
@@ -1031,7 +1032,15 @@ function mapError(err: unknown): MappedError {
 }
 
 export const errorHandlerMiddleware: ErrorRequestHandler = (err, req, res, _next) => {
-  const correlationId = req.correlationId ?? '';
+  // US-114 (BE-005 / D-05): fallback defensivo a `getCorrelationId()` para
+  // los pocos escenarios donde el error llega aquí sin `req.correlationId`
+  // seteado (p. ej. error lanzado por un middleware que aborta ANTES de
+  // `correlationIdMiddleware`, o pruebas que instancian el handler
+  // directamente sin `req.correlationId`). El middleware US-114 siempre
+  // setea `req.correlationId` en producción — este fallback preserva la
+  // invariante `error.correlationId != ''` en toda condición.
+  const correlationId =
+    req.correlationId ?? getCorrelationId() ?? '';
   const mapped = mapError(err);
 
   // ── Observabilidad ────────────────────────────────────────────────────────

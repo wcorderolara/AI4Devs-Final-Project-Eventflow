@@ -1812,7 +1812,7 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 
 ---
 
-### PB-P2-011 — Correlation IDs end-to-end
+### PB-P2-011 — Correlation IDs end-to-end (X-Correlation-Id UUID v4)
 
 | Campo | Valor |
 |---|---|
@@ -1820,16 +1820,16 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 | Priority | P2 |
 | Epic | EPIC-OBS-001 |
 | Related User Stories | US-114 |
-| Title | Propagar `correlation_id` desde request hasta logs y respuestas |
-| Description | Generar/propagar `X-Correlation-Id` por request, presente en todos los logs y devuelto en el error envelope. |
-| User Value / Delivery Value | Facilita troubleshooting. |
+| Title | Propagar `X-Correlation-Id` (UUID v4) end-to-end desde el frontend hasta los logs backend |
+| Description | Generar/propagar `X-Correlation-Id` (UUID v4 strict) por request end-to-end: (a) el frontend genera un UUID v4 con `crypto.randomUUID()` y lo adjunta como header en cada outbound request; (b) el backend `correlationIdMiddleware` valida el header con Zod (regex UUID v4 strict), reusa si es válido, genera uno server-side si está ausente, y responde 400 `INVALID_CORRELATION_ID` si es inválido — nunca propaga el valor inválido del cliente (SEC-04); (c) el ID vive en `AsyncLocalStorage` (US-113) por la duración del request y es inyectado automáticamente en cada log line via el `mixin` de Pino; (d) el envelope de éxito incluye `meta.correlationId`, el envelope de error incluye `error.correlationId`; (e) el response header echoa el mismo ID (invariante header==body==log). Helper `generateCorrelationId('job-<name>')` para jobs cron. |
+| User Value / Delivery Value | Facilita troubleshooting end-to-end — un solo ID permite trazar un request desde el fetch del frontend hasta la línea de log del backend, incluyendo el envelope de error. Piedra angular de la auditoría (ADR-API-004). |
 | Primary Role | System |
 | Type | Technical |
 | MoSCoW | Should Have |
-| Dependencies | PB-P2-010 |
-| Acceptance Summary | - Header presente en respuestas.<br>- Aparece en logs de todas las capas.<br>- Frontend lo propaga en `fetch`. |
-| Traceability | NFR-OBS-* |
-| Notes | — |
+| Dependencies | PB-P2-010 (US-113 logger estructurado con `correlationContext` singleton) |
+| Acceptance Summary | - Header `X-Correlation-Id` presente en TODAS las responses (2xx, 4xx, 5xx).<br>- UUID v4 strict validado; header inválido → 400 `INVALID_CORRELATION_ID`.<br>- `meta.correlationId` en success envelope; `error.correlationId` en error envelope.<br>- Invariante header == body.correlationId == log line.<br>- Frontend fetch client genera y adjunta el header con `crypto.randomUUID()`.<br>- `correlationContext.getStore()` disponible en handlers via AsyncLocalStorage.<br>- Injection defense (SEC-T-01): payloads maliciosos rechazan con 400 antes de handlers. |
+| Traceability | ADR-API-004 (primario — Use Correlation ID Across Requests, Logs, and Errors) · NFR-OBS-006 (stdout logging, sin APM) · ADR-SEC-001 (Prevent Injection and Token Exposure) · ADR-DEVOPS-001 (AWS) · Decisión Tech Lead US-114 |
+| Notes | Coexiste con `ai_recommendations.correlation_id` (columna ya existente en el schema, escrita por US-115). El header `X-Correlation-Id` NO es secret (SEC-01) — no se redacta en logs; sí se valida strict para defensa de injection. |
 
 ---
 

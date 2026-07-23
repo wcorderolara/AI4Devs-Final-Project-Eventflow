@@ -21,8 +21,9 @@ import request from 'supertest';
 import app from '../../src/app.js';
 
 describe('US-113 · request-logger middleware upgrade (IT-01, AC-05)', () => {
-  it('IT-01 (AC-05): X-Correlation-Id enviado se echoa en el response header', async () => {
-    const cid = '11111111-2222-3333-4444-555555555555';
+  it('IT-01 (AC-05): X-Correlation-Id enviado (UUID v4) se echoa en el response header', async () => {
+    // UUID v4 válido: `4` en posición 15, variante `[89ab]` en posición 20.
+    const cid = '11111111-2222-4111-8111-555555555555';
     const res = await request(app).get('/health').set('X-Correlation-Id', cid);
     expect(res.status).toBe(200);
     expect(res.headers['x-correlation-id']).toBe(cid);

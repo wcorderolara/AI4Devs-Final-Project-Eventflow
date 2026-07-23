@@ -18,8 +18,8 @@ describe('Pipeline global — CORS, body limit, correlationId (US-091)', () => {
   });
 
   it('AC-01: reutiliza el x-correlation-id entrante', async () => {
-    const res = await request(app).get('/health').set('x-correlation-id', 'test-id-123');
-    expect(res.headers['x-correlation-id']).toBe('test-id-123');
+    const res = await request(app).get('/health').set('x-correlation-id', '11111111-1111-4111-8111-111111111111');
+    expect(res.headers['x-correlation-id']).toBe('11111111-1111-4111-8111-111111111111');
   });
 
   it('NT-09: Origin fuera de la allowlist → 403', async () => {

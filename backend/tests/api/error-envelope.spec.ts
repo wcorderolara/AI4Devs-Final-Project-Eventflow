@@ -85,8 +85,8 @@ describe('errorHandlerMiddleware — envelope anidado (US-093 QA-002)', () => {
   });
 
   it('IT-10: response header X-Correlation-Id coincide con error.correlationId', async () => {
-    const res = await request(app).get('/internal').set('x-correlation-id', 'trace-abc');
-    expect(res.headers['x-correlation-id']).toBe('trace-abc');
-    expect(res.body.error.correlationId).toBe('trace-abc');
+    const res = await request(app).get('/internal').set('x-correlation-id', '44444444-4444-4444-8444-444444444444');
+    expect(res.headers['x-correlation-id']).toBe('44444444-4444-4444-8444-444444444444');
+    expect(res.body.error.correlationId).toBe('44444444-4444-4444-8444-444444444444');
   });
 });
