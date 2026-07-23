@@ -2,7 +2,7 @@
 // Exporta `app` SIN llamar `listen` (obligatorio per Doc 14 §8.1): permite que Supertest
 // importe la app sin abrir un puerto. El bootstrap del proceso (`listen`, `$connect`) vive en
 // `server.ts`. Los middlewares globales se registran en el orden EXACTO de Doc 14 §8.2 (AC-08).
-import express, { type Request, type Response, type Express, Router } from 'express';
+import express, { type Express, Router } from 'express';
 import cookieParser from 'cookie-parser';
 import { config } from './config/env.js';
 import { correlationIdMiddleware } from './shared/interface/middlewares/correlation-id.middleware.js';
@@ -87,6 +87,10 @@ import { vendorReviewsRouter } from './modules/reviews-moderation/interface/vend
 // US-067 (PB-P1-040): endpoint admin `POST /api/v1/admin/reviews/:id/moderate` — hide/remove
 // atómico con AdminAction obligatorio + recálculo denormalize VendorProfile + audit chain.
 import { adminReviewRouter } from './modules/reviews-moderation/interface/admin-review.routes.js';
+// US-116 (PB-P2-013): `GET /health` + `GET /health/ready` + 405 catch-all. Router del módulo
+// `platform-health` con probes (Postgres + AiProvider config-based). Exención de rate limit,
+// correlation ID (response) y logger success (§7.9 · OBS-001) via `HEALTH_PATHS` compartido.
+import { platformHealthRouter } from './modules/platform-health/infrastructure/http/composition.js';
 
 /** Construye y configura la aplicación Express. */
 export function createApp(): Express {
@@ -105,15 +109,13 @@ export function createApp(): Express {
   }
   app.use(rateLimitMiddleware); // 6. rate limit global laxo
 
-  // Health check público, no versionado (Doc 16 §180), sin auth. Después de correlación para
-  // que la respuesta incluya `x-correlation-id`. Response shape per Doc 16 §192.
-  app.get('/health', (_req: Request, res: Response) => {
-    res.status(200).json({
-      status: 'ok',
-      version: process.env.npm_package_version ?? '0.0.0',
-      uptimeMs: Math.floor(process.uptime() * 1000),
-    });
-  });
+  // US-116 (PB-P2-013): endpoints `/health` y `/health/ready` públicos, no versionados
+  // (docs/16 §21). Excepción explícita al patrón general del repo — el shape es un DTO
+  // plano sin envelope canonical (`meta.correlationId` NO presente, AC-06 · VR-04). El
+  // header `X-Correlation-Id` se setea antes por el middleware upstream (US-114) pero
+  // el módulo `platform-health` NO lo consume ni lo devuelve — el whitelist en el
+  // middleware de correlation-id se aplica via el `HEALTH_PATHS` compartido (OBS-001).
+  app.use(platformHealthRouter);
 
   // 7. Router de API versionada. Las rutas se agregan por feature story.
   const apiV1 = Router();

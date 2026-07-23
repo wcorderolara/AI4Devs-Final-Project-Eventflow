@@ -19,16 +19,31 @@
 //
 // Ubicación en el pipeline (`app.ts`): PRIMER middleware personalizado, ANTES
 // de `requestLogger` (US-113) y de cualquier auth/role/validation. Doc 14 §8.2.
+// US-116 (PB-P2-013 · AC-06 · VR-04): `/health` y `/health/ready` NO propagan
+// `X-Correlation-Id` a la response ni exponen `meta.correlationId` en el body.
+// Los probes de infraestructura (App Runner cada ~10s) no participan del
+// tracing correlativo del dominio; propagar el ID contaminaría el header y
+// ensuciaría los logs con líneas duplicadas cada 10s. El bypass es sólo en
+// **salida** — el header entrante sí se valida strict (defensa SEC-04) por
+// paridad con el resto del pipeline; sólo se omite el `res.setHeader` y el
+// wrapping del store. La lista canónica vive en `HEALTH_PATHS`.
 import type { RequestHandler } from 'express';
 import { randomUUID } from 'node:crypto';
 import { correlationContext } from '../../context/correlation-id.js';
 import { correlationIdSchema } from '../../validation/correlation-id.schema.js';
 import { failure } from '../../response/failure.js';
 import { ErrorCodes } from '../../domain/errors/error-codes.js';
+import { HEALTH_PATHS } from '../../constants/health-paths.js';
 
 const CORRELATION_ID_HEADER = 'x-correlation-id';
 
 export const correlationIdMiddleware: RequestHandler = (req, res, next) => {
+  // US-116 · AC-06: bypass total para `/health*` — no lee, no setea, no propaga.
+  // Coherente con la excepción explícita documentada en docs/16 §21.4 / ADR-API-004.
+  if (HEALTH_PATHS.includes(req.path)) {
+    next();
+    return;
+  }
   // Se accede directamente a `req.headers[...]` (case-insensitive normalizado
   // por Node.js) en vez de `req.header(name)` para permitir tests que
   // instancian el middleware con un mock request minimal (`{headers: {...}}`).

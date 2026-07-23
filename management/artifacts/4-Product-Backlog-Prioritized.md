@@ -1862,16 +1862,16 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 | Priority | P2 |
 | Epic | EPIC-OBS-001 |
 | Related User Stories | US-116 |
-| Title | `/healthz` y `/readyz` |
-| Description | Endpoint healthcheck (proceso vivo) y readiness (DB conectada, dependencias OK). Sin auth. |
+| Title | `/health` y `/health/ready` (healthcheck + readiness) |
+| Description | Endpoint healthcheck (proceso vivo) y readiness (DB conectada, dependencias OK). Sin auth. Paths canónicos `docs/16 §21` — NO `/healthz`/`/readyz`. |
 | User Value / Delivery Value | Habilita monitoreo y orquestación. |
 | Primary Role | System |
 | Type | Technical |
 | MoSCoW | Should Have |
-| Dependencies | PB-P0-002 |
-| Acceptance Summary | - `/healthz` 200.<br>- `/readyz` chequea DB.<br>- Sin datos sensibles. |
-| Traceability | NFR-OBS-* · ADR-DEVOPS-* |
-| Notes | — |
+| Dependencies | PB-P0-002, PB-P0-004 |
+| Acceptance Summary | - `GET /health` 200 con DTO plano `{status, version, uptimeMs, timestamp}`.<br>- `GET /health/ready` 200 (status ok/degraded) o 503 (status error) con `dependencies: {postgres, aiProvider}`.<br>- Métodos ≠ GET → 405 sin body.<br>- Endpoints anónimos, exentos de rate limit y X-Correlation-Id (excepción explícita per `docs/16 §21.4` / ADR-API-004).<br>- Sin datos sensibles ni PII (SEC-02 · VR-01 · NFR-PRIV-004). |
+| Traceability | NFR-PERF-001 (P95 <100ms /health · <500ms /health/ready) · NFR-OBS-006 (stdout, sin APM) · NFR-PRIV-004 (no exponer PII/secretos) · NFR-DEPLOY-001..005 · ADR-DEVOPS-003 (App Runner) · ADR-DEVOPS-007 (CloudWatch) · ADR-API-004 (excepción /health*) · BR-PRIVACY-008 · `docs/16 §21` (contrato canonical) |
+| Notes | Deviation D-01 (US-116 execution record): reemplaza el `app.get('/health')` inline preexistente por el router del módulo `platform-health`. Deviation D-02: se preserva el orden actual del pipeline (correlationId primero) y se aplican **whitelists path-based** vía `HEALTH_PATHS` compartido en los 3 middlewares afectados (rate-limit US-091, correlation-id US-114, request-logger US-113) en vez de reordenar. AiProvider probe es config-based (sin invocar SDK externo). |
 
 ---
 

@@ -2456,6 +2456,8 @@ Sin correlación, vincular request → log → error → recomendación IA es pr
 - Cada request entrante recibe (o genera) un `X-Correlation-Id` (UUID v4).
 - El ID se propaga a logs (`info`, `warn`, `error`), a respuestas (`meta.correlationId`, `error.correlationId`) y a registros `ai_recommendations`.
 
+> **Excepción — `/health` y `/health/ready` (US-116 · PB-P2-013).** Los endpoints canonicalizados en `docs/16 §21` NO propagan `X-Correlation-Id` a la response ni exponen `meta.correlationId` en el body. El middleware `correlationIdMiddleware` (US-114) aplica un bypass path-based via `HEALTH_PATHS` (`src/modules/platform-health/domain/types.ts`). Motivo: los probes de infraestructura (App Runner cada ~10s) no participan del tracing correlativo del dominio; propagar el ID contaminaría el header y ensuciaría los logs con líneas duplicadas cada 10s. NFR-OBS-006 acepta stdout mínimo — los fallos (`/health/ready` 503) sí emiten log estructurado propio (`event: 'health.ready.dependency_down'`).
+
 ### Alternativas consideradas
 
 | Alternativa | Resultado | Razón |
