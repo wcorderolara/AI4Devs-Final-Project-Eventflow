@@ -34,10 +34,14 @@ describe('US-114 · correlationIdMiddleware end-to-end (QA-003)', () => {
     expect(res.body?.error?.correlationId).toBe(cid);
   });
 
-  it('IT-01b: success 2xx — /health echoa el header (sin envelope estándar)', async () => {
+  it('IT-01b: success 2xx — non-health path echoa el header (bypass US-116 no aplica fuera de HEALTH_PATHS)', async () => {
+    // US-116 (PB-P2-013 · AC-06): `/health` y `/health/ready` NO propagan
+    // X-Correlation-Id por diseño (bypass path-based). Usamos un path fuera de
+    // HEALTH_PATHS que igual atraviesa toda la cadena y devuelve 4xx con el
+    // header echoed (invariante header==body cubierto por IT-01).
     const cid = '22222222-3333-4222-8222-444444444444';
-    const res = await request(app).get('/health').set('X-Correlation-Id', cid);
-    expect(res.status).toBe(200);
+    const res = await request(app).get('/us114-probe').set('X-Correlation-Id', cid);
+    expect(res.status).toBe(404);
     expect(res.headers['x-correlation-id']).toBe(cid);
   });
 
@@ -60,17 +64,17 @@ describe('US-114 · correlationIdMiddleware end-to-end (QA-003)', () => {
       return `${h}${h}${h}${h}${h}${h}${h}${h}-${h}${h}${h}${h}-4${h}${h}${h}-8${h}${h}${h}-${h}${h}${h}${h}${h}${h}${h}${h}${h}${h}${h}${h}`;
     });
     const responses = await Promise.all(
-      cids.map((cid) => request(app).get('/health').set('X-Correlation-Id', cid)),
+      cids.map((cid) => request(app).get('/us114-concurrency-probe').set('X-Correlation-Id', cid)),
     );
     responses.forEach((res, i) => {
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(404);
       expect(res.headers['x-correlation-id']).toBe(cids[i]);
     });
   });
 
   it('IT-04 (AC-01): sin header → server-generated UUID v4 válido', async () => {
-    const res = await request(app).get('/health');
-    expect(res.status).toBe(200);
+    const res = await request(app).get('/us114-nohdr-probe');
+    expect(res.status).toBe(404);
     const generated = res.headers['x-correlation-id'];
     expect(typeof generated).toBe('string');
     expect(UUID_V4_REGEX.test(String(generated))).toBe(true);
