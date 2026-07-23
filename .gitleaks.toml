@@ -19,4 +19,11 @@ regexes = [
   # Canaries de redacción de logs (US-108/US-109): valores que los tests verifican NO se filtran.
   '''leak-secret-value''',
   '''leak-token-value''',
+  # Identificadores de ADR / requisitos del catálogo documental (formato canónico
+  # `ADR-<AREA>-<NNN>`, ej. `ADR-DEVOPS-001`, `ADR-API-004`, `ADR-SEC-001`). Son
+  # referencias documentales — no secretos. Aparecen ampliamente en execution
+  # records, backlog prioritized, tech specs y prose de commits. US-113/US-114
+  # los referencian ~100 veces por row del índice; sin este allowlist gitleaks
+  # los flaggea como `generic-api-key` por entropía.
+  '''ADR-[A-Z]+-\d{3}''',
 ]
