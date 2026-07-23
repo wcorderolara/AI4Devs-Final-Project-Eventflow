@@ -167,6 +167,70 @@ describe('mi feature IA con MockAIProvider', () => {
 });
 ```
 
+## Suite dedicada IA (US-129 · PB-P2-017)
+
+`backend/tests/unit/us129-ai-mock-suite.spec.ts` es el **suite consolidado**
+que ejercita el `MockAIProvider` real contra las features del MVP y los
+comportamientos transversales de IA. Complementa (no duplica) las suites
+preexistentes citadas abajo.
+
+**Set canónico de features cubierto (Doc 7 · AI-001..AI-006 + AI-008):**
+
+| Doc 7 | Feature key en `AI_FEATURE_TYPES` | Cubierto por US-129 |
+| ----- | --------------------------------- | ------------------- |
+| AI-001 plan del evento | `event_plan` | Sí |
+| AI-002 checklist | `checklist` | Sí |
+| AI-003 presupuesto sugerido | `budget_suggestion` | Sí |
+| AI-004 categorías recomendadas | `vendor_categories` | Sí |
+| AI-005 brief de cotización | `quote_brief` | Sí |
+| AI-006 resumen comparativo | `quote_comparison` | Sí |
+| AI-008 priorización de tareas | `task_prioritization` | Sí |
+
+**Extensiones adicionales cubiertas (superset por diseño · D-02):**
+
+| Origen | Feature key | Razón |
+| ------ | ----------- | ----- |
+| US-022 (extensión de AI-006) | `quote_compare_summary` | HITL informativo event-scope |
+| Doc 7 AI-007 (Could Have) | `vendor_bio` | Cobertura defensiva |
+| US-024 (extensión de AI-008) | `task_priority` | Top-3 event-scope |
+
+**Cobertura de AC (US-129):**
+
+- **AC-01** (Mock por env en CI) — sanity: `assertNoOpenAIRealKey`; env
+  `LLM_PROVIDER=mock` en `pr.yml:test-backend-coverage:env`.
+- **AC-02** (7 features + Zod strict) — `it.each(CANONICAL_MVP_FEATURES)` +
+  loop sobre `AI_FEATURE_TYPES` completo; parse con `OUTPUT_SCHEMAS[feature]`.
+- **AC-03** (timeout/JSON/reintentos) — hooks `__simulate: 'timeout' |
+  'unavailable' | 'invalid'` del provider; feature/idioma no soportado.
+  Complemento en `us123-ai-timeout.service.spec.ts` +
+  `us123-fallback.service.spec.ts` (composición `AIExecutionService`).
+- **AC-04** (persistencia AIRecommendation) — **reconocido**: cubierto por
+  `us122-persist-ai-recommendation.service.spec.ts` (127 líneas · BR-AI-007/010).
+- **AC-05** (determinismo + <60s) — 3 corridas por feature deep-equal +
+  benchmark `performance.now()` con umbral defensivo 3s (holgura vs objetivo
+  60s de la spec).
+
+**Activación por env (AI-001) — ya existente:**
+
+`backend/src/config/env.ts:57` valida `LLM_PROVIDER: z.enum(['openai', 'mock',
+'anthropic'])`. `llm-provider.factory.ts` selecciona el provider en tiempo de
+composition root. En CI, `pr.yml:test-backend-coverage:env` fija
+`LLM_PROVIDER: mock` (US-126 · VR-02) — el mismo job cubre la suite US-129.
+
+**Sin PII ni secretos (SEC-001):**
+
+El bloque `SEC-001 · fixtures del mock — sin PII` corre patrones defensivos
+(email, `sk-XXX`, keywords sensibles) contra el `output` serializado de cada
+feature — UUIDs se strippean antes porque son parte del contrato. El guard
+estático de código (`us119-mock-no-network.guard.spec.ts`) verifica adicional
+que el mock no importa SDKs de IA, HTTP ni secrets.
+
+**Correrlo aislado:**
+
+```bash
+npm test -- us129
+```
+
 ## Ver el reporte HTML de cobertura
 
 ```bash

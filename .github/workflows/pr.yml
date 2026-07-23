@@ -97,6 +97,12 @@ jobs:
   # con umbrales seteados en `vitest.config.ts` (lines/statements/functions ≥55%, branches
   # ≥75%). Si la cobertura cae por debajo, Vitest sale con exit != 0 y el merge se bloquea.
   # VR-02/SEC-02: sin `OPENAI_API_KEY` real; el suite usa `MockAIProvider` en `LLM_PROVIDER=mock`.
+  #
+  # US-129 (PB-P2-017 · AC-01 · AC-05) — la suite IA con MockAIProvider
+  # (`backend/tests/unit/us129-ai-mock-suite.spec.ts` + suites preexistentes US-119/122/123)
+  # también corre bajo este job por diseño: `LLM_PROVIDER=mock` está explícito abajo, el
+  # merge queda bloqueado si algún test de IA falla, y `OPENAI_API_KEY` NUNCA se pasa al
+  # runner (SEC-02 · VR-02). No se duplica el job (D-03 execution record US-129).
   test-backend-coverage:
     runs-on: ubuntu-latest
     defaults:
