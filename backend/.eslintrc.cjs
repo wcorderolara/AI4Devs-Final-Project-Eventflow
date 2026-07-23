@@ -108,6 +108,12 @@ module.exports = {
         // el handler por inyección/tipo — wire cross-module, no lógica.
         'src/modules/quote-flow/interface/us051-vendor-quote-requests.routes.ts',
         'src/modules/quote-flow/application/respond-quote-request.us052.use-case.ts',
+        // Excepción documentada (US-070 PB-P2-007): mismo patrón para el
+        // `OnBookingConfirmedHandler` bilateral (canal organizer + vendor con `type='booking_confirmed'`).
+        // El composition root de `booking-intent/interface` y el UC `ConfirmBookingIntentUseCase`
+        // importan el handler por inyección/tipo — wire cross-module, no lógica.
+        'src/modules/booking-intent/interface/booking-intent.routes.ts',
+        'src/modules/booking-intent/application/booking-intent.use-cases.ts',
       ],
       rules: {
         'boundaries/element-types': 'off',

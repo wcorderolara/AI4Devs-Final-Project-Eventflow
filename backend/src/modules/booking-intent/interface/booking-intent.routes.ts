@@ -41,6 +41,12 @@ import { CreateBookingIntentUs060UseCase } from '../application/create-booking-i
 // Prisma que emite las notificaciones del quote-flow — un fallo revierte la transacción del UC.
 import { QuoteEventNotificationService } from '../../quote-flow/services/quote-event-notification.service.js';
 import { PrismaQuoteNotificationSenderAdapter } from '../../../infrastructure/notifications/prisma-quote-notification-sender.adapter.js';
+// US-070 (PB-P2-007 / BE-005): handler `booking_confirmed` bilateral in-tx.
+import { OnBookingConfirmedHandler } from '../../notifications/application/on-booking-confirmed.handler.js';
+import { PrismaNotificationBookingConfirmedRepository } from '../../notifications/infrastructure/prisma-notification-booking-confirmed.repository.js';
+import { LoggingSimulatedBookingConfirmedEmailAdapter } from '../../notifications/infrastructure/logging-simulated-booking-confirmed-email.adapter.js';
+import { PrismaOrganizerLanguageLookup } from '../../event-planning/infrastructure/prisma-organizer-language.lookup.js';
+import { logger as sharedLogger } from '../../../shared/infrastructure/logger/index.js';
 import { BookingIntentsController } from './booking-intent.controller.js';
 
 const events = new PrismaEventAccessReader();
@@ -62,15 +68,29 @@ const transactionRunner = {
     prisma.$transaction(fn),
 };
 
+// US-070 (BE-005): composition root del `OnBookingConfirmedHandler`. Reutiliza
+// `PrismaOrganizerLanguageLookup` structurally como `RecipientLanguagePreferenceReader`
+// (mismo shape) para ambos recipients.
+const onBookingConfirmedHandler = new OnBookingConfirmedHandler({
+  notificationRepo: new PrismaNotificationBookingConfirmedRepository(prisma),
+  languageLookup: new PrismaOrganizerLanguageLookup(prisma),
+  emailAdapter: new LoggingSimulatedBookingConfirmedEmailAdapter(sharedLogger),
+  logger: sharedLogger,
+});
+
 const controller = new BookingIntentsController({
   create: new CreateBookingIntentUs060UseCase(quoteEvents, clock, logger, prisma),
   get: new GetBookingIntentUseCase(bookingIntents, events, vendors),
   // US-061 (BE-002/003): inyecta el `BookingEventNotifierPort` para emitir 2 notifs al
   // organizer con `event='booking_intent.confirmed'` dentro de la misma tx del `applyOnConfirm`.
+  // US-070 (BE-005): ADEMÁS inyecta el `OnBookingConfirmedHandler` — fan-out canónico
+  // bilateral (organizer + vendor) con `type='booking_confirmed'`. Ambos side-effects
+  // comparten la tx y rollback path.
   confirm: new ConfirmBookingIntentUseCase(bookingIntents, vendors, clock, logger, {
     budgetSync: budgetSyncAdapter,
     transactionRunner,
     bookingEvents: quoteEvents,
+    onBookingConfirmedHandler,
   }),
   // US-062 (BE-002/003): inyecta el `BookingEventNotifierPort` para emitir 2 notifs a la
   // contraparte (organizer ⇄ vendor) con `event='booking_intent.cancelled'` dentro de la misma

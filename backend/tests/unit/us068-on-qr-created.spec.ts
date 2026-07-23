@@ -279,7 +279,11 @@ describe('US-068 · BatchNotificationLinkResolver (extensión)', () => {
     const eventReader = new FakeEventReader();
     const qrReader = new FakeQrReader();
     qrReader.existing.add(UUID_QR);
-    const resolver = new BatchNotificationLinkResolver({ eventReader, quoteRequestReader: qrReader });
+    const resolver = new BatchNotificationLinkResolver({
+      eventReader,
+      quoteRequestReader: qrReader,
+      bookingIntentReader: { filterExistingBookingIntentIds: async () => new Set<string>() },
+    });
     const row: NotificationRow = {
       id: 'n1',
       userId: UUID_VENDOR_USER,
@@ -296,7 +300,11 @@ describe('US-068 · BatchNotificationLinkResolver (extensión)', () => {
   it('resolveMany: type=quote_request_received con QR inexistente → link=null', async () => {
     const eventReader = new FakeEventReader();
     const qrReader = new FakeQrReader();
-    const resolver = new BatchNotificationLinkResolver({ eventReader, quoteRequestReader: qrReader });
+    const resolver = new BatchNotificationLinkResolver({
+      eventReader,
+      quoteRequestReader: qrReader,
+      bookingIntentReader: { filterExistingBookingIntentIds: async () => new Set<string>() },
+    });
     const row: NotificationRow = {
       id: 'n1',
       userId: UUID_VENDOR_USER,
@@ -315,7 +323,11 @@ describe('US-068 · BatchNotificationLinkResolver (extensión)', () => {
     eventReader.existing.add(UUID_EVENT);
     const qrReader = new FakeQrReader();
     qrReader.existing.add(UUID_QR);
-    const resolver = new BatchNotificationLinkResolver({ eventReader, quoteRequestReader: qrReader });
+    const resolver = new BatchNotificationLinkResolver({
+      eventReader,
+      quoteRequestReader: qrReader,
+      bookingIntentReader: { filterExistingBookingIntentIds: async () => new Set<string>() },
+    });
     const rows: NotificationRow[] = [
       {
         id: 'nt7',

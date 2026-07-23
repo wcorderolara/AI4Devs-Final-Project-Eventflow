@@ -7,6 +7,13 @@
 // → `/organizer/quote-requests/{quoteRequestId}/comparator` con batch-lookup
 // reutilizando el mismo `NotificationLinkQuoteRequestReader` (el `quoteRequestId`
 // viaja en `payload` para ambos types).
+// US-070 (PB-P2-007 / BE-002) extendido con la estrategia `booking_confirmed` con
+// dispatch por rol (D3): organizer → `/organizer/events/{eventId}/bookings/{bookingIntentId}`;
+// vendor → `/vendor/bookings/{bookingIntentId}`. El `recipientRole` viaja en
+// `payload` (persistido por el handler al INSERT) — la firma de `resolveMany`
+// permanece retrocompatible con US-068/US-069/US-071 (los callers pasan `rows`
+// sin contexto adicional). Batch-lookup contra `booking_intents` via
+// `NotificationLinkBookingIntentReader` dedicado (paridad con QR reader de US-068).
 //
 // Contract:
 //   * Nunca lanza — errores/payload malformado → `null`.
@@ -15,6 +22,7 @@
 //     resuelve URLs sin N+1.
 import type { NotificationLinkEventReader } from '../ports/notification-link-event-reader.js';
 import type { NotificationLinkQuoteRequestReader } from '../ports/notification-link-quote-request-reader.js';
+import type { NotificationLinkBookingIntentReader } from '../ports/notification-link-booking-intent-reader.js';
 import type { NotificationRow } from '../ports/list-notifications.repository.js';
 
 const UUID_REGEX =
@@ -24,18 +32,27 @@ const UUID_REGEX =
 export type ResolvableNotificationType =
   | 'task_due_soon'
   | 'quote_request_received'
-  | 'quote_received';
+  | 'quote_received'
+  | 'booking_confirmed';
 
 const LINK_STRATEGY_BY_TYPE: Record<ResolvableNotificationType, true> = {
   task_due_soon: true,
   quote_request_received: true,
   quote_received: true,
+  booking_confirmed: true,
 };
 
 function extractUuidField(payload: Record<string, unknown>, key: string): string | null {
   const raw = payload?.[key];
   if (typeof raw !== 'string' || !UUID_REGEX.test(raw)) return null;
   return raw;
+}
+
+function extractRecipientRole(
+  payload: Record<string, unknown>,
+): 'organizer' | 'vendor' | null {
+  const raw = payload?.['recipientRole'];
+  return raw === 'organizer' || raw === 'vendor' ? raw : null;
 }
 
 export interface NotificationLinkResolver {
@@ -45,6 +62,13 @@ export interface NotificationLinkResolver {
 export interface BatchNotificationLinkResolverDeps {
   eventReader: NotificationLinkEventReader;
   quoteRequestReader: NotificationLinkQuoteRequestReader;
+  bookingIntentReader: NotificationLinkBookingIntentReader;
+}
+
+interface BookingConfirmedRowState {
+  bookingIntentId: string | null;
+  eventId: string | null;
+  role: 'organizer' | 'vendor' | null;
 }
 
 export class BatchNotificationLinkResolver implements NotificationLinkResolver {
@@ -53,8 +77,10 @@ export class BatchNotificationLinkResolver implements NotificationLinkResolver {
   async resolveMany(rows: NotificationRow[]): Promise<Map<string, string | null>> {
     const eventIdsPerRow = new Map<string, string | null>();
     const quoteRequestIdsPerRow = new Map<string, string | null>();
+    const bookingConfirmedState = new Map<string, BookingConfirmedRowState>();
     const eventIdsToCheck: string[] = [];
     const quoteRequestIdsToCheck: string[] = [];
+    const bookingIntentIdsToCheck: string[] = [];
 
     for (const row of rows) {
       if (row.type === 'task_due_soon' && LINK_STRATEGY_BY_TYPE.task_due_soon) {
@@ -77,16 +103,34 @@ export class BatchNotificationLinkResolver implements NotificationLinkResolver {
         const id = extractUuidField(row.payload, 'quoteRequestId');
         quoteRequestIdsPerRow.set(row.id, id);
         if (id) quoteRequestIdsToCheck.push(id);
+      } else if (
+        row.type === 'booking_confirmed' &&
+        LINK_STRATEGY_BY_TYPE.booking_confirmed
+      ) {
+        // US-070 (BE-002): dispatch por rol vía `payload.recipientRole` (persistido
+        // al INSERT por el handler). Batch-lookup contra `booking_intents`.
+        const state: BookingConfirmedRowState = {
+          bookingIntentId: extractUuidField(row.payload, 'bookingIntentId'),
+          eventId: extractUuidField(row.payload, 'eventId'),
+          role: extractRecipientRole(row.payload),
+        };
+        bookingConfirmedState.set(row.id, state);
+        if (state.bookingIntentId) bookingIntentIdsToCheck.push(state.bookingIntentId);
       }
     }
 
-    const [existingEvents, existingQrs] = await Promise.all([
+    const [existingEvents, existingQrs, existingBookingIntents] = await Promise.all([
       eventIdsToCheck.length > 0
         ? this.deps.eventReader.filterExistingEventIds(Array.from(new Set(eventIdsToCheck)))
         : Promise.resolve(new Set<string>()),
       quoteRequestIdsToCheck.length > 0
         ? this.deps.quoteRequestReader.filterExistingQuoteRequestIds(
             Array.from(new Set(quoteRequestIdsToCheck)),
+          )
+        : Promise.resolve(new Set<string>()),
+      bookingIntentIdsToCheck.length > 0
+        ? this.deps.bookingIntentReader.filterExistingBookingIntentIds(
+            Array.from(new Set(bookingIntentIdsToCheck)),
           )
         : Promise.resolve(new Set<string>()),
     ]);
@@ -115,6 +159,30 @@ export class BatchNotificationLinkResolver implements NotificationLinkResolver {
             ? `/organizer/quote-requests/${qrId}/comparator`
             : null,
         );
+      } else if (row.type === 'booking_confirmed') {
+        const state = bookingConfirmedState.get(row.id);
+        if (
+          !state ||
+          !state.bookingIntentId ||
+          !state.role ||
+          !existingBookingIntents.has(state.bookingIntentId)
+        ) {
+          result.set(row.id, null);
+          continue;
+        }
+        if (state.role === 'organizer') {
+          // Requiere también `eventId` para el path del organizer.
+          if (!state.eventId) {
+            result.set(row.id, null);
+            continue;
+          }
+          result.set(
+            row.id,
+            `/organizer/events/${state.eventId}/bookings/${state.bookingIntentId}`,
+          );
+        } else {
+          result.set(row.id, `/vendor/bookings/${state.bookingIntentId}`);
+        }
       } else {
         result.set(row.id, null);
       }

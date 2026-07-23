@@ -316,6 +316,7 @@ describe('US-069 · BatchNotificationLinkResolver (extensión)', () => {
     const resolver = new BatchNotificationLinkResolver({
       eventReader,
       quoteRequestReader: qrReader,
+      bookingIntentReader: { filterExistingBookingIntentIds: async () => new Set<string>() },
     });
     const row: NotificationRow = {
       id: 'n1',
@@ -343,6 +344,7 @@ describe('US-069 · BatchNotificationLinkResolver (extensión)', () => {
     const resolver = new BatchNotificationLinkResolver({
       eventReader,
       quoteRequestReader: qrReader,
+      bookingIntentReader: { filterExistingBookingIntentIds: async () => new Set<string>() },
     });
     const row: NotificationRow = {
       id: 'n1',
@@ -369,6 +371,7 @@ describe('US-069 · BatchNotificationLinkResolver (extensión)', () => {
     const resolver = new BatchNotificationLinkResolver({
       eventReader,
       quoteRequestReader: qrReader,
+      bookingIntentReader: { filterExistingBookingIntentIds: async () => new Set<string>() },
     });
     const rows: NotificationRow[] = [
       {
