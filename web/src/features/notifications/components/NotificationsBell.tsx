@@ -25,6 +25,8 @@ import {
   NotificationsErrorBanner,
   NotificationsLoadingState,
 } from './NotificationsStates';
+// US-072 (PB-P2-008 / FE-004): botón bulk en el footer del dropdown.
+import { MarkAllAsReadButton } from './MarkAllAsReadButton';
 
 export interface NotificationsBellProps {
   /**
@@ -39,6 +41,8 @@ export function NotificationsBell({ initialOpen = false }: NotificationsBellProp
   const [open, setOpen] = useState(initialOpen);
   const [statusFilter, setStatusFilter] = useState<NotificationStatusFilter>('all');
   const [page, setPage] = useState(1);
+  // US-072 (FE-002/003/004): toast de error localizado — se muestra si la mutation falla.
+  const [markError, setMarkError] = useState<string | null>(null);
   const bellRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -143,7 +147,11 @@ export function NotificationsBell({ initialOpen = false }: NotificationsBellProp
               <>
                 <ul className="max-h-96 overflow-y-auto" data-testid="us071-list">
                   {data.items.map((n) => (
-                    <NotificationItem key={n.id} notification={n} />
+                    <NotificationItem
+                      key={n.id}
+                      notification={n}
+                      onMarkError={() => setMarkError(t('markErrorToast'))}
+                    />
                   ))}
                 </ul>
                 {showLoadMore ? (
@@ -158,8 +166,24 @@ export function NotificationsBell({ initialOpen = false }: NotificationsBellProp
                     </button>
                   </div>
                 ) : null}
+                {/* US-072 (FE-004): footer con el botón bulk mark-all-read. */}
+                <div className="flex items-center justify-end border-t border-gray-100 px-4 py-2">
+                  <MarkAllAsReadButton
+                    unreadCount={unreadCount}
+                    onMutationError={() => setMarkError(t('markErrorToast'))}
+                  />
+                </div>
               </>
             )
+          ) : null}
+          {markError ? (
+            <div
+              role="alert"
+              className="border-t border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800"
+              data-testid="us072-mark-error-toast"
+            >
+              {markError}
+            </div>
           ) : null}
         </div>
       ) : null}

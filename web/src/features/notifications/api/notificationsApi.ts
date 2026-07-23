@@ -1,7 +1,11 @@
 // US-071 (PB-P2-004 / FE-001). Cliente API del surface organizer de notificaciones.
 // Contrato §9 tech spec: `GET /api/v1/notifications` con query params opcionales.
 // Response envelope estándar EventFlow (`success(data, correlationId, pagination)`).
-import { httpGet } from '@/shared/api-client';
+//
+// US-072 (PB-P2-008 / FE-001): agrega `markAsRead` (PATCH single) y
+// `markAllAsRead` (POST bulk global). Ambas mutations retornan `void` (backend
+// responde `204 No Content` — D5). Sin body en el request.
+import { httpGet, httpPatch, httpPost } from '@/shared/api-client';
 
 /** Estados soportados por el query param `status`. */
 export type NotificationStatusFilter = 'unread' | 'all';
@@ -55,6 +59,9 @@ interface Envelope {
   meta: { correlationId: string; timestamp: string };
 }
 
+/** US-072 (FE-001). Default `channel='in_app'` (paridad con D4 backend). */
+export const DEFAULT_MARK_ALL_CHANNEL: NotificationChannelFilter = 'in_app';
+
 export const notificationsApi = {
   /**
    * Lista las notificaciones del usuario autenticado. Sin `credentials: 'include'` explícito
@@ -75,5 +82,24 @@ export const notificationsApi = {
       unreadCount: dto.data.unreadCount,
       pagination: dto.pagination,
     };
+  },
+  /**
+   * US-072 (FE-001) — mark single: `PATCH /notifications/:id/read`. Response
+   * `204 No Content`. `httpPatch` retorna `undefined` — se colapsa a `void`.
+   */
+  async markAsRead(notificationId: string): Promise<void> {
+    await httpPatch<void>(`/notifications/${notificationId}/read`);
+  },
+  /**
+   * US-072 (FE-001) — mark-all bulk: `POST /notifications/mark-all-read`. Se
+   * envía `channel` sólo cuando difiere del default `in_app` para mantener el
+   * request URL limpio en el happy path.
+   */
+  async markAllAsRead(
+    channel: NotificationChannelFilter = DEFAULT_MARK_ALL_CHANNEL,
+  ): Promise<void> {
+    const query =
+      channel === DEFAULT_MARK_ALL_CHANNEL ? undefined : { channel };
+    await httpPost<void>('/notifications/mark-all-read', { query });
   },
 };

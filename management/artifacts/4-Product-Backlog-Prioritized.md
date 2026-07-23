@@ -1765,7 +1765,7 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 | MoSCoW | Should Have |
 | Dependencies | PB-P2-005..007 |
 | Acceptance Summary | - `read_at` actualizado.<br>- Contador en topbar.<br>- Bulk con límite razonable. |
-| Traceability | FR-NOTIF-005 |
+| Traceability | FR-NOTIF-002 · UC-NOTIF-002 · BR-NOTIF-004 · BR-NOTIF-005 · BR-NOTIF-007 · NFR-PERF-001 · NFR-USAB-001 · NFR-A11Y-001 · NFR-A11Y-002 · NFR-A11Y-003 · Decisión PO US-072 |
 | Notes | — |
 
 ---
