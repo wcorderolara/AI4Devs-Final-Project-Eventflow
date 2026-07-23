@@ -17,9 +17,9 @@ import type { ListMyNotificationsUseCase } from '../../application/list-my-notif
 import type { MarkNotificationAsReadUseCase } from '../../application/mark-notification-as-read.use-case.js';
 import type { MarkAllNotificationsAsReadUseCase } from '../../application/mark-all-notifications-as-read.use-case.js';
 import { listNotificationsQuerySchema } from './list-notifications.query.schema.js';
-import {
-  markAllReadQuerySchema,
-  notificationIdParamSchema,
+import type {
+  MarkAllReadQuery,
+  NotificationIdParam,
 } from './mark-notifications.schemas.js';
 
 export interface NotificationsControllerDeps {
@@ -76,7 +76,10 @@ export class NotificationsController {
   markAsRead = async (req: Request, res: Response): Promise<void> => {
     const actor = req.user;
     if (!actor) throw new UnauthorizedError();
-    const { notificationId } = notificationIdParamSchema.parse(req.params);
+    // `validateRequestMiddleware` pobló `req.validated.params` con el schema
+    // aplicado — Zod se corre en el pipeline de middleware para que fallos
+    // devuelvan 400 uniforme.
+    const { notificationId } = req.validated?.params as NotificationIdParam;
     await this.markAsReadUseCase.execute({
       notificationId,
       actorUserId: actor.id,
@@ -87,7 +90,7 @@ export class NotificationsController {
   markAllAsRead = async (req: Request, res: Response): Promise<void> => {
     const actor = req.user;
     if (!actor) throw new UnauthorizedError();
-    const { channel } = markAllReadQuerySchema.parse(req.query);
+    const { channel } = req.validated?.query as MarkAllReadQuery;
     await this.markAllAsReadUseCase.execute({
       actorUserId: actor.id,
       channel,
