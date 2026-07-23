@@ -9,6 +9,7 @@ export {
 export { Logo } from './Logo';
 export { SkipLink } from './SkipLink';
 export { Footer } from './Footer';
+export { NotificationsBadge } from './NotificationsBadge';
 export { NavLink } from './NavLink';
 export { Sidebar } from './Sidebar';
 export { UserMenu } from './UserMenu';

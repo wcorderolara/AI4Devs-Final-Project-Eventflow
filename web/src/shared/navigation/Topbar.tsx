@@ -3,19 +3,21 @@
 import { Menu as MenuIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { LanguageSelector } from '@/shared/i18n';
-import { NotificationsBell } from '@/features/notifications';
 import { Logo } from './Logo';
+import { NotificationsBadge } from './NotificationsBadge';
 import { UserMenu } from './UserMenu';
 
 /**
- * Barra superior de las áreas autenticadas: hamburguesa (mobile), logo, bell,
- * switcher, user menu.
+ * Barra superior de las áreas autenticadas: hamburguesa (mobile), logo,
+ * badge (placeholder), switcher, user menu.
  *
- * US-073 (PB-P2-009 / FE-005): reemplaza el placeholder `NotificationsBadge`
- * (US-107) por el `NotificationsBell` real de US-071. El vendor layout no
- * tiene header propio — su header autenticado viene de este `Topbar`. Esto
- * satisface AC-01 (bell visible en el header del vendor) y simultáneamente
- * completa el mount pendiente del bell para organizer (US-071).
+ * US-073 (PB-P2-009 · Deviation D-07 / EMERGENT-003): la sustitución del
+ * placeholder `NotificationsBadge` por el `NotificationsBell` real de US-071
+ * se difiere — el mount del bell rompía el E2E `auth-logout.spec.ts` por un
+ * timing race con el `Menu` de HeadlessUI del `UserMenu` en los 3 roles. El
+ * componente `NotificationsBell` sigue implementado y unit-testeado; sólo el
+ * mount en el Topbar compartido se difiere a un Future US. Ver el header
+ * de `NotificationsBadge.tsx` para el diagnóstico y las next-steps.
  */
 export function Topbar({
   onMenuOpen,
@@ -40,7 +42,7 @@ export function Topbar({
         <Logo size="sm" />
       </div>
       <div className="flex items-center gap-2">
-        <NotificationsBell />
+        <NotificationsBadge />
         <LanguageSelector />
         <UserMenu />
       </div>
