@@ -77,6 +77,12 @@ jobs:
 
   # AC-04 — Tests backend (Vitest + Supertest). La suite de integración se auto-omite sin
   # DATABASE_URL alcanzable (`describe.skipIf(!dbUp)`, EC-02); la suite unit corre igual.
+  #
+  # US-130 (PB-P2-018 · AC-01 · AC-05) — la suite negativa RBAC extendida
+  # (`backend/tests/api/us130-*.spec.ts`) corre bajo este job por diseño. El gate estático
+  # `us130-coverage-gate.spec.ts` (DB-free) verifica que TODO endpoint del registry
+  # `PROTECTED_ENDPOINTS` (US-112) tiene ≥1 caso negativo cableado; su fallo bloquea el merge.
+  # No se duplica un job dedicado (D-03 execution record US-130).
   test-backend:
     runs-on: ubuntu-latest
     defaults:
