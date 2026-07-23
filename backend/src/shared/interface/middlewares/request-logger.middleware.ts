@@ -16,20 +16,36 @@
 import type { RequestHandler } from 'express';
 import { logger } from '../../logger.js';
 import { redactHeaders } from '../../infrastructure/logger/redactors.js';
+import { HEALTH_PATHS } from '../../constants/health-paths.js';
+
+// US-116 (PB-P2-013 · AC-07): success access log bypass para `/health*`. La
+// omisión aplica sólo a `2xx/3xx/4xx<500`; los fallos `5xx` (readiness 503) SÍ
+// se loguean para no perder visibilidad de degradación real. El HealthController
+// (US-116 · BE-005) emite además su propio log estructurado (`warn` en 503,
+// `error` en excepción). NFR-OBS-006 acepta stdout mínimo.
+function isHealthSuccessPath(reqPath: string, statusCode: number): boolean {
+  return HEALTH_PATHS.includes(reqPath) && statusCode < 500;
+}
 
 export const requestLoggerMiddleware: RequestHandler = (req, res, next) => {
+  const isHealth = HEALTH_PATHS.includes(req.path);
   const start = Date.now();
-  logger.info(
-    {
-      req: {
-        method: req.method,
-        url: req.originalUrl ?? req.url,
-        headers: redactHeaders(req.headers as Record<string, unknown>),
+  if (!isHealth) {
+    logger.info(
+      {
+        req: {
+          method: req.method,
+          url: req.originalUrl ?? req.url,
+          headers: redactHeaders(req.headers as Record<string, unknown>),
+        },
       },
-    },
-    'request received',
-  );
+      'request received',
+    );
+  }
   res.on('finish', () => {
+    if (isHealthSuccessPath(req.path, res.statusCode)) {
+      return;
+    }
     logger.info(
       {
         res: {
