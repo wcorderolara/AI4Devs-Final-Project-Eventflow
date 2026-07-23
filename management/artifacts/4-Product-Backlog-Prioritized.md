@@ -1848,9 +1848,9 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 | Type | Technical |
 | MoSCoW | Should Have |
 | Dependencies | PB-P0-010 |
-| Acceptance Summary | - Endpoint `/metrics` o log periódico JSON.<br>- Cobertura de las 7 features IA del MVP. |
-| Traceability | NFR-OBS-* · Decisión PO US-115 |
-| Notes | — |
+| Acceptance Summary | - Endpoint `GET /api/v1/admin/ai-metrics` admin-only con envelope canonical (US-114).<br>- Cobertura de las 7 features IA MVP core (`event_plan`, `checklist`, `budget_suggestion`, `vendor_categories`, `quote_brief`, `quote_compare_summary`, `vendor_bio`).<br>- 2 ventanas (`24h` + `all-time`) con query `?window ∈ {24h, all-time, both}` default `both`.<br>- 4 métricas por feature: `count`, `latencyAvgMs`, `fallbackRate`, `acceptanceRate` (con fill 0/null para features sin data). |
+| Traceability | FR-AI-010 · BR-AI-007/009/010 · NFR-OBS-006 (stdout, sin APM) · NFR-PERF-001 (P95 < 1.5s) · NFR-PRIV-004 (excluir PII de logs — via US-113 redactors) · ADR-SEC-001 (injection defense · Zod strict) · Decisión PO 4.4 US-115 (formato JSON) |
+| Notes | Deviation D-01 (US-115 execution record): los 7 nombres canónicos usan el enum real `AI_FEATURE_TYPES` en vez de los alias del Tech Spec (`budget_split`, `category_suggestion`, `comparator_summary`) para alinear con lo persistido por UC-AI-001..UC-AI-007. Deviation D-02: SQL agrega sobre `ai_meta` JSONB (`latencyMs`, `fallbackUsed`) y `status = 'accepted'`; no hay columnas dedicadas. Sin AdminAction (D7 · READ-ONLY). |
 
 ---
 
