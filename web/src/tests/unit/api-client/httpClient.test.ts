@@ -12,11 +12,14 @@ function jsonResponse(body: unknown, init?: ResponseInit): Response {
 }
 
 describe('httpClient — construcción de request', () => {
-  it('concatena base URL, credentials include, Accept-Language, X-Correlation-Id', async () => {
+  it('usa base same-origin en el navegador, credentials include, Accept-Language, X-Correlation-Id', async () => {
+    // En el navegador (jsdom define `window`) la base es same-origin (`/api/v1`, proxy Next.js →
+    // backend) para que la cookie de sesión sea first-party (ADR-DEVOPS-008). La URL absoluta del
+    // backend (`NEXT_PUBLIC_API_BASE_URL`) queda para el fetch SSR (vendorPublicApi).
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse({ ok: true }));
     await httpGet('/auth/me');
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toBe('http://localhost:3001/api/v1/auth/me');
+    expect(url).toBe('/api/v1/auth/me');
     expect((init as RequestInit).credentials).toBe('include');
     const headers = (init as RequestInit).headers as Record<string, string>;
     expect(headers['Accept-Language']).toBeTruthy();

@@ -2985,7 +2985,15 @@ SameSite=None`. La imagen no contiene secretos (SEC-02).
 
 - `infra/ec2/` — script de provisión (EC2 + EIP + SG + instance role) y `user-data` (Docker, login
   ECR, pull imagen, Caddy con TLS automático para `<eip>.sslip.io`, backend con env/secretos de SSM).
-- `NEXT_PUBLIC_API_BASE_URL` (Amplify, US-135) apunta a `https://<eip>.sslip.io/api/v1`.
+- **Cookie de sesión first-party (proxy same-origin):** como el backend está en otro dominio que el
+  frontend (sin dominio propio), la cookie de sesión HTTP-only sería *third-party* y los navegadores
+  la bloquean → el login no persistía. Se proxya `/api/v1/*` desde el propio origen del frontend con un
+  **rewrite de Next.js** (`web/next.config.mjs`, gated por `BACKEND_ORIGIN`); el `httpClient` del
+  navegador usa base same-origin (`/api/v1`). Así la cookie es first-party. El fetch SSR de páginas SEO
+  (`vendorPublicApi`) sigue usando `NEXT_PUBLIC_API_BASE_URL` absoluta. Con dominio propio (`app.` +
+  `api.` bajo el mismo padre) la cookie es first-party sin proxy y el rewrite se retira.
+- Amplify env: `BACKEND_ORIGIN=https://<eip>.sslip.io` (proxy + SSR) y
+  `NEXT_PUBLIC_API_BASE_URL=https://<eip>.sslip.io/api/v1` (SSR).
 - GitHub Actions: paso de deploy adaptado (build&push ECR + SSM Run Command `docker pull && restart`).
 
 ### Implicaciones de testing
