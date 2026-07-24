@@ -1,0 +1,50 @@
+# AWS Amplify Hosting — build spec del frontend Next.js (US-135 / PB-P2-021 · Doc 21 §9.2).
+#
+# Monorepo: el frontend vive en `web/` (appRoot). El backend (App Runner) y RDS se despliegan
+# aparte (PB-P2-022/023) y NO forman parte de este build.
+#
+# Branch mappings (se aplican vía AWS CLI / consola — ver infra/amplify/provision-amplify.sh y
+# docs/runbooks/deploy-frontend-amplify.md):
+#   main      -> Demo   (NEXT_PUBLIC_APP_ENV=demo)
+#   staging   -> QA     (NEXT_PUBLIC_APP_ENV=qa)   # rama de QA = `staging` (decisión Tech Lead)
+#
+# Pipeline por push a rama mapeada (Doc 21 §9.2, US-135 AC-02 · VR-02):
+#   npm ci -> check-public-env (fail-fast) -> lint -> typecheck -> test -> build
+# Amplify NO promueve un build fallido: si cualquier fase sale != 0, el deploy no se publica y
+# el build anterior permanece activo (US-135 EC-01 / NT-01).
+#
+# Variables de entorno: sólo `NEXT_PUBLIC_*` (Doc 21 §9.3/§9.8). Las sensibles NUNCA se
+# configuran aquí ni en Amplify env del frontend; van por Secrets Manager (SEC-02/SEC-03).
+
+version: 1
+applications:
+  - appRoot: web
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            # Instalación reproducible desde el lockfile (Doc 21 §9.2).
+            - npm ci
+            # Fail-fast de variables públicas requeridas ANTES de compilar (VR-01/VR-03/VR-04/EC-02).
+            # Si falta NEXT_PUBLIC_API_BASE_URL / NEXT_PUBLIC_APP_ENV, o una var pública expone un
+            # aspecto sensible, el build aborta y Amplify conserva el build anterior.
+            - npm run check-public-env
+        build:
+          commands:
+            # Quality gates del build (VR-02): deploy sólo si TODO es verde.
+            - npm run lint
+            - npm run typecheck
+            - npm run test
+            # `next build` produce los artefactos del App Router (Doc 21 §9.2/§9.6).
+            - npm run build
+            # SEC-07/VR-05: MSW nunca debe quedar en los chunks de producción.
+            - npm run check-no-msw-in-prod
+      artifacts:
+        # Salida estándar de Amplify Hosting para Next.js (App Router).
+        baseDirectory: .next
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
+          - .next/cache/**/*

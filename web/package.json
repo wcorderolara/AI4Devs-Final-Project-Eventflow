@@ -23,7 +23,8 @@
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test --grep @smoke",
     "test:e2e:install": "playwright install --with-deps chromium",
-    "check-no-msw-in-prod": "node scripts/check-no-msw-in-prod.mjs"
+    "check-no-msw-in-prod": "node scripts/check-no-msw-in-prod.mjs",
+    "check-public-env": "node scripts/check-public-env.mjs"
   },
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.5.10",
