@@ -85,6 +85,7 @@
 | ID | Título | Tarea padre | Razón | Impacto scope | Impacto Tech Spec | Status | Evidencia |
 | -- | ------ | ----------- | ----- | ------------- | ----------------- | ------ | --------- |
 | EMERGENT-003 | Backend en EC2 Free Tier (Docker+Caddy TLS) — ADR-DEVOPS-008 | OPS-002 | App Runner no habilitado en la cuenta (BLK-002, `SubscriptionRequiredException`); decisión usuario = compute alternativo Free Tier con ADR | Cambio de runtime del backend (App Runner→EC2), **con ADR-DEVOPS-008** (supersedes ADR-DEVOPS-003); reversible | Ninguno (misma imagen/contrato) | Done | `infra/ec2/provision-ec2.sh` + `docs/runbooks/deploy-backend-ec2-freetier.md`; EC2 `i-0a5a6fdd3f1f41799` + EIP 18.235.214.199 + Caddy TLS; `/health` y `/health/ready` 200 en vivo |
+| EMERGENT-004 | Cookie de sesión first-party vía proxy same-origin (Next.js rewrite) | SEC-001 / EMERGENT-003 | Frontend y backend en dominios distintos (Amplify ↔ sslip.io) → cookie de sesión third-party bloqueada por navegadores → login 200 pero sesión no persistía | Proxy `/api/v1/*` en `next.config.mjs` (gated `BACKEND_ORIGIN`) + httpClient base same-origin en navegador; documentado en ADR-DEVOPS-008 | Ninguno (mismo contrato; SSR sigue absoluta) | Done | Verificado en vivo: login vía `main.…amplifyapp.com/api/v1/auth/login` → 200, cookie first-party bajo el dominio Amplify; `/users/me` → 200 admin. Test `httpClient.test` alineado; suite 828/828 |
 
 ## 7. Evidence by Task
 
