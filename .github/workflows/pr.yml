@@ -7,6 +7,20 @@ name: PR Quality Gates
 #
 # Convive con los workflows especializados existentes: `ci.yml` (gates de schema/migraciones/OpenAPI
 # del backend) y `web-ci.yml` (pipeline frontend + E2E). Ver nota de alineación N1 del execution record.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# US-132 (PB-P2-020) — Consolidación de Quality Gates (Doc 20 §22 · Doc 21 §16).
+# Este workflow es el punto de entrada canónico de las compuertas de calidad en PR
+# a `main`. La lista completa (17 gates × workflow × source US × required)
+# y la política de branch protection viven en `.github/CI-QUALITY-GATES.md`.
+# Guards estructurales:
+#   • `backend/tests/schema/us132-ci-gates.spec.ts` — verifica que TODO gate de
+#     Doc 20 §22 está cableado; falla el job `test-backend` si alguien retira/
+#     renombra un gate sin actualizar el catálogo (EC-01 · NT-02 · VR-03: falso-
+#     verde por ausencia de gate imposible en código).
+#   • `backend/tests/schema/us132-no-openai-key.spec.ts` — verifica que NINGÚN
+#     workflow inyecta `OPENAI_API_KEY` como env/secret (VR-04 · SEC-02).
+# ─────────────────────────────────────────────────────────────────────────────
 
 on:
   pull_request:
