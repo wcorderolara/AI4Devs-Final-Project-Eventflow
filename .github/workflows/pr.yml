@@ -143,6 +143,12 @@ jobs:
   # y está incluida en el glob de Vitest (`vitest.config.ts:include`), por lo que
   # `npm test` la ejecuta automáticamente. Un fallo de contract (drift, schema no
   # conforme, red real detectada) bloquea el merge en este job.
+  #
+  # US-131 (PB-P2-019 · AC-05): la suite A11Y vive en `src/tests/a11y/**` (helpers
+  # axe + auditorías por ruta demo + teclado/foco/ARIA + focus trap + contraste).
+  # El glob de Vitest la incluye, por lo que `npm test` la ejecuta. Una violación
+  # `impact === 'critical'` de axe-core hace fallar el test y bloquea el merge —
+  # ver `web/src/tests/a11y/README.md` para inventario de rutas + convención.
   test-frontend:
     runs-on: ubuntu-latest
     defaults:

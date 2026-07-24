@@ -19,6 +19,7 @@
     "test:coverage": "vitest run --coverage",
     "test:ci": "vitest run --reporter=verbose",
     "test:contract": "vitest run src/tests/contract",
+    "test:a11y": "vitest run src/tests/a11y",
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test --grep @smoke",
     "test:e2e:install": "playwright install --with-deps chromium",
