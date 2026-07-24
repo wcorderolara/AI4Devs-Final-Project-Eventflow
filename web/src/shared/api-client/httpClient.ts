@@ -10,7 +10,15 @@ const AI_TIMEOUT_MS = 30_000;
 type Method = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
 function buildUrl(path: string, query?: HttpClientOptions['query']): string {
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
+  // En el navegador usamos una base **same-origin** (`/api/v1`) que Next.js proxya al backend
+  // (ver `next.config.mjs` rewrites + BACKEND_ORIGIN). Así la cookie de sesión HTTP-only es
+  // **first-party** y no la bloquean los navegadores como cookie de terceros — necesario cuando el
+  // backend vive en otro dominio sin dominio propio (ADR-DEVOPS-008, deploy free-tier).
+  // En el servidor (por si el cliente se usa en SSR) se usa la URL absoluta del backend.
+  const base =
+    typeof window !== 'undefined'
+      ? (process.env.NEXT_PUBLIC_API_PROXY_PATH ?? '/api/v1')
+      : (process.env.NEXT_PUBLIC_API_BASE_URL ?? '');
   const url = `${base}${path}`;
   if (!query) return url;
   const params = new URLSearchParams();
