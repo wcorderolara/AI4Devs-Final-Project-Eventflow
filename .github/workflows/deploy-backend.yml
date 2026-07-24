@@ -1,0 +1,89 @@
+# Deploy backend a AWS App Runner (US-136 / PB-P2-022 · AC-02 · Doc 21 §10).
+#
+# Build & push de la imagen Docker (backend/Dockerfile, PB-P0-016) a Amazon ECR y disparo del
+# deploy en App Runner. Autenticación por OIDC (sin claves largas en el repo — SEC-02).
+#
+# Prerrequisitos para que corra en vivo (configurar en el repo/AWS cuando exista PB-P2-023/024):
+#   - Variables de repo: AWS_REGION, AWS_ACCOUNT_ID, ECR_REPO (default eventflow-backend),
+#     APPRUNNER_SERVICE_ARN.
+#   - Secret/OIDC: rol IAM `AWS_DEPLOY_ROLE_ARN` con confianza al OIDC de GitHub y permisos
+#     ecr:* (push) + apprunner:StartDeployment/DescribeService.
+#   - El servicio App Runner debe existir (creado por infra/apprunner/provision-apprunner.sh
+#     fase 2, tras RDS PB-P2-023). Hasta entonces este workflow queda inactivo por gating.
+#
+# Los quality gates (US-132 / PB-P0-017) corren en pr.yml/ci.yml y preceden al merge (no se
+# duplican aquí). Este workflow asume que main/staging ya pasaron las compuertas.
+
+name: deploy-backend
+
+on:
+  push:
+    branches: [main, staging]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+# Gating: sólo corre si el repo declaró el rol de deploy (evita fallos mientras PB-P2-023/024
+# no existan). Cuando se configure AWS_DEPLOY_ROLE_ARN, el deploy se activa automáticamente.
+concurrency:
+  group: deploy-backend-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write # OIDC
+  contents: read
+
+jobs:
+  deploy:
+    if: ${{ vars.AWS_DEPLOY_ROLE_ARN != '' }}
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'demo' || 'qa' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      # US-137 / PB-P2-023 (OPS-003 · AC-04): aplicar migraciones Prisma contra RDS ANTES de
+      # servir la nueva imagen. `DATABASE_URL` se lee de SSM Parameter Store (SecureString) por
+      # ambiente; nunca se imprime ni se versiona (SEC-02/SEC-03). Migración destructiva → requiere
+      # plan documentado (VR-04). La validación (migrate diff/status) corre en pr.yml (US-139).
+      - name: Run Prisma migrations (deploy)
+        env:
+          SSM_ENV: ${{ github.ref_name == 'main' && 'demo' || 'qa' }}
+        run: |
+          cd backend
+          npm ci --no-audit --no-fund
+          DATABASE_URL="$(aws ssm get-parameter --name "/eventflow/${SSM_ENV}/DATABASE_URL" \
+            --with-decryption --query Parameter.Value --output text --region "${{ vars.AWS_REGION }}")" \
+            npx prisma migrate deploy
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          ECR_REPO: ${{ vars.ECR_REPO || 'eventflow-backend' }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          IMAGE="$REGISTRY/$ECR_REPO:$IMAGE_TAG"
+          docker build --platform linux/amd64 -t "$IMAGE" ./backend
+          docker push "$IMAGE"
+          # También etiqueta el ambiente (demo/qa) como tag flotante consumible por App Runner.
+          ENV_TAG="${{ github.ref_name == 'main' && 'demo' || 'qa' }}"
+          docker tag "$IMAGE" "$REGISTRY/$ECR_REPO:$ENV_TAG"
+          docker push "$REGISTRY/$ECR_REPO:$ENV_TAG"
+
+      - name: Trigger App Runner deployment
+        if: ${{ vars.APPRUNNER_SERVICE_ARN != '' }}
+        run: |
+          aws apprunner start-deployment \
+            --service-arn "${{ vars.APPRUNNER_SERVICE_ARN }}" \
+            --region "${{ vars.AWS_REGION }}"
+          echo "Deploy de App Runner disparado (redeploy de la nueva imagen — P-12)."

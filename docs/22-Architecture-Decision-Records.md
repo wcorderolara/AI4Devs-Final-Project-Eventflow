@@ -207,11 +207,12 @@ El presente ADR Log formaliza un total de **46 ADRs** distribuidos en nueve cate
 | ADR-TEST-004 | Include Negative Authorization and Security Tests as Quality Gate | Testing | Accepted | MVP | Derived | D19, D20 |
 | ADR-DEVOPS-001 | Use AWS for MVP Deployment | DevOps | Accepted | MVP | Explicit | D21 |
 | ADR-DEVOPS-002 | Deploy Frontend on AWS Amplify Hosting | DevOps | Accepted | MVP | Explicit | D21 |
-| ADR-DEVOPS-003 | Deploy Backend Docker Container on AWS App Runner | DevOps | Accepted | MVP | Explicit | D21 |
+| ADR-DEVOPS-003 | Deploy Backend Docker Container on AWS App Runner | DevOps | Superseded (por ADR-DEVOPS-008) | MVP | Explicit | D21 |
 | ADR-DEVOPS-004 | Use Amazon RDS PostgreSQL for Managed Database | DevOps | Accepted | MVP | Explicit | D21 |
 | ADR-DEVOPS-005 | Use S3 for File Storage | DevOps | Accepted | MVP | Explicit | D21, D18 |
 | ADR-DEVOPS-006 | Use GitHub Actions for CI/CD | DevOps | Accepted | MVP | Explicit | D21, D20 |
 | ADR-DEVOPS-007 | Use CloudWatch for MVP Logging and Operational Visibility | DevOps | Accepted | MVP | Explicit | D21 |
+| ADR-DEVOPS-008 | Deploy Backend on EC2 (Docker + Caddy TLS) for Free-Tier MVP | DevOps | Accepted | MVP | Derived | D21 |
 
 ---
 
@@ -2914,6 +2915,96 @@ Backend Dockerizado (`node:LTS-alpine`, multi-stage) desplegado en **AWS App Run
 ### Trazabilidad
 
 D21.
+
+> **Nota de estado (2026-07-24):** `Superseded` por **ADR-DEVOPS-008** para el MVP. La cuenta AWS
+> disponible (plan Free Tier restringido) **no habilita AWS App Runner** (`SubscriptionRequiredException`
+> en `create-service`/`create-vpc-connector`). App Runner permanece como objetivo cuando la cuenta se
+> actualice; hasta entonces el backend corre según ADR-DEVOPS-008.
+
+---
+
+## ADR-DEVOPS-008 — Deploy Backend on EC2 (Docker + Caddy TLS) for Free-Tier MVP
+
+| Campo | Valor |
+|---|---|
+| Estado | Accepted |
+| Fecha | 2026-07-24 |
+| Categoría | DevOps |
+| Alcance | MVP (temporal — revisar al actualizar el plan de la cuenta) |
+| Source type | Derived (restricción de cuenta) |
+| Drivers | Cuenta AWS en plan Free Tier sin App Runner; necesidad de un backend público con HTTPS para la demo sin costo |
+| Documentos fuente | D21; este ADR **supersedes** ADR-DEVOPS-003 para el MVP |
+
+### Contexto
+
+ADR-DEVOPS-003 fija el backend en **AWS App Runner**. Al ejecutar el despliegue (US-136 / PB-P2-022),
+la cuenta AWS disponible devuelve `SubscriptionRequiredException` en `apprunner create-service` y
+`create-vpc-connector`: App Runner no está habilitado en el plan Free Tier restringido de la cuenta.
+El frontend (Amplify, US-135) es **HTTPS** y emite/consume cookies `SameSite=None; Secure`, por lo que
+el backend **debe** exponer **HTTPS** con un certificado válido (un backend HTTP sería bloqueado por
+mixed-content y las cookies cross-site fallarían). No hay dominio propio configurado (custom domain es
+futuro).
+
+### Decisión
+
+Desplegar el backend Dockerizado (la **misma imagen** de ECR, PB-P0-016 — sin recompilar) en una
+instancia **Amazon EC2 `t2.micro` (Free Tier)** con Amazon Linux 2023 y Docker, detrás de un
+**reverse proxy Caddy** que provisiona **HTTPS automático (Let's Encrypt)** para el hostname
+**`<elastic-ip>.sslip.io`** (DNS comodín que resuelve a la IP; permite un certificado público válido
+sin poseer un dominio). Una **Elastic IP** da IP estable. Los secretos/config se leen de **SSM
+Parameter Store** vía un **instance role**. El **security group** de RDS permite `5432` solo desde el
+SG de la EC2; el SG de la EC2 permite `80/443` público (API + ACME) y `22` solo desde el operador.
+
+Health check `GET /health`. CORS restringido a los dominios de Amplify; cookies `HttpOnly; Secure;
+SameSite=None`. La imagen no contiene secretos (SEC-02).
+
+### Alternativas consideradas
+
+| Alternativa | Resultado | Razón |
+|---|---|---|
+| Esperar upgrade de cuenta para App Runner | Aplazado | Bloquea la demo end-to-end ahora |
+| EC2 + Docker + Caddy (sslip.io TLS) | **Aceptado** | Free Tier, HTTPS válido sin dominio, misma imagen |
+| ALB + ACM delante de EC2/ECS | Rechazado (MVP) | ALB no es Free Tier (~$16/mes) y ACM público requiere dominio propio |
+| Cert self-signed | Rechazado | El navegador rechaza fetch/cookies cross-site |
+| Elastic Beanstalk | Rechazado (MVP) | Más pesado; puede tener las mismas restricciones de plan |
+
+### Consecuencias positivas
+
+- Backend público con **HTTPS válido**, gratis, compatible con cookies `SameSite=None; Secure`.
+- Reutiliza la imagen de ECR y toda la configuración (env/secretos en SSM) ya preparada en US-136.
+- Reversible: al habilitar App Runner, se vuelve a ADR-DEVOPS-003 sin tocar el código del backend.
+
+### Consecuencias negativas / tradeoffs
+
+- **Menos gestionado** que App Runner: sin autoscaling ni self-healing nativos (una sola instancia,
+  min=max=1). Parcheo del SO y del runtime queda a cargo del operador.
+- HTTPS depende de **sslip.io** (DNS de terceros) y Let's Encrypt (rate limits). Aceptable para demo.
+- Redeploy es `docker pull` + restart (vía SSM Run Command o user-data), no un pipeline gestionado.
+
+### Implicaciones de implementación
+
+- `infra/ec2/` — script de provisión (EC2 + EIP + SG + instance role) y `user-data` (Docker, login
+  ECR, pull imagen, Caddy con TLS automático para `<eip>.sslip.io`, backend con env/secretos de SSM).
+- `NEXT_PUBLIC_API_BASE_URL` (Amplify, US-135) apunta a `https://<eip>.sslip.io/api/v1`.
+- GitHub Actions: paso de deploy adaptado (build&push ECR + SSM Run Command `docker pull && restart`).
+
+### Implicaciones de testing
+
+- Smoke `GET /health` (200) y `GET /health/ready` (200 con RDS) sobre `https://<eip>.sslip.io`.
+- Verificar HTTPS válido (cert Let's Encrypt) y CORS desde el dominio Amplify.
+
+### Riesgos y mitigaciones
+
+| Riesgo | Mitigación |
+|---|---|
+| IP cambia y rompe el hostname sslip.io | Elastic IP (estable mientras esté asociada) |
+| Instancia caída (sin self-healing) | Restart manual / snapshot AMI; migrar a App Runner al upgrade |
+| Superficie de SO expuesta | SG mínimo (80/443 público, 22 solo operador); AL2023 con parches |
+| Secretos en la instancia | Leídos de SSM en runtime vía instance role; no persistidos en la imagen |
+
+### Trazabilidad
+
+D21; US-136 / PB-P2-022; supersedes ADR-DEVOPS-003; depende de ADR-DEVOPS-004 (RDS) y ADR-DEVOPS-002 (Amplify).
 
 ---
 
