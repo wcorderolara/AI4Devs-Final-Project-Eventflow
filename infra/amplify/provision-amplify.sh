@@ -57,7 +57,7 @@ APP_ID="$(aws amplify list-apps --region "$AWS_REGION" \
   --query "apps[?name=='${APP_NAME}'].appId | [0]" --output text 2>/dev/null || true)"
 
 if [ -z "$APP_ID" ] || [ "$APP_ID" = "None" ]; then
-  echo "[provision-amplify] Creando app $APP_NAME…"
+  echo "[provision-amplify] Creando app $APP_NAME..."
   APP_ID="$(aws amplify create-app \
     --name "$APP_NAME" \
     --region "$AWS_REGION" \
@@ -82,11 +82,11 @@ upsert_branch() {
     envvars="${envvars},NEXT_PUBLIC_CAPTCHA_PROVIDER=mock"
   fi
   if aws amplify get-branch --app-id "$APP_ID" --branch-name "$branch" --region "$AWS_REGION" >/dev/null 2>&1; then
-    echo "[provision-amplify] Actualizando rama $branch ($app_env)…"
+    echo "[provision-amplify] Actualizando rama $branch ($app_env)..."
     aws amplify update-branch --app-id "$APP_ID" --branch-name "$branch" --region "$AWS_REGION" \
       --enable-auto-build --environment-variables "$envvars" >/dev/null
   else
-    echo "[provision-amplify] Creando rama $branch ($app_env)…"
+    echo "[provision-amplify] Creando rama $branch ($app_env)..."
     aws amplify create-branch --app-id "$APP_ID" --branch-name "$branch" --region "$AWS_REGION" \
       --enable-auto-build --environment-variables "$envvars" >/dev/null
   fi
@@ -97,7 +97,7 @@ upsert_branch "staging" "qa"   "$API_BASE_URL_QA"   ""
 
 # --- 3. Disparar el primer build por rama -----------------------------------
 for branch in main staging; do
-  echo "[provision-amplify] Disparando build de $branch…"
+  echo "[provision-amplify] Disparando build de $branch..."
   aws amplify start-job --app-id "$APP_ID" --branch-name "$branch" \
     --job-type RELEASE --region "$AWS_REGION" >/dev/null || \
     echo "[provision-amplify] ⚠ No se pudo disparar build de $branch (¿rama sin commits en remoto?)."
