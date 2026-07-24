@@ -5,6 +5,18 @@
 > Fuente de verdad de diseño: `docs/21-Deployment-and-DevOps-Design.md` §9 · ADR-DEVOPS-001.
 > Artefacto versionado del build: [`amplify.yml`](../../amplify.yml) (raíz del repo, monorepo `appRoot: web`).
 
+## Estado actual del despliegue (2026-07-24)
+
+| Dato | Valor |
+| --- | --- |
+| App Amplify | `d2jh1ql4whmeue` (región `us-east-1`, plataforma WEB_COMPUTE) |
+| Demo (`main`) | https://main.d2jh1ql4whmeue.amplifyapp.com — build `SUCCEED`, HTTP 200 |
+| QA (`staging`) | https://staging.d2jh1ql4whmeue.amplifyapp.com — build `SUCCEED`, HTTP 200 |
+| `NEXT_PUBLIC_API_BASE_URL` | **placeholder** — actualizar cuando PB-P2-022 (App Runner) publique las URLs reales |
+
+> El frontend carga y se sirve públicamente. Las llamadas al backend (login, datos) quedarán
+> operativas cuando exista PB-P2-022 y se actualice `NEXT_PUBLIC_API_BASE_URL` (ver §4) + redeploy.
+
 ## TL;DR
 
 | Paso | Qué | Dónde | Versionable |

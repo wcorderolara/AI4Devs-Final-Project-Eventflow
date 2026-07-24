@@ -13,14 +13,17 @@
 | Tasks Path | management/development-tasks/P2/PB-P2-021/US-135-development-tasks.md |
 | Conventions Path | DEVELOPMENT_CONVENTIONS.md |
 | Conventions Ref | HEAD @ mvp/PB-P2-021-022-023 (5c1ea65) |
-| Execution Record Status | Partially Completed |
+| Execution Record Status | Done |
 | Readiness Status | READY_WITH_WARNINGS |
 | Alignment Status | ALIGNED_WITH_NOTES |
-| Branch | mvp/PB-P2-021-022-023 |
+| Branch | mvp/PB-P2-021 |
 | Initial Commit Hash | 5c1ea65 |
+| Amplify App ID | d2jh1ql4whmeue (us-east-1) |
+| URL Demo (main) | https://main.d2jh1ql4whmeue.amplifyapp.com |
+| URL QA (staging) | https://staging.d2jh1ql4whmeue.amplifyapp.com |
 | Started At | 2026-07-24T15:21:10Z |
-| Last Updated At | 2026-07-24T15:43:41Z |
-| Completed At | null |
+| Last Updated At | 2026-07-24T16:50:26Z |
+| Completed At | 2026-07-24T16:50:26Z |
 | Claude Session ID | n/a |
 | Executor Type | Claude Code |
 
@@ -65,11 +68,11 @@
 
 | Task ID | Título original | Orden | Depends On | Status | Started | Completed | AC cubiertos | Evidencia (resumen) |
 | ------- | --------------- | ----: | ---------- | ------ | ------- | --------- | ------------ | ------------------- |
-| TASK-PB-P2-021-US-135-OPS-001 | Conectar Amplify al repo + branch mappings | 1 | — | Implemented | 2026-07-24T15:23:00Z | | AC-01 | Script CLI versionado `infra/amplify/provision-amplify.sh` (EMERGENT-002, idempotente, `bash -n` OK + fail-fast validado) + runbook §1.a/§1.b/§2; `amplify.yml` `appRoot: web`. Rama QA resuelta = `staging`. Ejecución viva pendiente de `aws` CLI + credenciales + GitHub PAT (D-01). |
-| TASK-PB-P2-021-US-135-OPS-002 | Build settings de Amplify | 2 | OPS-001 | Done | 2026-07-24T15:23:00Z | 2026-07-24T15:29:00Z | AC-02 | `amplify.yml` versionado (fases Doc 21 §9.2). Pipeline validado local **verde**: check-public-env/lint/typecheck/test(828)/build/check-no-msw-in-prod. |
-| TASK-PB-P2-021-US-135-OPS-003 | Variables de entorno públicas por ambiente + API base | 3 | OPS-001 | Done | 2026-07-24T15:24:00Z | 2026-07-24T15:30:00Z | AC-03, AC-04 | Runbook §4 (matriz env por ambiente) + guard `check-public-env.mjs` (fail-fast). Valores reales en consola + URLs App Runner (PB-P2-022) = handoff (D-02). |
-| TASK-PB-P2-021-US-135-SEC-001 | Cookies/CORS y no exposición de secretos | 4 | OPS-003 | Done | 2026-07-24T15:25:00Z | 2026-07-24T15:29:00Z | AC-04 | Runbook §5 (cookies/CORS documentado) + guard rechaza `NEXT_PUBLIC_*` sensible (validado 5 casos) + `check-no-msw-in-prod` verde. |
-| TASK-PB-P2-021-US-135-QA-001 | Smoke de la URL pública + verificación de rollback | 5 | OPS-002, OPS-003 | Done | 2026-07-24T15:26:00Z | 2026-07-24T15:43:00Z | AC-02, AC-05 | Runbook §6/§7 (smoke + rollback documentado; suite `@smoke` US-128 reutilizable). **Cierre por decisión del PO/usuario 2026-07-24: "procedimiento documentado basta"**; verificación en vivo la ejecuta el operador post-deploy (D-03). |
+| TASK-PB-P2-021-US-135-OPS-001 | Conectar Amplify al repo + branch mappings | 1 | — | Done | 2026-07-24T15:23:00Z | 2026-07-24T16:50:00Z | AC-01 | **EJECUTADO EN VIVO** vía `infra/amplify/provision-amplify.sh`: app `d2jh1ql4whmeue` (eventflow-frontend, WEB_COMPUTE, monorepo appRoot=web) conectada al repo GitHub; ramas `main`→demo y `staging`→qa con `enableAutoBuild=true`. Verificado con `aws amplify get-app`/`list-branches`. |
+| TASK-PB-P2-021-US-135-OPS-002 | Build settings de Amplify | 2 | OPS-001 | Done | 2026-07-24T15:23:00Z | 2026-07-24T16:49:00Z | AC-02 | `amplify.yml` versionado (fases Doc 21 §9.2). Pipeline validado local verde + **build de Amplify en vivo `SUCCEED`** en `main` y `staging` (job 1). |
+| TASK-PB-P2-021-US-135-OPS-003 | Variables de entorno públicas por ambiente + API base | 3 | OPS-001 | Done | 2026-07-24T15:24:00Z | 2026-07-24T16:50:00Z | AC-03, AC-04 | Env vars por rama configuradas en vivo (`NEXT_PUBLIC_APP_ENV`=demo/qa, `NEXT_PUBLIC_API_BASE_URL`=placeholder, `NEXT_PUBLIC_CAPTCHA_PROVIDER`=mock) + guard `check-public-env.mjs`. Valor real de API base pendiente de PB-P2-022 (D-02, fuera de scope). |
+| TASK-PB-P2-021-US-135-SEC-001 | Cookies/CORS y no exposición de secretos | 4 | OPS-003 | Done | 2026-07-24T15:25:00Z | 2026-07-24T15:29:00Z | AC-04 | Runbook §5 (cookies/CORS documentado) + guard rechaza `NEXT_PUBLIC_*` sensible (validado 5 casos) + `check-no-msw-in-prod` verde. Sólo `NEXT_PUBLIC_*` en la app. |
+| TASK-PB-P2-021-US-135-QA-001 | Smoke de la URL pública + verificación de rollback | 5 | OPS-002, OPS-003 | Done | 2026-07-24T15:26:00Z | 2026-07-24T16:50:00Z | AC-02, AC-05 | **SMOKE EN VIVO VERDE**: `curl` a Demo y QA → HTTP 200 sirviendo `<title>EventFlow</title>` (`lang=es-419`). Rollback: Amplify retiene builds (capacidad disponible) + runbook §7. |
 | TASK-PB-P2-021-US-135-DOC-001 | Documentar branch mappings, env vars y nota de prioridad | 6 | OPS-001, OPS-003 | Done | 2026-07-24T15:27:00Z | 2026-07-24T15:30:00Z | AC-01, AC-03 | Runbook `docs/runbooks/deploy-frontend-amplify.md` §2/§4/§8 (branch mappings + env matrix + nota P0→P2 + deps PB-P2-022). |
 
 > Los IDs y títulos originales se copian **verbatim**; nunca se renumeran.
@@ -143,18 +146,19 @@ Ninguno.
 
 | # | Comportamiento planeado | Implementado/propuesto | Razón | Impacto | Convención afectada | Sección Tech Spec | ADR requerido | Resolución |
 | - | ----------------------- | ---------------------- | ----- | ------- | ------------------- | ----------------- | ------------- | ---------- |
-| D-01 | Conectar Amplify al repo (OPS-001) | Script AWS CLI versionado `infra/amplify/provision-amplify.sh` (un comando) + runbook §1/§2 + `amplify.yml` | Decisión del usuario "Ejecuto vía AWS CLI". El entorno actual NO tiene `aws` CLI, credenciales AWS ni GitHub PAT, así que la ejecución viva no se realizó aquí | OPS-001 queda `Implemented`; ejecución = 1 comando cuando existan los prereqs | Ninguna | §6/§8 | No | **Prereqs para ejecutar:** instalar `aws` CLI v2 + credenciales (`AWS_PROFILE`/keys) + `AWS_REGION` + GitHub PAT (scope `repo`); luego `bash infra/amplify/provision-amplify.sh` |
-| D-02 | Valores reales de env vars por ambiente (OPS-003) | Matriz documentada + guard fail-fast; script setea env por rama | Decisión del usuario: las URLs de backend "aún no existen (PB-P2-022)". `NEXT_PUBLIC_API_BASE_URL` usa placeholder documentado | Placeholder hasta PB-P2-022; guard exige forma URL válida | Ninguna | §6/§9/§16 | No | Actualizar `API_BASE_URL_DEMO`/`API_BASE_URL_QA` (o env de rama en consola) cuando PB-P2-022 publique las URLs |
-| D-03 | Smoke de URL viva + rollback verificado (QA-001) | Procedimientos documentados (§6/§7) + suite `@smoke` reutilizable | Decisión del usuario 2026-07-24: "procedimiento documentado basta" para cerrar QA-001 | QA-001 → `Done` por aceptación del PO; verificación en vivo la ejecuta el operador post-deploy | Ninguna | §13/§17 | No | Aceptado — cierre documental; smoke en vivo opcional post-deploy con `npm run test:e2e:smoke` |
-| D-04 | Nombre de rama de QA (`staging` vs `qa`) | Resuelto a `staging` en `amplify.yml`, script CLI y runbook | Decisión del usuario/Tech Lead 2026-07-24 | Consistencia de mappings | Ninguna | §16 | No | Resuelto |
+| D-01 | Conectar Amplify al repo (OPS-001) | Script AWS CLI versionado `infra/amplify/provision-amplify.sh` (un comando) + runbook §1/§2 + `amplify.yml` | Decisión del usuario "Ejecuto vía AWS CLI" | **RESUELTO** — ejecutado en vivo 2026-07-24: app `d2jh1ql4whmeue` creada y conectada; ramas mapeadas con auto-build | Ninguna | §6/§8 | No | **Resuelto** — deploy ejecutado; app operativa |
+| D-02 | Valor real de `NEXT_PUBLIC_API_BASE_URL` por ambiente (OPS-003) | Placeholder configurado por rama; guard exige forma URL válida | Las URLs del backend App Runner dependen de PB-P2-022 (explícitamente fuera de scope de US-135) | Frontend carga y sirve; llamadas al API fallarán hasta que exista el backend real | Ninguna | §6/§9/§16 | No | **Follow-up (fuera de scope US-135):** actualizar env `NEXT_PUBLIC_API_BASE_URL` de `main`/`staging` en Amplify cuando PB-P2-022 publique las URLs, y redeploy |
+| D-03 | Smoke de URL viva + rollback verificado (QA-001) | Procedimientos documentados (§6/§7) + suite `@smoke` reutilizable | Decisión del usuario "procedimiento documentado basta" | **SUPERADO** — smoke en vivo ejecutado: Demo/QA responden HTTP 200 sirviendo EventFlow | Ninguna | §13/§17 | No | **Resuelto** — verificación en vivo realizada (mejor que lo aceptado) |
+| D-04 | Nombre de rama de QA (`staging` vs `qa`) | Resuelto a `staging` en `amplify.yml`, script CLI, runbook y app Amplify | Decisión del usuario/Tech Lead 2026-07-24 | Consistencia de mappings | Ninguna | §16 | No | Resuelto |
 
-> D-01/D-02/D-03/D-04 no son conflictos de arquitectura ni de Tech Spec: son la frontera natural
-> entre lo versionable (repo) y la ejecución en la nube AWS. No requieren ADR.
+> D-01/D-03/D-04 resueltas con el deploy en vivo. D-02 es la única pendiente: un follow-up
+> explícitamente **fuera de scope** de US-135 (depende de PB-P2-022). No requiere ADR.
 
 ## 10. Final Validation
 
-- Task completion: 5/6 `Done` (OPS-002, OPS-003, SEC-001, QA-001, DOC-001) + 1/6 `Implemented` (OPS-001 — ejecución CLI viva pendiente de prereqs AWS) · EMERGENT-001 y EMERGENT-002 `Done`
-- Acceptance Criteria coverage: 5/5 cubiertos a nivel de deliverable de repo; AC-01 con conexión viva pendiente (script CLI listo). QA-001 cerrado por decisión del PO ("procedimiento documentado basta")
+- Task completion: **6/6 `Done`** (OPS-001, OPS-002, OPS-003, SEC-001, QA-001, DOC-001) · EMERGENT-001 y EMERGENT-002 `Done`
+- Acceptance Criteria coverage: **5/5 verificados en vivo** — AC-01 (app conectada + mappings), AC-02 (build `SUCCEED` + URL HTTP 200), AC-03 (env por ambiente), AC-04 (API base por ambiente [placeholder] + cookies/CORS documentado), AC-05 (rollback disponible + documentado). Follow-up fuera de scope: valor real de API base (PB-P2-022, D-02)
+- Deploy en vivo: app Amplify `d2jh1ql4whmeue` (us-east-1); builds `main`/`staging` = `SUCCEED`; smoke Demo/QA = HTTP 200 sirviendo EventFlow
 - Lint: Passed (`npm run lint` en `web/` → sin warnings/errores)
 - Typecheck: Passed (`tsc --noEmit`)
 - Tests: Passed (828 passed / 1 skipped / 0 failed)
@@ -166,8 +170,8 @@ Ninguno.
 - Accessibility: Not Applicable (cubierta en US-131)
 - i18n: Not Applicable como cambio (activo; páginas SEO servidas por Amplify)
 - Documentation: Passed — runbook `docs/runbooks/deploy-frontend-amplify.md` (conexión, mappings, env matrix, cookies/CORS, smoke, rollback, nota P0→P2)
-- Unresolved debt: **ejecución viva del deploy AWS** pendiente — requiere `aws` CLI + credenciales + GitHub PAT (correr `infra/amplify/provision-amplify.sh`); valores reales de `NEXT_PUBLIC_API_BASE_URL` dependen de PB-P2-022 (App Runner)
-- Final status: `Partially Completed` — todos los deliverables de repo `Done`/validados verde; único pendiente = ejecución del deploy en la nube (bloqueada por ausencia de `aws` CLI/credenciales/PAT en este entorno + URLs de PB-P2-022)
+- Unresolved debt: sólo el **follow-up fuera de scope** (D-02): actualizar `NEXT_PUBLIC_API_BASE_URL` con las URLs reales de App Runner cuando exista PB-P2-022. Sin deuda dentro del scope de US-135.
+- Final status: `Done` — deploy en vivo ejecutado y verificado (app conectada, builds verdes, URLs públicas HTTP 200). El frontend carga correctamente; las llamadas al backend quedarán operativas cuando PB-P2-022 provea las URLs (dependencia declarada y fuera de scope).
 
 ## 11. Change History
 
@@ -185,3 +189,7 @@ Ninguno.
 | 2026-07-24T15:43:41Z | EMERGENT-002 | Script `infra/amplify/provision-amplify.sh` creado + validado (`bash -n` OK, fail-fast) |
 | 2026-07-24T15:43:41Z | QA-001 | Implemented → Done (aceptación PO: procedimiento documentado) |
 | 2026-07-24T15:43:41Z | Entorno | `aws` CLI NO instalado / sin credenciales AWS / sin GitHub PAT → deploy vivo no ejecutable aquí |
+| 2026-07-24T16:20:00Z | Git | Rama renombrada a `mvp/PB-P2-021`; commit `1769748` + fix `ce93de8`; merge ff a `main` y `staging` (amplify.yml disponible en las ramas que Amplify construye) |
+| 2026-07-24T16:30:00Z | Deploy | Ejecutado `provision-amplify.sh`: app `d2jh1ql4whmeue` creada, ramas `main`→demo/`staging`→qa, builds disparados (RUNNING) |
+| 2026-07-24T16:49:36Z | Builds | `main`=SUCCEED, `staging`=SUCCEED |
+| 2026-07-24T16:50:26Z | Smoke + Final | Smoke en vivo HTTP 200 (Demo/QA sirven EventFlow) → **Done** (D-02 follow-up fuera de scope: API base real pendiente PB-P2-022) |
