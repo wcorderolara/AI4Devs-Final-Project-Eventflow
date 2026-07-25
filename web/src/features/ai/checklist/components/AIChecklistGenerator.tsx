@@ -64,17 +64,13 @@ export function AIChecklistGenerator({ eventId }: AIChecklistGeneratorProps): Re
   };
 
   const errorCode = mutation.error instanceof ApiError ? mutation.error.code : null;
-  const errorLabelKey = errorCode && ERROR_CODE_KEYS.has(errorCode)
-    ? `errors.${errorCode}`
-    : 'errors.UNKNOWN';
+  const errorLabelKey =
+    errorCode && ERROR_CODE_KEYS.has(errorCode) ? `errors.${errorCode}` : 'errors.UNKNOWN';
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
       <div>
-        <Link
-          href={`/organizer/events/${eventId}`}
-          className="text-sm text-neutral-600 underline"
-        >
+        <Link href={`/organizer/events/${eventId}`} className="text-sm text-neutral-600 underline">
           {t('back')}
         </Link>
       </div>
@@ -92,7 +88,10 @@ export function AIChecklistGenerator({ eventId }: AIChecklistGeneratorProps): Re
       )}
 
       {eventError && (
-        <div role="alert" className="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+        <div
+          role="alert"
+          className="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-800"
+        >
           {t('errors.EVENT_LOAD_FAILED')}
         </div>
       )}
@@ -122,7 +121,7 @@ export function AIChecklistGenerator({ eventId }: AIChecklistGeneratorProps): Re
           <button
             type="button"
             onClick={handleGenerate}
-            className="mt-4 rounded-md bg-purple-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-purple-800 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="mt-4 rounded-md bg-purple-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-purple-800 focus-ring"
           >
             {t('generateCta')}
           </button>

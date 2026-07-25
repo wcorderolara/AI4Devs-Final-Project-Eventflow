@@ -108,7 +108,12 @@ export function QuoteRequestForm(props: QuoteRequestFormProps): JSX.Element {
     : null;
 
   return (
-    <form onSubmit={onSubmit} noValidate className="mt-4 space-y-4" aria-describedby={bannerMessage ? bannerId : undefined}>
+    <form
+      onSubmit={onSubmit}
+      noValidate
+      className="mt-4 space-y-4"
+      aria-describedby={bannerMessage ? bannerId : undefined}
+    >
       <QRLimitBadge eventId={props.eventId} serviceCategoryId={props.serviceCategoryId} />
       {bannerMessage != null && (
         <div
@@ -132,7 +137,7 @@ export function QuoteRequestForm(props: QuoteRequestFormProps): JSX.Element {
           {...register('budget')}
           aria-invalid={errors.budget != null}
           aria-describedby={errors.budget ? budgetErrorId : undefined}
-          className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="focus-ring mt-1 block w-full rounded-input border border-default px-3 py-2 text-body-sm text-primary shadow-surface-subtle focus-visible:border-interactive"
           placeholder={t('fields.budget.placeholder')}
         />
         {errors.budget && (
@@ -152,7 +157,7 @@ export function QuoteRequestForm(props: QuoteRequestFormProps): JSX.Element {
           {...register('message')}
           aria-invalid={errors.message != null}
           aria-describedby={errors.message ? messageErrorId : undefined}
-          className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="focus-ring mt-1 block w-full rounded-input border border-default px-3 py-2 text-body-sm text-primary shadow-surface-subtle focus-visible:border-interactive"
           placeholder={t('fields.message.placeholder')}
         />
         {errors.message && (
@@ -167,7 +172,7 @@ export function QuoteRequestForm(props: QuoteRequestFormProps): JSX.Element {
           type="submit"
           disabled={isSubmitting || limitReached}
           aria-describedby={limitReached ? QR_LIMIT_REASON_ID : undefined}
-          className="inline-flex items-center rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-60"
+          className="focus-ring inline-flex min-h-touch items-center rounded-button bg-action-primary px-4 py-2 text-body-sm font-medium text-action-primary-foreground shadow-surface-subtle hover:bg-action-primary-hover disabled:cursor-not-allowed disabled:opacity-disabled"
         >
           {isSubmitting ? t('actions.submitting') : t('actions.submit')}
         </button>

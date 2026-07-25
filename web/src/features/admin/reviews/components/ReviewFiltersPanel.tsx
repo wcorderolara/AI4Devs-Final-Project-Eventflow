@@ -15,12 +15,26 @@
 //
 // Debounce (Tech Spec §8): el commit se hace en submit para MVP. Extender a onChange con
 // `use-debounce` queda fuera de scope.
+//
+// PB-P2-029: la composición (layout responsive, acciones y resumen de filtros aplicados) pasa a
+// `FilterBar` del design system. Los filtros siguen siendo específicos del panel de reseñas —
+// `FilterBar` no conoce ninguno— y el contrato `AdminReviewListFilters`, la serialización ISO y
+// la validación cross-field no cambian. Novedad de UX: los filtros ya aplicados se muestran como
+// `AppliedFilterChip` removibles, que era la pieza que faltaba respecto de Component Foundations
+// §24 (applied filters summary).
 import { useEffect, useId, useMemo, useState, type FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
-import type {
-  AdminReviewListFilters,
-  AdminReviewStatus,
-} from '../api/adminReviewsApi.types';
+import {
+  type AppliedFilter,
+  Checkbox,
+  DateInput,
+  FilterBar,
+  FormField,
+  InlineMessage,
+  Input,
+  Select,
+} from '@/shared/design-system';
+import type { AdminReviewListFilters, AdminReviewStatus } from '../api/adminReviewsApi.types';
 
 const ALL_STATUS: readonly AdminReviewStatus[] = ['published', 'hidden', 'removed'];
 
@@ -52,8 +66,7 @@ function toDraft(v: AdminReviewListFilters): DraftState {
     createdAtTo: v.createdAtTo?.slice(0, 10) ?? '',
     ratingMin: v.ratingMin !== undefined ? String(v.ratingMin) : '',
     ratingMax: v.ratingMax !== undefined ? String(v.ratingMax) : '',
-    hasAdminAction:
-      v.hasAdminAction === undefined ? 'any' : v.hasAdminAction ? 'true' : 'false',
+    hasAdminAction: v.hasAdminAction === undefined ? 'any' : v.hasAdminAction ? 'true' : 'false',
   };
 }
 
@@ -118,6 +131,10 @@ export function ReviewFiltersPanel({ value, onChange }: Props): React.JSX.Elemen
   const ratingMinId = useId();
   const ratingMaxId = useId();
   const hasActionId = useId();
+  // Los errores de rango son cross-field: se anuncian una sola vez (`role="alert"`) y se asocian
+  // a los dos campos implicados por `aria-describedby`, en lugar de duplicar el mensaje.
+  const dateErrorId = useId();
+  const ratingErrorId = useId();
 
   const ratingCrossFieldError = useMemo(() => {
     if (!draft.ratingMin || !draft.ratingMax) return null;
@@ -142,167 +159,197 @@ export function ReviewFiltersPanel({ value, onChange }: Props): React.JSX.Elemen
     onChange({});
   };
 
+  // Chips de los filtros **ya aplicados** (`value`), no del borrador: quitar un chip modifica el
+  // filtro efectivo de inmediato, igual que `Limpiar filtros`.
+  const appliedFilters = useMemo<AppliedFilter[]>(() => {
+    const chips: AppliedFilter[] = [];
+    const push = (key: string, label: string, next: AdminReviewListFilters): void => {
+      chips.push({
+        key,
+        label,
+        removeLabel: t('removeFilter', { filter: label }),
+        onRemove: () => onChange(next),
+      });
+    };
+
+    for (const s of value.status ?? []) {
+      push(`status-${s}`, `${t('statusLegend')}: ${tStatus(s)}`, {
+        ...value,
+        status: (value.status ?? []).filter((other) => other !== s),
+      });
+    }
+    if (value.vendorId) {
+      const { vendorId: _vendorId, ...rest } = value;
+      push('vendorId', `${t('vendorIdLabel')}: ${value.vendorId}`, rest);
+    }
+    if (value.createdAtFrom) {
+      const { createdAtFrom: _from, ...rest } = value;
+      push('createdAtFrom', `${t('createdFromLabel')}: ${value.createdAtFrom.slice(0, 10)}`, rest);
+    }
+    if (value.createdAtTo) {
+      const { createdAtTo: _to, ...rest } = value;
+      push('createdAtTo', `${t('createdToLabel')}: ${value.createdAtTo.slice(0, 10)}`, rest);
+    }
+    if (value.ratingMin !== undefined) {
+      const { ratingMin: _min, ...rest } = value;
+      push('ratingMin', `${t('ratingMinLabel')}: ${value.ratingMin}`, rest);
+    }
+    if (value.ratingMax !== undefined) {
+      const { ratingMax: _max, ...rest } = value;
+      push('ratingMax', `${t('ratingMaxLabel')}: ${value.ratingMax}`, rest);
+    }
+    if (value.hasAdminAction !== undefined) {
+      const { hasAdminAction: _flag, ...rest } = value;
+      const label = value.hasAdminAction ? t('hasAdminActionYes') : t('hasAdminActionNo');
+      push('hasAdminAction', `${t('hasAdminActionLabel')}: ${label}`, rest);
+    }
+    return chips;
+  }, [onChange, t, tStatus, value]);
+
   return (
-    <form
+    <FilterBar
+      ariaLabel={t('formAriaLabel')}
       onSubmit={onSubmit}
-      className="rounded-md border border-neutral-200 bg-white p-4 space-y-4"
-      aria-label={t('formAriaLabel')}
+      applyLabel={t('apply')}
+      applyDisabled={hasFieldError}
+      onClear={onReset}
+      clearLabel={t('reset')}
+      appliedFilters={appliedFilters}
+      appliedLabel={t('appliedFilters')}
+      footer={
+        <>
+          {dateCrossFieldError ? (
+            <InlineMessage id={dateErrorId} tone="error" live>
+              {dateCrossFieldError}
+            </InlineMessage>
+          ) : null}
+          {ratingCrossFieldError ? (
+            <InlineMessage id={ratingErrorId} tone="error" live>
+              {ratingCrossFieldError}
+            </InlineMessage>
+          ) : null}
+        </>
+      }
     >
-      <fieldset aria-labelledby={statusFieldsetId} className="space-y-2">
-        <legend id={statusFieldsetId} className="text-sm font-medium text-neutral-800">
+      <fieldset
+        aria-labelledby={statusFieldsetId}
+        className="space-y-2 border-0 p-0 md:col-span-2 lg:col-span-3"
+      >
+        <legend id={statusFieldsetId} className="font-ui text-label font-medium text-primary">
           {t('statusLegend')}
         </legend>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-4">
           {ALL_STATUS.map((s) => (
-            <label key={s} className="inline-flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={
-                  s === 'published'
-                    ? draft.statusPublished
-                    : s === 'hidden'
-                      ? draft.statusHidden
-                      : draft.statusRemoved
-                }
-                onChange={(e) =>
-                  setDraft((d) => ({
-                    ...d,
-                    [`status${s.charAt(0).toUpperCase()}${s.slice(1)}`]: e.target.checked,
-                  }))
-                }
-                className="h-4 w-4"
-              />
-              <span>{tStatus(s)}</span>
-            </label>
+            <Checkbox
+              key={s}
+              label={tStatus(s)}
+              checked={
+                s === 'published'
+                  ? draft.statusPublished
+                  : s === 'hidden'
+                    ? draft.statusHidden
+                    : draft.statusRemoved
+              }
+              onChange={(e) =>
+                setDraft((d) => ({
+                  ...d,
+                  [`status${s.charAt(0).toUpperCase()}${s.slice(1)}`]: e.target.checked,
+                }))
+              }
+            />
           ))}
         </div>
       </fieldset>
 
-      <div>
-        <label htmlFor={vendorInputId} className="block text-sm font-medium text-neutral-800">
-          {t('vendorIdLabel')}
-        </label>
-        <input
-          id={vendorInputId}
-          type="text"
-          value={draft.vendorId}
-          onChange={(e) => setDraft((d) => ({ ...d, vendorId: e.target.value }))}
-          placeholder={t('vendorIdPlaceholder')}
-          className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-        />
-      </div>
+      <FormField id={vendorInputId} label={t('vendorIdLabel')}>
+        {(field) => (
+          <Input
+            {...field}
+            type="text"
+            value={draft.vendorId}
+            onChange={(e) => setDraft((d) => ({ ...d, vendorId: e.target.value }))}
+            placeholder={t('vendorIdPlaceholder')}
+          />
+        )}
+      </FormField>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <label htmlFor={fromInputId} className="block text-sm font-medium text-neutral-800">
-            {t('createdFromLabel')}
-          </label>
-          <input
-            id={fromInputId}
-            type="date"
+      <FormField id={fromInputId} label={t('createdFromLabel')}>
+        {(field) => (
+          <DateInput
+            {...field}
             value={draft.createdAtFrom}
             onChange={(e) => setDraft((d) => ({ ...d, createdAtFrom: e.target.value }))}
-            className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+            invalid={dateCrossFieldError !== null}
             aria-invalid={dateCrossFieldError !== null || undefined}
+            aria-describedby={dateCrossFieldError !== null ? dateErrorId : undefined}
           />
-        </div>
-        <div>
-          <label htmlFor={toInputId} className="block text-sm font-medium text-neutral-800">
-            {t('createdToLabel')}
-          </label>
-          <input
-            id={toInputId}
-            type="date"
+        )}
+      </FormField>
+      <FormField id={toInputId} label={t('createdToLabel')}>
+        {(field) => (
+          <DateInput
+            {...field}
             value={draft.createdAtTo}
             onChange={(e) => setDraft((d) => ({ ...d, createdAtTo: e.target.value }))}
-            className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+            invalid={dateCrossFieldError !== null}
             aria-invalid={dateCrossFieldError !== null || undefined}
+            aria-describedby={dateCrossFieldError !== null ? dateErrorId : undefined}
           />
-        </div>
-      </div>
-      {dateCrossFieldError ? (
-        <p role="alert" className="text-sm text-red-700">
-          {dateCrossFieldError}
-        </p>
-      ) : null}
+        )}
+      </FormField>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <label htmlFor={ratingMinId} className="block text-sm font-medium text-neutral-800">
-            {t('ratingMinLabel')}
-          </label>
-          <input
-            id={ratingMinId}
+      <FormField id={ratingMinId} label={t('ratingMinLabel')}>
+        {(field) => (
+          <Input
+            {...field}
             type="number"
             min={1}
             max={5}
             step={1}
             value={draft.ratingMin}
             onChange={(e) => setDraft((d) => ({ ...d, ratingMin: e.target.value }))}
-            className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+            invalid={ratingCrossFieldError !== null}
             aria-invalid={ratingCrossFieldError !== null || undefined}
+            aria-describedby={ratingCrossFieldError !== null ? ratingErrorId : undefined}
           />
-        </div>
-        <div>
-          <label htmlFor={ratingMaxId} className="block text-sm font-medium text-neutral-800">
-            {t('ratingMaxLabel')}
-          </label>
-          <input
-            id={ratingMaxId}
+        )}
+      </FormField>
+      <FormField id={ratingMaxId} label={t('ratingMaxLabel')}>
+        {(field) => (
+          <Input
+            {...field}
             type="number"
             min={1}
             max={5}
             step={1}
             value={draft.ratingMax}
             onChange={(e) => setDraft((d) => ({ ...d, ratingMax: e.target.value }))}
-            className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+            invalid={ratingCrossFieldError !== null}
             aria-invalid={ratingCrossFieldError !== null || undefined}
+            aria-describedby={ratingCrossFieldError !== null ? ratingErrorId : undefined}
           />
-        </div>
-      </div>
-      {ratingCrossFieldError ? (
-        <p role="alert" className="text-sm text-red-700">
-          {ratingCrossFieldError}
-        </p>
-      ) : null}
+        )}
+      </FormField>
 
-      <div>
-        <label htmlFor={hasActionId} className="block text-sm font-medium text-neutral-800">
-          {t('hasAdminActionLabel')}
-        </label>
-        <select
-          id={hasActionId}
-          value={draft.hasAdminAction}
-          onChange={(e) =>
-            setDraft((d) => ({
-              ...d,
-              hasAdminAction: e.target.value as DraftState['hasAdminAction'],
-            }))
-          }
-          className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-        >
-          <option value="any">{t('hasAdminActionAny')}</option>
-          <option value="true">{t('hasAdminActionYes')}</option>
-          <option value="false">{t('hasAdminActionNo')}</option>
-        </select>
-      </div>
-
-      <div className="flex justify-end gap-2 pt-2">
-        <button
-          type="button"
-          onClick={onReset}
-          className="rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm hover:bg-neutral-50"
-        >
-          {t('reset')}
-        </button>
-        <button
-          type="submit"
-          disabled={hasFieldError}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-neutral-300"
-        >
-          {t('apply')}
-        </button>
-      </div>
-    </form>
+      <FormField id={hasActionId} label={t('hasAdminActionLabel')}>
+        {(field) => (
+          <Select
+            {...field}
+            value={draft.hasAdminAction}
+            onChange={(e) =>
+              setDraft((d) => ({
+                ...d,
+                hasAdminAction: e.target.value as DraftState['hasAdminAction'],
+              }))
+            }
+            options={[
+              { value: 'any', label: t('hasAdminActionAny') },
+              { value: 'true', label: t('hasAdminActionYes') },
+              { value: 'false', label: t('hasAdminActionNo') },
+            ]}
+          />
+        )}
+      </FormField>
+    </FilterBar>
   );
 }

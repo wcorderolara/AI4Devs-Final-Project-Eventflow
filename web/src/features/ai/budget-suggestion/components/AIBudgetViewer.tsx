@@ -63,7 +63,7 @@ export function AIBudgetViewer({
             id="ai-budget-heading"
             ref={headingRef}
             tabIndex={-1}
-            className="text-xl font-semibold text-neutral-900 outline-none focus:ring-2 focus:ring-purple-400"
+            className="text-xl font-semibold text-neutral-900 focus-ring"
           >
             {t('viewerHeading')}
           </h2>
@@ -82,10 +82,18 @@ export function AIBudgetViewer({
           <caption className="sr-only">{t('tableCaption')}</caption>
           <thead>
             <tr className="border-b border-neutral-200 text-left">
-              <th scope="col" className="py-2 pr-3 font-medium text-neutral-800">{t('columns.category')}</th>
-              <th scope="col" className="py-2 pr-3 font-medium text-neutral-800">{t('columns.percentage')}</th>
-              <th scope="col" className="py-2 pr-3 font-medium text-neutral-800">{t('columns.amount')}</th>
-              <th scope="col" className="py-2 pr-3 font-medium text-neutral-800">{t('columns.notes')}</th>
+              <th scope="col" className="py-2 pr-3 font-medium text-neutral-800">
+                {t('columns.category')}
+              </th>
+              <th scope="col" className="py-2 pr-3 font-medium text-neutral-800">
+                {t('columns.percentage')}
+              </th>
+              <th scope="col" className="py-2 pr-3 font-medium text-neutral-800">
+                {t('columns.amount')}
+              </th>
+              <th scope="col" className="py-2 pr-3 font-medium text-neutral-800">
+                {t('columns.notes')}
+              </th>
             </tr>
           </thead>
           <tbody>

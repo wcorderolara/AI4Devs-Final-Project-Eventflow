@@ -9,6 +9,7 @@
   },
   "forbidden": {
     "title": "Access denied",
+    "body": "You don't have permission to view this section with your current account.",
     "cta": "Back to home"
   },
   "notFound": {

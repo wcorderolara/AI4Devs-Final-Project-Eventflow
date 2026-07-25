@@ -2,10 +2,10 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { ApiError } from '@/shared/api-client';
+import { Button, FormField, Input, TextLink } from '@/shared/design-system';
 import { CaptchaWidget } from './CaptchaWidget';
 import { useLogin } from '../hooks/useLogin';
 import { loginSchema, type LoginFormValues } from '../schemas/loginSchema';
@@ -89,62 +89,64 @@ export function LoginForm({ from }: { from?: string | null }): React.JSX.Element
 
   return (
     <form onSubmit={(e) => void onSubmit(e)} noValidate aria-busy={mutation.isPending}>
-      <h1 className="text-2xl font-bold">{t('title')}</h1>
-      <p className="mt-1 text-sm text-neutral-600">{t('subtitle')}</p>
+      <h1 className="font-heading text-h3 font-semibold text-primary">{t('title')}</h1>
+      <p className="mt-1 font-body text-body-sm text-secondary">{t('subtitle')}</p>
 
       {globalError ? (
-        <div role="alert" aria-live="polite" className="mt-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+        <div
+          role="alert"
+          aria-live="polite"
+          className="mt-4 rounded-card border border-feedback-error bg-feedback-error p-3 font-body text-body-sm text-feedback-error"
+        >
           {globalError}
         </div>
       ) : null}
 
       <div className="mt-4 flex flex-col gap-4">
-        <div>
-          <label htmlFor="login-email" className="block text-sm font-medium">
-            {t('email.label')}
-          </label>
-          <input
-            id="login-email"
-            type="email"
-            autoComplete="email"
-            disabled={disabled}
-            placeholder={t('email.placeholder')}
-            aria-invalid={errors.email ? true : undefined}
-            aria-describedby={errors.email ? 'login-email-error' : undefined}
-            className="mt-1 w-full rounded border border-neutral-300 px-3 py-2"
-            {...register('email')}
-          />
-          {errors.email ? (
-            <p id="login-email-error" className="mt-1 text-sm text-red-700" aria-live="polite">
-              {t(errors.email.message ?? 'validation.emailInvalid')}
-            </p>
-          ) : null}
-        </div>
+        <FormField
+          id="login-email"
+          label={t('email.label')}
+          disabled={disabled}
+          error={errors.email ? t(errors.email.message ?? 'validation.emailInvalid') : undefined}
+        >
+          {(field) => (
+            <Input
+              {...field}
+              type="email"
+              autoComplete="email"
+              placeholder={t('email.placeholder')}
+              {...register('email')}
+            />
+          )}
+        </FormField>
 
-        <div>
-          <label htmlFor="login-password" className="block text-sm font-medium">
-            {t('password.label')}
-          </label>
-          <input
-            id="login-password"
-            type="password"
-            autoComplete="current-password"
-            disabled={disabled}
-            aria-invalid={errors.password ? true : undefined}
-            aria-describedby={errors.password ? 'login-password-error' : undefined}
-            className="mt-1 w-full rounded border border-neutral-300 px-3 py-2"
-            {...register('password')}
-          />
-          {errors.password ? (
-            <p id="login-password-error" className="mt-1 text-sm text-red-700" aria-live="polite">
-              {t(errors.password.message ?? 'validation.passwordRequired')}
-            </p>
-          ) : null}
-        </div>
+        <FormField
+          id="login-password"
+          label={t('password.label')}
+          disabled={disabled}
+          error={
+            errors.password
+              ? t(errors.password.message ?? 'validation.passwordRequired')
+              : undefined
+          }
+        >
+          {(field) => (
+            // Se mantiene el `Input type="password"` y NO se adopta aquí `PasswordInput`:
+            // el toggle mostrar/ocultar añade una parada de tabulación y cambiaría el orden de
+            // foco verificado por `tests/a11y/us131-keyboard-aria.test.tsx`. La adopción del
+            // toggle queda diferida a una US con decisión de UX (ver implementation record).
+            <Input
+              {...field}
+              type="password"
+              autoComplete="current-password"
+              {...register('password')}
+            />
+          )}
+        </FormField>
 
         {captchaVisible ? (
           <div>
-            <p className="mb-2 text-sm text-neutral-700" aria-live="polite">
+            <p className="mb-2 font-body text-body-sm text-secondary" aria-live="polite">
               {t('captchaNotice')}
             </p>
             <CaptchaWidget
@@ -154,22 +156,24 @@ export function LoginForm({ from }: { from?: string | null }): React.JSX.Element
           </div>
         ) : null}
 
-        <button
+        <Button
           type="submit"
-          disabled={disabled || (captchaVisible && captchaToken.length === 0)}
-          className="rounded bg-neutral-900 px-4 py-2 text-white disabled:opacity-50"
+          fullWidth
+          isLoading={mutation.isPending}
+          loadingLabel={t('submitting')}
+          disabled={captchaVisible && captchaToken.length === 0}
         >
-          {mutation.isPending ? t('submitting') : t('submit')}
-        </button>
+          {t('submit')}
+        </Button>
       </div>
 
-      <p className="mt-4 flex flex-wrap gap-x-3 text-sm text-neutral-600">
-        <Link href="/forgot-password" className="underline">
+      <p className="mt-4 flex flex-wrap gap-x-3">
+        <TextLink href="/forgot-password" variant="inline" className="text-body-sm">
           {t('forgotPassword')}
-        </Link>
-        <Link href="/register" className="underline">
+        </TextLink>
+        <TextLink href="/register" variant="inline" className="text-body-sm">
           {t('createAccount')}
-        </Link>
+        </TextLink>
       </p>
     </form>
   );

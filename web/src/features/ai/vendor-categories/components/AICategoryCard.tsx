@@ -80,7 +80,7 @@ export function AICategoryCard({
         href={href}
         aria-label={ariaLabel}
         onClick={handleClick}
-        className="block rounded-lg border border-neutral-200 bg-white p-4 shadow-sm transition hover:border-purple-400 hover:shadow focus:outline-none focus:ring-2 focus:ring-purple-400"
+        className="block rounded-lg border border-neutral-200 bg-white p-4 shadow-sm transition hover:border-purple-400 hover:shadow focus-ring"
         data-testid={`ai-vendor-category-${category.service_category_code}`}
       >
         <div className="flex items-start justify-between gap-3">
@@ -91,9 +91,7 @@ export function AICategoryCard({
           <AIBadge fallbackUsed={fallbackUsed} />
         </div>
         <p className="mt-2 text-sm text-neutral-700">{category.reason}</p>
-        <p className="mt-3 text-xs font-medium text-purple-700">
-          {t('cardCta')}
-        </p>
+        <p className="mt-3 text-xs font-medium text-purple-700">{t('cardCta')}</p>
       </Link>
     </li>
   );

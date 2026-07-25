@@ -42,6 +42,7 @@
     "deleteAria": "Delete {label}"
   },
   "empty": {
+    "title": "No budget items yet",
     "body": "No budget items yet. You can start with an AI suggestion or add items manually.",
     "cta": {
       "ai": "Suggest with AI",

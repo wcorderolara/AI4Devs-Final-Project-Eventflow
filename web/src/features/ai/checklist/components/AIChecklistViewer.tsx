@@ -91,7 +91,7 @@ export function AIChecklistViewer({
                       key={`${phase}-${taskIndex}`}
                       ref={shouldFocus ? firstTaskRef : undefined}
                       tabIndex={shouldFocus ? -1 : undefined}
-                      className="rounded border border-neutral-100 p-3 outline-none focus:ring-2 focus:ring-purple-400"
+                      className="rounded border border-neutral-100 p-3 focus-ring"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <p className="text-sm font-medium text-neutral-900">{task.title}</p>

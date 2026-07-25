@@ -1,6 +1,9 @@
-import { useTranslations } from 'next-intl';
+'use client';
+
+import type { ReactNode } from 'react';
+import { AppSidebar } from '@/shared/design-system';
 import type { NavGroup, NavItem } from './navItems';
-import { NavLink } from './NavLink';
+import { useNavigationSections } from './useNavigationSections';
 
 interface SidebarProps {
   ariaLabel: string;
@@ -8,43 +11,19 @@ interface SidebarProps {
   items?: NavItem[];
   /** Modo agrupado: items divididos en secciones con título (admin). */
   groups?: NavGroup[];
+  /** Contexto de workspace/rol en la cabecera de la sidebar. */
+  header?: ReactNode;
 }
 
-/** Sidebar de navegación (desktop). Oculta en mobile (`<MobileNav>` la reutiliza en drawer). */
-export function Sidebar({ items, groups, ariaLabel }: SidebarProps) {
-  const t = useTranslations('navigation');
-
-  return (
-    <nav
-      aria-label={ariaLabel}
-      className="hidden w-60 shrink-0 border-r border-neutral-200 p-4 lg:block"
-    >
-      {groups ? (
-        <div className="flex flex-col gap-5">
-          {groups.map((group) => (
-            <section key={group.titleKey}>
-              <h2 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                {t(group.titleKey)}
-              </h2>
-              <ul className="flex flex-col gap-1">
-                {group.items.map((item) => (
-                  <li key={item.href}>
-                    <NavLink item={item} />
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
-        </div>
-      ) : (
-        <ul className="flex flex-col gap-1">
-          {(items ?? []).map((item) => (
-            <li key={item.href}>
-              <NavLink item={item} />
-            </li>
-          ))}
-        </ul>
-      )}
-    </nav>
-  );
+/**
+ * Sidebar de navegación (desktop). Oculta por debajo de `lg`, donde la sustituye `<MobileNav>`.
+ *
+ * PB-P2-029: pasa a ser el adaptador entre el modelo de navegación de la aplicación y
+ * `AppSidebar` del design system. Las rutas, los grupos y los permisos no cambian; sólo cambia
+ * quién pinta el markup. Desktop y mobile comparten `useNavigationSections`, de modo que existe
+ * **una única** definición de navegación.
+ */
+export function Sidebar({ items, groups, ariaLabel, header }: SidebarProps): React.JSX.Element {
+  const sections = useNavigationSections({ items, groups });
+  return <AppSidebar ariaLabel={ariaLabel} sections={sections} header={header} />;
 }

@@ -37,7 +37,9 @@
     "passwordHint": "At least 10 characters, with at least one letter and one number.",
     "confirmPassword": "Confirm new password",
     "submit": "Change password",
-    "changed": "Password updated."
+    "changed": "Password updated.",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "validation": {
     "nameMin": "Name must be at least 2 characters.",

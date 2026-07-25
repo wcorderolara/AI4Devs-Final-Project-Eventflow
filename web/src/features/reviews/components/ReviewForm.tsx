@@ -16,6 +16,7 @@
 import { useCallback, useId, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { ApiError } from '@/shared/api-client';
+import { Button, FormField, Textarea } from '@/shared/design-system';
 import { StarRating } from './StarRating';
 import { ReviewEligibilityBanner } from './ReviewEligibilityBanner';
 import { useCreateReview } from '../hooks/organizerReviewsQueries';
@@ -61,9 +62,10 @@ function toErrorState(err: ApiError): FormErrorState {
     : 'UNEXPECTED';
   if (code !== 'REVIEW_NOT_ELIGIBLE') return { code };
   const raw = extractReason(err);
-  const reason = raw && ELIGIBILITY_REASONS.includes(raw as ReviewNotEligibleReason)
-    ? (raw as ReviewNotEligibleReason)
-    : undefined;
+  const reason =
+    raw && ELIGIBILITY_REASONS.includes(raw as ReviewNotEligibleReason)
+      ? (raw as ReviewNotEligibleReason)
+      : undefined;
   return reason ? { code, eligibilityReason: reason } : { code };
 }
 
@@ -77,8 +79,6 @@ export function ReviewForm({ eventId, vendorProfileId, vendorSlug, onSuccess }: 
   const t = useTranslations('organizer.review.create');
   const labelId = useId();
   const commentId = useId();
-  const commentHintId = useId();
-  const commentCounterId = useId();
   const errorRegionId = useId();
 
   const [rating, setRating] = useState<number | null>(null);
@@ -134,9 +134,16 @@ export function ReviewForm({ eventId, vendorProfileId, vendorSlug, onSuccess }: 
   }, [formError, t]);
 
   return (
-    <form onSubmit={handleSubmit} noValidate aria-describedby={errorRegionId}>
-      <div>
-        <span id={labelId}>{t('ratingLabel')}</span>
+    <form
+      onSubmit={handleSubmit}
+      noValidate
+      aria-describedby={errorRegionId}
+      className="flex flex-col gap-4"
+    >
+      <div className="flex flex-col gap-1.5">
+        <span id={labelId} className="font-ui text-label font-medium text-primary">
+          {t('ratingLabel')}
+        </span>
         <StarRating
           labelId={labelId}
           value={rating}
@@ -145,35 +152,44 @@ export function ReviewForm({ eventId, vendorProfileId, vendorSlug, onSuccess }: 
         />
       </div>
 
-      <div>
-        <label htmlFor={commentId}>{t('commentLabel')}</label>
-        <textarea
-          id={commentId}
-          value={comment}
-          onChange={(event) => setComment(event.target.value)}
-          maxLength={COMMENT_MAX}
-          aria-describedby={`${commentHintId} ${commentCounterId}`}
-          aria-invalid={isCommentTooLong || undefined}
-          rows={5}
-          disabled={mutation.isPending}
-          data-testid="review-comment"
-        />
-        <span id={commentHintId}>{t('commentHint')}</span>
-        <span id={commentCounterId} aria-live="polite">
-          {t('commentCounter', { count: commentLength, max: COMMENT_MAX })}
-        </span>
-      </div>
+      <FormField
+        id={commentId}
+        label={t('commentLabel')}
+        helperText={t('commentHint')}
+        characterCount={{
+          current: commentLength,
+          max: COMMENT_MAX,
+          // Se conserva el anuncio en vivo del contador previo a la migración.
+          live: true,
+        }}
+        disabled={mutation.isPending}
+      >
+        {(field) => (
+          <Textarea
+            {...field}
+            value={comment}
+            onChange={(event) => setComment(event.target.value)}
+            maxLength={COMMENT_MAX}
+            invalid={isCommentTooLong}
+            minRows={5}
+            data-testid="review-comment"
+          />
+        )}
+      </FormField>
 
       <div id={errorRegionId}>{errorContent}</div>
 
-      <button
+      <Button
         type="submit"
         disabled={!canSubmit}
         aria-disabled={!canSubmit}
+        isLoading={mutation.isPending}
+        loadingLabel={t('actions.submitting')}
         data-testid="review-submit"
+        className="self-start"
       >
-        {mutation.isPending ? t('actions.submitting') : t('actions.submit')}
-      </button>
+        {t('actions.submit')}
+      </Button>
     </form>
   );
 }

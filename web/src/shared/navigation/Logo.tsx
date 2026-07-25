@@ -15,7 +15,7 @@ export function Logo({ variant = 'full', size = 'md' }: LogoProps) {
     <Link
       href="/"
       aria-label={t('logo.label')}
-      className={`font-bold text-primary-700 ${sizeClasses[size]}`}
+      className={`focus-ring font-heading font-bold text-link ${sizeClasses[size]}`}
     >
       {variant === 'icon' ? 'EF' : 'EventFlow'}
     </Link>

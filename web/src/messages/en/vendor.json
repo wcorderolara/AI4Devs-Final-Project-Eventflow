@@ -156,7 +156,8 @@
     },
     "dropzone": {
       "placeholder": "Drop an image here or press Enter to choose one",
-      "helper": "JPG, PNG or WebP. Up to 5 MB. Long side is resized to 2048 px."
+      "helper": "JPG, PNG or WebP. Up to 5 MB. Long side is resized to 2048 px.",
+      "remove": "Remove {name}"
     },
     "actions": {
       "upload": "Upload image",

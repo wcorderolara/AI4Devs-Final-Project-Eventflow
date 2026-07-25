@@ -156,7 +156,8 @@
     },
     "dropzone": {
       "placeholder": "Arrastra una imagen aquí o pulsa Intro para elegir una",
-      "helper": "JPG, PNG o WebP. Máximo 5 MB. El lado más largo se ajusta a 2048 px."
+      "helper": "JPG, PNG o WebP. Máximo 5 MB. El lado más largo se ajusta a 2048 px.",
+      "remove": "Quitar {name}"
     },
     "actions": {
       "upload": "Subir imagen",

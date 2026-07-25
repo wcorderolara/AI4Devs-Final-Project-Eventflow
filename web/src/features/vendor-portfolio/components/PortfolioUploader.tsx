@@ -1,16 +1,23 @@
 'use client';
 
 // PortfolioUploader (US-043 / PB-P1-026 / FE-002).
-// Dropzone accesible (keyboard: Enter/Space abre el file picker), input `work_label`,
-// barra de progreso multipart, mensajes de error i18n por código estable.
+// Dropzone accesible, input `work_label` y mensajes de error i18n por código estable.
+//
+// PB-P2-028: migrado al design system compartido (`FormField` + `Input` + `FileUpload` +
+// `Button`). El comportamiento de negocio no cambia — mismos límites (5 MB, JPG/PNG/WebP),
+// mismos códigos de error y el mismo contrato con `useUploadPortfolioImage`.
 //
 // Accessibility:
-// - `role="button"` + `tabIndex={0}` en la zona de drop; keydown Enter/Space delega al input.
-// - Mensajes de error usan `aria-live="polite"` y `aria-describedby` sobre el CTA.
+// - El `<input type="file">` nativo es la ruta accesible por teclado (`FileUpload` lo conserva
+//   enfocable y asociado a su label); el drop zone es refuerzo para puntero, ya no un
+//   `role="button"` con `tabIndex` propio.
+// - Los cambios de estado se anuncian con `role="status"`; los errores con `role="alert"`.
 // - El contador `N/10` de cada work vive en `WorkGrid` (aria-live allí).
-import { useCallback, useId, useRef, useState } from 'react';
-import type { ChangeEvent, DragEvent, FormEvent, KeyboardEvent } from 'react';
+import { useCallback, useState } from 'react';
+import type { FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
+import { Button, FileUpload, FormField, Input } from '@/shared/design-system';
+import type { FileRejection } from '@/shared/design-system';
 import { useUploadPortfolioImage } from '../hooks/useUploadPortfolioImage';
 import type { PortfolioImageView } from '../api/vendorPortfolioApi.types';
 
@@ -69,54 +76,29 @@ export function PortfolioUploader(props: PortfolioUploaderProps): JSX.Element {
   const t = useTranslations('vendor.portfolio');
   const [workLabel, setWorkLabel] = useState(props.initialWorkLabel ?? '');
   const [error, setError] = useState<ErrorCode | null>(null);
-  const [selectedName, setSelectedName] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const errorId = useId();
-  const uploadHelperId = useId();
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const mutation = useUploadPortfolioImage();
 
-  const canSubmit = workLabel.trim().length > 0 && inputRef.current?.files?.[0] !== undefined && !mutation.isPending;
+  const canSubmit = workLabel.trim().length > 0 && selectedFile !== null && !mutation.isPending;
 
-  const openPicker = useCallback((): void => {
-    inputRef.current?.click();
-  }, []);
-
-  const onDropzoneKeyDown = useCallback(
-    (ev: KeyboardEvent<HTMLDivElement>): void => {
-      if (ev.key === 'Enter' || ev.key === ' ') {
-        ev.preventDefault();
-        openPicker();
-      }
-    },
-    [openPicker],
-  );
-
-  const onDrop = useCallback((ev: DragEvent<HTMLDivElement>): void => {
-    ev.preventDefault();
-    const file = ev.dataTransfer.files[0];
-    if (file && inputRef.current) {
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      inputRef.current.files = dt.files;
-      setSelectedName(file.name);
-    }
-  }, []);
-
-  const onDragOver = useCallback((ev: DragEvent<HTMLDivElement>): void => {
-    ev.preventDefault();
-  }, []);
-
-  const onFileChange = useCallback((ev: ChangeEvent<HTMLInputElement>): void => {
-    const file = ev.target.files?.[0] ?? null;
-    setSelectedName(file?.name ?? null);
+  const onFilesSelected = useCallback((files: File[]): void => {
+    setSelectedFile(files[0] ?? null);
     setError(null);
+  }, []);
+
+  // La validación previa de `FileUpload` usa los mismos límites de negocio y se traduce a los
+  // códigos de error estables que ya conoce el catálogo i18n.
+  const onFilesRejected = useCallback((rejections: FileRejection[]): void => {
+    const reason = rejections[0]?.reason;
+    setSelectedFile(null);
+    setError(reason === 'size' ? 'FILE_TOO_LARGE' : 'INVALID_MIME');
   }, []);
 
   const onSubmit = useCallback(
     async (ev: FormEvent<HTMLFormElement>): Promise<void> => {
       ev.preventDefault();
       setError(null);
-      const file = inputRef.current?.files?.[0];
+      const file = selectedFile;
       if (!file) {
         setError('INVALID_IMAGE');
         return;
@@ -128,73 +110,55 @@ export function PortfolioUploader(props: PortfolioUploaderProps): JSX.Element {
       try {
         const view = await mutation.mutateAsync({ workLabel: workLabel.trim(), file });
         props.onUploaded?.(view);
-        setSelectedName(null);
-        if (inputRef.current) inputRef.current.value = '';
+        setSelectedFile(null);
       } catch (err) {
         setError(resolveErrorCode(err));
       }
     },
-    [mutation, workLabel, props],
+    [mutation, selectedFile, workLabel, props],
   );
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-      <label className="flex flex-col gap-1 text-sm font-medium">
-        <span>{t('workLabel.label')}</span>
-        <input
-          type="text"
-          value={workLabel}
-          onChange={(ev) => setWorkLabel(ev.target.value)}
-          placeholder={t('workLabel.placeholder')}
-          maxLength={80}
-          className="rounded border border-neutral-300 px-3 py-2 text-base"
-          required
-          aria-required="true"
-        />
-      </label>
+      <FormField label={t('workLabel.label')} required>
+        {(field) => (
+          <Input
+            {...field}
+            type="text"
+            value={workLabel}
+            onChange={(ev) => setWorkLabel(ev.target.value)}
+            placeholder={t('workLabel.placeholder')}
+            maxLength={80}
+            required
+          />
+        )}
+      </FormField>
 
-      <div
-        role="button"
-        tabIndex={0}
-        onKeyDown={onDropzoneKeyDown}
-        onClick={openPicker}
-        onDrop={onDrop}
-        onDragOver={onDragOver}
-        aria-describedby={uploadHelperId}
-        className="flex min-h-[7rem] cursor-pointer items-center justify-center rounded border-2 border-dashed border-neutral-300 bg-neutral-50 px-4 py-6 text-center text-sm text-neutral-600 hover:border-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
-        {selectedName ?? t('dropzone.placeholder')}
-        <input
-          ref={inputRef}
-          type="file"
-          accept={ACCEPT}
-          onChange={onFileChange}
-          className="hidden"
-        />
-      </div>
-      <p id={uploadHelperId} className="text-xs text-neutral-500">
-        {t('dropzone.helper')}
-      </p>
+      <FileUpload
+        dropzoneLabel={selectedFile?.name ?? t('dropzone.placeholder')}
+        hintLabel={t('dropzone.helper')}
+        removeLabel={(name) => t('dropzone.remove', { name })}
+        accept={ACCEPT}
+        maxSizeBytes={MAX_BYTES}
+        disabled={mutation.isPending}
+        status={mutation.isPending ? 'uploading' : error !== null ? 'error' : 'idle'}
+        statusMessage={mutation.isPending ? t('actions.uploading') : undefined}
+        errorMessage={error !== null ? t(`errors.${error}`) : undefined}
+        selectedFiles={selectedFile ? [{ name: selectedFile.name, size: selectedFile.size }] : []}
+        onFilesSelected={onFilesSelected}
+        onFilesRejected={onFilesRejected}
+        onRemoveFile={() => setSelectedFile(null)}
+      />
 
-      {error !== null && (
-        <p
-          id={errorId}
-          role="alert"
-          aria-live="polite"
-          className="rounded bg-red-50 px-3 py-2 text-sm text-red-800"
-        >
-          {t(`errors.${error}`)}
-        </p>
-      )}
-
-      <button
+      <Button
         type="submit"
+        className="self-start"
         disabled={!canSubmit}
-        aria-describedby={error !== null ? errorId : undefined}
-        className="self-start rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-neutral-300"
+        isLoading={mutation.isPending}
+        loadingLabel={t('actions.uploading')}
       >
-        {mutation.isPending ? t('actions.uploading') : t('actions.upload')}
-      </button>
+        {t('actions.upload')}
+      </Button>
     </form>
   );
 }

@@ -9,7 +9,7 @@
 //
 // Contraste — la meta MVP es texto ≥4.5:1 sobre la paleta principal (VR-04). Verificamos con
 // axe (regla `color-contrast`) sobre combinaciones representativas de los tokens Tailwind del
-// repo (neutral-900 sobre blanco; neutral-600 sobre blanco). El chequeo activa explícitamente
+// repo (text.primary sobre blanco; text.secondary sobre blanco). El chequeo activa explícitamente
 // la regla desactivada por default en `jest-axe` (no corre en jsdom sin activarla).
 import React, { useRef, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -18,6 +18,7 @@ import userEvent from '@testing-library/user-event';
 import esLatamOrganizer from '@/messages/es-LATAM/organizer.json';
 import esLatamCommon from '@/messages/es-LATAM/common.json';
 import { CancelQRDialog } from '@/features/quotes/components/CancelQRDialog';
+import { feedback, surface, text } from '@/shared/design-tokens';
 import { renderWithProviders } from './helpers/render-with-intl';
 
 vi.mock('next/navigation', () => ({
@@ -44,7 +45,9 @@ function DialogHarness(): React.JSX.Element {
       <button ref={triggerRef} type="button" onClick={() => setOpen(true)}>
         Abrir
       </button>
-      {open ? <CancelQRDialog quoteRequestId="00000000-0000-4000-8000-000000000000" onClose={close} /> : null}
+      {open ? (
+        <CancelQRDialog quoteRequestId="00000000-0000-4000-8000-000000000000" onClose={close} />
+      ) : null}
     </>
   );
 }
@@ -100,8 +103,13 @@ describe('US-131 QA-003 · contraste ≥4.5:1 sobre paleta principal (design tok
   // Playwright E2E (fuera del scope MVP; D-02 del execution record).
   function relativeLuminance(hex: string): number {
     const value = hex.replace('#', '');
-    const [r, g, b] = [0, 2, 4].map((i) => Number.parseInt(value.slice(i, i + 2), 16) / 255) as [number, number, number];
-    const toLin = (c: number): number => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+    const [r, g, b] = [0, 2, 4].map((i) => Number.parseInt(value.slice(i, i + 2), 16) / 255) as [
+      number,
+      number,
+      number,
+    ];
+    const toLin = (c: number): number =>
+      c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
     return 0.2126 * toLin(r) + 0.7152 * toLin(g) + 0.0722 * toLin(b);
   }
   function contrastRatio(fg: string, bg: string): number {
@@ -109,17 +117,55 @@ describe('US-131 QA-003 · contraste ≥4.5:1 sobre paleta principal (design tok
     return (lums[0]! + 0.05) / (lums[1]! + 0.05);
   }
 
-  // Tokens Tailwind reales usados en las rutas demo (verificados en LoginForm/CreateEventWizard/
-  // QuoteComparisonTable). No incluye combinaciones con `red-700`/`green-800` para banners:
-  // esas se auditan con axe estático (regla `link-name`/`aria-*`) — el contraste específico se
-  // registra en el checklist manual (QA-004) si algún token queda cerca del umbral.
+  // PB-P2-027: las combinaciones se anclan a los design tokens aprobados
+  // (`src/shared/design-tokens`, Design Tokens §9). El token de texto principal es
+  // `text.primary` = #262626 — NO #171717, que queda reservado a `surface.inverse` y a la CTA
+  // oscura de marketing (UI-DEC-003). La matriz completa de contraste del sistema vive en
+  // `src/tests/a11y/design-tokens-contrast.test.ts`; aquí se conserva el subconjunto que
+  // cubren las rutas demo de US-131.
   const combos: Array<{ label: string; fg: string; bg: string; minRatio: number }> = [
-    { label: 'neutral-900 sobre blanco (h1/label/campo)', fg: '#171717', bg: '#ffffff', minRatio: 4.5 },
-    { label: 'neutral-600 sobre blanco (texto secundario)', fg: '#525252', bg: '#ffffff', minRatio: 4.5 },
-    { label: 'white sobre neutral-900 (submit button)', fg: '#ffffff', bg: '#171717', minRatio: 4.5 },
-    { label: 'red-700 sobre red-50 (mensaje error inline)', fg: '#b91c1c', bg: '#fef2f2', minRatio: 4.5 },
-    { label: 'green-800 sobre green-50 (banner éxito)', fg: '#166534', bg: '#f0fdf4', minRatio: 4.5 },
-    { label: 'red-800 sobre red-50 (banner error alert)', fg: '#991b1b', bg: '#fef2f2', minRatio: 4.5 },
+    {
+      label: 'text.primary sobre blanco (h1/label/campo)',
+      fg: text.primary,
+      bg: '#ffffff',
+      minRatio: 4.5,
+    },
+    {
+      label: 'text.secondary sobre blanco (texto secundario)',
+      fg: text.secondary,
+      bg: '#ffffff',
+      minRatio: 4.5,
+    },
+    {
+      label: 'text.inverse sobre surface.inverse (CTA oscura)',
+      fg: text.inverse,
+      bg: surface.inverse,
+      minRatio: 4.5,
+    },
+    {
+      label: 'feedback.error.text sobre su surface (error inline)',
+      fg: feedback.error.text,
+      bg: feedback.error.surface,
+      minRatio: 4.5,
+    },
+    {
+      label: 'feedback.success.text sobre su surface (banner éxito)',
+      fg: feedback.success.text,
+      bg: feedback.success.surface,
+      minRatio: 4.5,
+    },
+    {
+      label: 'feedback.warning.text sobre su surface (banner warning)',
+      fg: feedback.warning.text,
+      bg: feedback.warning.surface,
+      minRatio: 4.5,
+    },
+    {
+      label: 'feedback.info.text sobre su surface (banner info)',
+      fg: feedback.info.text,
+      bg: feedback.info.surface,
+      minRatio: 4.5,
+    },
   ];
 
   it.each(combos)('VR-04 · NFR-A11Y-005: $label ≥4.5:1', ({ fg, bg, minRatio }) => {

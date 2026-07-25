@@ -1,10 +1,10 @@
 'use client';
 
-import { Dialog, DialogPanel } from '@headlessui/react';
-import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
+import { MobileNavigationDrawer } from '@/shared/design-system';
 import type { NavGroup, NavItem } from './navItems';
-import { NavLink } from './NavLink';
+import { useNavigationSections } from './useNavigationSections';
 
 interface MobileNavProps {
   isOpen: boolean;
@@ -14,57 +14,42 @@ interface MobileNavProps {
   items?: NavItem[];
   /** Modo agrupado (admin). */
   groups?: NavGroup[];
+  /** Bloque de cuenta al pie del drawer (nombre, email, cerrar sesión). */
+  footer?: ReactNode;
+  /** `id` del panel, para enlazarlo con el `aria-controls` del trigger del `Topbar`. */
+  panelId?: string;
 }
 
 /**
- * Drawer de navegación mobile. Headless UI `<Dialog>` aporta focus trap + cierre con `Escape` +
- * overlay clickeable de forma nativa (AC-07 / WCAG 2.1 AA).
+ * Drawer de navegación mobile.
+ *
+ * PB-P2-029: delega en `MobileNavigationDrawer` del design system, que sigue apoyándose en el
+ * `<Dialog>` de Headless UI (focus trap + `Escape` + clic fuera + retorno de foco al trigger +
+ * bloqueo del scroll del body) y añade título accesible, objetivos táctiles de 44 px y zona de
+ * cuenta al pie. Consume `useNavigationSections`, la **misma** fuente que la sidebar desktop.
  */
-export function MobileNav({ items, groups, isOpen, onClose, ariaLabel }: MobileNavProps) {
+export function MobileNav({
+  items,
+  groups,
+  isOpen,
+  onClose,
+  ariaLabel,
+  footer,
+  panelId,
+}: MobileNavProps): React.JSX.Element {
   const t = useTranslations('navigation');
+  const sections = useNavigationSections({ items, groups });
+
   return (
-    <Dialog open={isOpen} onClose={onClose} className="relative z-50 lg:hidden">
-      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-      <div className="fixed inset-y-0 left-0 flex w-64 max-w-[80vw]">
-        <DialogPanel className="flex w-full flex-col overflow-y-auto bg-white p-4">
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t('mobile.close')}
-            className="mb-4 self-end rounded p-2 hover:bg-neutral-100"
-          >
-            <X className="h-5 w-5" aria-hidden="true" />
-          </button>
-          <nav aria-label={ariaLabel}>
-            {groups ? (
-              <div className="flex flex-col gap-5">
-                {groups.map((group) => (
-                  <section key={group.titleKey}>
-                    <h2 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                      {t(group.titleKey)}
-                    </h2>
-                    <ul className="flex flex-col gap-1">
-                      {group.items.map((item) => (
-                        <li key={item.href}>
-                          <NavLink item={item} />
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                ))}
-              </div>
-            ) : (
-              <ul className="flex flex-col gap-1">
-                {(items ?? []).map((item) => (
-                  <li key={item.href}>
-                    <NavLink item={item} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </nav>
-        </DialogPanel>
-      </div>
-    </Dialog>
+    <MobileNavigationDrawer
+      open={isOpen}
+      onClose={onClose}
+      ariaLabel={ariaLabel}
+      title={t('mobile.title')}
+      closeLabel={t('mobile.close')}
+      sections={sections}
+      footer={footer}
+      panelId={panelId}
+    />
   );
 }

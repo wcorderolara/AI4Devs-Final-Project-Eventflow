@@ -156,7 +156,8 @@
     },
     "dropzone": {
       "placeholder": "Arraste uma imagem aqui ou prima Enter para escolher uma",
-      "helper": "JPG, PNG ou WebP. Até 5 MB. O lado maior é ajustado para 2048 px."
+      "helper": "JPG, PNG ou WebP. Até 5 MB. O lado maior é ajustado para 2048 px.",
+      "remove": "Remover {name}"
     },
     "actions": {
       "upload": "Enviar imagem",

@@ -15,3 +15,8 @@ export { Sidebar } from './Sidebar';
 export { UserMenu } from './UserMenu';
 export { MobileNav } from './MobileNav';
 export { Topbar } from './Topbar';
+export {
+  isNavItemActive,
+  useNavigationSections,
+  type UseNavigationSectionsInput,
+} from './useNavigationSections';

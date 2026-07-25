@@ -145,12 +145,24 @@
   },
   "userMenu": {
     "myProfile": "My profile",
-    "logout": "Log out"
+    "logout": "Log out",
+    "label": "User menu",
+    "role": {
+      "organizer": "Organizer",
+      "vendor": "Vendor",
+      "admin": "Admin"
+    }
   },
   "notifications": {
     "label": "Notifications"
   },
   "mobile": {
-    "close": "Close"
+    "close": "Close",
+    "title": "EventFlow"
+  },
+  "workspace": {
+    "organizer": "Organizer workspace",
+    "vendor": "Vendor workspace",
+    "admin": "Administration"
   }
 }

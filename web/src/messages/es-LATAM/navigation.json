@@ -145,12 +145,24 @@
   },
   "userMenu": {
     "myProfile": "Mi perfil",
-    "logout": "Cerrar sesión"
+    "logout": "Cerrar sesión",
+    "label": "Menú de usuario",
+    "role": {
+      "organizer": "Organizador",
+      "vendor": "Proveedor",
+      "admin": "Administrador"
+    }
   },
   "notifications": {
     "label": "Notificaciones"
   },
   "mobile": {
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "title": "EventFlow"
+  },
+  "workspace": {
+    "organizer": "Espacio de organizador",
+    "vendor": "Espacio de proveedor",
+    "admin": "Administración"
   }
 }
