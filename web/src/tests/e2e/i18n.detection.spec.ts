@@ -7,6 +7,7 @@ test.use({ locale: 'pt-BR' });
 
 test('detección por Accept-Language renderiza en pt sin cookie', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByText('Bem-vindo ao EventFlow')).toBeVisible();
+  // La landing dejó de ser un placeholder: se comprueba el titular real en portugués.
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('plano acionável');
   await expect(page.locator('html')).toHaveAttribute('lang', 'pt');
 });
