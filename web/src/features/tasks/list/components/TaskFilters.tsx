@@ -7,6 +7,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ChangeEvent } from 'react';
+import { SearchInput, Select } from '@/shared/design-system/forms';
 import { STATUS_OPTIONS } from '../schema/filter-options';
 
 function setOrDelete(params: URLSearchParams, key: string, value: string | undefined): void {
@@ -31,45 +32,60 @@ export function TaskFilters(): JSX.Element {
     router.push(`?${params.toString()}`);
   }
 
+  // Las clases BEM (`task-filters`, `task-filters__field`) no tenían hoja de estilo: los tres
+  // controles salían pegados al texto de su label en una sola línea. Se componen ahora con
+  // `Select` / `Input` del design system sobre una rejilla responsive.
   return (
-    <fieldset className="task-filters">
-      <legend>{t('filters.legend')}</legend>
-      <label className="task-filters__field">
-        <span>{t('filters.status.label')}</span>
-        <select
-          value={status}
-          onChange={(e: ChangeEvent<HTMLSelectElement>) => updateParam('status', e.target.value)}
-        >
-          <option value="">{t('filters.status.any')}</option>
-          {STATUS_OPTIONS.map((opt) => (
-            <option key={opt} value={opt}>
-              {t(`status.${opt}`)}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="task-filters__field">
-        <span>{t('filters.aiGenerated.label')}</span>
-        <select
-          value={aiGenerated}
-          onChange={(e: ChangeEvent<HTMLSelectElement>) => updateParam('aiGenerated', e.target.value)}
-        >
-          <option value="">{t('filters.aiGenerated.any')}</option>
-          <option value="true">{t('filters.aiGenerated.true')}</option>
-          <option value="false">{t('filters.aiGenerated.false')}</option>
-        </select>
-      </label>
-      <label className="task-filters__field">
-        <span>{t('filters.categoryCode.label')}</span>
-        <input
-          type="text"
-          value={categoryCode}
-          placeholder={t('filters.categoryCode.placeholder')}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            updateParam('categoryCode', e.target.value.trim())
-          }
-        />
-      </label>
+    <fieldset className="min-w-0 rounded-card border border-subtle bg-surface-subtle p-4 sm:p-6">
+      <legend className="sr-only">{t('filters.legend')}</legend>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <label className="flex flex-col gap-1">
+          <span className="font-ui text-caption uppercase tracking-ef-wide text-secondary">{t('filters.status.label')}</span>
+          <Select
+            value={status}
+            selectSize="md"
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => updateParam('status', e.target.value)}
+          >
+            <option value="">{t('filters.status.any')}</option>
+            {STATUS_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {t(`status.${opt}`)}
+              </option>
+            ))}
+          </Select>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="font-ui text-caption uppercase tracking-ef-wide text-secondary">
+            {t('filters.aiGenerated.label')}
+          </span>
+          <Select
+            value={aiGenerated}
+            selectSize="md"
+            onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+              updateParam('aiGenerated', e.target.value)
+            }
+          >
+            <option value="">{t('filters.aiGenerated.any')}</option>
+            <option value="true">{t('filters.aiGenerated.true')}</option>
+            <option value="false">{t('filters.aiGenerated.false')}</option>
+          </Select>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="font-ui text-caption uppercase tracking-ef-wide text-secondary">
+            {t('filters.categoryCode.label')}
+          </span>
+          <SearchInput
+            inputSize="md"
+            value={categoryCode}
+            placeholder={t('filters.categoryCode.placeholder')}
+            clearLabel={t('filters.categoryCode.clear')}
+            onClear={() => updateParam('categoryCode', '')}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              updateParam('categoryCode', e.target.value.trim())
+            }
+          />
+        </label>
+      </div>
     </fieldset>
   );
 }

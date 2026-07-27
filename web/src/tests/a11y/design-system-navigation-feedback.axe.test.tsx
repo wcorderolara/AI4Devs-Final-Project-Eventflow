@@ -293,3 +293,75 @@ describe('PB-P2-029 · axe · feedback', () => {
     }
   });
 });
+
+/**
+ * PB-P2-030 — Catálogo de los estados extendidos en esta tarea (variantes y props que no existían
+ * cuando se escribió `FeedbackCatalog`). Se audita aparte para que un fallo señale exactamente qué
+ * extensión lo provoca.
+ */
+function StatesCatalog(): React.JSX.Element {
+  return (
+    <main>
+      <h1>Catálogo de estados</h1>
+      <Badge variant="count" srLabel="42 notificaciones sin leer">
+        42
+      </Badge>
+      <Badge variant="seed">SEED-492</Badge>
+      <EmptyState
+        variant="compact"
+        icon={<CalendarX />}
+        title="Ningún usuario coincide con los filtros"
+        description="Prueba a limpiar los filtros aplicados."
+        primaryAction={<TextLink href="/admin/users">Limpiar filtros</TextLink>}
+        headingLevel={2}
+      />
+      <ErrorState
+        title="No pudimos cargar la sección"
+        description={'Revisa tu conexión.\nSi persiste, inténtalo más tarde.'}
+        onRetry={() => {}}
+        retryLabel="Intentar nuevamente"
+        correlationId="a8f9-4b2c-91e3"
+        correlationLabel="Referencia"
+        technicalDetails="Reintento 2 de 3"
+        headingLevel={2}
+      />
+      <PermissionDeniedState
+        title="Acceso denegado"
+        description="No tienes permiso para ver esta sección con tu cuenta actual."
+        action={<TextLink href="/">Volver al inicio</TextLink>}
+        secondaryAction={<TextLink href="/organizer">Ver mis eventos</TextLink>}
+        headingLevel={2}
+      />
+      <Skeleton variant="avatar" />
+      <Skeleton variant="listRow" count={2} />
+      <Skeleton variant="navItem" count={3} />
+      <ProgressIndicator
+        label="Progreso de subida"
+        value={45}
+        valueText="45 %"
+        description="No cierres esta pestaña."
+      />
+      <ProgressIndicator label="Procesando" description="Puede tardar un minuto." />
+    </main>
+  );
+}
+
+describe('PB-P2-030 · axe · estados extendidos', () => {
+  it('catálogo de estados (compact, multilínea, avatar, progreso descrito) sin violaciones', async () => {
+    const { container } = render(<StatesCatalog />);
+    const { critical, otherViolations } = await auditA11y(container);
+    expect(critical, formatViolations(critical)).toEqual([]);
+    expect(otherViolations, formatViolations(otherViolations)).toEqual([]);
+  });
+
+  it('los placeholders de carga no aportan texto y la barra conserva su nombre', () => {
+    render(<StatesCatalog />);
+    expect(screen.getByRole('progressbar', { name: 'Progreso de subida' })).toHaveAttribute(
+      'aria-valuenow',
+      '45',
+    );
+    expect(screen.getByRole('progressbar', { name: 'Procesando' })).not.toHaveAttribute(
+      'aria-valuenow',
+    );
+  });
+});

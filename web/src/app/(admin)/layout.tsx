@@ -1,56 +1,24 @@
-'use client';
-
-import { useTranslations } from 'next-intl';
-import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { AppShell, Badge } from '@/shared/design-system';
-import { ADMIN_NAV_GROUPS, MobileNav, Sidebar, SkipLink, Topbar } from '@/shared/navigation';
-
-const DRAWER_ID = 'admin-mobile-nav';
+import { cookies } from 'next/headers';
+import { COOKIE_ROLE, isRole } from '@/shared/authorization';
+import { AuthenticatedShell } from '@/shared/navigation';
 
 /**
  * Shell autenticado de `admin`.
  *
- * PB-P2-029: adopta `AppShell`; la sidebar agrupada y el drawer pasan a los componentes del
- * design system y comparten el mismo `ADMIN_NAV_GROUPS`. Sin cambios de rutas, grupos, guards ni
- * densidad del contenido (`p-6` se conserva).
+ * Pasa a ser **Server Component** y monta el mismo `AuthenticatedShell` que `(app)` (UI-DEC-008:
+ * un único shell para los tres roles). La sidebar agrupada del admin ya no se elige aquí: la
+ * decide `getRoleNavigation()` a partir del rol de la sesión. Sin cambios de rutas, grupos,
+ * guards ni densidad del contenido (`p-6` se conserva).
+ *
+ * `roleGuardMiddleware` sigue siendo quien impide que un no-admin llegue a `/admin/*`; este
+ * layout sólo decide qué se pinta.
  */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const pathname = usePathname();
-  const t = useTranslations('navigation');
-
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [pathname]);
-
-  const ariaLabel = t('sidebar.admin.label');
+  const roleClaim = cookies().get(COOKIE_ROLE)?.value;
 
   return (
-    <AppShell
-      skipLink={<SkipLink />}
-      topBar={
-        <Topbar onMenuOpen={() => setMenuOpen(true)} isMenuOpen={menuOpen} drawerId={DRAWER_ID} />
-      }
-      sidebar={
-        <Sidebar
-          groups={ADMIN_NAV_GROUPS}
-          ariaLabel={ariaLabel}
-          header={<Badge variant="role">{t('workspace.admin')}</Badge>}
-        />
-      }
-      drawer={
-        <MobileNav
-          groups={ADMIN_NAV_GROUPS}
-          isOpen={menuOpen}
-          onClose={() => setMenuOpen(false)}
-          ariaLabel={ariaLabel}
-          panelId={DRAWER_ID}
-        />
-      }
-      mainClassName="p-6"
-    >
+    <AuthenticatedShell initialRole={isRole(roleClaim) ? roleClaim : null} mainClassName="p-6">
       {children}
-    </AppShell>
+    </AuthenticatedShell>
   );
 }

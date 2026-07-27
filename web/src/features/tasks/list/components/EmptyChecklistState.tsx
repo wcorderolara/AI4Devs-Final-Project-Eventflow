@@ -13,6 +13,16 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { TASK_LIST_RANGES, type TaskListRange } from '../api/tasksListApi.types';
 
+// Los CTA eran `btn btn--primary` / `btn btn--secondary`, clases sin hoja de estilo: se veían
+// como texto suelto. Se replican aquí los tokens del `Button` del design system porque uno de los
+// dos caminos es un `<Link>` de Next y `Button` sólo renderiza `<button>`.
+const CTA_BASE =
+  'focus-ring inline-flex min-h-touch items-center justify-center rounded-button px-4 py-2 ' +
+  'font-ui text-body-sm font-medium transition-colors duration-fast ease-standard ' +
+  'motion-reduce:transition-none';
+const PRIMARY_CTA = `${CTA_BASE} bg-action-primary text-action-primary-foreground hover:bg-action-primary-hover`;
+const SECONDARY_CTA = `${CTA_BASE} border border-action-secondary bg-action-secondary text-primary hover:bg-action-secondary-hover`;
+
 interface Props {
   eventId: string;
   /** US-028: handler para abrir el modal de creación desde el empty state. */
@@ -37,15 +47,19 @@ export function EmptyChecklistState({ eventId, onCreateTask, activeRange }: Prop
   }
 
   return (
-    <div className="empty-checklist" role="region" aria-label={t('title')}>
+    <div
+      className="rounded-card border border-dashed border-subtle bg-surface-subtle p-6 text-center"
+      role="region"
+      aria-label={t('title')}
+    >
       {isFiltered ? (
         <>
-          <h2>{t('rangeFiltered.title')}</h2>
-          <p>{t('rangeFiltered.body')}</p>
-          <div className="empty-checklist__ctas">
+          <h2 className="font-heading text-h3 text-primary">{t('rangeFiltered.title')}</h2>
+          <p className="mt-1 text-body-sm text-secondary">{t('rangeFiltered.body')}</p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
             <button
               type="button"
-              className="btn btn--secondary"
+              className={SECONDARY_CTA}
               onClick={clearRange}
               data-testid="empty-clear-range"
             >
@@ -55,13 +69,13 @@ export function EmptyChecklistState({ eventId, onCreateTask, activeRange }: Prop
               <button
                 ref={triggerRef}
                 type="button"
-                className="btn btn--primary"
+                className={PRIMARY_CTA}
                 onClick={onCreateTask}
               >
                 {t('ctaCreate')}
               </button>
             ) : (
-              <Link href={`/organizer/events/${eventId}/tasks/new`} className="btn btn--primary">
+              <Link href={`/organizer/events/${eventId}/tasks/new`} className={PRIMARY_CTA}>
                 {t('ctaCreate')}
               </Link>
             )}
@@ -69,24 +83,24 @@ export function EmptyChecklistState({ eventId, onCreateTask, activeRange }: Prop
         </>
       ) : (
         <>
-          <h2>{t('title')}</h2>
-          <p>{t('body')}</p>
-          <div className="empty-checklist__ctas">
+          <h2 className="font-heading text-h3 text-primary">{t('title')}</h2>
+          <p className="mt-1 text-body-sm text-secondary">{t('body')}</p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
             {onCreateTask ? (
               <button
                 ref={triggerRef}
                 type="button"
-                className="btn btn--primary"
+                className={PRIMARY_CTA}
                 onClick={onCreateTask}
               >
                 {t('ctaCreate')}
               </button>
             ) : (
-              <Link href={`/organizer/events/${eventId}/tasks/new`} className="btn btn--primary">
+              <Link href={`/organizer/events/${eventId}/tasks/new`} className={PRIMARY_CTA}>
                 {t('ctaCreate')}
               </Link>
             )}
-            <Link href={`/organizer/events/${eventId}/ai`} className="btn btn--secondary">
+            <Link href={`/organizer/events/${eventId}/ai`} className={SECONDARY_CTA}>
               {t('ctaGenerateAi')}
             </Link>
           </div>

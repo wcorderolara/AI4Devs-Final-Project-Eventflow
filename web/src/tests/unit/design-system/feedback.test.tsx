@@ -7,6 +7,7 @@
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CalendarX } from 'lucide-react';
+import { useRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   Alert,
@@ -102,15 +103,30 @@ describe('PB-P2-029 · StatusBadge', () => {
     expect(screen.getByText('Aprobado')).toBeInTheDocument();
   });
 
-  it('sólo se anuncia como status cuando se pasa `ariaLabel`', () => {
-    const { rerender } = render(<StatusBadge status="warning">Pendiente</StatusBadge>);
+  it('sin `ariaLabel` no expone rol: el texto visible es el nombre accesible', () => {
+    render(<StatusBadge status="warning">Pendiente</StatusBadge>);
     expect(screen.queryByRole('status')).toBeNull();
-    rerender(
+    expect(screen.queryByRole('img')).toBeNull();
+  });
+
+  it('`ariaLabel` aporta el nombre accesible sin crear región viva (listado estático)', () => {
+    render(
       <StatusBadge status="warning" ariaLabel="Estado del evento: Pendiente">
         Pendiente
       </StatusBadge>,
     );
-    expect(screen.getByRole('status')).toHaveAccessibleName('Estado del evento: Pendiente');
+    // PB-P2-031: `role="img"` etiqueta el badge sin que N filas se anuncien al renderizar.
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.getByRole('img')).toHaveAccessibleName('Estado del evento: Pendiente');
+  });
+
+  it('`live` es el opt-in de región viva, igual que en Alert / InlineMessage / Toast', () => {
+    render(
+      <StatusBadge status="success" ariaLabel="Estado del evento: Activo" live>
+        Activo
+      </StatusBadge>,
+    );
+    expect(screen.getByRole('status')).toHaveAccessibleName('Estado del evento: Activo');
   });
 });
 
@@ -576,5 +592,352 @@ describe('PB-P2-029 · sin regresión de anuncios duplicados', () => {
     await waitFor(() => expect(screen.getAllByRole('alert')).toHaveLength(1));
     expect(screen.getByText('No se pudo guardar')).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('Reintenta en unos segundos');
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+// PB-P2-030 — Navigation, Feedback & States. Estados y comportamientos que faltaban tras
+// PB-P2-029, verificados contra el screen Stitch
+// `projects/10889252267442839867/screens/19e34fc844be45a39f7e86e00ae2980c`
+// («Component Design System — Navigation, Feedback & States»).
+//
+// Ningún componente se recrea: se extienden y normalizan los ya existentes.
+// ---------------------------------------------------------------------------------------------
+
+describe('PB-P2-030 · Badge · contexto accesible del contador', () => {
+  beforeEach(cleanup);
+
+  it('`srLabel` describe el contador y silencia el dígito aislado', () => {
+    render(
+      <Badge variant="count" srLabel="3 tareas pendientes" data-testid="count">
+        3
+      </Badge>,
+    );
+    const badge = screen.getByTestId('count');
+    // Un «3» suelto no significa nada para el lector de pantalla; la descripción lo sustituye.
+    expect(badge).toHaveTextContent('3 tareas pendientes');
+    expect(badge.querySelector('[aria-hidden="true"]')).toHaveTextContent('3');
+  });
+
+  it('sin `srLabel` el texto visible sigue siendo el contenido anunciado', () => {
+    render(<Badge data-testid="plain">Organizador</Badge>);
+    const badge = screen.getByTestId('plain');
+    expect(badge).toHaveTextContent('Organizador');
+    expect(badge.querySelector('[aria-hidden="true"]')).toBeNull();
+  });
+
+  it('cada variante compartida mapea a utilidades semánticas, nunca a paleta cruda', () => {
+    render(
+      <>
+        <Badge data-testid="v-neutral">Metadata</Badge>
+        <Badge variant="role" data-testid="v-role">
+          Admin
+        </Badge>
+        <Badge variant="seed" data-testid="v-seed">
+          SEED-492
+        </Badge>
+        <Badge variant="count" data-testid="v-count">
+          42
+        </Badge>
+      </>,
+    );
+    expect(screen.getByTestId('v-neutral').className).toContain('bg-surface-subtle');
+    expect(screen.getByTestId('v-role').className).toContain('bg-surface-selected');
+    expect(screen.getByTestId('v-seed').className).toContain('bg-feedback-info');
+    expect(screen.getByTestId('v-count').className).toContain('bg-action-primary');
+    for (const id of ['v-neutral', 'v-role', 'v-seed', 'v-count']) {
+      expect(screen.getByTestId(id).className).not.toMatch(/-(?:50|100|200|500|600|700|800)\b/);
+      expect(screen.getByTestId(id).className).toContain('rounded-badge');
+    }
+  });
+});
+
+describe('PB-P2-030 · StatusBadge · mapeo a tokens semánticos', () => {
+  beforeEach(cleanup);
+
+  const TONE_CLASS = {
+    neutral: 'bg-surface-subtle',
+    info: 'bg-feedback-info',
+    success: 'bg-feedback-success',
+    warning: 'bg-feedback-warning',
+    error: 'bg-feedback-error',
+  } as const;
+
+  it.each([
+    ['draft', 'neutral'],
+    ['active', 'success'],
+    ['completed', 'neutral'],
+    ['cancelled', 'error'],
+    ['warning', 'warning'],
+    ['info', 'info'],
+  ] as const)('el estado %s consume los tokens del tono %s', (status, tone) => {
+    render(
+      <StatusBadge status={status} data-testid="badge">
+        {`Etiqueta ${status}`}
+      </StatusBadge>,
+    );
+    const badge = screen.getByTestId('badge');
+    expect(badge.className).toContain(TONE_CLASS[tone]);
+    // Stitch pinta `completed` en verde y usa hex crudos (`#dcfce7`, `#fef08a`, `#e0f2fe`);
+    // la autoridad es Component Foundations §14, que lo asigna a neutral.
+    expect(badge.className).not.toMatch(/#[0-9a-fA-F]{3,8}/);
+  });
+
+  it('cada estado de dominio conserva un glifo propio además del texto', () => {
+    const { container: draft } = render(<StatusBadge status="draft">Borrador</StatusBadge>);
+    const draftGlyph = draft.querySelector('svg')?.outerHTML;
+    cleanup();
+    const { container: cancelled } = render(
+      <StatusBadge status="cancelled">Cancelado</StatusBadge>,
+    );
+    expect(cancelled.querySelector('svg')?.outerHTML).not.toBe(draftGlyph);
+  });
+});
+
+describe('PB-P2-030 · Alert · reenvío de ref', () => {
+  beforeEach(cleanup);
+
+  it('expone el nodo para que un formulario pueda enfocar el resumen de errores', () => {
+    function Harness(): React.JSX.Element {
+      const ref = useRef<HTMLDivElement>(null);
+      return (
+        <>
+          <button type="button" onClick={() => ref.current?.focus()}>
+            Ir al error
+          </button>
+          <Alert ref={ref} variant="error" live tabIndex={-1} data-testid="alert">
+            Revisa los campos marcados
+          </Alert>
+        </>
+      );
+    }
+    render(<Harness />);
+    screen.getByRole('button', { name: 'Ir al error' }).click();
+    expect(screen.getByTestId('alert')).toHaveFocus();
+  });
+});
+
+describe('PB-P2-030 · InlineMessage · identificador para `aria-describedby`', () => {
+  beforeEach(cleanup);
+
+  it('genera un id estable cuando el consumidor no lo aporta', () => {
+    render(
+      <InlineMessage tone="info" data-testid="msg">
+        Se aplicará al guardar
+      </InlineMessage>,
+    );
+    const id = screen.getByTestId('msg').getAttribute('id');
+    expect(id).toBeTruthy();
+    expect(id).not.toBe('');
+  });
+
+  it('el id generado sirve para asociar el mensaje a un control externo', () => {
+    function Harness(): React.JSX.Element {
+      const id = 'inline-desc';
+      return (
+        <>
+          <input aria-label="Aforo" aria-describedby={id} />
+          <InlineMessage id={id} tone="warning">
+            Supera el aforo recomendado
+          </InlineMessage>
+        </>
+      );
+    }
+    render(<Harness />);
+    expect(screen.getByRole('textbox', { name: 'Aforo' })).toHaveAccessibleDescription(
+      'Supera el aforo recomendado',
+    );
+  });
+
+  it('un mensaje traducido largo envuelve en lugar de recortarse', () => {
+    const long =
+      'Este mensaje contextual es deliberadamente extenso para comprobar que la traducción ' +
+      'más larga de los cuatro locales soportados envuelve en varias líneas sin truncarse.';
+    render(
+      <InlineMessage tone="warning" data-testid="msg">
+        {long}
+      </InlineMessage>,
+    );
+    expect(screen.getByTestId('msg')).toHaveTextContent(long);
+    expect(screen.getByTestId('msg').innerHTML).toContain('break-words');
+    expect(screen.getByTestId('msg').innerHTML).not.toContain('truncate');
+  });
+});
+
+describe('PB-P2-030 · EmptyState · variantes y ejemplos de uso', () => {
+  beforeEach(cleanup);
+
+  it('la variante compact reduce el espaciado sin perder título ni acción', async () => {
+    const user = userEvent.setup();
+    const onCreate = vi.fn();
+    render(
+      <EmptyState
+        variant="compact"
+        title="Sin cotizaciones"
+        primaryAction={
+          <button type="button" onClick={onCreate}>
+            Solicitar
+          </button>
+        }
+        data-testid="empty"
+      />,
+    );
+    const empty = screen.getByTestId('empty');
+    expect(empty.className).toContain('p-4');
+    expect(screen.getByRole('heading', { name: 'Sin cotizaciones' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Solicitar' }));
+    expect(onCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it('section y page conservan su escala mayor', () => {
+    const { rerender } = render(
+      <EmptyState variant="section" title="Sin datos" data-testid="empty" />,
+    );
+    expect(screen.getByTestId('empty').className).toContain('p-6');
+    rerender(<EmptyState variant="page" title="Sin datos" data-testid="empty" />);
+    expect(screen.getByTestId('empty').className).toContain('p-10');
+  });
+
+  it.each([
+    ['No hay eventos', 'Aún no has creado ningún evento.'],
+    ['Ningún usuario coincide con los filtros', 'Prueba a limpiar los filtros aplicados.'],
+    ['Sin ejecuciones de IA', 'Todavía no has generado ninguna sugerencia.'],
+  ])('el copy «%s» llega por props, no vive en el componente', (title, description) => {
+    render(<EmptyState icon={<CalendarX />} title={title} description={description} />);
+    expect(screen.getByRole('heading', { name: title })).toBeInTheDocument();
+    expect(screen.getByText(description)).toBeInTheDocument();
+  });
+
+  it('no introduce dependencias de imagen ni ilustraciones', () => {
+    const { container } = render(<EmptyState icon={<CalendarX />} title="Sin eventos" />);
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.querySelector('svg')?.closest('[aria-hidden="true"]')).not.toBeNull();
+  });
+});
+
+describe('PB-P2-030 · ErrorState · mensajes multilínea y metadata técnica', () => {
+  beforeEach(cleanup);
+
+  it('conserva los saltos de línea de un mensaje localizado', () => {
+    const multiline = 'No pudimos cargar tus eventos.\nRevisa tu conexión e inténtalo de nuevo.';
+    render(<ErrorState title="Error" description={multiline} data-testid="error" />);
+    const paragraph = screen.getByText(/No pudimos cargar tus eventos/);
+    expect(paragraph.className).toContain('whitespace-pre-line');
+    expect(paragraph.textContent).toBe(multiline);
+  });
+
+  it('la metadata técnica es texto secundario, nunca el mensaje principal', () => {
+    render(
+      <ErrorState
+        title="No pudimos cargar la sección"
+        description="Inténtalo de nuevo en unos segundos."
+        correlationId="a8f9-4b2c-91e3"
+        correlationLabel="Referencia"
+        technicalDetails="Reintento 2 de 3"
+        data-testid="error"
+      />,
+    );
+    expect(screen.getByRole('heading')).toHaveTextContent('No pudimos cargar la sección');
+    expect(screen.getByText('a8f9-4b2c-91e3')).toBeInTheDocument();
+    expect(screen.getByText('Reintento 2 de 3').className).toContain('text-muted');
+  });
+
+  it('la API no admite un Error ni un payload: no puede filtrar detalle interno', () => {
+    render(
+      <ErrorState
+        title="Error"
+        description="Inténtalo de nuevo."
+        technicalDetails="Reintento 2 de 3"
+      />,
+    );
+    const text = screen.getByRole('alert').textContent ?? '';
+    expect(text).not.toMatch(/TypeError|ECONNREFUSED|at .*\.tsx:|Bearer |sk-|prompt/i);
+  });
+});
+
+describe('PB-P2-030 · PermissionDeniedState · salida secundaria', () => {
+  beforeEach(cleanup);
+
+  it('admite dos salidas seguras y ninguna revela el recurso restringido', () => {
+    render(
+      <PermissionDeniedState
+        title="Acceso denegado"
+        description="No tienes permiso para ver esta sección con tu cuenta actual."
+        action={<TextLink href="/">Volver al inicio</TextLink>}
+        secondaryAction={<TextLink href="/organizer">Ver mis eventos</TextLink>}
+        data-testid="denied"
+      />,
+    );
+    expect(screen.getByRole('link', { name: 'Volver al inicio' })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: 'Ver mis eventos' })).toHaveAttribute(
+      'href',
+      '/organizer',
+    );
+    // Sin identificador del recurso ni pista sobre su existencia o sobre la regla incumplida.
+    const text = screen.getByTestId('denied').textContent ?? '';
+    expect(text).not.toMatch(/rol|scope|permission\.|policy|id=|administrador/i);
+  });
+});
+
+describe('PB-P2-030 · Skeleton · variante avatar y semántica de la región', () => {
+  beforeEach(cleanup);
+
+  it('la variante avatar es circular y decorativa', () => {
+    render(<Skeleton variant="avatar" data-testid="skeleton" />);
+    const skeleton = screen.getByTestId('skeleton');
+    expect(skeleton).toHaveAttribute('aria-hidden', 'true');
+    expect(skeleton).toHaveAttribute('data-variant', 'avatar');
+    expect(skeleton.innerHTML).toContain('rounded-badge');
+  });
+
+  it.each(['text', 'avatar', 'card', 'listRow', 'tableRow', 'navItem'] as const)(
+    'la variante %s no aporta texto al árbol de accesibilidad',
+    (variant) => {
+      render(<Skeleton variant={variant} data-testid="skeleton" />);
+      expect(screen.getByTestId('skeleton').textContent).toBe('');
+    },
+  );
+
+  it('usa tamaños del sistema, no anchos arbitrarios en píxeles', () => {
+    render(<Skeleton variant="avatar" data-testid="skeleton" />);
+    expect(screen.getByTestId('skeleton').innerHTML).toContain('h-icon-lg');
+    expect(screen.getByTestId('skeleton').innerHTML).not.toMatch(/w-\[\d+px\]|style="width/);
+  });
+});
+
+describe('PB-P2-030 · ProgressIndicator · valores acotados', () => {
+  beforeEach(cleanup);
+
+  it('`aria-valuenow` nunca sale del rango declarado', () => {
+    const { rerender } = render(<ProgressIndicator label="Carga" value={250} max={100} />);
+    let bar = screen.getByRole('progressbar');
+    expect(bar).toHaveAttribute('aria-valuenow', '100');
+    rerender(<ProgressIndicator label="Carga" value={-40} max={100} />);
+    bar = screen.getByRole('progressbar');
+    expect(bar).toHaveAttribute('aria-valuenow', '0');
+    const fill = bar.querySelector('span') as HTMLElement;
+    expect(fill.style.width).toBe('0%');
+  });
+
+  it('un rango degenerado se trata como indeterminado en lugar de exponer datos inválidos', () => {
+    render(<ProgressIndicator label="Procesando" value={5} min={10} max={10} />);
+    const bar = screen.getByRole('progressbar', { name: 'Procesando' });
+    expect(bar).not.toHaveAttribute('aria-valuenow');
+    expect(bar).not.toHaveAttribute('aria-valuemin');
+    expect(bar).toHaveAttribute('aria-busy', 'true');
+  });
+
+  it('la descripción se asocia a la barra y el indeterminado no simula porcentaje', () => {
+    render(<ProgressIndicator label="Generando sugerencia" description="Puede tardar un minuto" />);
+    const bar = screen.getByRole('progressbar', { name: 'Generando sugerencia' });
+    expect(bar).toHaveAccessibleDescription('Puede tardar un minuto');
+    expect(bar).not.toHaveAttribute('aria-valuenow');
+    expect(screen.queryByText(/%/)).toBeNull();
+  });
+
+  it('el porcentaje visible sólo aparece cuando el consumidor lo formatea', () => {
+    render(<ProgressIndicator label="Progreso de subida" value={45} valueText="45 %" />);
+    expect(screen.getByText('45 %')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuetext', '45 %');
   });
 });

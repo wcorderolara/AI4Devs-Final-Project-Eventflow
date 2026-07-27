@@ -36,6 +36,16 @@ export interface MobileNavigationDrawerProps {
   sections: readonly NavigationSection[];
   /** Bloque de cuenta / acciones al pie (nombre, email, cerrar sesión). Opcional. */
   footer?: ReactNode;
+  /**
+   * Se dispara al activar cualquier enlace del panel. Se propaga hasta el `<a>` de cada
+   * `SidebarItem`, de modo que `Enter` funciona igual que el clic sin colgar handlers de
+   * elementos no interactivos.
+   *
+   * El consumidor que navega entre rutas puede cerrar el drawer observando el `pathname`, pero
+   * eso no cubre los enlaces de ancla (`#seccion`) de una landing: la URL cambia sin cambiar de
+   * ruta y el panel se quedaría abierto tapando justo la sección a la que se ha saltado.
+   */
+  onNavigate?: () => void;
   /** `id` del panel, para enlazarlo con `aria-controls` del trigger. */
   panelId?: string;
   className?: string;
@@ -49,6 +59,7 @@ export function MobileNavigationDrawer({
   closeLabel,
   sections,
   footer,
+  onNavigate,
   panelId,
   className,
 }: MobileNavigationDrawerProps): React.JSX.Element {
@@ -58,9 +69,10 @@ export function MobileNavigationDrawer({
       <div className="fixed inset-y-0 left-0 flex w-sidebar max-w-[85vw]">
         <DialogPanel
           id={panelId}
-          className="flex w-full flex-col overflow-y-auto bg-surface shadow-overlay-modal"
+          // Mismo cromo que la sidebar de desktop: el drawer es su equivalente en mobile.
+          className="flex w-full flex-col overflow-y-auto bg-sidebar shadow-overlay-modal"
         >
-          <div className="flex items-center justify-between gap-2 border-b border-subtle p-4">
+          <div className="flex items-center justify-between gap-2 border-b border-chrome p-4">
             <DialogTitle className="min-w-0 truncate font-heading text-h3 font-semibold text-link">
               {title}
             </DialogTitle>
@@ -71,10 +83,12 @@ export function MobileNavigationDrawer({
             className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-4"
           >
             {sections.map((section) => (
-              <SidebarSection key={section.id} section={section} />
+              <SidebarSection key={section.id} section={section} onNavigate={onNavigate} />
             ))}
           </nav>
-          {footer ? <div className="mt-auto border-t border-subtle p-4">{footer}</div> : null}
+          {footer ? (
+            <div className="mt-auto border-t border-chrome bg-sidebar-footer p-4">{footer}</div>
+          ) : null}
         </DialogPanel>
       </div>
     </Dialog>

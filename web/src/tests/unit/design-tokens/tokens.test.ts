@@ -22,6 +22,7 @@ import {
   icon,
   layout,
   motion,
+  platform,
   radii,
   surface,
   text,
@@ -119,6 +120,27 @@ describe('PB-P2-027 · semánticos aprobados (Design Tokens §9–§11)', () => 
     expect(surface.selected).toBe('#F5F1FE');
   });
 
+  it('el cromo del shell usa la rampa cálida del screen Stitch del layout principal', () => {
+    // Origen: `projects/10889252267442839867/screens/d1d8a7612a6a41ba84a183ec9a53f434`.
+    // Estos valores SON el look & feel aprobado del layout principal: si alguien devuelve el
+    // cromo a blanco puro, este test falla.
+    expect(color.canvas.bright).toBe('#FCF9F8');
+    expect(color.canvas.low).toBe('#F6F3F2');
+    expect(color.canvas.container).toBe('#F0EDED');
+    expect(color.canvas.high).toBe('#EAE7E7');
+    expect(color.canvas.outlineVariant).toBe('#CBC3D6');
+
+    expect(platform.pageBackground).toBe(color.canvas.bright);
+    expect(platform.headerBackground).toBe(color.canvas.bright);
+    expect(platform.sidebarBackground).toBe(color.canvas.low);
+    expect(platform.sidebarFooterBackground).toBe(color.canvas.container);
+    expect(platform.sidebarItemHover).toBe(color.canvas.high);
+    expect(platform.chromeBorder).toBe(color.canvas.outlineVariant);
+    // El lienzo de contenido ya no es `neutral.50`; el blanco puro queda para las cards.
+    expect(background.page).toBe(color.canvas.bright);
+    expect(surface.default).toBe('#FFFFFF');
+  });
+
   it('bordes exponen default/subtle/strong/interactive', () => {
     expect(borderColor.default).toBe('#D4D4D4');
     expect(borderColor.subtle).toBe('#E5E5E5');
@@ -212,9 +234,9 @@ describe('PB-P2-027 · foco, forma, elevación, layout, motion, z-index', () => 
     expect(layout.pagePaddingMobile).toBe('16px');
     expect(layout.pagePaddingTablet).toBe('32px');
     expect(layout.pagePaddingDesktop).toBe('48px');
-    expect([layout.gridColumnsDesktop, layout.gridColumnsTablet, layout.gridColumnsMobile]).toEqual([
-      12, 8, 4,
-    ]);
+    expect([layout.gridColumnsDesktop, layout.gridColumnsTablet, layout.gridColumnsMobile]).toEqual(
+      [12, 8, 4],
+    );
     expect(breakpoint).toEqual({
       sm: '640px',
       md: '768px',
@@ -278,7 +300,10 @@ describe('PB-P2-027 · tipografía y arquitectura de capas', () => {
     expect(componentAliases.button.primary.background).toBe(actionPrimary.background);
     expect(componentAliases.input.border).toBe(borderColor.default);
     expect(componentAliases.card.radius).toBe(radii.card);
-    expect(componentAliases.sidebarItem.activeForeground).toBe('#6238C7');
+    // El ítem activo pasó a relleno violeta con texto blanco (look & feel del screen Stitch
+    // del layout principal), en lugar del chip violeta claro con texto `violet.700`.
+    expect(componentAliases.sidebarItem.activeBackground).toBe('#7B4EE8');
+    expect(componentAliases.sidebarItem.activeForeground).toBe('#FFFFFF');
     expect(componentAliases.aiRecommendation.background).toBe(ai.surface);
     expect(componentAliases.aiRecommendation.border).toBe(ai.border);
   });

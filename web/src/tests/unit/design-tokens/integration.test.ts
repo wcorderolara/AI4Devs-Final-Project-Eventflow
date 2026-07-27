@@ -11,11 +11,13 @@ import {
   actionDestructive,
   actionMarketing,
   actionPrimary,
+  background,
   borderColor,
   elevation,
   feedback,
   focusRing,
   layout,
+  platform,
   radii,
   surface,
   text,
@@ -89,6 +91,14 @@ describe('PB-P2-027 · CSS custom properties sincronizadas con la capa TS', () =
     ['--color-ai-label', ai.label],
     ['--color-ai-icon', ai.icon],
     ['--color-ai-text', ai.text],
+    ['--color-background-page', background.page],
+    ['--color-platform-sidebar-background', platform.sidebarBackground],
+    ['--color-platform-sidebar-footer-background', platform.sidebarFooterBackground],
+    ['--color-platform-sidebar-item-hover', platform.sidebarItemHover],
+    ['--color-platform-sidebar-item-active', platform.sidebarItemActive],
+    ['--color-platform-sidebar-item-active-foreground', platform.sidebarItemActiveForeground],
+    ['--color-platform-header-background', platform.headerBackground],
+    ['--color-platform-chrome-border', platform.chromeBorder],
     ['--focus-ring-color', focusRing.ringColor],
     ['--focus-ring-offset-color', focusRing.ringOffsetColor],
     ['--focus-ring-width', focusRing.ringWidth],
@@ -252,14 +262,27 @@ describe('PB-P2-027 · consumidores migrados', () => {
 
     const appSidebar = read('src/shared/design-system/navigation/AppSidebar.tsx');
     expect(appSidebar).toContain('w-sidebar');
-    expect(appSidebar).toContain('border-subtle');
+    // Cromo tintado del screen Stitch del layout principal: la sidebar dejó de ser blanca y su
+    // separador es el hairline `outline-variant`, no `border-subtle`.
+    expect(appSidebar).toContain('bg-sidebar');
+    expect(appSidebar).toContain('border-chrome');
+
+    const topBar = read('src/shared/design-system/navigation/TopBar.tsx');
+    expect(topBar).toContain('bg-header');
+    expect(topBar).toContain('border-chrome');
+
+    const appShell = read('src/shared/design-system/navigation/AppShell.tsx');
+    expect(appShell).toContain('bg-page');
 
     const skipLink = read('src/shared/navigation/SkipLink.tsx');
     expect(skipLink).toContain('bg-action-primary');
   });
 
-  it('AIBadge (superficie AI representativa) consume la familia ai.* con icono + label', () => {
-    const src = read('src/features/ai/event-plan/components/AIBadge.tsx');
+  it('AILabel (primitiva AI canónica) consume la familia ai.* con icono + label', () => {
+    // PB-P2-032: la garantía se mueve al design system. `AIBadge` dejó de mantener markup
+    // propio, así que los tokens se auditan donde ahora viven — para todos sus consumidores,
+    // no sólo para el badge de event-plan.
+    const src = read('src/shared/design-system/ai/AILabel.tsx');
     expect(src).toContain('bg-ai-surface');
     expect(src).toContain('border-ai');
     expect(src).toContain('text-ai-label');
@@ -267,6 +290,13 @@ describe('PB-P2-027 · consumidores migrados', () => {
     // UI-DEC-010: la distinción no puede depender sólo del color.
     expect(src).toContain('Sparkles');
     expect(src).toContain("from 'lucide-react'");
+    expect(src).not.toMatch(/purple-\d/);
+  });
+
+  it('AIBadge (consumidor representativo) delega en la primitiva y sólo aporta el copy', () => {
+    const src = read('src/features/ai/event-plan/components/AIBadge.tsx');
+    expect(src).toContain('AILabel');
+    expect(src).toContain("from '@/shared/design-system'");
     expect(src).toContain('badgeSuggested');
     expect(src).not.toMatch(/purple-\d/);
   });

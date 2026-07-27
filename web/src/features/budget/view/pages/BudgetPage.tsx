@@ -5,6 +5,8 @@
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import Link from 'next/link';
+import { Plus } from 'lucide-react';
+import { Button } from '@/shared/design-system';
 import { ApiError } from '@/shared/api-client';
 import { useEventBudget } from '../hooks/useEventBudget';
 import { BudgetSummary } from '../components/BudgetSummary';
@@ -22,9 +24,20 @@ import type { BudgetItemDto } from '../api/budgetApi';
 interface BudgetPageProps {
   eventId: string;
   readOnly?: boolean;
+  /**
+   * `true` cuando la vista se monta dentro del tab «Budget» del dashboard del evento: suprime el
+   * cromo propio de la ruta standalone (enlace «volver» y `<h1>`, que ya aporta el dashboard) y
+   * el contenedor centrado, para que herede el ancho del panel. La ruta
+   * `/organizer/events/:id/budget` sigue montándola sin la prop y conserva su cabecera.
+   */
+  embedded?: boolean;
 }
 
-export function BudgetPage({ eventId, readOnly = false }: BudgetPageProps): React.JSX.Element {
+export function BudgetPage({
+  eventId,
+  readOnly = false,
+  embedded = false,
+}: BudgetPageProps): React.JSX.Element {
   const t = useTranslations('budget.page');
   const locale = useLocale();
   const query = useEventBudget(eventId);
@@ -36,28 +49,33 @@ export function BudgetPage({ eventId, readOnly = false }: BudgetPageProps): Reac
   const errorMsg = (err: unknown): string | null => (err instanceof ApiError ? err.message : null);
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-6">
-      <div className="flex items-center justify-between">
-        <Link
-          href={`/organizer/events/${eventId}`}
-          className="text-sm text-neutral-600 underline"
-        >
-          {t('back')}
-        </Link>
+    <div className={embedded ? 'w-full space-y-6' : 'mx-auto w-full max-w-4xl space-y-6'}>
+      <div className={embedded ? 'flex items-center justify-end' : 'flex items-center justify-between'}>
+        {!embedded ? (
+          <Link
+            href={`/organizer/events/${eventId}`}
+            className="text-sm text-neutral-600 underline"
+          >
+            {t('back')}
+          </Link>
+        ) : null}
         {!readOnly ? (
-          <button
-            type="button"
+          // `bg-blue-600` era azul crudo de Tailwind, ajeno a la paleta violeta de la marca y
+          // muy visible junto al resto del detalle del evento. Pasa al `Button` del design system.
+          <Button
+            leadingIcon={<Plus aria-hidden="true" className="h-icon-sm w-icon-sm" />}
             onClick={() => setShowAdd(true)}
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white"
           >
             {t('addItemCta')}
-          </button>
+          </Button>
         ) : null}
       </div>
 
-      <header>
-        <h1 className="text-2xl font-bold text-neutral-900">{t('title')}</h1>
-      </header>
+      {!embedded ? (
+        <header>
+          <h1 className="text-2xl font-bold text-neutral-900">{t('title')}</h1>
+        </header>
+      ) : null}
 
       {query.isLoading ? (
         <div role="status" aria-live="polite" className="space-y-3" data-testid="budget-loading">

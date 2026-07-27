@@ -6,7 +6,6 @@ import {
   actionMarketing,
   actionPrimary,
   actionSecondary,
-  background,
   borderColor,
   breakpoint,
   color,
@@ -94,7 +93,14 @@ const config: Config = {
 
       // --- Background ------------------------------------------------------------
       backgroundColor: {
-        page: background.page,
+        // Cromo del shell autenticado (screen Stitch del layout principal): el lienzo y la
+        // topbar comparten `canvas.bright`; la sidebar baja un paso en la rampa.
+        page: platform.pageBackground,
+        header: platform.headerBackground,
+        sidebar: {
+          DEFAULT: platform.sidebarBackground,
+          footer: platform.sidebarFooterBackground,
+        },
         surface: {
           DEFAULT: surface.default,
           subtle: surface.subtle,
@@ -144,6 +150,8 @@ const config: Config = {
         },
         'sidebar-item-hover': platform.sidebarItemHover,
         'sidebar-item-active': platform.sidebarItemActive,
+        // Marca de acento del ítem activo: se invierte sobre el relleno violeta.
+        'sidebar-item-active-foreground': platform.sidebarItemActiveForeground,
         'marketing-hero': marketing.heroSurface,
         scrim: overlay.scrim,
         'scrim-light': overlay.scrimLight,
@@ -158,6 +166,8 @@ const config: Config = {
         interactive: borderColor.interactive,
         disabled: borderColor.disabled,
         separator: borderColor.separator,
+        /** Hairline del cromo del shell (sidebar / topbar), `outline-variant` de Stitch. */
+        chrome: platform.chromeBorder,
         ai: ai.border,
         'ai-strong': ai.borderStrong,
         'feedback-success': feedback.success.border,

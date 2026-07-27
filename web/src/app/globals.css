@@ -30,7 +30,8 @@
     /* --- Background & surface (9.2, 10.2) ---------------------------------- */
     --color-background-default: #ffffff;
     --color-background-subtle: #fafafa;
-    --color-background-page: #fafafa;
+    /* Lienzo del area de contenido: gris calido del screen Stitch del layout principal. */
+    --color-background-page: #fcf9f8;
     --color-surface-default: #ffffff;
     --color-surface-subtle: #fafafa;
     --color-surface-elevated: #ffffff;
@@ -102,10 +103,15 @@
     --color-ai-pending: #946df8;
 
     /* --- Platform & marketing aliases (10) --------------------------------- */
-    --color-platform-sidebar-background: #ffffff;
-    --color-platform-sidebar-item-hover: rgba(23, 23, 23, 0.04);
-    --color-platform-sidebar-item-active: #f5f1fe;
-    --color-platform-sidebar-item-active-foreground: #6238c7;
+    /* Cromo del shell autenticado — screen Stitch "EventFlow - Layout Principal (Base)".
+       Rampa de grises calidos para sidebar/topbar/lienzo; item activo RELLENO en violeta. */
+    --color-platform-sidebar-background: #f6f3f2;
+    --color-platform-sidebar-footer-background: #f0eded;
+    --color-platform-sidebar-item-hover: #eae7e7;
+    --color-platform-sidebar-item-active: #7b4ee8;
+    --color-platform-sidebar-item-active-foreground: #ffffff;
+    --color-platform-header-background: #fcf9f8;
+    --color-platform-chrome-border: #cbc3d6;
     --color-marketing-accent-lilac: #c4b7e5;
     --color-marketing-accent-coral: #ee8c8d;
     --color-marketing-hero-surface: #fafafa;
@@ -176,6 +182,14 @@
     --z-modal: 300;
     --z-toast: 400;
     --z-tooltip: 500;
+  }
+
+  /* Desplazamiento suave al saltar a un ancla (`/#features`, `#main-content`).
+     Va en `html` porque `scroll-behavior` solo surte efecto en el elemento que scrollea, no en
+     un contenedor intermedio. El bloque `prefers-reduced-motion` de mas abajo lo devuelve a
+     `auto` (UI-DEC-015 / WCAG 2.3.3): quien pide menos movimiento salta directo. */
+  html {
+    scroll-behavior: smooth;
   }
 
   /* Defaults globales minimos. Deliberadamente NO se estilan controles individuales

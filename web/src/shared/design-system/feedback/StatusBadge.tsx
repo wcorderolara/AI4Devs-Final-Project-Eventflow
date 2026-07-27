@@ -48,10 +48,17 @@ export interface StatusBadgeProps {
   /** Sustituye el glifo por defecto del tono (mismo tamaño, sigue `aria-hidden`). */
   icon?: ReactNode;
   /**
-   * `role="status"` + nombre accesible. Sólo cuando el badge cambia en vivo tras una acción del
-   * usuario; en listados estáticos se omite para no saturar al lector de pantalla.
+   * Nombre accesible que **sustituye** al texto visible cuando éste se queda corto
+   * (`Excedido` → `excedido por $300`). Sin él, el badge se anuncia por su texto.
    */
   ariaLabel?: string;
+  /**
+   * Opt-in de región viva, igual que en `Alert` / `InlineMessage` / `Toast` (CMP-DEC-022): sólo
+   * cuando el estado cambia tras una acción del usuario. En un listado estático el badge lleva
+   * `role="img"` —un gráfico etiquetado— para aportar su nombre accesible sin que decenas de
+   * filas se anuncien solas al renderizar. Requiere `ariaLabel`.
+   */
+  live?: boolean;
   className?: string;
   'data-testid'?: string;
   'data-status'?: string;
@@ -87,6 +94,7 @@ export function StatusBadge({
   showIcon = true,
   icon,
   ariaLabel,
+  live = false,
   className,
   'data-testid': testId,
   'data-status': dataStatus,
@@ -96,7 +104,7 @@ export function StatusBadge({
 
   return (
     <span
-      role={ariaLabel ? 'status' : undefined}
+      role={ariaLabel ? (live ? 'status' : 'img') : undefined}
       aria-label={ariaLabel}
       data-testid={testId}
       data-status={dataStatus ?? status}

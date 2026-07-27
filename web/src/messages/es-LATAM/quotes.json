@@ -70,5 +70,36 @@
       "FORBIDDEN": "Tu rol no puede rechazar cotizaciones.",
       "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
     }
+  },
+  "eventPanel": {
+    "loading": "Cargando solicitudes de cotización…",
+    "tableCaption": "Solicitudes de cotización de este evento",
+    "columns": {
+      "category": "Categoría",
+      "status": "Estado",
+      "sentAt": "Enviada",
+      "actions": "Acciones"
+    },
+    "status": {
+      "sent": "Enviada",
+      "viewed": "Vista",
+      "responded": "Respondida",
+      "expired": "Vencida",
+      "cancelled": "Cancelada"
+    },
+    "actions": {
+      "new": "Nueva solicitud",
+      "compare": "Comparar"
+    },
+    "empty": {
+      "title": "Todavía no hay solicitudes",
+      "description": "Pide cotizaciones a los proveedores para comparar precios y disponibilidad para este evento.",
+      "cta": "Solicitar cotización"
+    },
+    "error": {
+      "title": "No pudimos cargar las solicitudes",
+      "description": "Ocurrió un problema de nuestro lado. Vuelve a intentarlo en un momento.",
+      "retry": "Reintentar"
+    }
   }
 }

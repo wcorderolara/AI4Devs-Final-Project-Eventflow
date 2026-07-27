@@ -94,10 +94,35 @@
   "public": {
     "directory": "Directory",
     "login": "Log in",
-    "register": "Sign up"
+    "register": "Sign up",
+    "nav": {
+      "label": "Main navigation",
+      "howItWorks": "How it works",
+      "features": "Features",
+      "forVendors": "For vendors",
+      "directory": "Vendors"
+    },
+    "cta": {
+      "login": "Log in",
+      "register": "Create account",
+      "directory": "Browse vendors",
+      "vendorRegister": "Sign up as a vendor",
+      "organizer": {
+        "primary": "Go to my events",
+        "secondary": "View my dashboard"
+      },
+      "vendor": {
+        "primary": "Go to my vendor workspace",
+        "secondary": "View quote requests"
+      },
+      "admin": {
+        "primary": "Open administration",
+        "secondary": "View metrics"
+      }
+    }
   },
   "footer": {
-    "copyright": "© {year, number} EventFlow"
+    "copyright": "© {year} EventFlow"
   },
   "sidebar": {
     "organizer": {

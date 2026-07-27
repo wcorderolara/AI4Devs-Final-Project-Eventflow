@@ -38,6 +38,43 @@ export const neutral = {
 } as const;
 
 /**
+ * Escala de **superficies de plataforma** (cromo del shell autenticado).
+ *
+ * Origen: screen Stitch *EventFlow - Layout Principal (Base)*
+ * (`projects/10889252267442839867/screens/d1d8a7612a6a41ba84a183ec9a53f434`), que define el
+ * look & feel aprobado del layout principal con una rampa de grises **cálidos** en lugar de
+ * blanco puro: el lienzo es `#FCF9F8`, la sidebar se separa por tinte (`#F6F3F2`) y las zonas
+ * embebidas / hover suben por la rampa.
+ *
+ * Sustituye el uso de `neutral.0` / `neutral.50` **sólo en el cromo** (sidebar, topbar, lienzo
+ * de contenido). Las cards, inputs y overlays siguen en `neutral.0` (blanco puro), que es
+ * precisamente lo que hace legible la jerarquía: contenido blanco sobre lienzo cálido.
+ *
+ * `outlineVariant` es el hairline violáceo del cromo; `onSurface` / `onSurfaceVariant` son los
+ * textos que Stitch pinta sobre estas superficies.
+ */
+export const canvas = {
+  /** `surface` / `background` / `surface-bright` — lienzo de contenido y topbar. */
+  bright: '#FCF9F8',
+  /** `surface-container-low` — sidebar. */
+  low: '#F6F3F2',
+  /** `surface-container` — zonas embebidas (pie de sidebar, campos sobre cromo). */
+  container: '#F0EDED',
+  /** `surface-container-high` — hover de navegación. */
+  high: '#EAE7E7',
+  /** `surface-container-highest` — presionado / separadores fuertes. */
+  highest: '#E4E2E1',
+  /** `surface-dim` — límite inferior de la rampa. */
+  dim: '#DCD9D9',
+  /** `outline-variant` — hairline del cromo. */
+  outlineVariant: '#CBC3D6',
+  /** `on-surface` — texto sobre el lienzo. */
+  onSurface: '#1B1C1C',
+  /** `on-surface-variant` — texto secundario sobre el cromo. */
+  onSurfaceVariant: '#494454',
+} as const;
+
+/**
  * Escala violeta construida alrededor del ancla aprobada `#946DF8` (UI-DEC-002).
  * `600`/`700`/`800` son derivadas porque `500` **no** cumple 4.5:1 sobre blanco
  * (3.62:1) y por tanto está prohibido como texto (Design Tokens §32).
@@ -134,7 +171,18 @@ export const alpha = {
 } as const;
 
 /** Agrupador de todas las escalas cromáticas primitivas. */
-export const color = { neutral, violet, lilac, coral, green, amber, red, blue, alpha } as const;
+export const color = {
+  neutral,
+  canvas,
+  violet,
+  lilac,
+  coral,
+  green,
+  amber,
+  red,
+  blue,
+  alpha,
+} as const;
 
 /* ------------------------------------------------------------------ *
  * Typography primitives

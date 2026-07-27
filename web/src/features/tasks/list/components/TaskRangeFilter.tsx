@@ -22,6 +22,7 @@ import { useCallback, useRef } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { cx } from '@/shared/design-system/internal/cx';
 import {
   DEFAULT_TASK_LIST_RANGE,
   TASK_LIST_RANGES,
@@ -81,10 +82,13 @@ export function TaskRangeFilter(): JSX.Element {
   );
 
   return (
+    // Sin hoja de estilo para `task-range-filter`, los cuatro toggles salían como texto corrido
+    // (`OOverdue7dNext 7 days…`), con la etiqueta corta y la larga pegadas. Ahora es un segmented
+    // control real: la corta sólo se ve en móvil y la larga a partir de `sm`.
     <div
       role="group"
       aria-label={t('groupLabel')}
-      className="task-range-filter"
+      className="inline-flex flex-wrap gap-1 rounded-button border border-subtle bg-surface-subtle p-1"
       data-testid="task-range-filter"
     >
       {TASK_LIST_RANGES.map((value, index) => {
@@ -97,16 +101,28 @@ export function TaskRangeFilter(): JSX.Element {
             }}
             type="button"
             aria-pressed={isActive}
-            className={`task-range-filter__toggle${isActive ? ' is-active' : ''}`}
+            // El nombre accesible se fija aquí y no en el texto visible: la etiqueta larga está
+            // oculta con `display:none` en móvil y la corta es decorativa, así que sin esto el
+            // botón se quedaría sin nombre en pantallas estrechas.
+            aria-label={t(`options.${value}.label`)}
+            className={cx(
+              'focus-ring inline-flex min-h-touch items-center rounded-button px-3 py-1.5',
+              'font-ui text-body-sm transition-colors duration-fast ease-standard',
+              'motion-reduce:transition-none',
+              isActive
+                ? // El estado activo no depende sólo del color: también cambia el peso.
+                  'bg-surface font-semibold text-link shadow-surface-subtle'
+                : 'font-medium text-secondary hover:text-primary',
+            )}
             onClick={(): void => setRange(value)}
             onKeyDown={onKeyDown(index)}
             title={t(`options.${value}.tooltip`)}
             tabIndex={isActive ? 0 : -1}
           >
-            <span aria-hidden="true" className="task-range-filter__short">
+            <span aria-hidden="true" className="sm:hidden">
               {t(`options.${value}.short`)}
             </span>
-            <span className="task-range-filter__long">
+            <span aria-hidden="true" className="hidden sm:inline">
               {t(`options.${value}.label`)}
             </span>
           </button>

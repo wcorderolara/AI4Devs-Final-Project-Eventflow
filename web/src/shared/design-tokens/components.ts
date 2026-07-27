@@ -82,12 +82,20 @@ export const card = {
   padding: space[6],
 } as const;
 
-/** Design Tokens §27.4. */
+/**
+ * Design Tokens §27.4.
+ *
+ * `foreground` es el texto **en reposo**: secundario sobre el cromo tintado, como en el screen
+ * Stitch del layout principal. Al pasar el ratón sube a `text.primary` (`hoverForeground`) y en
+ * estado activo pasa a `activeForeground` sobre el relleno violeta.
+ */
 export const sidebarItem = {
-  foreground: text.primary,
+  foreground: text.secondary,
+  hoverForeground: text.primary,
   hoverBackground: platform.sidebarItemHover,
   activeBackground: platform.sidebarItemActive,
   activeForeground: platform.sidebarItemActiveForeground,
+  radius: radii.card,
   focusRing: focusRing.ringColor,
 } as const;
 

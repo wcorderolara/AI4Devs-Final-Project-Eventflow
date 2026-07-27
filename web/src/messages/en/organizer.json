@@ -148,6 +148,8 @@
     "task_priority": {
       "title": "AI Priorities",
       "subtitle": "Up to 3 urgent tasks. AI suggests; you decide.",
+      "ai_label": "AI suggestion",
+      "actions_group": "Priority suggestion actions",
       "mark_done": "Go to task",
       "regenerate": "Regenerate",
       "regenerating": "Regenerating…",
@@ -243,7 +245,10 @@
     "subtitle": "Snapshot of your activity: events, tasks, quotes and notifications.",
     "error": "We couldn't load your summary. Please try again.",
     "weekBanner": "{count, plural, one {# event} other {# events}} this week",
-    "actions": { "refresh": "Refresh", "refreshing": "Refreshing…" },
+    "actions": {
+      "refresh": "Refresh",
+      "refreshing": "Refreshing…"
+    },
     "cards": {
       "events": {
         "title": "Events organized",

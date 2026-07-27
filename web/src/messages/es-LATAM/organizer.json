@@ -148,6 +148,8 @@
     "task_priority": {
       "title": "Prioridades IA",
       "subtitle": "Hasta 3 tareas urgentes. La IA sugiere; tú decides.",
+      "ai_label": "Sugerencia de IA",
+      "actions_group": "Acciones de la sugerencia de prioridades",
       "mark_done": "Ir a la tarea",
       "regenerate": "Regenerar",
       "regenerating": "Regenerando…",

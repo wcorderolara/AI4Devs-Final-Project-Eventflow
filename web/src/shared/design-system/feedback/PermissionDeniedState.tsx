@@ -19,6 +19,11 @@ export interface PermissionDeniedStateProps {
   description?: ReactNode;
   /** Navegación segura (volver al dashboard del rol). */
   action?: ReactNode;
+  /**
+   * Salida alternativa igualmente segura (p. ej. `Ver mis eventos`). **No** debe usarse para
+   * sugerir «contacta a un administrador» salvo que el producto ya exponga ese canal.
+   */
+  secondaryAction?: ReactNode;
   /** Referencia de soporte, sólo si el producto ya la expone. */
   supportReference?: string;
   supportLabel?: string;
@@ -31,6 +36,7 @@ export function PermissionDeniedState({
   title,
   description,
   action,
+  secondaryAction,
   supportReference,
   supportLabel,
   headingLevel = 1,
@@ -55,9 +61,16 @@ export function PermissionDeniedState({
       </span>
       <Heading className="font-heading text-h2 font-semibold text-primary">{title}</Heading>
       {description ? (
-        <p className="mt-2 max-w-form font-body text-body-md text-secondary">{description}</p>
+        <p className="mt-2 max-w-form whitespace-pre-line font-body text-body-md text-secondary">
+          {description}
+        </p>
       ) : null}
-      {action ? <div className="mt-6">{action}</div> : null}
+      {action || secondaryAction ? (
+        <div className="mt-6 flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-center">
+          {action}
+          {secondaryAction}
+        </div>
+      ) : null}
       {supportReference && supportLabel ? (
         <p className="mt-4 font-body text-caption text-muted">
           {supportLabel}

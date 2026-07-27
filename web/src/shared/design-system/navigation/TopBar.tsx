@@ -42,7 +42,9 @@ export function TopBar({
     <header
       data-testid={testId}
       className={cx(
-        'flex h-header shrink-0 items-center justify-between gap-3 border-b border-subtle bg-surface px-4',
+        // `bg-header` es el mismo lienzo cálido que el área de contenido (screen Stitch del
+        // layout principal): el hairline `border-chrome` es el único separador.
+        'flex h-header shrink-0 items-center justify-between gap-3 border-b border-chrome bg-header px-4',
         className,
       )}
     >

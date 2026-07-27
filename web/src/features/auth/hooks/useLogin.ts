@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { roleHome as sharedRoleHome } from '@/shared/navigation/roleHome';
 import { authRegisterApi } from '../api/authApi';
 import type { LoginRequestDTO } from '../api/authApi.types';
 import type { RegisteredUser } from '../types';
@@ -18,11 +19,13 @@ export function safeInternalPath(from: string | null | undefined): string | null
   return from;
 }
 
-/** Dashboard por rol (AC-02). */
+/**
+ * Dashboard por rol (AC-02). El mapa vive en `shared/navigation/roleHome`: es el mismo que
+ * consumen el header público y los CTA de la landing, y tenerlo en un solo sitio evita que la
+ * redirección post-login y la navegación pública se separen.
+ */
 export function roleHome(role: RegisteredUser['role']): string {
-  if (role === 'admin') return '/admin';
-  if (role === 'vendor') return '/vendor';
-  return '/organizer';
+  return sharedRoleHome(role);
 }
 
 /**
@@ -30,9 +33,9 @@ export function roleHome(role: RegisteredUser['role']): string {
  * rehidrata vía `GET /users/me`, AC-02) y redirige: `from` interno validado > dashboard del rol
  * devuelto por el backend.
  */
-export function useLogin(options: { from?: string | null } = {}): ReturnType<
-  typeof useMutation<RegisteredUser, Error, LoginRequestDTO>
-> {
+export function useLogin(
+  options: { from?: string | null } = {},
+): ReturnType<typeof useMutation<RegisteredUser, Error, LoginRequestDTO>> {
   const router = useRouter();
   const queryClient = useQueryClient();
 

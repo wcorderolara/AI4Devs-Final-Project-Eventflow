@@ -75,7 +75,8 @@ describe('PB-P2-029 · SidebarItem', () => {
     const link = screen.getByRole('link', { name: 'Activo' });
     expect(link.className).toContain('bg-sidebar-item-active');
     expect(link.className).toContain('font-semibold');
-    expect(link.querySelector('.bg-action-primary')).not.toBeNull();
+    // La marca vertical se invierte a blanco sobre el relleno violeta del ítem activo.
+    expect(link.querySelector('.bg-sidebar-item-active-foreground')).not.toBeNull();
   });
 
   it('el label visible se conserva y el icono es decorativo', () => {

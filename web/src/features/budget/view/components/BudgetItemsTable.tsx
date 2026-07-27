@@ -3,11 +3,31 @@
 // `aria-label` localizado interpolando el delta y la moneda. Añade `data-overcommit="true"`
 // e `id="item-row-<id>"` a las filas para que `useOvercommitFocus` pueda anclar el CTA.
 // US-064 (PB-P1-037 / FE-002) — EC-02: badge accesible "Auto-creado" cuando `item.auto_created`.
-// Indica ítems creados automáticamente por el `UpdateCommittedFromBookingIntentUseCase`
-// (US-039 apply) al confirmar un `BookingIntent` sin `BudgetItem` previo — el organizer los
-// reconoce sin ambigüedad.
+//
+// PB-P2-031: compone las primitivas `Table` / `ResponsiveTable` / `CurrencyDisplay` /
+// `StatusBadge` / `Button` del design system.
+//   * Desktop conserva la tabla semántica (`th scope="col"`, `caption`, montos a la derecha con
+//     numeración tabular).
+//   * Móvil pivota a cards de resumen — el patrón que muestra la pantalla Stitch— alimentadas
+//     por **la misma lista `items`**: no hay segunda consulta ni un segundo modelo de fila.
+//   * Las dos vistas son mutuamente excluyentes por CSS, así que sólo un juego de acciones
+//     («Editar» / «Eliminar») es alcanzable por teclado en cada viewport.
 import { useTranslations } from 'next-intl';
-import { Money, formatCurrency } from '@/shared/i18n';
+import {
+  Button,
+  Card,
+  CurrencyDisplay,
+  ResponsiveSummaryRow,
+  ResponsiveTable,
+  StatusBadge,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from '@/shared/design-system';
+import { formatCurrency } from '@/shared/i18n';
 import type { BudgetItemDto } from '../api/budgetApi';
 
 interface BudgetItemsTableProps {
@@ -30,104 +50,166 @@ export function BudgetItemsTable({
   const t = useTranslations('budget.table');
   const tOver = useTranslations('budget.overcommit');
   const tSummary = useTranslations('budget.summary');
-  const showActions = !readOnly && (onEdit || onDelete);
+  const showActions = !readOnly && Boolean(onEdit || onDelete);
+
+  const overcommitAria = (item: BudgetItemDto): string =>
+    tOver('item_aria_label', {
+      amount: formatCurrency(item.overcommitted_amount, currencyCode, locale),
+    });
+
+  /** Marcas de estado del ítem, compartidas por la fila de escritorio y la card móvil. */
+  const badges = (item: BudgetItemDto, scope: 'row' | 'summary'): React.JSX.Element | null => {
+    if (!item.over_committed && !item.auto_created) return null;
+    const suffix = scope === 'summary' ? 'summary-' : '';
+    return (
+      <>
+        {item.over_committed ? (
+          <StatusBadge
+            status="error"
+            ariaLabel={overcommitAria(item)}
+            data-testid={`budget-item-${suffix}badge-${item.id}`}
+          >
+            {tOver('item_badge')}
+          </StatusBadge>
+        ) : null}
+        {item.auto_created ? (
+          <StatusBadge
+            status="warning"
+            ariaLabel={tSummary('autoCreatedAria')}
+            data-testid={`budget-item-${suffix}auto-created-${item.id}`}
+          >
+            {tSummary('autoCreatedBadge')}
+          </StatusBadge>
+        ) : null}
+      </>
+    );
+  };
+
+  const actions = (item: BudgetItemDto, fullWidth: boolean): React.JSX.Element => (
+    <div className={fullWidth ? 'flex gap-2' : 'flex justify-end gap-2'}>
+      {onEdit ? (
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => onEdit(item)}
+          aria-label={t('editAria', { label: item.label })}
+        >
+          {t('edit')}
+        </Button>
+      ) : null}
+      {onDelete ? (
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={() => onDelete(item)}
+          aria-label={t('deleteAria', { label: item.label })}
+        >
+          {t('delete')}
+        </Button>
+      ) : null}
+    </div>
+  );
+
   return (
-    <table
-      className="w-full text-sm"
-      aria-label={t('caption')}
-      data-budget-items-table
-    >
-      <caption className="sr-only">{t('caption')}</caption>
-      <thead>
-        <tr className="border-b text-left text-neutral-500">
-          <th scope="col" className="py-2">{t('col.label')}</th>
-          <th scope="col" className="py-2">{t('col.category')}</th>
-          <th scope="col" className="py-2 text-right">{t('col.planned')}</th>
-          <th scope="col" className="py-2 text-right">{t('col.committed')}</th>
-          {showActions ? <th scope="col" className="py-2 text-right">{t('col.actions')}</th> : null}
-        </tr>
-      </thead>
-      <tbody>
-        {items.map((it) => {
-          const badgeAriaLabel = it.over_committed
-            ? tOver('item_aria_label', {
-                amount: formatCurrency(it.overcommitted_amount, currencyCode, locale),
-              })
-            : undefined;
-          return (
-            <tr
-              key={it.id}
-              id={`item-row-${it.id}`}
-              className="border-b"
-              data-testid={`budget-item-${it.id}`}
-              // US-038 (FE-003): anchor para `useOvercommitFocus`; `tabIndex=-1` habilita focus
-              // programático sin agregar la fila al tab order.
-              {...(it.over_committed
-                ? { 'data-overcommit': 'true' as const, tabIndex: -1 }
-                : {})}
-            >
-              <td className="py-2">
-                <div className="flex items-center gap-2">
-                  <span>{it.label}</span>
-                  {it.over_committed ? (
-                    <span
-                      role="img"
-                      aria-label={badgeAriaLabel}
-                      data-testid={`budget-item-badge-${it.id}`}
-                      className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800"
-                    >
-                      {tOver('item_badge')}
-                    </span>
-                  ) : null}
-                  {it.auto_created ? (
-                    <span
-                      role="img"
-                      aria-label={tSummary('autoCreatedAria')}
-                      data-testid={`budget-item-auto-created-${it.id}`}
-                      className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900"
-                    >
-                      {tSummary('autoCreatedBadge')}
-                    </span>
-                  ) : null}
-                </div>
-              </td>
-              <td className="py-2 text-neutral-700">{it.category_code ?? '—'}</td>
-              <td className="py-2 text-right">
-                <Money amount={it.amount_planned} currency={currencyCode} locale={locale} />
-              </td>
-              <td className="py-2 text-right">
-                <Money amount={it.amount_committed} currency={currencyCode} locale={locale} />
-              </td>
+    // `useOvercommitFocus` hace scroll a este contenedor cuando no hay ninguna fila excedida.
+    <div data-budget-items-table>
+      <ResponsiveTable
+        items={items}
+        getRowKey={(item) => item.id}
+        summaryLabel={t('caption')}
+        renderSummary={(item) => (
+          <Card padding="sm" data-testid={`budget-item-summary-${item.id}`}>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <span className="min-w-0 font-ui text-body-sm font-semibold text-primary">
+                {item.label}
+              </span>
+              <span className="flex flex-wrap gap-1">{badges(item, 'summary')}</span>
+            </div>
+            <div className="mt-3 space-y-1">
+              <ResponsiveSummaryRow label={t('col.category')}>
+                {item.category_code ?? '—'}
+              </ResponsiveSummaryRow>
+              <ResponsiveSummaryRow label={t('col.planned')}>
+                <CurrencyDisplay
+                  amount={item.amount_planned}
+                  currencyCode={currencyCode}
+                  locale={locale}
+                />
+              </ResponsiveSummaryRow>
+              <ResponsiveSummaryRow label={t('col.committed')}>
+                <CurrencyDisplay
+                  amount={item.amount_committed}
+                  currencyCode={currencyCode}
+                  locale={locale}
+                />
+              </ResponsiveSummaryRow>
+            </div>
+            {showActions ? <div className="mt-3">{actions(item, true)}</div> : null}
+          </Card>
+        )}
+      >
+        <Table caption={t('caption')} density="compact">
+          <TableHead>
+            <TableRow>
+              <TableHeaderCell density="compact">{t('col.label')}</TableHeaderCell>
+              <TableHeaderCell density="compact">{t('col.category')}</TableHeaderCell>
+              <TableHeaderCell density="compact" align="numeric">
+                {t('col.planned')}
+              </TableHeaderCell>
+              <TableHeaderCell density="compact" align="numeric">
+                {t('col.committed')}
+              </TableHeaderCell>
               {showActions ? (
-                <td className="py-2 text-right">
-                  <div className="flex justify-end gap-2">
-                    {onEdit ? (
-                      <button
-                        type="button"
-                        onClick={() => onEdit(it)}
-                        className="rounded border border-neutral-300 px-2 py-1 text-xs"
-                        aria-label={t('editAria', { label: it.label })}
-                      >
-                        {t('edit')}
-                      </button>
-                    ) : null}
-                    {onDelete ? (
-                      <button
-                        type="button"
-                        onClick={() => onDelete(it)}
-                        className="rounded border border-red-300 px-2 py-1 text-xs text-red-700"
-                        aria-label={t('deleteAria', { label: it.label })}
-                      >
-                        {t('delete')}
-                      </button>
-                    ) : null}
-                  </div>
-                </td>
+                <TableHeaderCell density="compact" align="end">
+                  {t('col.actions')}
+                </TableHeaderCell>
               ) : null}
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {items.map((item) => (
+              <TableRow
+                key={item.id}
+                id={`item-row-${item.id}`}
+                interactive={showActions}
+                data-testid={`budget-item-${item.id}`}
+                // US-038 (FE-003): ancla para `useOvercommitFocus`; `tabIndex=-1` habilita el
+                // foco programático sin añadir la fila al orden de tabulación.
+                {...(item.over_committed
+                  ? { 'data-overcommit': 'true' as const, tabIndex: -1 }
+                  : {})}
+              >
+                <TableCell density="compact">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span>{item.label}</span>
+                    {badges(item, 'row')}
+                  </div>
+                </TableCell>
+                <TableCell density="compact">{item.category_code ?? '—'}</TableCell>
+                <TableCell density="compact" align="numeric">
+                  <CurrencyDisplay
+                    amount={item.amount_planned}
+                    currencyCode={currencyCode}
+                    locale={locale}
+                  />
+                </TableCell>
+                <TableCell density="compact" align="numeric">
+                  <CurrencyDisplay
+                    amount={item.amount_committed}
+                    currencyCode={currencyCode}
+                    locale={locale}
+                  />
+                </TableCell>
+                {showActions ? (
+                  <TableCell density="compact" align="end">
+                    {actions(item, false)}
+                  </TableCell>
+                ) : null}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </ResponsiveTable>
+    </div>
   );
 }

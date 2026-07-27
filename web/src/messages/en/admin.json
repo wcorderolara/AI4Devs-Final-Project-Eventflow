@@ -531,7 +531,8 @@
       "status": "Status",
       "search": "Search",
       "searchPlaceholder": "Email or name…",
-      "all": "All"
+      "all": "All",
+      "clearSearch": "Clear search"
     },
     "status": {
       "active": "Active",

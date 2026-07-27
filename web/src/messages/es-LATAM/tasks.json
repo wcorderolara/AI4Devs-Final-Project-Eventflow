@@ -84,10 +84,26 @@
     "rangeFilter": {
       "groupLabel": "Filtro temporal",
       "options": {
-        "overdue": { "short": "V", "label": "Vencidas", "tooltip": "Tareas vencidas" },
-        "7d": { "short": "7d", "label": "Próx. 7 días", "tooltip": "Próximas 7 días" },
-        "30d": { "short": "30d", "label": "Próx. 30 días", "tooltip": "Próximas 30 días" },
-        "all": { "short": "Todas", "label": "Todas", "tooltip": "Todas las tareas" }
+        "overdue": {
+          "short": "V",
+          "label": "Vencidas",
+          "tooltip": "Tareas vencidas"
+        },
+        "7d": {
+          "short": "7d",
+          "label": "Próx. 7 días",
+          "tooltip": "Próximas 7 días"
+        },
+        "30d": {
+          "short": "30d",
+          "label": "Próx. 30 días",
+          "tooltip": "Próximas 30 días"
+        },
+        "all": {
+          "short": "Todas",
+          "label": "Todas",
+          "tooltip": "Todas las tareas"
+        }
       }
     },
     "progress": {
@@ -122,7 +138,8 @@
       },
       "categoryCode": {
         "label": "Categoría",
-        "placeholder": "catering, decoración…"
+        "placeholder": "catering, decoración…",
+        "clear": "Limpiar categoría"
       }
     },
     "pagination": {
@@ -272,6 +289,9 @@
           "generic": "No se pudo eliminar la tarea. Intenta de nuevo."
         }
       }
+    },
+    "board": {
+      "emptyColumn": "Sin tareas"
     }
   }
 }

@@ -5,9 +5,23 @@
 // homogéneos. Semántica accesible: `<table>` con `<caption>` (sr-only), `<th scope="col">`
 // para la cabecera de vendor, `<th scope="row">` para las etiquetas de fila.
 // Los CTAs "Marcar preferred" y "Resumir con IA" son deep-links (US-058 / US-022 respectivamente).
-import Link from 'next/link';
+//
+// PB-P2-033: compone las primitivas `Table` del design system. Además corrige dos desviaciones
+// de token: la escala **indigo** de Tailwind (prohibida como acento: la marca es violeta,
+// UI-DEC-002/003) y la alerta con paleta cruda, que pasa a `Alert`.
+import { Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import {
+  Alert,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+  TextLink,
+} from '@/shared/design-system';
 import type { CompareQuoteItemView } from '../api/quotesApi.types';
 import { QuoteStatusIndicator } from './QuoteStatusIndicator';
 import { PreferredToggleButton } from './PreferredToggleButton';
@@ -47,22 +61,28 @@ export function QuoteComparisonTable({
     eventId,
   )}/quotes/compare/ai-summary?categoryCode=${encodeURIComponent(categoryCode)}`;
 
+  // La primera columna queda fija al hacer scroll horizontal: la fila sigue siendo legible
+  // cuando hay muchas cotizaciones. `bg-surface` es obligatorio para que el contenido no se
+  // transparente por debajo.
+  const ROW_LABEL = 'sticky left-0 z-sticky bg-surface align-top font-medium text-secondary';
+
   return (
-    <div className="overflow-x-auto" data-testid="quote-comparison-table">
-      <table className="min-w-full border-collapse text-sm">
-        <caption className="sr-only">
-          {t('table.caption', { category: categoryName })}
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col" className="sticky left-0 z-10 bg-white px-3 py-2 text-left font-semibold text-neutral-700">
+    <div data-testid="quote-comparison-table">
+      <Table
+        caption={t('table.caption', { category: categoryName })}
+        density="compact"
+        containerClassName="rounded-card border border-subtle bg-surface"
+      >
+        <TableHead>
+          <TableRow>
+            <TableHeaderCell density="compact" className={ROW_LABEL}>
               {t('table.rowLabels.vendor')}
-            </th>
+            </TableHeaderCell>
             {items.map((item) => (
-              <th
+              <TableHeaderCell
                 key={item.quoteId}
-                scope="col"
-                className="min-w-[220px] px-3 py-2 text-left align-top font-semibold text-neutral-900"
+                density="compact"
+                className="min-w-[220px] align-top text-primary"
               >
                 <div className="space-y-1">
                   <div className="flex items-start justify-between gap-2">
@@ -70,25 +90,26 @@ export function QuoteComparisonTable({
                     <QuoteStatusIndicator status={item.status} isPreferred={item.isPreferred} />
                   </div>
                   {vendorHref(item.vendor.slug) ? (
-                    <Link
+                    <TextLink
                       href={vendorHref(item.vendor.slug) as string}
-                      className="text-xs font-normal text-indigo-700 underline hover:text-indigo-900"
+                      variant="inline"
+                      className="text-caption font-normal"
                     >
                       {t('table.viewProfile')}
-                    </Link>
+                    </TextLink>
                   ) : null}
                 </div>
-              </th>
+              </TableHeaderCell>
             ))}
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th scope="row" className="sticky left-0 z-10 bg-white px-3 py-2 text-left font-medium text-neutral-600">
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          <TableRow>
+            <TableCell density="compact" header className={ROW_LABEL}>
               {t('table.rowLabels.rating')}
-            </th>
+            </TableCell>
             {items.map((item) => (
-              <td key={item.quoteId} className="px-3 py-2 align-top text-neutral-800">
+              <TableCell key={item.quoteId} density="compact" className="align-top">
                 {item.vendor.ratingAvg !== null ? (
                   <span
                     aria-label={t('table.ratingAria', {
@@ -97,79 +118,87 @@ export function QuoteComparisonTable({
                     })}
                   >
                     {`★ ${item.vendor.ratingAvg.toFixed(1)} `}
-                    <span className="text-xs text-neutral-500">
+                    <span className="text-caption text-muted">
                       {`(${item.vendor.reviewsCount})`}
                     </span>
                   </span>
                 ) : (
-                  <span className="text-xs text-neutral-500">{t('table.noRating')}</span>
+                  <span className="text-caption text-muted">{t('table.noRating')}</span>
                 )}
-              </td>
+              </TableCell>
             ))}
-          </tr>
-          <tr>
-            <th scope="row" className="sticky left-0 z-10 bg-white px-3 py-2 text-left font-medium text-neutral-600">
+          </TableRow>
+          <TableRow>
+            <TableCell density="compact" header className={ROW_LABEL}>
               {t('table.rowLabels.totalPrice')}
-            </th>
+            </TableCell>
             {items.map((item) => (
-              <td key={item.quoteId} className="px-3 py-2 align-top font-semibold text-neutral-900">
+              <TableCell
+                key={item.quoteId}
+                density="compact"
+                className="align-top font-semibold tabular-nums"
+              >
                 {formatPrice(item.totalPrice, currencyCode)}
-              </td>
+              </TableCell>
             ))}
-          </tr>
-          <tr>
-            <th scope="row" className="sticky left-0 z-10 bg-white px-3 py-2 text-left align-top font-medium text-neutral-600">
+          </TableRow>
+          <TableRow>
+            <TableCell density="compact" header className={ROW_LABEL}>
               {t('table.rowLabels.breakdown')}
-            </th>
+            </TableCell>
             {items.map((item) => (
-              <td key={item.quoteId} className="px-3 py-2 align-top text-neutral-800">
+              <TableCell key={item.quoteId} density="compact" className="align-top">
                 {item.breakdown && item.breakdown.length > 0 ? (
-                  <ul className="list-disc space-y-0.5 pl-4 text-xs">
+                  <ul className="list-disc space-y-0.5 pl-4 text-caption">
                     {item.breakdown.map((row) => (
                       <li key={`${item.quoteId}-${row.label}`}>
-                        <span className="text-neutral-600">{row.label}:</span>{' '}
-                        <span className="font-medium">{formatPrice(row.amount, currencyCode)}</span>
+                        <span className="text-secondary">{row.label}:</span>{' '}
+                        <span className="font-medium tabular-nums">
+                          {formatPrice(row.amount, currencyCode)}
+                        </span>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <span className="text-xs text-neutral-500">{t('table.noBreakdown')}</span>
+                  <span className="text-caption text-muted">{t('table.noBreakdown')}</span>
                 )}
-              </td>
+              </TableCell>
             ))}
-          </tr>
-          <tr>
-            <th scope="row" className="sticky left-0 z-10 bg-white px-3 py-2 text-left align-top font-medium text-neutral-600">
+          </TableRow>
+          <TableRow>
+            <TableCell density="compact" header className={ROW_LABEL}>
               {t('table.rowLabels.validUntil')}
-            </th>
+            </TableCell>
             {items.map((item) => (
-              <td key={item.quoteId} className="px-3 py-2 align-top text-neutral-800">
+              <TableCell key={item.quoteId} density="compact" className="align-top">
                 {item.validUntil ? (
                   <time dateTime={item.validUntil}>{item.validUntil.slice(0, 10)}</time>
                 ) : (
-                  <span className="text-xs text-neutral-500">{t('table.noValidUntil')}</span>
+                  <span className="text-caption text-muted">{t('table.noValidUntil')}</span>
                 )}
-              </td>
+              </TableCell>
             ))}
-          </tr>
-          <tr>
-            <th scope="row" className="sticky left-0 z-10 bg-white px-3 py-2 text-left align-top font-medium text-neutral-600">
+          </TableRow>
+          <TableRow>
+            <TableCell density="compact" header className={ROW_LABEL}>
               {t('table.rowLabels.conditions')}
-            </th>
+            </TableCell>
             {items.map((item) => (
-              <td key={item.quoteId} className="px-3 py-2 align-top text-xs text-neutral-700">
-                {item.conditions ?? (
-                  <span className="text-neutral-500">{t('table.noConditions')}</span>
-                )}
-              </td>
+              <TableCell
+                key={item.quoteId}
+                density="compact"
+                className="align-top text-caption text-secondary"
+              >
+                {item.conditions ?? <span className="text-muted">{t('table.noConditions')}</span>}
+              </TableCell>
             ))}
-          </tr>
-          <tr>
-            <th scope="row" className="sticky left-0 z-10 bg-white px-3 py-2 text-left align-top font-medium text-neutral-600">
+          </TableRow>
+          <TableRow>
+            <TableCell density="compact" header className={ROW_LABEL}>
               {t('table.rowLabels.actions')}
-            </th>
+            </TableCell>
             {items.map((item) => (
-              <td key={item.quoteId} className="px-3 py-2 align-top">
+              <TableCell key={item.quoteId} density="compact" className="align-top">
                 {isSelectable(item.status) ? (
                   <PreferredToggleButton
                     quoteId={item.quoteId}
@@ -181,37 +210,42 @@ export function QuoteComparisonTable({
                     onError={setError}
                   />
                 ) : (
+                  // No es un control: es una explicación de por qué no hay acción. Se mantiene
+                  // como `span` (no `Button` deshabilitado) con su nombre accesible.
                   <span
-                    className="inline-flex items-center rounded-md bg-neutral-100 px-3 py-1.5 text-xs font-medium text-neutral-500"
+                    className="inline-flex items-center rounded-button bg-surface-disabled px-3 py-1.5 font-ui text-caption font-medium text-disabled"
                     aria-label={t('table.notSelectableAria', { status: item.status })}
                   >
                     {t('table.notSelectable')}
                   </span>
                 )}
-              </td>
+              </TableCell>
             ))}
-          </tr>
-        </tbody>
-      </table>
+          </TableRow>
+        </TableBody>
+      </Table>
 
       {error ? (
-        <div
-          role="alert"
-          className="mt-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900"
+        <Alert
+          variant="error"
+          live
+          className="mt-3"
           data-testid="preferred-toggle-error"
-        >
-          {error}
-        </div>
+          title={error}
+        />
       ) : null}
 
       {items.length >= 2 ? (
         <div className="mt-4 flex justify-end">
-          <Link
+          {/* Deep-link a la síntesis de IA: el icono acompaña al label, nunca lo sustituye
+              (UI-DEC-010). Violeta de marca, no indigo. */}
+          <TextLink
             href={aiSummaryHref}
-            className="inline-flex items-center rounded-md border border-indigo-300 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            className="text-body-sm font-semibold"
+            leadingIcon={<Sparkles />}
           >
             {t('table.aiSummaryCta')}
-          </Link>
+          </TextLink>
         </div>
       ) : null}
     </div>

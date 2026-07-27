@@ -77,6 +77,11 @@ import ptNotifications from '../../messages/pt/notifications.json';
 
 export type Messages = Record<string, unknown>;
 
+// La feature `tasks/list` (US-027..US-033) consume el namespace raíz `checklist`, no
+// `tasks.checklist`; sin esta entrada todas sus etiquetas caían al `getMessageFallback` y la
+// pantalla del checklist mostraba rutas de clave crudas (`checklist.title`). Los tests unitarios
+// construían el namespace a mano, así que el gap sólo se veía en la app. Se expone el subárbol
+// bajo ambas rutas en vez de reescribir ~15 `useTranslations` y sus tests.
 const REGISTRY: Record<Locale, Messages> = {
   'es-LATAM': {
     common: esLatamCommon,
@@ -89,6 +94,7 @@ const REGISTRY: Record<Locale, Messages> = {
     admin: esLatamAdmin,
     ai: esLatamAi,
     tasks: esLatamTasks,
+    checklist: esLatamTasks.checklist,
     budget: esLatamBudget,
     vendor: esLatamVendor,
     publicVendor: esLatamPublicVendor,
@@ -108,6 +114,7 @@ const REGISTRY: Record<Locale, Messages> = {
     admin: esEsAdmin,
     ai: esEsAi,
     tasks: esEsTasks,
+    checklist: esEsTasks.checklist,
     budget: esEsBudget,
     vendor: esEsVendor,
     publicVendor: esEsPublicVendor,
@@ -127,6 +134,7 @@ const REGISTRY: Record<Locale, Messages> = {
     admin: ptAdmin,
     ai: ptAi,
     tasks: ptTasks,
+    checklist: ptTasks.checklist,
     budget: ptBudget,
     vendor: ptVendor,
     publicVendor: ptPublicVendor,
@@ -146,6 +154,7 @@ const REGISTRY: Record<Locale, Messages> = {
     admin: enAdmin,
     ai: enAi,
     tasks: enTasks,
+    checklist: enTasks.checklist,
     budget: enBudget,
     vendor: enVendor,
     publicVendor: enPublicVendor,

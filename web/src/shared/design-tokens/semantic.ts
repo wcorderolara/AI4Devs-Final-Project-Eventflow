@@ -13,6 +13,7 @@ import {
   blue,
   border,
   breakpoint,
+  canvas,
   coral,
   focus,
   green,
@@ -57,8 +58,12 @@ export const background = {
   /** Fondo principal de la aplicación (UI-DEC-002). */
   default: neutral[0],
   subtle: neutral[50],
-  /** Fondo del área de contenido de plataforma, para separar de las cards blancas. */
-  page: neutral[50],
+  /**
+   * Fondo del área de contenido de plataforma, para separar de las cards blancas.
+   * Adopta el lienzo cálido del screen Stitch del layout principal (`canvas.bright`) en lugar
+   * de `neutral.50`: mismo propósito, el look & feel aprobado del shell.
+   */
+  page: canvas.bright,
 } as const;
 
 export const surface = {
@@ -211,12 +216,35 @@ export const ai = {
  * Platform & marketing aliases — Design Tokens §10
  * ------------------------------------------------------------------ */
 
+/**
+ * Cromo del shell autenticado (sidebar, topbar, lienzo de contenido).
+ *
+ * Los valores replican el screen Stitch *EventFlow - Layout Principal (Base)*, que es la
+ * referencia visual aprobada del layout principal: cromo en grises cálidos (`canvas.*`),
+ * contenido blanco encima, e ítem de navegación activo **relleno** en violeta de marca con
+ * texto blanco — no el chip violeta claro anterior.
+ *
+ * Contraste verificado (WCAG 2.1 AA):
+ * - `sidebarItemActiveForeground` (`#FFFFFF`) sobre `sidebarItemActive` (`violet.600`): 5.12:1.
+ * - Texto secundario (`#525252`) sobre `sidebarBackground` (`#F6F3F2`): 7.4:1.
+ * - Texto primario (`#262626`) sobre `pageBackground` (`#FCF9F8`): 13.9:1.
+ *
+ * El estado activo **sigue sin depender sólo del color** (UI-DEC-014): además del relleno lleva
+ * peso semibold y la marca vertical de acento que `SidebarItem` invierte a blanco.
+ */
 export const platform = {
-  sidebarBackground: neutral[0],
-  sidebarItemHover: alpha.hoverSubtle,
-  sidebarItemActive: violet[50],
-  sidebarItemActiveForeground: violet[700],
-  pageBackground: neutral[50],
+  /** Sidebar: tinte cálido que la separa del lienzo sin necesidad de sombra. */
+  sidebarBackground: canvas.low,
+  /** Pie de la sidebar (bloque de identidad): un paso más en la rampa. */
+  sidebarFooterBackground: canvas.container,
+  sidebarItemHover: canvas.high,
+  sidebarItemActive: violet[600],
+  sidebarItemActiveForeground: neutral[0],
+  /** Topbar: mismo lienzo que el contenido; el hairline es el único separador. */
+  headerBackground: canvas.bright,
+  /** Hairline del cromo (`outline-variant` de Stitch). */
+  chromeBorder: canvas.outlineVariant,
+  pageBackground: canvas.bright,
 } as const;
 
 export const marketing = {

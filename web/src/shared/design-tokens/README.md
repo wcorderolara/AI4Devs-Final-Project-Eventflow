@@ -17,9 +17,16 @@ transcriben de los documentos normativos aprobados, en este orden:
 4. `docs/ux-ui/EventFlow-Stitch-Foundations-Frontend-Validation.md` — mapa de implementación.
 
 Si un valor de aquí discrepa de esos documentos, **el documento gana** y el código se corrige.
-Los valores generados por Stitch **no son autoridad** (arrastran una capa Material Design con
-`primary: #683ec9`, `background: #fdf7ff`, semánticos `#10B981/#F59E0B/#EF4444/#3B82F6` e
-iconografía Font Awesome — todos rechazados).
+Los valores generados por Stitch **no son autoridad general**: arrastran una capa Material Design
+cuyos semánticos (`#10B981/#F59E0B/#EF4444/#3B82F6`) e iconografía (Font Awesome) siguen
+rechazados, y su `primary: #683ec9` no sustituye a la escala violeta aprobada.
+
+**Excepción aprobada (decisión de producto, 2026-07-25):** el **cromo del layout principal** —
+lienzo de contenido, topbar, sidebar, hover y estado activo de navegación — sí adopta la paleta
+de superficies del screen Stitch _EventFlow - Layout Principal (Base)_. Vive en el primitivo
+`color.canvas` y se consume a través de `platform.*`. Motivo: ese screen es la referencia visual
+aprobada del layout principal, y el cromo blanco anterior no la reproducía. Alcance limitado al
+cromo: cards, inputs, overlays, feedback e IA siguen exactamente igual.
 
 ---
 
@@ -39,12 +46,12 @@ Regla (Design Tokens §6): **los alias de componente referencian semánticos, nu
 
 ### Archivos
 
-| Archivo | Contenido |
-| --- | --- |
-| `primitives.ts` | Escalas neutral / violet / lilac / coral / green / amber / red / blue / alpha; tipografía; spacing; sizing; radius; borders; shadows; layout; breakpoints; motion; focus; opacity; z-index; iconos. |
-| `semantic.ts` | `text`, `background`, `surface`, `borderColor`, `actionPrimary/Secondary/Ghost/Destructive/Marketing`, `feedback`, `ai`, `platform`, `marketing`, `focusRing`, `selection`, `overlay`, `radii`, `elevation`. |
-| `components.ts` | `button`, `input`, `card`, `sidebarItem`, `aiRecommendation`. |
-| `index.ts` | Barrel + objeto `tokens` con las tres capas + tipos. |
+| Archivo         | Contenido                                                                                                                                                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `primitives.ts` | Escalas neutral / canvas (cromo del shell) / violet / lilac / coral / green / amber / red / blue / alpha; tipografía; spacing; sizing; radius; borders; shadows; layout; breakpoints; motion; focus; opacity; z-index; iconos. |
+| `semantic.ts`   | `text`, `background`, `surface`, `borderColor`, `actionPrimary/Secondary/Ghost/Destructive/Marketing`, `feedback`, `ai`, `platform`, `marketing`, `focusRing`, `selection`, `overlay`, `radii`, `elevation`.                   |
+| `components.ts` | `button`, `input`, `card`, `sidebarItem`, `aiRecommendation`.                                                                                                                                                                  |
+| `index.ts`      | Barrel + objeto `tokens` con las tres capas + tipos.                                                                                                                                                                           |
 
 ---
 
@@ -60,21 +67,22 @@ import { actionPrimary, ai, text } from './src/shared/design-tokens';
 
 Utilidades semánticas disponibles (lista no exhaustiva):
 
-| Categoría | Utilidades |
-| --- | --- |
-| Texto | `text-primary` `text-secondary` `text-muted` `text-disabled` `text-inverse` `text-link` `text-link-hover` |
-| Superficie | `bg-surface` `bg-surface-subtle` `bg-surface-elevated` `bg-surface-disabled` `bg-surface-inverse` `bg-surface-selected` `bg-page` |
-| Acciones | `bg-action-primary` `hover:bg-action-primary-hover` `bg-action-primary-active` `text-action-primary-foreground` `bg-action-secondary` `bg-action-ghost-hover` `bg-action-destructive` `bg-action-marketing` |
-| Bordes | `border-default` `border-subtle` `border-strong` `border-interactive` `border-separator` |
-| Feedback | `bg-feedback-{success,warning,error,info}` `text-feedback-*` `border-feedback-*` `bg-feedback-*-strong` |
-| IA | `bg-ai-surface` `bg-ai-surface-hover` `border-ai` `border-ai-strong` `text-ai-label` `text-ai-icon` `text-ai-text` |
-| Foco | `.focus-ring` (clase canónica), `ring-focus`, `ring-offset-focus` |
-| Tipografía | `font-heading` `font-body` `font-ui` · `text-display` `text-h1` `text-h2` `text-h3` `text-body-lg` `text-body-md` `text-body-sm` `text-label` `text-caption` `text-eyebrow` |
-| Forma | `rounded-button` `rounded-input` `rounded-card` `rounded-card-prominent` `rounded-modal` `rounded-drawer` `rounded-badge` |
-| Elevación | `shadow-surface-subtle` `shadow-surface-raised` `shadow-overlay-dropdown` `shadow-overlay-modal` `shadow-marketing-floating` |
-| Layout | `w-sidebar` `h-header` `max-w-marketing` `max-w-form` `max-w-content` `p-page-mobile/tablet/desktop` `min-h-touch` `min-w-touch` `h-icon-sm/md/lg` |
-| Motion | `duration-instant/fast/standard/slow` `ease-standard/enter/exit` |
-| Capas | `z-base` `z-sticky` `z-dropdown` `z-drawer` `z-modal` `z-toast` `z-tooltip` |
+| Categoría       | Utilidades                                                                                                                                                                                                  |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Texto           | `text-primary` `text-secondary` `text-muted` `text-disabled` `text-inverse` `text-link` `text-link-hover`                                                                                                   |
+| Superficie      | `bg-surface` `bg-surface-subtle` `bg-surface-elevated` `bg-surface-disabled` `bg-surface-inverse` `bg-surface-selected` `bg-page`                                                                           |
+| Cromo del shell | `bg-page` `bg-header` `bg-sidebar` `bg-sidebar-footer` `bg-sidebar-item-hover` `bg-sidebar-item-active` `bg-sidebar-item-active-foreground` `text-sidebar-item-active` `border-chrome`                      |
+| Acciones        | `bg-action-primary` `hover:bg-action-primary-hover` `bg-action-primary-active` `text-action-primary-foreground` `bg-action-secondary` `bg-action-ghost-hover` `bg-action-destructive` `bg-action-marketing` |
+| Bordes          | `border-default` `border-subtle` `border-strong` `border-interactive` `border-separator`                                                                                                                    |
+| Feedback        | `bg-feedback-{success,warning,error,info}` `text-feedback-*` `border-feedback-*` `bg-feedback-*-strong`                                                                                                     |
+| IA              | `bg-ai-surface` `bg-ai-surface-hover` `border-ai` `border-ai-strong` `text-ai-label` `text-ai-icon` `text-ai-text`                                                                                          |
+| Foco            | `.focus-ring` (clase canónica), `ring-focus`, `ring-offset-focus`                                                                                                                                           |
+| Tipografía      | `font-heading` `font-body` `font-ui` · `text-display` `text-h1` `text-h2` `text-h3` `text-body-lg` `text-body-md` `text-body-sm` `text-label` `text-caption` `text-eyebrow`                                 |
+| Forma           | `rounded-button` `rounded-input` `rounded-card` `rounded-card-prominent` `rounded-modal` `rounded-drawer` `rounded-badge`                                                                                   |
+| Elevación       | `shadow-surface-subtle` `shadow-surface-raised` `shadow-overlay-dropdown` `shadow-overlay-modal` `shadow-marketing-floating`                                                                                |
+| Layout          | `w-sidebar` `h-header` `max-w-marketing` `max-w-form` `max-w-content` `p-page-mobile/tablet/desktop` `min-h-touch` `min-w-touch` `h-icon-sm/md/lg`                                                          |
+| Motion          | `duration-instant/fast/standard/slow` `ease-standard/enter/exit`                                                                                                                                            |
+| Capas           | `z-base` `z-sticky` `z-dropdown` `z-drawer` `z-modal` `z-toast` `z-tooltip`                                                                                                                                 |
 
 ### 3.2 CSS custom properties
 
@@ -170,12 +178,12 @@ Estas reglas están **testeadas**, no sólo documentadas: ver `src/tests/unit/de
 `tailwind.config.ts` mantiene cuatro aliases heredados de US-107, ya **remapeados a valores
 EventFlow aprobados** para no romper consumidores no migrados:
 
-| Alias | Antes | Ahora | Reemplazo |
-| --- | --- | --- | --- |
-| `primary-*` | `colors.blue` | escala violeta aprobada | `bg-action-primary`, `text-link`, `bg-surface-selected` |
-| `secondary-*` | `colors.slate` | escala neutral aprobada | `text-secondary`, `bg-surface-subtle`, `border-subtle` |
-| `danger-*` | `colors.red` | escala red aprobada | `bg-action-destructive`, `text-feedback-error` |
-| `success-*` | `colors.emerald` | escala green aprobada | `bg-feedback-success-strong`, `text-feedback-success` |
+| Alias         | Antes            | Ahora                   | Reemplazo                                               |
+| ------------- | ---------------- | ----------------------- | ------------------------------------------------------- |
+| `primary-*`   | `colors.blue`    | escala violeta aprobada | `bg-action-primary`, `text-link`, `bg-surface-selected` |
+| `secondary-*` | `colors.slate`   | escala neutral aprobada | `text-secondary`, `bg-surface-subtle`, `border-subtle`  |
+| `danger-*`    | `colors.red`     | escala red aprobada     | `bg-action-destructive`, `text-feedback-error`          |
+| `success-*`   | `colors.emerald` | escala green aprobada   | `bg-feedback-success-strong`, `text-feedback-success`   |
 
 Tras la migración del shell de navegación **ninguno tiene consumidores en el código**; se
 conservan como red de seguridad y deben eliminarse al cerrar la migración de componentes.
@@ -184,11 +192,11 @@ conservan como red de seguridad y deben eliminarse al cerrar la migración de co
 
 ## 7. Tokens provisionales
 
-| Token | Estado | Nota |
-| --- | --- | --- |
-| `ai.border` = `violet.500` | **Provisional** | 3.35:1 sobre `ai.surface` — cumple 3:1 con margen estrecho. CMP-Q-003 pide validación visual en navegador; si resulta débil, promover a `violet.600` **como cambio de token**, nunca como override en el componente. |
-| `provisional.sidebarWidthCollapsed` | **No usado** | TOK-DEC-023 / CMP-DEC-005 lo difieren fuera del MVP. Declarado como `null` sólo para dejar constancia. No consumir. |
-| `font.family.mono` | **No implementado** | TOK-DEC-024 lo deja provisional y sin consumidor real en el MVP. Se omite deliberadamente. |
+| Token                               | Estado              | Nota                                                                                                                                                                                                                 |
+| ----------------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ai.border` = `violet.500`          | **Provisional**     | 3.35:1 sobre `ai.surface` — cumple 3:1 con margen estrecho. CMP-Q-003 pide validación visual en navegador; si resulta débil, promover a `violet.600` **como cambio de token**, nunca como override en el componente. |
+| `provisional.sidebarWidthCollapsed` | **No usado**        | TOK-DEC-023 / CMP-DEC-005 lo difieren fuera del MVP. Declarado como `null` sólo para dejar constancia. No consumir.                                                                                                  |
+| `font.family.mono`                  | **No implementado** | TOK-DEC-024 lo deja provisional y sin consumidor real en el MVP. Se omite deliberadamente.                                                                                                                           |
 
 ---
 

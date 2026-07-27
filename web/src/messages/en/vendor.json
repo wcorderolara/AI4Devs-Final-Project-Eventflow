@@ -53,11 +53,20 @@
       "title": "Edit my profile",
       "subtitle": "Update your business details. Major changes require another review by our team.",
       "loading": "Loading your profile…",
-      "links": { "createNew": "Create my profile" },
+      "links": {
+        "createNew": "Create my profile"
+      },
       "fields": {
-        "businessName": { "label": "Business name" },
-        "bio": { "label": "Description", "help": "Between 50 and 1000 characters." },
-        "location": { "label": "Primary city" }
+        "businessName": {
+          "label": "Business name"
+        },
+        "bio": {
+          "label": "Description",
+          "help": "Between 50 and 1000 characters."
+        },
+        "location": {
+          "label": "Primary city"
+        }
       },
       "buttons": {
         "save": "Save changes",
@@ -214,7 +223,9 @@
       "title": "Change my service categories",
       "subtitle": "Pick between 1 and 5 categories. Each accepted change requires another admin review.",
       "loading": "Loading your categories…",
-      "links": { "createNew": "Create my profile" },
+      "links": {
+        "createNew": "Create my profile"
+      },
       "counter": {
         "remaining": "Category changes remaining: {remaining} of {max}.",
         "reached": "You have reached the maximum of 5 category changes."
@@ -295,11 +306,21 @@
       "submit": "Create package",
       "submitting": "Creating…",
       "fields": {
-        "packageName": { "label": "Package name" },
-        "description": { "label": "Description" },
-        "basePrice": { "label": "Base price" },
-        "currency": { "label": "Currency" },
-        "category": { "label": "Category" }
+        "packageName": {
+          "label": "Package name"
+        },
+        "description": {
+          "label": "Description"
+        },
+        "basePrice": {
+          "label": "Base price"
+        },
+        "currency": {
+          "label": "Currency"
+        },
+        "category": {
+          "label": "Category"
+        }
       }
     },
     "deactivate": {
@@ -399,8 +420,8 @@
     }
   },
   "directory": {
-    "title": "Find vendors",
-    "subtitle": "Filter by category, city and price range. Results are paginated.",
+    "title": "Vendor directory",
+    "subtitle": "Browse the approved vendors on EventFlow. Filter by category, city and price range.",
     "loading": "Loading vendors…",
     "error": "We couldn't load the directory. Please retry in a few seconds.",
     "empty": {
@@ -434,6 +455,11 @@
       "noCategories": "No categories",
       "priceRange": "Price range",
       "ratingAria": "{avg} stars, {count} reviews"
+    },
+    "invalidFilters": "One of the filters is not valid. Review them or clear them to start over.",
+    "metadata": {
+      "title": "Event vendors | EventFlow",
+      "description": "Browse the approved vendors on EventFlow and filter by category, city and price range. Check their profile and request structured quotes."
     }
   },
   "booking": {
@@ -468,7 +494,10 @@
     "subtitle": "Snapshot of your business: requests, bookings, reviews and rating.",
     "error": "We couldn't load your summary. Please try again.",
     "weekBanner": "{count, plural, one {# booking} other {# bookings}} this week",
-    "actions": { "refresh": "Refresh", "refreshing": "Refreshing…" },
+    "actions": {
+      "refresh": "Refresh",
+      "refreshing": "Refreshing…"
+    },
     "onboarding": {
       "title": "You don't have a vendor profile yet",
       "body": "Complete onboarding to start receiving quote requests.",

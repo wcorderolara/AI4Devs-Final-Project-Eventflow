@@ -16,10 +16,16 @@ import { SidebarItem } from './SidebarItem';
  */
 export interface SidebarSectionProps {
   section: NavigationSection;
+  /** Se propaga a cada `SidebarItem`: activar un enlace del grupo lo notifica. */
+  onNavigate?: () => void;
   className?: string;
 }
 
-export function SidebarSection({ section, className }: SidebarSectionProps): React.JSX.Element {
+export function SidebarSection({
+  section,
+  onNavigate,
+  className,
+}: SidebarSectionProps): React.JSX.Element {
   const headingId = useId();
   const { label, labelHidden = false, items } = section;
 
@@ -27,7 +33,7 @@ export function SidebarSection({ section, className }: SidebarSectionProps): Rea
     <ul className="flex flex-col gap-1">
       {items.map((item) => (
         <li key={item.href}>
-          <SidebarItem item={item} />
+          <SidebarItem item={item} onNavigate={onNavigate} />
         </li>
       ))}
     </ul>

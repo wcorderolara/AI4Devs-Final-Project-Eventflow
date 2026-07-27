@@ -3,8 +3,13 @@
 // US-027 (PB-P1-018 / FE-003) — Paginación accesible (`<nav aria-label>`).
 // Actualiza `?page=` preservando el resto de filtros. Prev deshabilitado en page 1; Next
 // deshabilitado cuando `page >= totalPages`.
+//
+// PB-P2-031: deja de pintar sus propios botones y compone `Pagination` del design system. La
+// paginación por URL sigue viviendo aquí —la primitiva es controlada y no conoce rutas—, así
+// que el contrato con `EventChecklistPage` no cambia.
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { Pagination as SharedPagination } from '@/shared/design-system';
 
 interface Props {
   page: number;
@@ -25,26 +30,15 @@ export function Pagination({ page, totalPages }: Props): JSX.Element | null {
   }
 
   return (
-    <nav aria-label={t('label')} className="pagination">
-      <button
-        type="button"
-        onClick={() => go(page - 1)}
-        disabled={page <= 1}
-        aria-label={t('prev')}
-      >
-        {t('prev')}
-      </button>
-      <span aria-live="polite" className="pagination__current">
-        {t('pageOf', { page, totalPages })}
-      </span>
-      <button
-        type="button"
-        onClick={() => go(page + 1)}
-        disabled={page >= totalPages}
-        aria-label={t('next')}
-      >
-        {t('next')}
-      </button>
-    </nav>
+    <SharedPagination
+      ariaLabel={t('label')}
+      page={page}
+      totalPages={totalPages}
+      onPageChange={go}
+      previousLabel={t('prev')}
+      nextLabel={t('next')}
+      summary={t('pageOf', { page, totalPages })}
+      live
+    />
   );
 }

@@ -1,8 +1,24 @@
 'use client';
 
+// PB-P2-033: las tablas de conteos pasan a las primitivas `Table` del design system.
 import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { AlertTriangle } from 'lucide-react';
+import {
+  Alert,
+  Button,
+  Card,
+  DescriptionList,
+  DescriptionListItem,
+  ErrorState,
+  Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from '@/shared/design-system';
 import { useSeedStatus } from '../hooks/useAdminSeed';
 import type { SeedResetReportDTO } from '../api/adminSeedApi.types';
 import { SeedResetDialog } from './SeedResetDialog';
@@ -31,29 +47,30 @@ function CountsTable({
 }): React.JSX.Element {
   const entries = Object.entries(counts).sort(([a], [b]) => a.localeCompare(b));
   return (
-    <div className="overflow-x-auto rounded-md border border-neutral-200">
-      <table className="min-w-full text-sm">
-        <caption className="sr-only">{caption}</caption>
-        <thead className="bg-neutral-50 text-xs font-semibold uppercase tracking-wide text-neutral-600">
-          <tr>
-            <th scope="col" className="px-3 py-2 text-left">
-              {entityLabel}
-            </th>
-            <th scope="col" className="px-3 py-2 text-right">
-              {countLabel}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {entries.map(([k, v]) => (
-            <tr key={k} className="border-t border-neutral-100">
-              <td className="px-3 py-1.5 text-neutral-800">{k}</td>
-              <td className="px-3 py-1.5 text-right font-mono text-neutral-900">{v}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Table
+      caption={caption}
+      density="compact"
+      containerClassName="rounded-card border border-subtle"
+    >
+      <TableHead>
+        <TableRow>
+          <TableHeaderCell density="compact">{entityLabel}</TableHeaderCell>
+          <TableHeaderCell density="compact" align="numeric">
+            {countLabel}
+          </TableHeaderCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {entries.map(([k, v]) => (
+          <TableRow key={k}>
+            <TableCell density="compact">{k}</TableCell>
+            <TableCell density="compact" align="numeric">
+              {v}
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }
 
@@ -68,71 +85,61 @@ export function SeedDemoPanel(): React.JSX.Element {
     <section aria-labelledby="admin-seed-title" className="space-y-4">
       <header className="flex flex-wrap items-baseline justify-between gap-3">
         <div>
-          <h1 id="admin-seed-title" className="text-2xl font-bold">
+          <h1 id="admin-seed-title" className="font-heading text-h2 font-semibold text-primary">
             {t('title')}
           </h1>
-          <p className="mt-1 text-sm text-neutral-600">{t('subtitle')}</p>
+          <p className="mt-1 font-body text-body-sm text-secondary">{t('subtitle')}</p>
         </div>
         <div className="flex gap-2">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => void refetch()}
             disabled={isRefetching || isPending}
-            className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+            isLoading={isRefetching}
+            loadingLabel={t('actions.refreshing')}
           >
-            {isRefetching ? t('actions.refreshing') : t('actions.refresh')}
-          </button>
-          <button
-            type="button"
+            {t('actions.refresh')}
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
             onClick={() => setDialogOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-md border border-red-600 bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+            leadingIcon={<AlertTriangle />}
           >
-            <AlertTriangle className="h-4 w-4" aria-hidden="true" />
             {t('actions.reset')}
-          </button>
+          </Button>
         </div>
       </header>
 
-      <div
-        role="note"
-        className="flex gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
-      >
-        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-        <p>{t('warning')}</p>
-      </div>
+      <Alert variant="warning">{t('warning')}</Alert>
 
       {isPending ? (
-        <div role="status" aria-busy="true" className="h-40 animate-pulse rounded-md bg-neutral-100" />
-      ) : null}
-
-      {isError ? (
-        <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-          {t('errors.statusLoad')}
+        <div role="status" aria-busy="true">
+          <Skeleton variant="card" />
         </div>
       ) : null}
 
+      {isError ? <ErrorState title={t('errors.statusLoad')} /> : null}
+
       {data ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="rounded-md border border-neutral-200 bg-white p-4">
-            <h2 className="text-sm font-semibold text-neutral-700">{t('status.title')}</h2>
-            <dl className="mt-3 space-y-2 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-neutral-600">{t('status.lastRunAt')}</dt>
-                <dd className="font-medium text-neutral-900">
-                  {formatDateTime(data.lastRunAt, locale)}
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-neutral-600">{t('status.preset')}</dt>
-                <dd className="font-medium text-neutral-900">
-                  {data.preset ?? '—'}
-                </dd>
-              </div>
-            </dl>
-          </div>
+          <Card padding="sm">
+            <h2 className="font-ui text-label font-semibold text-secondary">{t('status.title')}</h2>
+            <DescriptionList className="mt-3">
+              <DescriptionListItem term={t('status.lastRunAt')}>
+                {formatDateTime(data.lastRunAt, locale)}
+              </DescriptionListItem>
+              <DescriptionListItem term={t('status.preset')} emptyText="—">
+                {data.preset ?? undefined}
+              </DescriptionListItem>
+            </DescriptionList>
+          </Card>
 
           <div>
-            <h2 className="mb-2 text-sm font-semibold text-neutral-700">{t('status.counts')}</h2>
+            <h2 className="mb-2 font-ui text-label font-semibold text-secondary">
+              {t('status.counts')}
+            </h2>
             <CountsTable
               counts={data.recordCount}
               caption={t('status.counts')}
@@ -144,16 +151,20 @@ export function SeedDemoPanel(): React.JSX.Element {
       ) : null}
 
       {lastReport ? (
-        <div className="rounded-md border border-green-200 bg-green-50 p-4">
-          <h2 className="text-sm font-semibold text-green-900">
-            {t('report.title')} <span className="font-mono text-xs">({lastReport.seedVersion})</span>
-          </h2>
-          <p className="mt-1 text-xs text-green-800">
-            {t('report.duration', { ms: lastReport.durationMs })}
-          </p>
+        <Alert
+          variant="success"
+          live
+          title={
+            <>
+              {t('report.title')}{' '}
+              <span className="font-mono text-caption">({lastReport.seedVersion})</span>
+            </>
+          }
+        >
+          <p className="text-caption">{t('report.duration', { ms: lastReport.durationMs })}</p>
           <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
             <div>
-              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-red-700">
+              <h3 className="mb-1 font-ui text-caption font-semibold uppercase tracking-ef-wide text-secondary">
                 {t('report.deleted')}
               </h3>
               <CountsTable
@@ -164,7 +175,7 @@ export function SeedDemoPanel(): React.JSX.Element {
               />
             </div>
             <div>
-              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-green-700">
+              <h3 className="mb-1 font-ui text-caption font-semibold uppercase tracking-ef-wide text-secondary">
                 {t('report.reseeded')}
               </h3>
               <CountsTable
@@ -175,7 +186,7 @@ export function SeedDemoPanel(): React.JSX.Element {
               />
             </div>
           </div>
-        </div>
+        </Alert>
       ) : null}
 
       <SeedResetDialog

@@ -16,6 +16,9 @@ import type {
   CreateQuoteRequestEnvelope,
   CreateQuoteRequestInput,
   CreateQuoteRequestView,
+  ListEventQuoteRequestsEnvelope,
+  ListEventQuoteRequestsInput,
+  ListEventQuoteRequestsView,
   PreferQuoteEnvelope,
   PreferQuoteInput,
   PreferQuoteView,
@@ -28,6 +31,7 @@ import {
   toCancelQrView,
   toCompareQuotesView,
   toCreateQuoteRequestView,
+  toListEventQuoteRequestsView,
   toPreferQuoteView,
   toRejectQuoteView,
 } from './quotesApi.types';
@@ -122,5 +126,25 @@ export const quotesApi = {
       { body: { is_preferred: input.isPreferred } },
     );
     return toPreferQuoteView(envelope.data);
+  },
+
+  /**
+   * US-096 (BE-001): listado paginado de los QuoteRequests del evento para su organizer dueño.
+   * A diferencia del resto de endpoints de quotes el envelope es de lista (`{data, pagination}`)
+   * y el DTO ya viene camelCase. Códigos de error: `AUTHENTICATION_REQUIRED` (401),
+   * `FORBIDDEN` (403), `EVENT_NOT_FOUND` (404), `VALIDATION_ERROR` (422).
+   */
+  async listByEvent(input: ListEventQuoteRequestsInput): Promise<ListEventQuoteRequestsView> {
+    const envelope = await httpGet<ListEventQuoteRequestsEnvelope>(
+      `/events/${encodeURIComponent(input.eventId)}/quote-requests`,
+      {
+        query: {
+          status: input.status,
+          page: input.page,
+          pageSize: input.pageSize,
+        },
+      },
+    );
+    return toListEventQuoteRequestsView(envelope);
   },
 };

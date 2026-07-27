@@ -11,7 +11,7 @@ import { cx } from '../internal/cx';
  * - `motion-reduce:animate-none` elimina el shimmer cuando el usuario reduce el movimiento
  *   (UI-DEC-015); el placeholder sigue siendo visible, simplemente estático.
  */
-export type SkeletonVariant = 'text' | 'card' | 'listRow' | 'tableRow' | 'navItem';
+export type SkeletonVariant = 'text' | 'avatar' | 'card' | 'listRow' | 'tableRow' | 'navItem';
 
 export interface SkeletonProps {
   variant?: SkeletonVariant;
@@ -29,6 +29,9 @@ function Block({ className }: { className: string }): React.JSX.Element {
 
 const SHAPES: Record<SkeletonVariant, () => React.JSX.Element> = {
   text: () => <Block className="h-4 w-full" />,
+  // Placeholder circular del avatar del `UserMenu` y de las filas con foto de proveedor. Se
+  // dimensiona con el token de icono, no con un ancho arbitrario.
+  avatar: () => <Block className="h-icon-lg w-icon-lg shrink-0 rounded-badge" />,
   card: () => (
     <span className="block space-y-3 rounded-card border border-subtle bg-surface p-4">
       <Block className="h-5 w-1/2" />

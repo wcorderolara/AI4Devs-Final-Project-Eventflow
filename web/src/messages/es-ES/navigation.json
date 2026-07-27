@@ -94,10 +94,35 @@
   "public": {
     "directory": "Directorio",
     "login": "Iniciar sesión",
-    "register": "Registrarse"
+    "register": "Registrarse",
+    "nav": {
+      "label": "Navegación principal",
+      "howItWorks": "Cómo funciona",
+      "features": "Funcionalidades",
+      "forVendors": "Para proveedores",
+      "directory": "Proveedores"
+    },
+    "cta": {
+      "login": "Iniciar sesión",
+      "register": "Crear cuenta",
+      "directory": "Explorar proveedores",
+      "vendorRegister": "Registrarme como proveedor",
+      "organizer": {
+        "primary": "Ir a mis eventos",
+        "secondary": "Ver mi panel"
+      },
+      "vendor": {
+        "primary": "Ir a mi espacio de proveedor",
+        "secondary": "Ver solicitudes de presupuesto"
+      },
+      "admin": {
+        "primary": "Abrir administración",
+        "secondary": "Ver métricas"
+      }
+    }
   },
   "footer": {
-    "copyright": "© {year, number} EventFlow"
+    "copyright": "© {year} EventFlow"
   },
   "sidebar": {
     "organizer": {

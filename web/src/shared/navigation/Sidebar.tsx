@@ -13,6 +13,8 @@ interface SidebarProps {
   groups?: NavGroup[];
   /** Contexto de workspace/rol en la cabecera de la sidebar. */
   header?: ReactNode;
+  /** Zona inferior fija: identidad de la sesión (`SidebarAccount`). */
+  footer?: ReactNode;
 }
 
 /**
@@ -23,7 +25,13 @@ interface SidebarProps {
  * quién pinta el markup. Desktop y mobile comparten `useNavigationSections`, de modo que existe
  * **una única** definición de navegación.
  */
-export function Sidebar({ items, groups, ariaLabel, header }: SidebarProps): React.JSX.Element {
+export function Sidebar({
+  items,
+  groups,
+  ariaLabel,
+  header,
+  footer,
+}: SidebarProps): React.JSX.Element {
   const sections = useNavigationSections({ items, groups });
-  return <AppSidebar ariaLabel={ariaLabel} sections={sections} header={header} />;
+  return <AppSidebar ariaLabel={ariaLabel} sections={sections} header={header} footer={footer} />;
 }

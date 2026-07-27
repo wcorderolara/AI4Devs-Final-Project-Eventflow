@@ -11,6 +11,20 @@ class ResizeObserverStub {
 }
 globalThis.ResizeObserver ??= ResizeObserverStub as unknown as typeof ResizeObserver;
 
+// jsdom tampoco implementa `matchMedia`, que el carrusel del hero consulta para respetar
+// `prefers-reduced-motion`. El stub responde "sin preferencia" (`matches: false`), que es el
+// estado por defecto de un navegador; los tests que necesiten el contrario lo sobrescriben.
+globalThis.matchMedia ??= ((query: string) => ({
+  matches: false,
+  media: query,
+  onchange: null,
+  addEventListener: () => {},
+  removeEventListener: () => {},
+  addListener: () => {},
+  removeListener: () => {},
+  dispatchEvent: () => false,
+})) as unknown as typeof matchMedia;
+
 // MSW server para toda la suite (Doc 20 / US-106). `onUnhandledRequest: 'error'` evita fugas de red;
 // cada test registra sus handlers con `server.use(...)` cuando necesita un caso específico.
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));

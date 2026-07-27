@@ -20,6 +20,13 @@ export interface BadgeProps {
   icon?: ReactNode;
   /** Texto visible ya traducido. */
   children: ReactNode;
+  /**
+   * Descripción contextual del badge, ya traducida e interpolada (p. ej. `3 tareas pendientes`).
+   * Se lee **en lugar** del texto visible: el número queda `aria-hidden` para que el lector de
+   * pantalla no anuncie «3 · 3 tareas pendientes». Pensado sobre todo para `variant="count"`,
+   * cuyo dígito aislado no significa nada fuera de contexto.
+   */
+  srLabel?: string;
   className?: string;
   'data-testid'?: string;
 }
@@ -44,6 +51,7 @@ export function Badge({
   size = 'sm',
   icon,
   children,
+  srLabel,
   className,
   'data-testid': testId,
 }: BadgeProps): React.JSX.Element {
@@ -62,7 +70,10 @@ export function Badge({
           {icon}
         </span>
       ) : null}
-      <span className="truncate">{children}</span>
+      {srLabel ? <span className="sr-only">{srLabel}</span> : null}
+      <span aria-hidden={srLabel ? 'true' : undefined} className="truncate">
+        {children}
+      </span>
     </span>
   );
 }

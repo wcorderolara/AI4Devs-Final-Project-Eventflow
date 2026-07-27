@@ -36,34 +36,33 @@ export function AdminActionRowExpansion({
 
   return (
     <tr>
-      <td colSpan={colSpan} className="bg-neutral-50 px-3 py-3">
-        <div
-          id={regionId}
-          role="region"
-          aria-labelledby={labelledById}
-          className="space-y-3"
-        >
+      {/* La fila de expansión reutiliza la superficie sutil de la cabecera de tabla para leerse
+          como continuación de la fila padre, con tokens semánticos en vez de `neutral-*`. */}
+      <td colSpan={colSpan} className="bg-surface-subtle px-3 py-3">
+        <div id={regionId} role="region" aria-labelledby={labelledById} className="space-y-3">
           {hasReason ? (
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
+              <p className="font-ui text-caption font-semibold uppercase tracking-ef-wide text-secondary">
                 {t('expansion.reasonLabel')}
               </p>
-              <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-800">
+              <p className="mt-1 whitespace-pre-wrap font-body text-body-sm text-primary">
                 {reason}
               </p>
             </div>
           ) : null}
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
+            <p className="font-ui text-caption font-semibold uppercase tracking-ef-wide text-secondary">
               {t('expansion.payloadLabel')}
             </p>
             {hasPayload ? (
-              <pre className="mt-1 max-h-64 overflow-auto rounded border border-neutral-200 bg-white p-2 text-xs text-neutral-800">
+              <pre className="mt-1 max-h-64 overflow-auto rounded-card border border-subtle bg-surface p-2 font-mono text-caption text-primary">
                 {payloadText}
               </pre>
             ) : (
-              <p className="mt-1 text-sm text-neutral-500">{t('expansion.payloadEmpty')}</p>
+              <p className="mt-1 font-body text-body-sm text-muted">
+                {t('expansion.payloadEmpty')}
+              </p>
             )}
           </div>
         </div>

@@ -9,9 +9,15 @@
 //   - AC-03 el símbolo ambiguo `$` (USD en `en`) se desambigua a "USD 500.00" via
 //     `currencyDisplay: 'code'` de `Intl.NumberFormat`.
 // EC-05: currency malformada → helper `formatCurrency` degrada a formato genérico sin crash.
+//
+// PB-P2-031: el `<span>` con `title` + `aria-label` + numeración tabular pasa a ser
+// `CurrencyDisplay` del design system. `Money` conserva **su** responsabilidad —resolver el
+// locale activo, decidir la desambiguación de `$` (AC-03) y traducir el nombre de la divisa— y
+// deja de mantener markup propio. El formateo sigue viviendo en `formatCurrency`: no hay una
+// segunda implementación (QA-004).
 import { useLocale as useNextIntlLocale, useTranslations } from 'next-intl';
+import { CurrencyDisplay } from '@/shared/design-system/data-display/CurrencyDisplay';
 import { defaultLocale, isSupportedLocale, type Locale } from './config';
-import { formatCurrency } from './format';
 
 export interface MoneyProps {
   amount: number;
@@ -36,20 +42,24 @@ export interface MoneyProps {
 // Solo aplica en `en`; en locales `es-*`/`pt` los formatos ya son inequívocos (MX$, COL$, US$).
 const AMBIGUOUS_IN_EN = new Set(['USD', 'MXN', 'COP']);
 
-export function Money({ amount, currency, locale, className, formatOptions }: MoneyProps): React.JSX.Element {
+export function Money({
+  amount,
+  currency,
+  locale,
+  className,
+  formatOptions,
+}: MoneyProps): React.JSX.Element {
   // Consumimos `useLocale` de next-intl directamente (no el hook custom `useLocale` que además
   // devuelve `setLocale` y depende de `useRouter`) — `<Money>` no necesita mutar la locale y así
   // se puede renderizar en tests sin un App Router montado.
   const activeRaw = useNextIntlLocale();
   const activeLocale: Locale = isSupportedLocale(activeRaw) ? activeRaw : defaultLocale;
-  const effectiveLocale: Locale = isSupportedLocale(locale ?? null) ? (locale as Locale) : activeLocale;
+  const effectiveLocale: Locale = isSupportedLocale(locale ?? null)
+    ? (locale as Locale)
+    : activeLocale;
   const tCurrency = useTranslations('common.currency');
 
   const useCodeDisplay = effectiveLocale === 'en' && AMBIGUOUS_IN_EN.has(currency);
-  const intlOpts: Intl.NumberFormatOptions | undefined = useCodeDisplay
-    ? { ...formatOptions, currencyDisplay: 'code' }
-    : formatOptions;
-  const formatted = formatCurrency(amount, currency, effectiveLocale, intlOpts);
 
   // Nombre completo para screen reader. Si el key no existe en messages (currency no soportada
   // o test sin providers), degrada silenciosamente al código ISO — nunca lanza.
@@ -65,12 +75,14 @@ export function Money({ amount, currency, locale, className, formatOptions }: Mo
   }
 
   return (
-    <span
+    <CurrencyDisplay
+      amount={amount}
+      currencyCode={currency}
+      locale={effectiveLocale}
+      showCurrencyCode={useCodeDisplay}
+      formatOptions={formatOptions}
+      accessibleLabel={`${amount} ${currencyName}`}
       className={className}
-      title={currency}
-      aria-label={`${amount} ${currencyName}`}
-    >
-      {formatted}
-    </span>
+    />
   );
 }

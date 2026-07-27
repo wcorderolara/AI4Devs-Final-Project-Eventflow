@@ -350,3 +350,66 @@ export function toCreateQuoteRequestView(dto: CreateQuoteRequestDTO): CreateQuot
     },
   };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// US-096 · listado de QuoteRequests del evento (`GET /events/:eventId/quote-requests`)
+// El DTO del backend ya viene en camelCase (`QuoteRequestResponseSchema`), a diferencia del
+// resto de endpoints de quotes: aquí el mapper sólo re-tipa, no renombra.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const QUOTE_REQUEST_STATUSES = [
+  'sent',
+  'viewed',
+  'responded',
+  'expired',
+  'cancelled',
+] as const;
+export type QuoteRequestStatus = (typeof QUOTE_REQUEST_STATUSES)[number];
+
+export interface ListEventQuoteRequestsInput {
+  eventId: string;
+  status?: QuoteRequestStatus;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface QuoteRequestBriefDTO {
+  summary: string;
+  requirements: string[];
+  questions: string[];
+  constraints?: string[];
+}
+
+export interface EventQuoteRequestDTO {
+  id: string;
+  eventId: string;
+  serviceCategoryId: string;
+  vendorProfileId: string | null;
+  status: QuoteRequestStatus;
+  brief: QuoteRequestBriefDTO | null;
+  aiRecommendationId: string | null;
+  viewedAt: string | null;
+  viewedBy: string | null;
+  cancelledAt: string | null;
+  cancelledBy: string | null;
+  cancellationReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ListEventQuoteRequestsEnvelope {
+  data: EventQuoteRequestDTO[];
+  pagination: { page: number; pageSize: number; total: number; totalPages: number };
+  meta?: { correlationId: string; timestamp?: string };
+}
+
+export interface ListEventQuoteRequestsView {
+  items: EventQuoteRequestDTO[];
+  pagination: { page: number; pageSize: number; total: number; totalPages: number };
+}
+
+export function toListEventQuoteRequestsView(
+  envelope: ListEventQuoteRequestsEnvelope,
+): ListEventQuoteRequestsView {
+  return { items: envelope.data, pagination: envelope.pagination };
+}

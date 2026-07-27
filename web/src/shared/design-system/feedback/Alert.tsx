@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { forwardRef, type ReactNode } from 'react';
 import { cx } from '../internal/cx';
 
 /**
@@ -13,6 +13,8 @@ import { cx } from '../internal/cx';
  * - Icono + texto: el color no es la única señal.
  * - `live` se activa **sólo cuando la alerta se inserta dinámicamente**; una alerta presente
  *   desde el render inicial no debe anunciarse (evita ruido en el lector de pantalla).
+ * - **Reenvía la `ref`** al contenedor (misma convención que `Button`, PB-P2-028), para que un
+ *   formulario pueda desplazar el foco al resumen de errores tras un envío fallido.
  */
 export type AlertVariant = 'info' | 'success' | 'warning' | 'error';
 
@@ -35,6 +37,8 @@ export interface AlertProps {
    * `role="alert"` en `error`, `role="status"` en el resto (Component Foundations §27).
    */
   live?: boolean;
+  /** `tabIndex={-1}` cuando el consumidor va a mover el foco a la alerta programáticamente. */
+  tabIndex?: number;
   className?: string;
   'data-testid'?: string;
 }
@@ -67,23 +71,29 @@ const DEFAULT_ICON: Record<AlertVariant, ReactNode> = {
   error: <XCircle aria-hidden="true" className="h-icon-md w-icon-md" />,
 };
 
-export function Alert({
-  variant = 'info',
-  title,
-  children,
-  action,
-  onDismiss,
-  dismissLabel,
-  icon,
-  live = false,
-  className,
-  'data-testid': testId,
-}: AlertProps): React.JSX.Element {
+export const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(
+  {
+    variant = 'info',
+    title,
+    children,
+    action,
+    onDismiss,
+    dismissLabel,
+    icon,
+    live = false,
+    tabIndex,
+    className,
+    'data-testid': testId,
+  },
+  ref,
+) {
   const role = live ? (variant === 'error' ? 'alert' : 'status') : undefined;
 
   return (
     <div
+      ref={ref}
       role={role}
+      tabIndex={tabIndex}
       data-testid={testId}
       data-variant={variant}
       className={cx(
@@ -114,4 +124,4 @@ export function Alert({
       ) : null}
     </div>
   );
-}
+});

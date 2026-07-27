@@ -37,6 +37,24 @@ describe('FormField', () => {
     expect(screen.getByText('0/50')).toBeInTheDocument();
   });
 
+  it('`labelAction` renderiza la acción en la fila del label, antes del control', () => {
+    render(
+      <FormField
+        label="Contraseña"
+        labelAction={<a href="/forgot-password">¿Olvidaste tu contraseña?</a>}
+      >
+        {(field) => <Input {...field} type="password" />}
+      </FormField>,
+    );
+
+    const control = screen.getByLabelText('Contraseña');
+    const action = screen.getByRole('link', { name: '¿Olvidaste tu contraseña?' });
+    expect(action).toBeInTheDocument();
+    // La acción no forma parte del nombre accesible del campo y precede al control en el DOM.
+    expect(control).toHaveAccessibleName('Contraseña');
+    expect(action.compareDocumentPosition(control) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('sin error no marca aria-invalid ni añade descripción de error', () => {
     render(
       <FormField label="Correo electrónico" helperText="Te enviaremos un enlace.">

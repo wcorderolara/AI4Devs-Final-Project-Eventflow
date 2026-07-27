@@ -80,18 +80,22 @@ export function AICategoryCard({
         href={href}
         aria-label={ariaLabel}
         onClick={handleClick}
-        className="block rounded-lg border border-neutral-200 bg-white p-4 shadow-sm transition hover:border-purple-400 hover:shadow focus-ring"
+        // PB-P2-032: `purple-*` genérico está prohibido como color de marca (UI-DEC-002).
+        // El acento de hover/CTA usa los alias semánticos aprobados.
+        className="focus-ring block rounded-card border border-subtle bg-surface p-4 shadow-surface-subtle transition-[box-shadow,border-color] duration-fast ease-standard hover:border-interactive hover:shadow-surface-raised motion-reduce:transition-none"
         data-testid={`ai-vendor-category-${category.service_category_code}`}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="font-medium text-neutral-900">{category.name}</p>
-            <p className="mt-1 text-xs text-neutral-500">{category.service_category_code}</p>
+            <p className="font-ui text-body-sm font-medium text-primary">{category.name}</p>
+            <p className="mt-1 font-body text-caption text-muted">
+              {category.service_category_code}
+            </p>
           </div>
           <AIBadge fallbackUsed={fallbackUsed} />
         </div>
-        <p className="mt-2 text-sm text-neutral-700">{category.reason}</p>
-        <p className="mt-3 text-xs font-medium text-purple-700">{t('cardCta')}</p>
+        <p className="mt-2 font-body text-body-sm text-secondary">{category.reason}</p>
+        <p className="mt-3 font-ui text-caption font-medium text-link">{t('cardCta')}</p>
       </Link>
     </li>
   );

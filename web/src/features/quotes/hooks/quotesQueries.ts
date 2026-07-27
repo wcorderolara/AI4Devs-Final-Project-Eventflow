@@ -13,6 +13,8 @@ import type {
   CompareQuotesView,
   CreateQuoteRequestInput,
   CreateQuoteRequestView,
+  ListEventQuoteRequestsInput,
+  ListEventQuoteRequestsView,
   PreferQuoteInput,
   PreferQuoteView,
 } from '../api/quotesApi.types';
@@ -59,6 +61,29 @@ export function useActiveQrCount(
       }),
     enabled,
     staleTime: 10_000, // consistente con Cache-Control corto sugerido por Tech Spec §5 API.
+  });
+}
+
+/**
+ * US-096 (FE): listado de QuoteRequests del evento. Alimenta el tab «Quotes» del dashboard del
+ * evento. Reusa `quotesKeys.requestsByEvent`, que `useCreateQuoteRequest` ya invalida, de modo
+ * que enviar una nueva solicitud refresca la lista sin trabajo extra.
+ */
+export function useEventQuoteRequests(
+  input: Partial<ListEventQuoteRequestsInput>,
+): ReturnType<typeof useQuery<ListEventQuoteRequestsView, ApiError>> {
+  const enabled = Boolean(input.eventId);
+  return useQuery<ListEventQuoteRequestsView, ApiError>({
+    queryKey: quotesKeys.requestsByEvent(input.eventId ?? '__no_event__'),
+    queryFn: () =>
+      quotesApi.listByEvent({
+        eventId: input.eventId as string,
+        status: input.status,
+        page: input.page,
+        pageSize: input.pageSize ?? 50,
+      }),
+    enabled,
+    staleTime: 30_000,
   });
 }
 

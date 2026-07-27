@@ -84,10 +84,26 @@
     "rangeFilter": {
       "groupLabel": "Time range filter",
       "options": {
-        "overdue": { "short": "O", "label": "Overdue", "tooltip": "Overdue tasks" },
-        "7d": { "short": "7d", "label": "Next 7 days", "tooltip": "Due in the next 7 days" },
-        "30d": { "short": "30d", "label": "Next 30 days", "tooltip": "Due in the next 30 days" },
-        "all": { "short": "All", "label": "All", "tooltip": "All tasks" }
+        "overdue": {
+          "short": "O",
+          "label": "Overdue",
+          "tooltip": "Overdue tasks"
+        },
+        "7d": {
+          "short": "7d",
+          "label": "Next 7 days",
+          "tooltip": "Due in the next 7 days"
+        },
+        "30d": {
+          "short": "30d",
+          "label": "Next 30 days",
+          "tooltip": "Due in the next 30 days"
+        },
+        "all": {
+          "short": "All",
+          "label": "All",
+          "tooltip": "All tasks"
+        }
       }
     },
     "progress": {
@@ -110,9 +126,21 @@
     },
     "filters": {
       "legend": "Filters",
-      "status": { "label": "Status", "any": "Any" },
-      "aiGenerated": { "label": "Origin", "any": "Any", "true": "AI", "false": "Manual" },
-      "categoryCode": { "label": "Category", "placeholder": "catering, decor…" }
+      "status": {
+        "label": "Status",
+        "any": "Any"
+      },
+      "aiGenerated": {
+        "label": "Origin",
+        "any": "Any",
+        "true": "AI",
+        "false": "Manual"
+      },
+      "categoryCode": {
+        "label": "Category",
+        "placeholder": "catering, decor…",
+        "clear": "Clear category"
+      }
     },
     "pagination": {
       "label": "Pagination",
@@ -147,11 +175,15 @@
       "fields": {
         "title": {
           "label": "Title",
-          "errors": { "title_length": "Title must be between 2 and 200 characters." }
+          "errors": {
+            "title_length": "Title must be between 2 and 200 characters."
+          }
         },
         "description": {
           "label": "Description (optional)",
-          "errors": { "description_max": "Description cannot exceed 2000 characters." }
+          "errors": {
+            "description_max": "Description cannot exceed 2000 characters."
+          }
         },
         "dueDate": {
           "label": "Due date (optional)",
@@ -165,7 +197,9 @@
           "label": "Category (optional)",
           "none": "No category",
           "aiHint": "AI-suggested",
-          "errors": { "category_not_available": "The selected category is not available." }
+          "errors": {
+            "category_not_available": "The selected category is not available."
+          }
         }
       },
       "errors": {
@@ -182,12 +216,16 @@
       "fields": {
         "title": {
           "label": "Title",
-          "errors": { "title_length": "Title must be between 2 and 200 characters." }
+          "errors": {
+            "title_length": "Title must be between 2 and 200 characters."
+          }
         },
         "description": {
           "label": "Description",
           "edit": "Edit description",
-          "errors": { "description_max": "Description cannot exceed 2000 characters." }
+          "errors": {
+            "description_max": "Description cannot exceed 2000 characters."
+          }
         },
         "dueDate": {
           "label": "Due date",
@@ -251,6 +289,9 @@
           "generic": "Could not delete the task. Please try again."
         }
       }
+    },
+    "board": {
+      "emptyColumn": "No tasks"
     }
   }
 }

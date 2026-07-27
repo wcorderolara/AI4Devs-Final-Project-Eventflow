@@ -70,5 +70,36 @@
       "FORBIDDEN": "Your role cannot reject quotes.",
       "UNEXPECTED": "Something went wrong. Please try again."
     }
+  },
+  "eventPanel": {
+    "loading": "Loading quote requests…",
+    "tableCaption": "Quote requests for this event",
+    "columns": {
+      "category": "Category",
+      "status": "Status",
+      "sentAt": "Sent",
+      "actions": "Actions"
+    },
+    "status": {
+      "sent": "Sent",
+      "viewed": "Viewed",
+      "responded": "Responded",
+      "expired": "Expired",
+      "cancelled": "Cancelled"
+    },
+    "actions": {
+      "new": "New quote request",
+      "compare": "Compare"
+    },
+    "empty": {
+      "title": "No quote requests yet",
+      "description": "Request quotes from vendors to compare prices and availability for this event.",
+      "cta": "Request a quote"
+    },
+    "error": {
+      "title": "We couldn't load the quote requests",
+      "description": "Something went wrong on our side. Try again in a moment.",
+      "retry": "Retry"
+    }
   }
 }

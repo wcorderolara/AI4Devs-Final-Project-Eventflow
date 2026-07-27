@@ -51,6 +51,14 @@ export interface FormFieldProps {
   requiredIndicator?: ReactNode;
   /** Marca visible de campo opcional. Usar una u otra en todo el formulario, nunca ambas. */
   optionalIndicator?: ReactNode;
+  /**
+   * Acción secundaria alineada a la derecha del label (por ejemplo el enlace *¿Olvidaste tu
+   * contraseña?* junto al campo de contraseña). Es contenido del consumidor, ya traducido.
+   *
+   * Ocupa la misma celda que `characterCount`; usar una u otra en un mismo campo. Queda **antes**
+   * del control en el orden del DOM, que es donde el patrón lo sitúa visualmente.
+   */
+  labelAction?: ReactNode;
   /** Contexto adicional del campo, encima del control. */
   description?: ReactNode;
   /** Texto de ayuda neutro, debajo del control. */
@@ -70,6 +78,7 @@ export function FormField({
   required = false,
   requiredIndicator,
   optionalIndicator,
+  labelAction,
   description,
   helperText,
   error,
@@ -129,6 +138,7 @@ export function FormField({
             {`${characterCount.current}/${characterCount.max}`}
           </span>
         ) : null}
+        {labelAction ? <span className="shrink-0">{labelAction}</span> : null}
       </div>
 
       {description ? (

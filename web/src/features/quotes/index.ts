@@ -10,11 +10,14 @@ export { QuoteComparisonCards } from './components/QuoteComparisonCards';
 export { QuoteStatusIndicator } from './components/QuoteStatusIndicator';
 // US-058 (FE-001): toggle accesible del flag `is_preferred`.
 export { PreferredToggleButton } from './components/PreferredToggleButton';
+// Panel de cotizaciones del dashboard del evento (tab «Quotes»).
+export { EventQuotesPanel, type EventQuotesPanelProps } from './components/EventQuotesPanel';
 export { quotesApi } from './api/quotesApi';
 export {
   useCreateQuoteRequest,
   useActiveQrCount,
   useCompareQuotes,
+  useEventQuoteRequests,
   usePreferQuote,
   quotesKeys,
 } from './hooks/quotesQueries';
@@ -28,6 +31,10 @@ export type {
   ActiveQrCountDTO,
   CompareQuotesInput,
   CompareQuotesView,
+  ListEventQuoteRequestsInput,
+  ListEventQuoteRequestsView,
+  EventQuoteRequestDTO,
+  QuoteRequestStatus,
   CompareQuoteItemView,
   ComparableQuoteStatus,
   PreferQuoteInput,

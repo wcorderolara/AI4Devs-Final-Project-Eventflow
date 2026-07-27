@@ -41,11 +41,13 @@ export function AppSidebar({
     <div
       data-testid={testId}
       className={cx(
-        'hidden w-sidebar shrink-0 flex-col border-r border-subtle bg-surface lg:flex',
+        // `bg-sidebar` + `border-chrome`: el cromo tintado del screen Stitch del layout
+        // principal. La sidebar ya no es blanca — el blanco queda para el contenido.
+        'hidden w-sidebar shrink-0 flex-col border-r border-chrome bg-sidebar lg:flex',
         className,
       )}
     >
-      {header ? <div className="border-b border-subtle p-4">{header}</div> : null}
+      {header ? <div className="border-b border-chrome p-4">{header}</div> : null}
       <nav
         aria-label={ariaLabel}
         // `min-h-0` + `overflow-y-auto`: si el menú crece más que el alto disponible, hace scroll
@@ -56,7 +58,9 @@ export function AppSidebar({
           <SidebarSection key={section.id} section={section} />
         ))}
       </nav>
-      {footer ? <div className="border-t border-subtle p-4">{footer}</div> : null}
+      {/* El pie sube un paso en la rampa de superficies (`sidebar.footer.background`), como el
+          bloque de identidad del screen Stitch. */}
+      {footer ? <div className="border-t border-chrome bg-sidebar-footer p-4">{footer}</div> : null}
     </div>
   );
 }

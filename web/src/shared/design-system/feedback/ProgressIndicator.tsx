@@ -1,3 +1,6 @@
+'use client';
+
+import { useId } from 'react';
 import { cx } from '../internal/cx';
 
 /**
@@ -11,6 +14,12 @@ import { cx } from '../internal/cx';
  * - El label visible es obligatorio: el progreso nunca se comunica sólo con la barra.
  * - `valueText` permite un texto no porcentual (`18 de 30 tareas`) formateado por el consumidor
  *   con `Intl` — el design system no formatea números ni conoce el locale.
+ *
+ * PB-P2-030 (normalización): el valor se **acota al rango también en la capa accesible**. Antes
+ * sólo se acotaba el ancho visual, de modo que `value={250} max={100}` exponía
+ * `aria-valuenow="250"` — un valor fuera de `[aria-valuemin, aria-valuemax]` que WAI-ARIA declara
+ * inválido y que los lectores de pantalla anuncian de forma impredecible. `description` pasa
+ * además a asociarse con la barra vía `aria-describedby`.
  */
 export type ProgressIndicatorSize = 'sm' | 'md';
 
@@ -43,10 +52,17 @@ export function ProgressIndicator({
   className,
   'data-testid': testId,
 }: ProgressIndicatorProps): React.JSX.Element {
-  const indeterminate = value === undefined || Number.isNaN(value);
+  const descriptionId = useId();
+  const indeterminate = value === undefined || !Number.isFinite(value);
+  // Un rango invertido o degenerado (`max <= min`) no puede describir progreso: se trata como
+  // indeterminado en lugar de dividir por cero o exponer un rango inválido.
   const span = max - min;
-  const ratio = indeterminate || span <= 0 ? 0 : (value - min) / span;
-  const percent = Math.max(0, Math.min(100, ratio * 100));
+  const validRange = Number.isFinite(min) && Number.isFinite(max) && span > 0;
+  const determinate = !indeterminate && validRange;
+  // `aria-valuenow` debe caer dentro de `[aria-valuemin, aria-valuemax]`: se acota igual que el
+  // ancho visual para que ambas señales digan lo mismo.
+  const clamped = determinate ? Math.max(min, Math.min(max, value)) : undefined;
+  const percent = determinate ? ((clamped as number) - min) / span : 0;
 
   return (
     <div className={cx('w-full', className)} data-testid={testId}>
@@ -61,22 +77,27 @@ export function ProgressIndicator({
       <div
         role="progressbar"
         aria-label={label}
-        aria-valuemin={indeterminate ? undefined : min}
-        aria-valuemax={indeterminate ? undefined : max}
-        aria-valuenow={indeterminate ? undefined : value}
-        aria-valuetext={indeterminate ? undefined : valueText}
-        aria-busy={indeterminate || undefined}
+        aria-valuemin={determinate ? min : undefined}
+        aria-valuemax={determinate ? max : undefined}
+        aria-valuenow={clamped}
+        aria-valuetext={determinate ? valueText : undefined}
+        aria-describedby={description ? descriptionId : undefined}
+        aria-busy={!determinate || undefined}
         className={cx('mt-2 w-full overflow-hidden rounded-badge bg-surface-disabled', SIZE[size])}
       >
         <span
           className={cx(
             'block h-full rounded-badge bg-action-primary transition-[width] duration-standard ease-standard',
-            indeterminate && 'animate-pulse motion-reduce:animate-none',
+            !determinate && 'animate-pulse motion-reduce:animate-none',
           )}
-          style={{ width: indeterminate ? '100%' : `${percent}%` }}
+          style={{ width: determinate ? `${percent * 100}%` : '100%' }}
         />
       </div>
-      {description ? <p className="mt-1 text-caption text-muted">{description}</p> : null}
+      {description ? (
+        <p id={descriptionId} className="mt-1 text-caption text-muted">
+          {description}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -531,7 +531,8 @@
       "status": "Estado",
       "search": "Buscar",
       "searchPlaceholder": "Email o nombre…",
-      "all": "Todos"
+      "all": "Todos",
+      "clearSearch": "Limpiar búsqueda"
     },
     "status": {
       "active": "Activo",

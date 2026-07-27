@@ -22,7 +22,11 @@ export function Topbar({
   title,
   breadcrumb,
 }: {
-  onMenuOpen: () => void;
+  /**
+   * Abre el drawer mobile. Ausente ⇒ no se monta el trigger: es el caso del shell sin navegación
+   * (sesión sin rol activo), donde no habría nada que abrir.
+   */
+  onMenuOpen?: () => void;
   isMenuOpen: boolean;
   /** `id` del panel del drawer, para el `aria-controls` del trigger. */
   drawerId?: string;
@@ -35,12 +39,14 @@ export function Topbar({
   return (
     <TopBar
       menuTrigger={
-        <MobileNavigationTrigger
-          label={t('topbar.menuOpen')}
-          isOpen={isMenuOpen}
-          onOpen={onMenuOpen}
-          controls={drawerId}
-        />
+        onMenuOpen ? (
+          <MobileNavigationTrigger
+            label={t('topbar.menuOpen')}
+            isOpen={isMenuOpen}
+            onOpen={onMenuOpen}
+            controls={drawerId}
+          />
+        ) : undefined
       }
       brand={<Logo size="sm" />}
       title={title}

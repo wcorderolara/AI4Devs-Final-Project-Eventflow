@@ -55,7 +55,13 @@ export function AppShell({
       {drawer}
       <div className="flex min-h-0 flex-1">
         {sidebar}
-        <main id={mainId} className={cx('min-w-0 flex-1', mainClassName)}>
+        {/* `bg-page` (`color.platform.page.background`, Design Tokens §10) es el fondo del área
+            de contenido, cuyo propósito declarado es **separarla de las cards blancas**. Desde
+            la adopción del look & feel del screen Stitch del layout principal, ese lienzo es el
+            gris cálido `canvas.bright`; el cromo (topbar `bg-header`, sidebar `bg-sidebar`) se
+            apoya en la misma rampa, y el blanco puro queda reservado al contenido. Va antes de
+            `mainClassName` para que un consumidor pueda sustituirlo si lo necesitase. */}
+        <main id={mainId} className={cx('min-w-0 flex-1 bg-page', mainClassName)}>
           {children}
         </main>
       </div>

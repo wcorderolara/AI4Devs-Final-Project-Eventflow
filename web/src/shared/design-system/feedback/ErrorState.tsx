@@ -30,6 +30,12 @@ export interface ErrorStateProps {
   correlationId?: string;
   /** Etiqueta del identificador (p. ej. `Referencia`). Requerida para mostrar `correlationId`. */
   correlationLabel?: string;
+  /**
+   * Metadata técnica **ya saneada por el feature** (p. ej. `Reintento 2 de 3`, marca de tiempo).
+   * Se renderiza como texto secundario junto al correlation ID. Sólo admite `string`: no puede
+   * recibir un `Error`, un payload de API ni el mensaje de un proveedor de IA.
+   */
+  technicalDetails?: string;
   variant?: ErrorStateVariant;
   headingLevel?: 2 | 3 | 4;
   className?: string;
@@ -49,6 +55,7 @@ export function ErrorState({
   secondaryAction,
   correlationId,
   correlationLabel,
+  technicalDetails,
   variant = 'section',
   headingLevel = 3,
   className,
@@ -71,7 +78,11 @@ export function ErrorState({
       </span>
       <Heading className="font-heading text-h3 font-semibold text-feedback-error">{title}</Heading>
       {description ? (
-        <p className="mt-2 max-w-form font-body text-body-sm text-primary">{description}</p>
+        // `whitespace-pre-line`: los catálogos de `next-intl` pueden traer mensajes de varias
+        // líneas (`\n`) y HTML los colapsaría en un único párrafo corrido.
+        <p className="mt-2 max-w-form whitespace-pre-line font-body text-body-sm text-primary">
+          {description}
+        </p>
       ) : null}
       {onRetry || secondaryAction ? (
         <div className="mt-6 flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-center">
@@ -83,6 +94,11 @@ export function ErrorState({
         <p className="mt-4 font-body text-caption text-muted">
           {correlationLabel}
           <span className="ml-1 select-all tabular-nums">{correlationId}</span>
+        </p>
+      ) : null}
+      {technicalDetails ? (
+        <p className="mt-1 max-w-form whitespace-pre-line font-body text-caption text-muted">
+          {technicalDetails}
         </p>
       ) : null}
     </div>

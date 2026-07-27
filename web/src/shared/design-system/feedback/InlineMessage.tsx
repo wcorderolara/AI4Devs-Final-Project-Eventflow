@@ -1,5 +1,7 @@
+'use client';
+
 import { AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import { cx } from '../internal/cx';
 
 /**
@@ -20,6 +22,10 @@ export interface InlineMessageProps {
   icon?: ReactNode;
   /** `true` cuando el mensaje aparece dinámicamente tras una acción del usuario. */
   live?: boolean;
+  /**
+   * Id del párrafo. Si se omite se **genera** uno estable, de modo que el mensaje siempre puede
+   * referenciarse desde `aria-describedby` sin que el consumidor invente identificadores.
+   */
   id?: string;
   className?: string;
   'data-testid'?: string;
@@ -50,12 +56,13 @@ export function InlineMessage({
   className,
   'data-testid': testId,
 }: InlineMessageProps): React.JSX.Element {
+  const generatedId = useId();
   const glyph = icon ?? TONE_ICON[tone];
   const role = live ? (tone === 'error' ? 'alert' : 'status') : undefined;
 
   return (
     <p
-      id={id}
+      id={id ?? generatedId}
       role={role}
       data-testid={testId}
       data-tone={tone}
