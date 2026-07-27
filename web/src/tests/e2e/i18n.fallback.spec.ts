@@ -5,6 +5,6 @@ test.use({ locale: 'fr-FR' });
 
 test('locale no soportado cae a es-LATAM', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByText('Bienvenido a EventFlow')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('plan accionable');
   await expect(page.locator('html')).toHaveAttribute('lang', 'es-419');
 });

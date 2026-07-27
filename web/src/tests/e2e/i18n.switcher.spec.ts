@@ -11,13 +11,13 @@ test.beforeEach(async ({ context }) => {
 
 test('cambiar idioma vía switcher persiste cookie y re-renderiza', async ({ page, context }) => {
   await page.goto('/');
-  await expect(page.getByText('Bienvenido a EventFlow')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('plan accionable');
   await expect(page.locator('html')).toHaveAttribute('lang', 'es-419');
 
   await page.getByRole('button', { name: 'Cambiar idioma' }).click();
   await page.getByRole('option', { name: /English/ }).click();
 
-  await expect(page.getByText('Welcome to EventFlow')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('actionable plan');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
 
   const cookies = await context.cookies();
