@@ -1,3 +1,265 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/**
+ * EventFlow — Design Tokens · capa semántica como CSS custom properties.
+ *
+ * Fuente de verdad: `src/shared/design-tokens/` (TypeScript). Este bloque la ESPEJA para que
+ * CSS y componentes puedan consumir los mismos valores (Design Tokens §28, §30).
+ * La sincronización TS <-> CSS se verifica en
+ * `src/tests/unit/design-tokens/integration.test.ts` — si un valor diverge, el test falla.
+ *
+ * Convención de nombres: kebab-case, `--<categoria>-<grupo>-<rol>`.
+ *
+ * Light theme únicamente (UI-DEC-013): NO existe selector `.dark` ni `[data-theme]`.
+ * Sin temas por rol (UI-DEC-009): NO existe selector `[data-role]`.
+ */
+@layer base {
+  :root {
+    /* --- Text (Design Tokens 9.1) ------------------------------------------ */
+    /* `#171717` NO es texto de cuerpo: se reserva a superficie inversa / CTA marketing. */
+    --color-text-primary: #262626;
+    --color-text-secondary: #525252;
+    --color-text-muted: #737373;
+    --color-text-disabled: #a3a3a3;
+    --color-text-inverse: #ffffff;
+    --color-text-link: #6238c7;
+    --color-text-link-hover: #4a2a99;
+
+    /* --- Background & surface (9.2, 10.2) ---------------------------------- */
+    --color-background-default: #ffffff;
+    --color-background-subtle: #fafafa;
+    /* Lienzo del area de contenido: gris calido del screen Stitch del layout principal. */
+    --color-background-page: #fcf9f8;
+    --color-surface-default: #ffffff;
+    --color-surface-subtle: #fafafa;
+    --color-surface-elevated: #ffffff;
+    --color-surface-disabled: #f5f5f5;
+    --color-surface-inverse: #171717;
+    --color-surface-selected: #f5f1fe;
+
+    /* --- Borders (9.3, 16) ------------------------------------------------- */
+    --color-border-default: #d4d4d4;
+    --color-border-subtle: #e5e5e5;
+    --color-border-strong: #404040;
+    --color-border-interactive: #946df8;
+    --color-border-disabled: #e5e5e5;
+    --color-border-separator: #e5e5e5;
+    --border-width-default: 1px;
+    --border-width-strong: 2px;
+
+    /* --- Actions (9.4, 10.1, 10.2) ----------------------------------------- */
+    --color-action-primary: #7b4ee8;
+    --color-action-primary-hover: #6238c7;
+    --color-action-primary-active: #4a2a99;
+    --color-action-primary-foreground: #ffffff;
+    --color-action-primary-disabled-background: #e5e5e5;
+    --color-action-primary-disabled-foreground: #a3a3a3;
+    --color-action-secondary: #ffffff;
+    --color-action-secondary-hover: #fafafa;
+    --color-action-secondary-foreground: #262626;
+    --color-action-secondary-border: #d4d4d4;
+    --color-action-ghost-hover: rgba(23, 23, 23, 0.04);
+    --color-action-ghost-foreground: #262626;
+    --color-action-destructive: #dc2626;
+    --color-action-destructive-hover: #b91c1c;
+    --color-action-destructive-foreground: #ffffff;
+    --color-action-marketing: #171717;
+    --color-action-marketing-hover: #262626;
+    --color-action-marketing-foreground: #ffffff;
+
+    /* --- Feedback (9.5) — independientes de los colores de marca ----------- */
+    --color-feedback-success-surface: #ecfdf5;
+    --color-feedback-success-border: #a7f3d0;
+    --color-feedback-success-text: #15803d;
+    --color-feedback-success-icon: #16a34a;
+    --color-feedback-success-strong: #16a34a;
+    --color-feedback-warning-surface: #fffbeb;
+    --color-feedback-warning-border: #fde68a;
+    --color-feedback-warning-text: #b45309;
+    --color-feedback-warning-icon: #d97706;
+    --color-feedback-warning-strong: #d97706;
+    --color-feedback-error-surface: #fef2f2;
+    --color-feedback-error-border: #fecaca;
+    --color-feedback-error-text: #b91c1c;
+    --color-feedback-error-icon: #dc2626;
+    --color-feedback-error-strong: #dc2626;
+    --color-feedback-info-surface: #eff6ff;
+    --color-feedback-info-border: #bfdbfe;
+    --color-feedback-info-text: #1d4ed8;
+    --color-feedback-info-icon: #2563eb;
+    --color-feedback-info-strong: #2563eb;
+
+    /* --- AI (11) — human-in-the-loop --------------------------------------- */
+    /* Estos valores SIEMPRE acompañan icono + label "Sugerencia de IA" (UI-DEC-010). */
+    --color-ai-surface: #f7f5fb;
+    --color-ai-surface-hover: #efebf6;
+    --color-ai-border: #946df8;
+    --color-ai-border-strong: #6238c7;
+    --color-ai-text: #262626;
+    --color-ai-icon: #6238c7;
+    --color-ai-label: #6238c7;
+    --color-ai-pending: #946df8;
+
+    /* --- Platform & marketing aliases (10) --------------------------------- */
+    /* Cromo del shell autenticado — screen Stitch "EventFlow - Layout Principal (Base)".
+       Rampa de grises calidos para sidebar/topbar/lienzo; item activo RELLENO en violeta. */
+    --color-platform-sidebar-background: #f6f3f2;
+    --color-platform-sidebar-footer-background: #f0eded;
+    --color-platform-sidebar-item-hover: #eae7e7;
+    --color-platform-sidebar-item-active: #7b4ee8;
+    --color-platform-sidebar-item-active-foreground: #ffffff;
+    --color-platform-header-background: #fcf9f8;
+    --color-platform-chrome-border: #cbc3d6;
+    --color-marketing-accent-lilac: #c4b7e5;
+    --color-marketing-accent-coral: #ee8c8d;
+    --color-marketing-hero-surface: #fafafa;
+
+    /* --- Focus (21, TOK-DEC-016) ------------------------------------------- */
+    /* El offset blanco es MANDATORIO: sin el, el anillo sobre violeta mide 1.41:1. */
+    --focus-ring-width: 2px;
+    --focus-ring-style: solid;
+    --focus-ring-color: #6238c7;
+    --focus-ring-offset: 2px;
+    --focus-ring-offset-color: #ffffff;
+
+    /* --- Selection & overlay (9.7, 9.8) ------------------------------------ */
+    --color-selection-background: #ede6fe;
+    --color-selection-foreground: #262626;
+    --color-overlay-scrim: rgba(23, 23, 23, 0.6);
+    --color-overlay-scrim-light: rgba(23, 23, 23, 0.4);
+
+    /* --- Radius (15.2) ------------------------------------------------------ */
+    --radius-button: 8px;
+    --radius-input: 8px;
+    --radius-card: 12px;
+    --radius-card-prominent: 16px;
+    --radius-modal: 16px;
+    --radius-drawer: 16px;
+    --radius-badge: 9999px;
+
+    /* --- Elevation (17) ----------------------------------------------------- */
+    --shadow-surface-subtle: 0 1px 2px rgba(23, 23, 23, 0.04);
+    --shadow-surface-raised: 0 2px 6px rgba(23, 23, 23, 0.06);
+    --shadow-overlay-dropdown: 0 8px 16px rgba(23, 23, 23, 0.08), 0 2px 4px rgba(23, 23, 23, 0.04);
+    --shadow-overlay-modal: 0 20px 40px rgba(23, 23, 23, 0.12), 0 8px 16px rgba(23, 23, 23, 0.06);
+    --shadow-marketing-floating:
+      0 30px 60px -20px rgba(15, 13, 26, 0.15), 0 10px 20px -10px rgba(15, 13, 26, 0.08);
+
+    /* --- Layout (18) -------------------------------------------------------- */
+    --layout-container-marketing-max: 1280px;
+    --layout-container-form-max: 720px;
+    --layout-container-content-max: 1440px;
+    --layout-sidebar-width: 256px;
+    --layout-header-height: 64px;
+    --layout-page-padding-mobile: 16px;
+    --layout-page-padding-tablet: 32px;
+    --layout-page-padding-desktop: 48px;
+
+    /* --- Motion (20) -------------------------------------------------------- */
+    --motion-duration-instant: 0ms;
+    --motion-duration-fast: 120ms;
+    --motion-duration-normal: 200ms;
+    --motion-duration-slow: 320ms;
+    --motion-easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
+    --motion-easing-enter: cubic-bezier(0, 0, 0.2, 1);
+    --motion-easing-exit: cubic-bezier(0.4, 0, 1, 1);
+
+    /* --- Icons (24) — libreria unica: lucide-react -------------------------- */
+    --icon-size-sm: 16px;
+    --icon-size-md: 20px;
+    --icon-size-lg: 24px;
+    --icon-stroke-default: 1.5;
+    --icon-stroke-strong: 2;
+    --size-touch-minimum: 44px;
+
+    /* --- Z-index (23) ------------------------------------------------------- */
+    --z-base: 0;
+    --z-sticky: 10;
+    --z-dropdown: 100;
+    --z-drawer: 200;
+    --z-modal: 300;
+    --z-toast: 400;
+    --z-tooltip: 500;
+  }
+
+  /* Desplazamiento suave al saltar a un ancla (`/#features`, `#main-content`).
+     Va en `html` porque `scroll-behavior` solo surte efecto en el elemento que scrollea, no en
+     un contenedor intermedio. El bloque `prefers-reduced-motion` de mas abajo lo devuelve a
+     `auto` (UI-DEC-015 / WCAG 2.3.3): quien pide menos movimiento salta directo. */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Defaults globales minimos. Deliberadamente NO se estilan controles individuales
+     (`input`, `button`, ...) para no alterar layouts existentes. */
+  body {
+    background-color: var(--color-background-default);
+    color: var(--color-text-primary);
+    font-family: theme('fontFamily.body');
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Los headings pueden optar por Inter Tight con `font-heading`; no se fuerza aqui
+     para no alterar la tipografia de las vistas aun sin migrar. */
+
+  ::selection {
+    background-color: var(--color-selection-background);
+    color: var(--color-selection-foreground);
+  }
+
+  /* Reduced motion (UI-DEC-015): las duraciones aprobadas colapsan a `instant`. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: var(--motion-duration-instant) !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: var(--motion-duration-instant) !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /**
+   * Tratamiento canonico de foco (TOK-DEC-016).
+   * Usa `focus-visible` — nunca `focus` generico (Design Tokens 30).
+   * El offset blanco garantiza >=3:1 tambien sobre superficies violeta (WCAG 1.4.11).
+   */
+  .focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-focus;
+  }
+
+  /**
+   * Variante del foco canonico para controles compuestos (input con icono/prefijo/accion
+   * trailing): el anillo se pinta sobre el contenedor cuando el control interno recibe
+   * `focus-visible`. Mismos tokens que `.focus-ring`; sigue sin usar `focus` generico.
+   */
+  .focus-ring-within {
+    @apply outline-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-focus has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-focus;
+  }
+
+  /**
+   * Ampliacion invisible del area de pulsacion hasta el minimo tactil aprobado
+   * (`size.touch.minimum` = 44 px, UI-DEC-015) para controles cuyo alto visual es 32 o 40 px
+   * (`size.control.sm` / `.md`). Component Foundations 10: "se logra con area tactil ampliada
+   * aun cuando el visual mida 32 px". No altera el layout: el pseudo-elemento no ocupa flujo.
+   */
+  .hit-area {
+    position: relative;
+  }
+
+  .hit-area::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: var(--size-touch-minimum);
+    transform: translateY(-50%);
+  }
+}

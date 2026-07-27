@@ -10,6 +10,8 @@
 import { useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { Plus } from 'lucide-react';
+import { Alert, Button } from '@/shared/design-system';
 import { useEventTasks } from '../hooks/useEventTasks';
 import type { TaskListItemStatus, TaskListRange } from '../api/tasksListApi.types';
 import { TASK_LIST_RANGES } from '../api/tasksListApi.types';
@@ -24,6 +26,12 @@ import { CreateTaskDialog } from '../../create/components/CreateTaskDialog';
 interface Props {
   eventId: string;
   eventStatus?: 'draft' | 'active' | 'completed' | 'cancelled';
+  /**
+   * `true` cuando la vista se monta dentro del tab «Tasks» del dashboard del evento: suprime el
+   * `<h1>` propio (el dashboard ya titula la página y dos `h1` romperían la jerarquía). La ruta
+   * standalone `/organizer/events/:id/tasks` la monta sin la prop y conserva su título.
+   */
+  embedded?: boolean;
 }
 
 function parseStatus(raw: string | null): TaskListItemStatus | undefined {
@@ -50,7 +58,7 @@ function parseRange(raw: string | null): TaskListRange | undefined {
   return undefined;
 }
 
-export function EventChecklistPage({ eventId, eventStatus }: Props): JSX.Element {
+export function EventChecklistPage({ eventId, eventStatus, embedded = false }: Props): JSX.Element {
   const search = useSearchParams();
   const t = useTranslations('checklist');
   const filters = {
@@ -74,41 +82,51 @@ export function EventChecklistPage({ eventId, eventStatus }: Props): JSX.Element
   const createBtnRef = useRef<HTMLButtonElement | null>(null);
 
   return (
-    <section className="event-checklist" aria-labelledby="event-checklist-title">
-      <h1 id="event-checklist-title">{t('title')}</h1>
+    // `event-checklist`, `banner`, `btn` eran clases BEM sin hoja de estilo: la vista salía como
+    // texto plano apilado. Se compone con utilidades del design system y `Alert` para los avisos.
+    <section
+      className="flex w-full min-w-0 flex-col gap-6"
+      aria-labelledby={embedded ? undefined : 'event-checklist-title'}
+      aria-label={embedded ? t('title') : undefined}
+    >
+      {!embedded ? (
+        <h1 id="event-checklist-title" className="font-heading text-h2 text-primary">
+          {t('title')}
+        </h1>
+      ) : null}
       {isCompleted && (
-        <div className="banner banner--info" role="status">
+        <Alert variant="info" live>
           {t('banner.readOnly')}
-        </div>
+        </Alert>
       )}
       {isCancelled && (
-        <div className="banner banner--warn" role="alert">
+        <Alert variant="warning" live>
           {t('banner.cancelled')}
-        </div>
+        </Alert>
       )}
 
-      {/* US-028: barra de acciones con botón "Crear tarea" persistente. */}
-      <div className="event-checklist__actions">
-        <button
+      {/* US-028: barra de acciones con botón "Crear tarea" persistente, junto al segmented
+          control temporal (US-032 / FE-001, AC-07) para que la fila de controles sea una sola. */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <TaskRangeFilter />
+        <Button
           ref={createBtnRef}
-          type="button"
-          className="btn btn--primary"
+          size="lg"
+          leadingIcon={<Plus aria-hidden="true" className="h-icon-sm w-icon-sm" />}
           onClick={(): void => setDialogOpen(true)}
           disabled={isReadOnly}
           title={isReadOnly ? t('actions.createDisabledTooltip') : undefined}
         >
           {t('actions.create')}
-        </button>
+        </Button>
       </div>
 
-      {/* US-032 (FE-001, AC-07) — Segmented control temporal por encima de los filtros existentes. */}
-      <TaskRangeFilter />
       <TaskFilters />
 
       {query.isError && (
-        <div className="banner banner--error" role="alert">
+        <Alert variant="error" live>
           {t('errorLoad')}
-        </div>
+        </Alert>
       )}
 
       {query.data && query.data.pagination.total === 0 ? (

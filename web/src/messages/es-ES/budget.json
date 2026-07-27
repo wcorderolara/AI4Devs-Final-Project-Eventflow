@@ -42,6 +42,7 @@
     "deleteAria": "Eliminar {label}"
   },
   "empty": {
+    "title": "Aún no hay presupuesto",
     "body": "Aún no hay partidas de presupuesto. Puedes empezar con una sugerencia IA o añadir partidas manualmente.",
     "cta": {
       "ai": "Sugerir con IA",

@@ -6,17 +6,21 @@ import userEvent from '@testing-library/user-event';
 import { axe } from 'jest-axe';
 import { NextIntlClientProvider } from 'next-intl';
 import { describe, expect, it, vi } from 'vitest';
-import {
-  CreateEventWizard,
-  EventDashboardPage,
-  EventsListPage,
-} from '@/features/events';
+import { CreateEventWizard, EventDashboardPage, EventsListPage } from '@/features/events';
 import esLatamEvents from '@/messages/es-LATAM/events.json';
 import esLatamNavigation from '@/messages/es-LATAM/navigation.json';
+import esLatamTasks from '@/messages/es-LATAM/tasks.json';
+import esLatamBudget from '@/messages/es-LATAM/budget.json';
+import esLatamQuotes from '@/messages/es-LATAM/quotes.json';
 
 const push = vi.fn();
+const replace = vi.fn();
+// El dashboard sincroniza el tab activo con `?tab=` (US-014), de ahí `usePathname` /
+// `useSearchParams` además del router.
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push, replace: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }),
+  useRouter: () => ({ push, replace, refresh: vi.fn(), prefetch: vi.fn() }),
+  usePathname: () => '/organizer/events/e1111111-1111-4111-8111-111111111111',
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 function renderWithProviders(ui: React.ReactElement) {
@@ -24,7 +28,19 @@ function renderWithProviders(ui: React.ReactElement) {
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   return render(
-    <NextIntlClientProvider locale="es-LATAM" messages={{ events: esLatamEvents, navigation: esLatamNavigation }}>
+    <NextIntlClientProvider
+      locale="es-LATAM"
+      messages={{
+        events: esLatamEvents,
+        navigation: esLatamNavigation,
+        // El dashboard monta los tabs Tareas / Presupuesto / Cotizaciones, cada uno con su
+        // catálogo. `checklist` es el namespace raíz que consume `tasks/list` (ver `request.ts`).
+        tasks: esLatamTasks,
+        checklist: esLatamTasks.checklist,
+        budget: esLatamBudget,
+        quotes: esLatamQuotes,
+      }}
+    >
       <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
     </NextIntlClientProvider>,
   );
@@ -47,11 +63,13 @@ describe('US-011 — cancelar evento', () => {
     await screen.findByText('Boda de Ana');
 
     await user.click(screen.getByRole('button', { name: 'Cancelar' }));
-    const dialog = await screen.findByRole('dialog');
+    // PB-P2-031: `ConfirmDialog` compone `ConfirmationDialog` del design system, que usa
+    // `role="alertdialog"` — el correcto para una interrupción que exige una decisión.
+    const dialog = await screen.findByRole('alertdialog');
     expect(within(dialog).getByText('Cancelar evento')).toBeInTheDocument();
 
     await user.click(within(dialog).getByRole('button', { name: 'Sí, cancelar' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
   });
 });
 
@@ -62,18 +80,20 @@ describe('US-012 — eliminar borrador', () => {
     await screen.findByText('Boda de Ana');
 
     await user.click(screen.getByRole('button', { name: 'Eliminar' }));
-    const dialog = await screen.findByRole('dialog');
+    const dialog = await screen.findByRole('alertdialog');
     expect(within(dialog).getByText('Eliminar borrador')).toBeInTheDocument();
 
     await user.click(within(dialog).getByRole('button', { name: 'Eliminar' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
   });
 });
 
 describe('US-014 — dashboard de evento', () => {
   it('AC-01: renderiza el detalle del evento', async () => {
     renderWithProviders(<EventDashboardPage eventId="e1111111-1111-4111-8111-111111111111" />);
-    expect(await screen.findByRole('heading', { name: 'Boda de Ana', level: 1 })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Boda de Ana', level: 1 }),
+    ).toBeInTheDocument();
     expect(screen.getByText('Tareas')).toBeInTheDocument();
   });
 });
@@ -100,6 +120,8 @@ describe('US-013 QA — accesibilidad', () => {
     const { container } = renderWithProviders(<EventsListPage />);
     await screen.findByText('Boda de Ana');
     const results = await axe(container);
-    expect(results.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')).toEqual([]);
+    expect(
+      results.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious'),
+    ).toEqual([]);
   });
 });

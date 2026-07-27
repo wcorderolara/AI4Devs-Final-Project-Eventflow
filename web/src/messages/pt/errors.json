@@ -9,6 +9,7 @@
   },
   "forbidden": {
     "title": "Acesso negado",
+    "body": "Você não tem permissão para ver esta seção com sua conta atual.",
     "cta": "Voltar ao início"
   },
   "notFound": {

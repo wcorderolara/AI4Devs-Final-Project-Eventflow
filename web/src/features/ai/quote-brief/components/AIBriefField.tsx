@@ -61,7 +61,7 @@ export function AIBriefField({
         }}
         aria-describedby={helpId}
         aria-label={ariaSectionLabel ?? label}
-        className="block w-full resize-y rounded-md border border-neutral-300 bg-white p-2 text-sm text-neutral-900 shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-400 disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-500"
+        className="block w-full resize-y rounded-md border border-neutral-300 bg-white p-2 text-sm text-neutral-900 shadow-sm focus-visible:border-interactive focus-ring disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-500"
         data-testid={testId}
       />
       <p id={helpId} className="text-xs text-neutral-500">

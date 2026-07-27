@@ -1,28 +1,90 @@
 'use client';
 
+import { useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import {
+  ArrowLeft,
+  Briefcase,
+  CalendarDays,
+  Globe,
+  StickyNote,
+  Users,
+  Wallet,
+} from 'lucide-react';
 import { Money } from '@/shared/i18n';
+import { MetricCard, Tabs, type TabItem } from '@/shared/design-system/data-display';
+import { EventChecklistPage } from '@/features/tasks/list';
+import { BudgetPage } from '@/features/budget';
+import { EventQuotesPanel } from '@/features/quotes';
 import { EventActions } from '../components/EventActions';
 import { EventStatusBadge } from '../components/EventStatusBadge';
 import { useEvent } from '../hooks/useEventsQueries';
 
 /**
  * Dashboard de un evento (US-014 / AC-01). Compone la vista de detalle a partir de
- * `GET /api/v1/events/:id`. Las secciones de tareas, presupuesto detallado y cotizaciones se
- * muestran como "próximamente" en el MVP (sus sub-endpoints pertenecen a backlog items
- * posteriores; ver execution record). Estados loading / error / not-found.
+ * `GET /api/v1/events/:id`. Estados loading / error / not-found.
+ *
+ * Tareas, presupuesto y cotizaciones se montan aquí mismo en un `Tabs` en lugar de vivir sólo en
+ * las rutas hijas: las tres vistas ya existían (`/tasks`, `/budget` y el listado de QuoteRequests)
+ * pero el dashboard seguía enseñando tres tarjetas «próximamente» del MVP inicial, de modo que
+ * desde el detalle del evento no había forma de llegar a ellas.
+ *
+ * El tab activo se sincroniza con `?tab=` (`replace`, sin scroll) para que la vista sea
+ * enlazable y sobreviva a un refresco. Las rutas hijas se conservan: los deeplinks que ya
+ * apuntan a ellas (empty states de presupuesto, notificaciones) siguen funcionando.
+ *
+ * Los paneles se montan sólo cuando su tab está activo: cada uno dispara su propia query y no
+ * tiene sentido pagar tres fetches para enseñar uno.
  */
+const TAB_IDS = ['tasks', 'budget', 'quotes'] as const;
+type TabId = (typeof TAB_IDS)[number];
+
+function isTabId(value: string | null): value is TabId {
+  return value !== null && (TAB_IDS as readonly string[]).includes(value);
+}
+
 export function EventDashboardPage({ eventId }: { eventId: string }): React.JSX.Element {
   const t = useTranslations('events');
   const { data: event, isLoading, isError, error, refetch } = useEvent(eventId);
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const search = useSearchParams();
+  const rawTab = search.get('tab');
+  const activeTab: TabId = isTabId(rawTab) ? rawTab : 'tasks';
+
+  const handleTabChange = useCallback(
+    (id: string) => {
+      const next = new URLSearchParams(search.toString());
+      next.set('tab', id);
+      // Los filtros del checklist (`status`, `page`, `range`) viven en el mismo query string;
+      // se limpian al cambiar de tab para no arrastrar una página 3 de tareas al volver.
+      for (const key of ['status', 'page', 'range', 'categoryCode', 'aiGenerated']) {
+        next.delete(key);
+      }
+      router.replace(`${pathname}?${next.toString()}`, { scroll: false });
+    },
+    [pathname, router, search],
+  );
 
   const notFound =
     isError && typeof error === 'object' && error !== null && 'status' in error && (error as { status?: number }).status === 404;
 
   return (
-    <div className="mx-auto w-full max-w-3xl">
-      <Link href="/organizer/events" className="text-sm text-neutral-600 underline">
+    // El detalle ocupa todo el ancho disponible del shell: los tabs montan vistas de datos
+    // (tablero de tareas, tabla de presupuesto, tabla de cotizaciones) que se ahogaban dentro del
+    // `max-w-3xl` original.
+    <div className="w-full">
+      <Link
+        href="/organizer/events"
+        className="focus-ring group inline-flex items-center gap-2 rounded-button text-body-sm text-secondary transition-colors hover:text-link"
+      >
+        <ArrowLeft
+          aria-hidden="true"
+          className="h-icon-sm w-icon-sm transition-transform group-hover:-translate-x-0.5 motion-reduce:transform-none"
+        />
         {t('dashboard.back')}
       </Link>
 
@@ -53,54 +115,91 @@ export function EventDashboardPage({ eventId }: { eventId: string }): React.JSX.
 
       {event ? (
         <>
-          <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-bold">{event.name || t(`types.${event.eventTypeCode}`)}</h1>
-              <div className="mt-2 flex items-center gap-2">
+          <div className="mt-6 flex flex-wrap items-end justify-between gap-6">
+            <div className="flex flex-col gap-3">
+              <h1 className="font-heading text-h1 text-primary">
+                {event.name || t(`types.${event.eventTypeCode}`)}
+              </h1>
+              <div className="flex items-center gap-3">
                 <EventStatusBadge status={event.status} />
-                <span className="text-sm text-neutral-600">{t(`types.${event.eventTypeCode}`)}</span>
+                <span className="inline-flex items-center gap-1.5 text-body-sm text-secondary">
+                  <Briefcase aria-hidden="true" className="h-icon-sm w-icon-sm" />
+                  {t(`types.${event.eventTypeCode}`)}
+                </span>
               </div>
             </div>
             <EventActions event={event} />
           </div>
 
-          <dl className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label={t('fields.eventDate')} value={event.eventDate} />
-            <Field label={t('fields.guests')} value={String(event.guestsCount)} />
-            <Field
+          {/* Ficha del evento como grid de métricas: cada dato lleva su glifo y el valor se lee
+              como cifra, no como par clave/valor en una lista. `MetricCard` ya resuelve el
+              formato (label + icono + valor + contenido extra), así que no hay card ad-hoc. */}
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <MetricCard
+              label={t('fields.eventDate')}
+              value={event.eventDate}
+              icon={<CalendarDays />}
+            />
+            <MetricCard
+              label={t('fields.guests')}
+              value={String(event.guestsCount)}
+              icon={<Users />}
+            />
+            <MetricCard
               label={t('fields.budget')}
               value={<Money amount={Number(event.estimatedBudget)} currency={event.currencyCode} />}
+              icon={<Wallet />}
             />
-            <Field label={t('fields.currency')} value={event.currencyCode} />
-            <Field label={t('fields.language')} value={event.languageCode} />
-            {event.notes ? <Field label={t('fields.notes')} value={event.notes} /> : null}
-          </dl>
-
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <PlaceholderCard title={t('dashboard.sections.tasks')} hint={t('dashboard.comingSoon')} />
-            <PlaceholderCard title={t('dashboard.sections.budget')} hint={t('dashboard.comingSoon')} />
-            <PlaceholderCard title={t('dashboard.sections.quotes')} hint={t('dashboard.comingSoon')} />
+            {/* Moneda e idioma comparten card: son dos códigos cortos y ocupar dos huecos del
+                grid con ellos desequilibra la fila. */}
+            <MetricCard
+              label={t('dashboard.localeCard')}
+              value={event.currencyCode}
+              icon={<Globe />}
+            >
+              <p className="mt-1 text-body-sm text-secondary">
+                {t('fields.language')}: <span className="uppercase">{event.languageCode}</span>
+              </p>
+            </MetricCard>
+            {event.notes ? (
+              <MetricCard
+                className="sm:col-span-2 lg:col-span-4"
+                label={t('fields.notes')}
+                value={<span className="font-body text-body-md">{event.notes}</span>}
+                icon={<StickyNote />}
+              />
+            ) : null}
           </div>
+
+          <Tabs
+            className="mt-10"
+            ariaLabel={t('dashboard.sectionsLabel')}
+            value={activeTab}
+            onChange={handleTabChange}
+            items={TAB_ITEMS.map((item) => ({ ...item, label: t(`dashboard.sections.${item.id}`) }))}
+            data-testid="event-dashboard-tabs"
+          >
+            {(tab) => {
+              // `completed` / `cancelled` dejan el evento en sólo lectura: las tres secciones
+              // ocultan sus acciones de escritura en lugar de dejar que el backend responda 409.
+              const readOnly = event.status === 'completed' || event.status === 'cancelled';
+              if (tab === 'budget') {
+                return <BudgetPage eventId={eventId} readOnly={readOnly} embedded />;
+              }
+              if (tab === 'quotes') {
+                return <EventQuotesPanel eventId={eventId} readOnly={readOnly} />;
+              }
+              // `eventStatus` no llegaba en la ruta standalone `/tasks` (se montaba sin la prop),
+              // así que allí los banners read-only nunca aparecían. Aquí el evento ya está
+              // cargado y se propaga.
+              return <EventChecklistPage eventId={eventId} eventStatus={event.status} embedded />;
+            }}
+          </Tabs>
         </>
       ) : null}
     </div>
   );
 }
 
-function Field({ label, value }: { label: string; value: React.ReactNode }): React.JSX.Element {
-  return (
-    <div className="rounded border border-neutral-200 p-3">
-      <dt className="text-xs uppercase tracking-wide text-neutral-500">{label}</dt>
-      <dd className="mt-1 text-sm text-neutral-900">{value}</dd>
-    </div>
-  );
-}
-
-function PlaceholderCard({ title, hint }: { title: string; hint: string }): React.JSX.Element {
-  return (
-    <div className="rounded border border-dashed border-neutral-300 p-4">
-      <h2 className="text-sm font-semibold text-neutral-700">{title}</h2>
-      <p className="mt-1 text-xs text-neutral-500">{hint}</p>
-    </div>
-  );
-}
+// El label se resuelve en el render (necesita `t`); aquí sólo vive el orden y los ids estables.
+const TAB_ITEMS: readonly (Omit<TabItem, 'label'> & { id: TabId })[] = TAB_IDS.map((id) => ({ id }));

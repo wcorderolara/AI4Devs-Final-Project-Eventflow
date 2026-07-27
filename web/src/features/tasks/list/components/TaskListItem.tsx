@@ -1,15 +1,18 @@
 'use client';
 
-// US-027 (PB-P1-018 / FE-002) — Fila del checklist con badges accesibles.
+// US-027 (PB-P1-018 / FE-002) — Tarjeta de tarea dentro de la columna del tablero.
 // `aria-label` combina título + estado + origen + fecha para lectores de pantalla.
-// Reusa el patrón del `AIBadge` (semantic hint) sin depender del componente concreto si aún
-// no existe en la feature — se renderiza inline como `<span>` con `aria-label` explícito.
 //
-// US-030 (PB-P1-018 / FE-006): integra `TaskStatusQuickToggle` a la izquierda de la fila
-// cuando el `eventId` y (opcionalmente) `eventStatus` están disponibles. El toggle se
-// autolimita: si `task.status` no está en el flujo canónico o no hay transiciones válidas,
-// retorna null y la fila renderiza igual que antes (no-regresión).
+// US-030 (PB-P1-018 / FE-006): integra `TaskStatusQuickToggle` al pie de la tarjeta cuando el
+// `eventId` y (opcionalmente) `eventStatus` están disponibles. El toggle se autolimita: si
+// `task.status` no está en el flujo canónico o no hay transiciones válidas, retorna null y la
+// tarjeta se renderiza igual (no-regresión).
+//
+// Los badges dejan de usar clases BEM sin hoja de estilo (`badge badge--overdue`, …) y pasan a
+// las utilidades semánticas del design system. El badge de estado desaparece: en un tablero
+// agrupado por estado la columna ya lo dice, y repetirlo en cada tarjeta es ruido.
 import { useTranslations } from 'next-intl';
+import { cx } from '@/shared/design-system/internal/cx';
 import type { TaskListItemDTO } from '../api/tasksListApi.types';
 import { TaskStatusQuickToggle } from '../../quick-action';
 
@@ -17,6 +20,12 @@ interface Props {
   item: TaskListItemDTO;
   eventId?: string;
   eventStatus?: 'draft' | 'active' | 'completed' | 'cancelled';
+  /**
+   * Clase literal de acento superior (`border-t-*`) que aporta la columna, para que la tarjeta se
+   * lea como parte de su cubo aunque se mire aislada. Debe llegar ya resuelta: componerla aquí
+   * con `replace()` dejaría fuera del CSS la clase (el JIT de Tailwind sólo ve literales).
+   */
+  accentClassName?: string;
 }
 
 function formatDate(iso: string | null, locale: string): string {
@@ -25,7 +34,15 @@ function formatDate(iso: string | null, locale: string): string {
   return d.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: '2-digit' });
 }
 
-export function TaskListItem({ item, eventId, eventStatus }: Props): JSX.Element {
+const BADGE_BASE =
+  'inline-flex items-center rounded-badge border px-1.5 py-0.5 text-caption font-medium';
+
+export function TaskListItem({
+  item,
+  eventId,
+  eventStatus,
+  accentClassName,
+}: Props): JSX.Element {
   const t = useTranslations('checklist');
   const statusLabel = t(`status.${item.status}`);
   const dateLabel = item.due_date ? formatDate(item.due_date, 'default') : t('noDueDate');
@@ -41,21 +58,40 @@ export function TaskListItem({ item, eventId, eventStatus }: Props): JSX.Element
     .join(', ');
 
   return (
-    <li aria-label={ariaLabel} className="task-list-item">
-      {eventId && (
-        <TaskStatusQuickToggle eventId={eventId} task={item} eventStatus={eventStatus} />
+    <li
+      aria-label={ariaLabel}
+      className={cx(
+        'rounded-card border border-subtle bg-surface p-4 shadow-surface-subtle',
+        // El acento va arriba (la columna lo lleva abajo, bajo su título): juntos encuadran
+        // visualmente el cubo.
+        accentClassName ? cx('border-t-4', accentClassName) : null,
+        'transition-shadow duration-fast ease-standard hover:shadow-surface-raised',
+        'motion-reduce:transition-none',
       )}
-      <div className="task-list-item__title">{item.title}</div>
-      <div className="task-list-item__badges">
+      data-testid={`task-card-${item.id}`}
+    >
+      <p
+        className={cx(
+          'font-ui text-body-md font-medium leading-snug text-primary',
+          // Una tarea cerrada se lee de un vistazo sin mirar en qué columna cayó.
+          item.status === 'done' || item.status === 'skipped'
+            ? 'text-secondary line-through'
+            : null,
+        )}
+      >
+        {item.title}
+      </p>
+
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
         {/*
           US-032 (FE-003, AC-08, A11Y-03/04) — Badges temporales derivados del DTO.
           Excluyentes visualmente: si `overdue`, se prioriza sobre `is_t_minus_7`. Cada uno
-          expone `aria-label` semántico para lectores de pantalla; el color se resuelve por
-          design tokens con contraste ≥ 4.5:1 (rojo vencidas / ámbar próximas).
+          expone `aria-label` semántico; el color cumple contraste ≥ 4.5:1 vía design tokens
+          (rojo vencidas / ámbar próximas).
         */}
         {item.overdue ? (
           <span
-            className="badge badge--overdue"
+            className={cx(BADGE_BASE, 'border-feedback-error bg-feedback-error text-feedback-error')}
             aria-label={t('badgeOverdueAria')}
             data-testid="task-badge-overdue"
           >
@@ -63,32 +99,50 @@ export function TaskListItem({ item, eventId, eventStatus }: Props): JSX.Element
           </span>
         ) : item.is_t_minus_7 ? (
           <span
-            className="badge badge--t-minus-7"
+            className={cx(
+              BADGE_BASE,
+              'border-feedback-warning bg-feedback-warning text-feedback-warning',
+            )}
             aria-label={t('badgeTMinus7Aria')}
             data-testid="task-badge-t-minus-7"
           >
             {t('badgeTMinus7')}
           </span>
         ) : null}
-        <span className={`badge badge--status badge--status-${item.status}`} aria-hidden="true">
-          {statusLabel}
-        </span>
+
         {item.category_code && (
-          <span className="badge badge--category" aria-hidden="true">
+          <span
+            className={cx(BADGE_BASE, 'border-subtle bg-surface-subtle text-secondary')}
+            aria-hidden="true"
+          >
             {item.category_code}
           </span>
         )}
+
         {item.ai_generated && (
-          <span className="badge badge--ai" aria-label={t('itemAriaAiSuffix')}>
+          <span
+            className={cx(BADGE_BASE, 'border-ai bg-ai-surface text-ai-label')}
+            aria-label={t('itemAriaAiSuffix')}
+          >
             {t('badgeAi')}
           </span>
         )}
+
         {item.due_date && (
-          <span className="badge badge--due" aria-hidden="true">
+          <span
+            className={cx(BADGE_BASE, 'border-subtle bg-surface text-secondary')}
+            aria-hidden="true"
+          >
             {dateLabel}
           </span>
         )}
       </div>
+
+      {eventId && (
+        <div className="mt-4">
+          <TaskStatusQuickToggle eventId={eventId} task={item} eventStatus={eventStatus} />
+        </div>
+      )}
     </li>
   );
 }

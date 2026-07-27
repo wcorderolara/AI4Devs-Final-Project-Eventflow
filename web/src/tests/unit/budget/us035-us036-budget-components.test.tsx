@@ -1,5 +1,5 @@
 // US-035 QA-004 + US-036 QA-004 — Tests unit + A11Y para componentes del presupuesto.
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { describe, expect, it, vi } from 'vitest';
@@ -24,8 +24,24 @@ function wrap(node: React.ReactNode): React.ReactElement {
 }
 
 const items = [
-  { id: 'i1', label: 'Venue rental', category_code: 'venue', amount_planned: 5000, amount_committed: 2000, over_committed: false, overcommitted_amount: 0 },
-  { id: 'i2', label: 'Catering', category_code: 'catering', amount_planned: 3000, amount_committed: 1000, over_committed: false, overcommitted_amount: 0 },
+  {
+    id: 'i1',
+    label: 'Venue rental',
+    category_code: 'venue',
+    amount_planned: 5000,
+    amount_committed: 2000,
+    over_committed: false,
+    overcommitted_amount: 0,
+  },
+  {
+    id: 'i2',
+    label: 'Catering',
+    category_code: 'catering',
+    amount_planned: 3000,
+    amount_committed: 1000,
+    over_committed: false,
+    overcommitted_amount: 0,
+  },
 ];
 
 describe('US-035 — <BudgetSummary>', () => {
@@ -33,7 +49,13 @@ describe('US-035 — <BudgetSummary>', () => {
     render(
       wrap(
         <BudgetSummary
-          summary={{ currency_code: 'USD', total_planned: 8000, total_committed: 3000, over_committed: false, overcommitted_amount: 0 }}
+          summary={{
+            currency_code: 'USD',
+            total_planned: 8000,
+            total_committed: 3000,
+            over_committed: false,
+            overcommitted_amount: 0,
+          }}
           locale="en"
         />,
       ),
@@ -50,7 +72,13 @@ describe('US-035 — <BudgetSummary>', () => {
     const { container } = render(
       wrap(
         <BudgetSummary
-          summary={{ currency_code: 'USD', total_planned: 100, total_committed: 50, over_committed: false, overcommitted_amount: 0 }}
+          summary={{
+            currency_code: 'USD',
+            total_planned: 100,
+            total_committed: 50,
+            over_committed: false,
+            overcommitted_amount: 0,
+          }}
           locale="en"
         />,
       ),
@@ -76,11 +104,18 @@ describe('US-035 — <OvercommitWarning>', () => {
 });
 
 describe('US-035 — <BudgetItemsTable>', () => {
+  // PB-P2-031: la tabla pivota a cards de resumen en móvil (`ResponsiveTable`). Ambas vistas
+  // están en el DOM y se excluyen por CSS (`display:none`), que jsdom no evalúa: por eso las
+  // consultas se acotan a una vista. En un navegador sólo una es alcanzable a la vez.
+  const desktop = (): HTMLElement => document.querySelector('[data-view="table"]') as HTMLElement;
+
   it('renderiza items y llama onDelete al click', () => {
     const onDelete = vi.fn();
-    render(wrap(<BudgetItemsTable items={items} currencyCode="USD" locale="en" onDelete={onDelete} />));
-    expect(screen.getByText('Venue rental')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /delete venue rental/i }));
+    render(
+      wrap(<BudgetItemsTable items={items} currencyCode="USD" locale="en" onDelete={onDelete} />),
+    );
+    expect(within(desktop()).getByText('Venue rental')).toBeInTheDocument();
+    fireEvent.click(within(desktop()).getByRole('button', { name: /delete venue rental/i }));
     expect(onDelete).toHaveBeenCalledWith(items[0]);
   });
 
@@ -90,7 +125,9 @@ describe('US-035 — <BudgetItemsTable>', () => {
   });
 
   it('A11Y: sin violaciones', async () => {
-    const { container } = render(wrap(<BudgetItemsTable items={items} currencyCode="USD" locale="en" onDelete={vi.fn()} />));
+    const { container } = render(
+      wrap(<BudgetItemsTable items={items} currencyCode="USD" locale="en" onDelete={vi.fn()} />),
+    );
     const results = await axe(container);
     expect(results).toHaveNoViolations();
   });
@@ -119,7 +156,9 @@ describe('US-035 — <EmptyBudgetState>', () => {
 describe('US-036 — <AddBudgetItemModal>', () => {
   it('valida label vacío y monto inválido', () => {
     const onSubmit = vi.fn();
-    const { container } = render(wrap(<AddBudgetItemModal open onSubmit={onSubmit} onCancel={vi.fn()} />));
+    const { container } = render(
+      wrap(<AddBudgetItemModal open onSubmit={onSubmit} onCancel={vi.fn()} />),
+    );
     const form = container.querySelector('form')!;
     fireEvent.submit(form);
     expect(onSubmit).not.toHaveBeenCalled();
@@ -128,7 +167,9 @@ describe('US-036 — <AddBudgetItemModal>', () => {
 
   it('envía valores válidos', () => {
     const onSubmit = vi.fn();
-    const { container } = render(wrap(<AddBudgetItemModal open onSubmit={onSubmit} onCancel={vi.fn()} />));
+    const { container } = render(
+      wrap(<AddBudgetItemModal open onSubmit={onSubmit} onCancel={vi.fn()} />),
+    );
     fireEvent.change(screen.getByLabelText(/^label$/i), { target: { value: 'Photo' } });
     fireEvent.change(screen.getByLabelText(/category code/i), { target: { value: 'photography' } });
     fireEvent.change(screen.getByLabelText(/planned amount/i), { target: { value: '1500.50' } });
@@ -141,7 +182,9 @@ describe('US-036 — <AddBudgetItemModal>', () => {
   });
 
   it('A11Y: sin violaciones', async () => {
-    const { container } = render(wrap(<AddBudgetItemModal open onSubmit={vi.fn()} onCancel={vi.fn()} />));
+    const { container } = render(
+      wrap(<AddBudgetItemModal open onSubmit={vi.fn()} onCancel={vi.fn()} />),
+    );
     const results = await axe(container);
     expect(results).toHaveNoViolations();
   });
@@ -152,12 +195,7 @@ describe('US-036 — <DeleteBudgetItemDialog>', () => {
     const onConfirm = vi.fn();
     render(
       wrap(
-        <DeleteBudgetItemDialog
-          open
-          item={items[0]!}
-          onCancel={vi.fn()}
-          onConfirm={onConfirm}
-        />,
+        <DeleteBudgetItemDialog open item={items[0]!} onCancel={vi.fn()} onConfirm={onConfirm} />,
       ),
     );
     expect(screen.getByText(/Venue rental/)).toBeInTheDocument();
@@ -178,9 +216,7 @@ describe('US-036 — <DeleteBudgetItemDialog>', () => {
 
   it('A11Y: sin violaciones', async () => {
     const { container } = render(
-      wrap(
-        <DeleteBudgetItemDialog open item={items[0]!} onCancel={vi.fn()} onConfirm={vi.fn()} />,
-      ),
+      wrap(<DeleteBudgetItemDialog open item={items[0]!} onCancel={vi.fn()} onConfirm={vi.fn()} />),
     );
     const results = await axe(container);
     expect(results).toHaveNoViolations();

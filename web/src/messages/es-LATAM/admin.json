@@ -116,7 +116,9 @@
         "reset": "Limpiar filtros",
         "apply": "Aplicar",
         "errorRatingRange": "La puntuación mínima debe ser menor o igual a la máxima.",
-        "errorDateRange": "La fecha inicial debe ser menor o igual a la final."
+        "errorDateRange": "La fecha inicial debe ser menor o igual a la final.",
+        "appliedFilters": "Filtros aplicados",
+        "removeFilter": "Quitar filtro: {filter}"
       }
     },
     "moderate": {
@@ -529,7 +531,8 @@
       "status": "Estado",
       "search": "Buscar",
       "searchPlaceholder": "Email o nombre…",
-      "all": "Todos"
+      "all": "Todos",
+      "clearSearch": "Limpiar búsqueda"
     },
     "status": {
       "active": "Activo",

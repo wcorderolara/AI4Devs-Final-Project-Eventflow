@@ -1,11 +1,12 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { LogIn } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { ApiError } from '@/shared/api-client';
+import { Alert, Button, FormField, Input, PasswordInput, TextLink } from '@/shared/design-system';
 import { CaptchaWidget } from './CaptchaWidget';
 import { useLogin } from '../hooks/useLogin';
 import { loginSchema, type LoginFormValues } from '../schemas/loginSchema';
@@ -23,10 +24,23 @@ const KNOWN_ERROR_CODES = new Set([
 ]);
 
 /**
- * LoginForm (US-003 / FE-002, FE-003). Email + password con mensaje de error GENÉRICO
+ * LoginForm (US-003 / FE-002..FE-005). Email + password con mensaje de error GENÉRICO
  * (anti-enumeración, EC-01); el `CaptchaWidget` solo se renderiza cuando el backend lo exige
  * (`400 CAPTCHA_REQUIRED`/`CAPTCHA_INVALID` — captcha condicional N=3, EC-02). El banner 429
  * muestra los segundos de `Retry-After` (AC-05).
+ *
+ * Alineación visual con la screen Stitch *EventFlow — Iniciar Sesión (Foco)*:
+ * - El error global pasa a `Alert` del design system (icono + texto: el estado nunca se comunica
+ *   sólo por color) y recibe el foco tras un envío fallido.
+ * - La contraseña usa `PasswordInput` (toggle mostrar/ocultar accesible del design system). El
+ *   toggle añade una parada de tabulación entre el campo y el submit — el orden verificado en
+ *   `tests/a11y/us131-keyboard-aria.test.tsx` se actualizó en consecuencia.
+ * - *¿Olvidaste tu contraseña?* se coloca en la fila del label de contraseña (`labelAction` de
+ *   `FormField`), como en la referencia.
+ *
+ * La sesión la establece el backend vía cookie `HttpOnly` (`Set-Cookie` sobre el httpClient con
+ * `credentials: 'include'`): este componente no lee, no persiste y no inspecciona token alguno
+ * (SEC-06).
  */
 export function LoginForm({ from }: { from?: string | null }): React.JSX.Element {
   const t = useTranslations('auth.login');
@@ -34,6 +48,7 @@ export function LoginForm({ from }: { from?: string | null }): React.JSX.Element
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [captchaVisible, setCaptchaVisible] = useState(false);
   const [captchaReset, setCaptchaReset] = useState(0);
+  const errorRef = useRef<HTMLDivElement>(null);
 
   const {
     register,
@@ -48,7 +63,15 @@ export function LoginForm({ from }: { from?: string | null }): React.JSX.Element
 
   const captchaToken = watch('captchaToken') ?? '';
 
+  // Tras un fallo de autenticación el foco va al resumen del error: sin esto, quien navega con
+  // teclado o lector de pantalla se queda en el submit sin saber qué pasó (WCAG 3.3.1).
+  useEffect(() => {
+    if (globalError) errorRef.current?.focus();
+  }, [globalError]);
+
   const onSubmit = handleSubmit((values) => {
+    // Guarda de doble envío además del `disabled` del botón (AC: no reintentar mientras pende).
+    if (mutation.isPending) return;
     setGlobalError(null);
     mutation.mutate(
       {
@@ -59,6 +82,7 @@ export function LoginForm({ from }: { from?: string | null }): React.JSX.Element
       {
         onError: (error) => {
           if (!(error instanceof ApiError)) {
+            // Fallo de red o respuesta no interpretable: mensaje recuperable, nunca el crudo.
             setGlobalError(t('errors.UNEXPECTED'));
             return;
           }
@@ -89,62 +113,71 @@ export function LoginForm({ from }: { from?: string | null }): React.JSX.Element
 
   return (
     <form onSubmit={(e) => void onSubmit(e)} noValidate aria-busy={mutation.isPending}>
-      <h1 className="text-2xl font-bold">{t('title')}</h1>
-      <p className="mt-1 text-sm text-neutral-600">{t('subtitle')}</p>
+      <h1 className="font-heading text-h2 font-semibold text-primary">{t('title')}</h1>
+      <p className="mt-2 font-body text-body-md text-secondary">{t('subtitle')}</p>
 
       {globalError ? (
-        <div role="alert" aria-live="polite" className="mt-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+        <Alert ref={errorRef} variant="error" live tabIndex={-1} className="mt-6">
           {globalError}
-        </div>
+        </Alert>
       ) : null}
 
-      <div className="mt-4 flex flex-col gap-4">
-        <div>
-          <label htmlFor="login-email" className="block text-sm font-medium">
-            {t('email.label')}
-          </label>
-          <input
-            id="login-email"
-            type="email"
-            autoComplete="email"
-            disabled={disabled}
-            placeholder={t('email.placeholder')}
-            aria-invalid={errors.email ? true : undefined}
-            aria-describedby={errors.email ? 'login-email-error' : undefined}
-            className="mt-1 w-full rounded border border-neutral-300 px-3 py-2"
-            {...register('email')}
-          />
-          {errors.email ? (
-            <p id="login-email-error" className="mt-1 text-sm text-red-700" aria-live="polite">
-              {t(errors.email.message ?? 'validation.emailInvalid')}
-            </p>
-          ) : null}
-        </div>
+      <div className="mt-6 flex flex-col gap-5">
+        <FormField
+          id="login-email"
+          label={t('email.label')}
+          disabled={disabled}
+          error={errors.email ? t(errors.email.message ?? 'validation.emailInvalid') : undefined}
+        >
+          {(field) => (
+            <Input
+              {...field}
+              type="email"
+              inputSize="lg"
+              // `/login` es una página de propósito único: no hay contenido que el foco
+              // automático se salte, y el estado inicial de la referencia Stitch («Foco») es
+              // precisamente este campo enfocado. El anillo lo pinta `:focus-visible`, no una
+              // clase permanente.
+              // eslint-disable-next-line jsx-a11y/no-autofocus
+              autoFocus
+              autoComplete="email"
+              placeholder={t('email.placeholder')}
+              {...register('email')}
+            />
+          )}
+        </FormField>
 
-        <div>
-          <label htmlFor="login-password" className="block text-sm font-medium">
-            {t('password.label')}
-          </label>
-          <input
-            id="login-password"
-            type="password"
-            autoComplete="current-password"
-            disabled={disabled}
-            aria-invalid={errors.password ? true : undefined}
-            aria-describedby={errors.password ? 'login-password-error' : undefined}
-            className="mt-1 w-full rounded border border-neutral-300 px-3 py-2"
-            {...register('password')}
-          />
-          {errors.password ? (
-            <p id="login-password-error" className="mt-1 text-sm text-red-700" aria-live="polite">
-              {t(errors.password.message ?? 'validation.passwordRequired')}
-            </p>
-          ) : null}
-        </div>
+        <FormField
+          id="login-password"
+          label={t('password.label')}
+          disabled={disabled}
+          labelAction={
+            <TextLink href="/forgot-password" className="text-body-sm">
+              {t('forgotPassword')}
+            </TextLink>
+          }
+          error={
+            errors.password
+              ? t(errors.password.message ?? 'validation.passwordRequired')
+              : undefined
+          }
+        >
+          {(field) => (
+            <PasswordInput
+              {...field}
+              inputSize="lg"
+              autoComplete="current-password"
+              placeholder={t('password.placeholder')}
+              showLabel={t('password.show')}
+              hideLabel={t('password.hide')}
+              {...register('password')}
+            />
+          )}
+        </FormField>
 
         {captchaVisible ? (
           <div>
-            <p className="mb-2 text-sm text-neutral-700" aria-live="polite">
+            <p className="mb-2 font-body text-body-sm text-secondary" aria-live="polite">
               {t('captchaNotice')}
             </p>
             <CaptchaWidget
@@ -154,22 +187,28 @@ export function LoginForm({ from }: { from?: string | null }): React.JSX.Element
           </div>
         ) : null}
 
-        <button
+        <Button
           type="submit"
-          disabled={disabled || (captchaVisible && captchaToken.length === 0)}
-          className="rounded bg-neutral-900 px-4 py-2 text-white disabled:opacity-50"
+          size="lg"
+          fullWidth
+          trailingIcon={<LogIn />}
+          isLoading={mutation.isPending}
+          loadingLabel={t('submitting')}
+          disabled={captchaVisible && captchaToken.length === 0}
+          className="mt-1"
         >
-          {mutation.isPending ? t('submitting') : t('submit')}
-        </button>
+          {t('submit')}
+        </Button>
       </div>
 
-      <p className="mt-4 flex flex-wrap gap-x-3 text-sm text-neutral-600">
-        <Link href="/forgot-password" className="underline">
-          {t('forgotPassword')}
-        </Link>
-        <Link href="/register" className="underline">
-          {t('createAccount')}
-        </Link>
+      <p className="mt-8 border-t border-subtle pt-6 text-center font-body text-body-sm text-secondary">
+        {t.rich('noAccount', {
+          link: (chunks) => (
+            <TextLink href="/register" variant="inline" className="text-body-sm font-semibold">
+              {chunks}
+            </TextLink>
+          ),
+        })}
       </p>
     </form>
   );

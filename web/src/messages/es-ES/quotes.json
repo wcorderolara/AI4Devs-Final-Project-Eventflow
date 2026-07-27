@@ -70,5 +70,36 @@
       "FORBIDDEN": "Tu rol no puede rechazar presupuestos.",
       "UNEXPECTED": "Ha ocurrido un error inesperado. Vuelve a intentarlo."
     }
+  },
+  "eventPanel": {
+    "loading": "Cargando solicitudes de presupuesto…",
+    "tableCaption": "Solicitudes de presupuesto de este evento",
+    "columns": {
+      "category": "Categoría",
+      "status": "Estado",
+      "sentAt": "Enviada",
+      "actions": "Acciones"
+    },
+    "status": {
+      "sent": "Enviada",
+      "viewed": "Vista",
+      "responded": "Respondida",
+      "expired": "Caducada",
+      "cancelled": "Cancelada"
+    },
+    "actions": {
+      "new": "Nueva solicitud",
+      "compare": "Comparar"
+    },
+    "empty": {
+      "title": "Todavía no hay solicitudes",
+      "description": "Pide presupuesto a los proveedores para comparar precios y disponibilidad para este evento.",
+      "cta": "Solicitar presupuesto"
+    },
+    "error": {
+      "title": "No hemos podido cargar las solicitudes",
+      "description": "Ha ocurrido un problema por nuestra parte. Inténtalo de nuevo en un momento.",
+      "retry": "Reintentar"
+    }
   }
 }

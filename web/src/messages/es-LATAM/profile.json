@@ -37,7 +37,9 @@
     "passwordHint": "Mínimo 10 caracteres, con al menos una letra y un número.",
     "confirmPassword": "Confirmar nueva contraseña",
     "submit": "Cambiar contraseña",
-    "changed": "Contraseña actualizada."
+    "changed": "Contraseña actualizada.",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña"
   },
   "validation": {
     "nameMin": "El nombre debe tener al menos 2 caracteres.",

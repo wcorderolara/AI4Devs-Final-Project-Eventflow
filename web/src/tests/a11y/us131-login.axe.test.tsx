@@ -15,11 +15,13 @@ vi.mock('next/navigation', () => ({
 
 import esLatamAuth from '@/messages/es-LATAM/auth.json';
 import esLatamCommon from '@/messages/es-LATAM/common.json';
+import esLatamNavigation from '@/messages/es-LATAM/navigation.json';
 import { LoginForm } from '@/features/auth/components/LoginForm';
+import { AuthSplitShell } from '@/shared/navigation';
 import { auditA11y, formatViolations } from './helpers/axe';
 import { renderWithProviders } from './helpers/render-with-intl';
 
-const messages = { auth: esLatamAuth, common: esLatamCommon };
+const messages = { auth: esLatamAuth, common: esLatamCommon, navigation: esLatamNavigation };
 
 describe('US-131 QA-001 · axe /login (LoginForm)', () => {
   it('AC-01 · TS-01: LoginForm render inicial sin violaciones críticas', async () => {
@@ -38,6 +40,19 @@ describe('US-131 QA-001 · axe /login (LoginForm)', () => {
     banner.setAttribute('aria-live', 'polite');
     banner.textContent = 'Credenciales inválidas';
     container.querySelector('form')?.insertBefore(banner, container.querySelector('form')!.firstChild);
+    const { critical } = await auditA11y(container);
+    expect(critical, formatViolations(critical)).toEqual([]);
+  });
+
+  it('AC-01 · TS-01: la página completa (`AuthSplitShell` + `LoginForm`) sin violaciones críticas', async () => {
+    // La pantalla real es el shell a dos columnas, no sólo el formulario: audita landmarks,
+    // skip-link, selector de idioma y el panel de marca (contraste del texto sobre violeta).
+    const { container } = renderWithProviders(
+      <AuthSplitShell>
+        <LoginForm />
+      </AuthSplitShell>,
+      { messages },
+    );
     const { critical } = await auditA11y(container);
     expect(critical, formatViolations(critical)).toEqual([]);
   });

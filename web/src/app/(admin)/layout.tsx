@@ -1,37 +1,24 @@
-'use client';
+import { cookies } from 'next/headers';
+import { COOKIE_ROLE, isRole } from '@/shared/authorization';
+import { AuthenticatedShell } from '@/shared/navigation';
 
-import { useTranslations } from 'next-intl';
-import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { ADMIN_NAV_GROUPS, MobileNav, Sidebar, SkipLink, Topbar } from '@/shared/navigation';
-
+/**
+ * Shell autenticado de `admin`.
+ *
+ * Pasa a ser **Server Component** y monta el mismo `AuthenticatedShell` que `(app)` (UI-DEC-008:
+ * un único shell para los tres roles). La sidebar agrupada del admin ya no se elige aquí: la
+ * decide `getRoleNavigation()` a partir del rol de la sesión. Sin cambios de rutas, grupos,
+ * guards ni densidad del contenido (`p-6` se conserva).
+ *
+ * `roleGuardMiddleware` sigue siendo quien impide que un no-admin llegue a `/admin/*`; este
+ * layout sólo decide qué se pinta.
+ */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const pathname = usePathname();
-  const t = useTranslations('navigation');
-
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [pathname]);
-
-  const ariaLabel = t('sidebar.admin.label');
+  const roleClaim = cookies().get(COOKIE_ROLE)?.value;
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <SkipLink />
-      <Topbar onMenuOpen={() => setMenuOpen(true)} isMenuOpen={menuOpen} />
-      <MobileNav
-        groups={ADMIN_NAV_GROUPS}
-        isOpen={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        ariaLabel={ariaLabel}
-      />
-      <div className="flex flex-1">
-        <Sidebar groups={ADMIN_NAV_GROUPS} ariaLabel={ariaLabel} />
-        <main id="main-content" className="flex-1 p-6">
-          {children}
-        </main>
-      </div>
-    </div>
+    <AuthenticatedShell initialRole={isRole(roleClaim) ? roleClaim : null} mainClassName="p-6">
+      {children}
+    </AuthenticatedShell>
   );
 }

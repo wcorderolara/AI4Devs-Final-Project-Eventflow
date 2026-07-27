@@ -9,7 +9,12 @@ const pathname = vi.hoisted(() => ({ value: '/organizer/events' }));
 vi.mock('next/navigation', () => ({ usePathname: () => pathname.value }));
 
 const messages = { navigation: { sidebar: { organizer: { events: 'Eventos' } } } };
-const item: NavItem = { href: '/organizer/events', labelKey: 'sidebar.organizer.events', icon: Calendar };
+const item: NavItem = {
+  href: '/organizer/events',
+  labelKey: 'sidebar.organizer.events',
+  icon: Calendar,
+  allowedRoles: ['organizer'],
+};
 
 function renderNavLink() {
   return render(

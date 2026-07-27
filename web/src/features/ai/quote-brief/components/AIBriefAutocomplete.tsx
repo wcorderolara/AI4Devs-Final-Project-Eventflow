@@ -101,7 +101,9 @@ export function AIBriefAutocomplete({ eventId }: AIBriefAutocompleteProps): Reac
   const missing = event ? isMissingEventData(event) : true;
   const input = useMemo(
     () =>
-      event && serviceCategoryCode.length > 0 ? toQuoteBriefInput(event, serviceCategoryCode) : null,
+      event && serviceCategoryCode.length > 0
+        ? toQuoteBriefInput(event, serviceCategoryCode)
+        : null,
     [event, serviceCategoryCode],
   );
 
@@ -144,7 +146,8 @@ export function AIBriefAutocomplete({ eventId }: AIBriefAutocompleteProps): Reac
   };
 
   const errorCode = mutation.error instanceof ApiError ? mutation.error.code : null;
-  const errorLabelKey = errorCode && ERROR_CODE_KEYS.has(errorCode) ? `errors.${errorCode}` : 'errors.UNKNOWN';
+  const errorLabelKey =
+    errorCode && ERROR_CODE_KEYS.has(errorCode) ? `errors.${errorCode}` : 'errors.UNKNOWN';
 
   const showViewer = mutation.data !== undefined || dirty;
 
@@ -169,7 +172,10 @@ export function AIBriefAutocomplete({ eventId }: AIBriefAutocompleteProps): Reac
       )}
 
       {eventError && (
-        <div role="alert" className="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+        <div
+          role="alert"
+          className="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-800"
+        >
           {t('errors.EVENT_LOAD_FAILED')}
         </div>
       )}
@@ -202,7 +208,7 @@ export function AIBriefAutocomplete({ eventId }: AIBriefAutocompleteProps): Reac
               value={serviceCategoryCode}
               onChange={(e): void => setServiceCategoryCode(e.target.value)}
               placeholder={t('categoryPlaceholder')}
-              className="block w-full rounded-md border border-neutral-300 bg-white p-2 text-sm text-neutral-900 shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-400"
+              className="block w-full rounded-md border border-neutral-300 bg-white p-2 text-sm text-neutral-900 shadow-sm focus-visible:border-interactive focus-ring"
               data-testid="ai-brief-category-input"
             />
             <p className="text-xs text-neutral-500">{t('categoryHelp')}</p>
@@ -213,7 +219,7 @@ export function AIBriefAutocomplete({ eventId }: AIBriefAutocompleteProps): Reac
               type="button"
               onClick={handleGenerate}
               disabled={!serviceCategoryCode || mutation.isPending}
-              className="rounded-md bg-purple-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-purple-800 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:cursor-not-allowed disabled:bg-neutral-300"
+              className="rounded-md bg-purple-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-purple-800 focus-ring disabled:cursor-not-allowed disabled:bg-neutral-300"
               data-testid="ai-brief-generate-cta"
             >
               {mutation.data ? t('actions.regenerate') : t('actions.autocomplete')}
@@ -276,11 +282,7 @@ export function AIBriefAutocomplete({ eventId }: AIBriefAutocompleteProps): Reac
           )}
 
           {showViewer && (
-            <div
-              aria-live="polite"
-              className="space-y-4"
-              data-testid="ai-quote-brief-viewer"
-            >
+            <div aria-live="polite" className="space-y-4" data-testid="ai-quote-brief-viewer">
               <AIBriefField
                 label={t('sections.brief')}
                 value={draft.brief}

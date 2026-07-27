@@ -42,6 +42,20 @@ function fieldErrorFromApi(err: ApiError, field: string): string | null {
   return typeof found?.message === 'string' ? found.message : null;
 }
 
+// `modal-overlay`, `modal-card`, `form-field`, `btn`… eran clases BEM sin hoja de estilo: el
+// diálogo se renderizaba como texto plano sobre la página. Se reconstruye con las utilidades del
+// design system. Los controles nativos se estilan aquí en vez de sustituirse por `Input`/`Select`
+// porque van cableados con `register()` de react-hook-form, que necesita la ref del elemento.
+const LABEL = 'font-ui text-label text-primary';
+const CONTROL =
+  'focus-ring w-full rounded-input border border-default bg-surface px-3 py-2 ' +
+  'font-body text-body-sm text-primary placeholder:text-muted ' +
+  'aria-[invalid=true]:border-feedback-error disabled:bg-surface-disabled';
+const CTA_BASE =
+  'focus-ring inline-flex min-h-touch items-center justify-center rounded-button px-4 py-2 ' +
+  'font-ui text-body-sm font-medium transition-colors duration-fast ease-standard ' +
+  'motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-disabled';
+
 export function CreateTaskDialog({
   eventId,
   isOpen,
@@ -166,7 +180,7 @@ export function CreateTaskDialog({
 
   return (
     <div
-      className="modal-overlay"
+      className="fixed inset-0 z-modal flex items-center justify-center overflow-y-auto bg-scrim p-4"
       role="presentation"
       onKeyDown={onKeyDown}
       // Overlay simple: click en overlay cierra (siempre que no sea sobre el card).
@@ -181,24 +195,29 @@ export function CreateTaskDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="modal-card"
+        className="w-full max-w-form rounded-modal bg-surface p-6 shadow-overlay-modal"
       >
-        <h2 id={titleId} className="modal-title">
+        <h2 id={titleId} className="font-heading text-h3 text-primary">
           {t('title')}
         </h2>
 
         {globalError && (
-          <div className="banner banner--error" role="alert" aria-live="assertive">
+          <div
+            className="mt-3 rounded-card border border-feedback-error bg-feedback-error p-3 text-body-sm text-feedback-error"
+            role="alert"
+            aria-live="assertive"
+          >
             {globalError}
           </div>
         )}
 
-        <form onSubmit={onSubmit} className="create-task-form">
-          <div className="form-field">
-            <label htmlFor={`${titleId}-title`}>{t('fields.title.label')}</label>
+        <form onSubmit={onSubmit} className="mt-4 flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <label className={LABEL} htmlFor={`${titleId}-title`}>{t('fields.title.label')}</label>
             <input
               id={`${titleId}-title`}
               type="text"
+              className={CONTROL}
               maxLength={200}
               aria-describedby={titleErr ? `${titleId}-title-err` : undefined}
               aria-invalid={titleErr ? 'true' : undefined}
@@ -209,49 +228,52 @@ export function CreateTaskDialog({
               }}
             />
             {titleErr && (
-              <p id={`${titleId}-title-err`} className="field-error" aria-live="assertive">
+              <p id={`${titleId}-title-err`} className="text-caption text-feedback-error" aria-live="assertive">
                 {t(`fields.title.errors.${String(titleErr)}` as never)}
               </p>
             )}
           </div>
 
-          <div className="form-field">
-            <label htmlFor={`${titleId}-desc`}>{t('fields.description.label')}</label>
+          <div className="flex flex-col gap-1">
+            <label className={LABEL} htmlFor={`${titleId}-desc`}>{t('fields.description.label')}</label>
             <textarea
               id={`${titleId}-desc`}
+              className={CONTROL}
               maxLength={2000}
               aria-describedby={descErr ? `${titleId}-desc-err` : undefined}
               aria-invalid={descErr ? 'true' : undefined}
               {...form.register('description')}
             />
             {descErr && (
-              <p id={`${titleId}-desc-err`} className="field-error" aria-live="assertive">
+              <p id={`${titleId}-desc-err`} className="text-caption text-feedback-error" aria-live="assertive">
                 {t(`fields.description.errors.${String(descErr)}` as never)}
               </p>
             )}
           </div>
 
-          <div className="form-field">
-            <label htmlFor={`${titleId}-due`}>{t('fields.dueDate.label')}</label>
+          <div className="flex flex-col gap-1">
+            <label className={LABEL} htmlFor={`${titleId}-due`}>{t('fields.dueDate.label')}</label>
             <input
               id={`${titleId}-due`}
               type="datetime-local"
+              className={CONTROL}
               aria-describedby={dueErr ? `${titleId}-due-err` : undefined}
               aria-invalid={dueErr ? 'true' : undefined}
               {...form.register('dueDateLocal')}
             />
             {dueErr && (
-              <p id={`${titleId}-due-err`} className="field-error" aria-live="assertive">
+              <p id={`${titleId}-due-err`} className="text-caption text-feedback-error" aria-live="assertive">
                 {t(`fields.dueDate.errors.${String(dueErr)}` as never)}
               </p>
             )}
           </div>
 
           {categoryOptions.length > 0 && (
-            <div className="form-field">
-              <label htmlFor={`${titleId}-cat`}>{t('fields.category.label')}</label>
+            <div className="flex flex-col gap-1">
+              <label className={LABEL} htmlFor={`${titleId}-cat`}>{t('fields.category.label')}</label>
               <select
                 id={`${titleId}-cat`}
+                className={CONTROL}
                 aria-describedby={catErr ? `${titleId}-cat-err` : undefined}
                 aria-invalid={catErr ? 'true' : undefined}
                 {...form.register('categoryCode')}
@@ -265,25 +287,25 @@ export function CreateTaskDialog({
                 ))}
               </select>
               {catErr && (
-                <p id={`${titleId}-cat-err`} className="field-error" aria-live="assertive">
+                <p id={`${titleId}-cat-err`} className="text-caption text-feedback-error" aria-live="assertive">
                   {t(`fields.category.errors.${String(catErr)}` as never)}
                 </p>
               )}
             </div>
           )}
 
-          <div className="modal-actions">
+          <div className="mt-2 flex flex-wrap justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="btn btn--secondary"
+              className={`${CTA_BASE} border border-action-secondary bg-action-secondary text-primary hover:bg-action-secondary-hover`}
               disabled={mutation.isPending}
             >
               {t('cancel')}
             </button>
             <button
               type="submit"
-              className="btn btn--primary"
+              className={`${CTA_BASE} bg-action-primary text-action-primary-foreground hover:bg-action-primary-hover`}
               disabled={mutation.isPending}
               aria-busy={mutation.isPending ? 'true' : undefined}
             >

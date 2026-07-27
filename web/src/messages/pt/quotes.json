@@ -70,5 +70,36 @@
       "FORBIDDEN": "Seu perfil não pode recusar cotações.",
       "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
     }
+  },
+  "eventPanel": {
+    "loading": "Carregando solicitações de cotação…",
+    "tableCaption": "Solicitações de cotação deste evento",
+    "columns": {
+      "category": "Categoria",
+      "status": "Status",
+      "sentAt": "Enviada",
+      "actions": "Ações"
+    },
+    "status": {
+      "sent": "Enviada",
+      "viewed": "Vista",
+      "responded": "Respondida",
+      "expired": "Expirada",
+      "cancelled": "Cancelada"
+    },
+    "actions": {
+      "new": "Nova solicitação",
+      "compare": "Comparar"
+    },
+    "empty": {
+      "title": "Ainda não há solicitações",
+      "description": "Peça cotações aos fornecedores para comparar preços e disponibilidade para este evento.",
+      "cta": "Solicitar cotação"
+    },
+    "error": {
+      "title": "Não conseguimos carregar as solicitações",
+      "description": "Algo deu errado do nosso lado. Tente novamente em instantes.",
+      "retry": "Tentar novamente"
+    }
   }
 }

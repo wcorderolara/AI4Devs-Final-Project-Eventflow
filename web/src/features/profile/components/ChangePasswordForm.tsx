@@ -5,8 +5,12 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { ApiError } from '@/shared/api-client';
+import { Button, FormField, PasswordInput } from '@/shared/design-system';
 import { useChangePassword } from '../hooks/useChangePassword';
-import { changePasswordSchema, type ChangePasswordFormValues } from '../schemas/changePasswordSchema';
+import {
+  changePasswordSchema,
+  type ChangePasswordFormValues,
+} from '../schemas/changePasswordSchema';
 
 /**
  * ChangePasswordForm (US-006 / AC-04). Verifica `currentPassword`, valida la política de
@@ -70,94 +74,101 @@ export function ChangePasswordForm(): React.JSX.Element {
 
   return (
     <form onSubmit={(e) => void onSubmit(e)} noValidate aria-busy={mutation.isPending}>
-      <h2 className="text-lg font-semibold">{t('security.title')}</h2>
-      <p className="mt-1 text-sm text-neutral-600">{t('security.description')}</p>
+      <h2 className="font-heading text-h3 font-semibold text-primary">{t('security.title')}</h2>
+      <p className="mt-1 font-body text-body-sm text-secondary">{t('security.description')}</p>
 
       {globalError ? (
-        <div role="alert" aria-live="polite" className="mt-3 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+        <div
+          role="alert"
+          aria-live="polite"
+          className="mt-3 rounded-card border border-feedback-error bg-feedback-error p-3 font-body text-body-sm text-feedback-error"
+        >
           {globalError}
         </div>
       ) : null}
       {success ? (
-        <p role="status" aria-live="polite" className="mt-3 rounded border border-green-300 bg-green-50 p-3 text-sm text-green-800">
+        <p
+          role="status"
+          aria-live="polite"
+          className="mt-3 rounded-card border border-feedback-success bg-feedback-success p-3 font-body text-body-sm text-feedback-success"
+        >
           {t('security.changed')}
         </p>
       ) : null}
 
       <div className="mt-4 flex flex-col gap-4">
-        <div>
-          <label htmlFor="current-password" className="block text-sm font-medium">
-            {t('security.currentPassword')}
-          </label>
-          <input
-            id="current-password"
-            type="password"
-            autoComplete="current-password"
-            disabled={disabled}
-            aria-invalid={errors.currentPassword ? true : undefined}
-            aria-describedby={errors.currentPassword ? 'current-password-error' : undefined}
-            className="mt-1 w-full rounded border border-neutral-300 px-3 py-2"
-            {...register('currentPassword')}
-          />
-          {errors.currentPassword ? (
-            <p id="current-password-error" className="mt-1 text-sm text-red-700" aria-live="polite">
-              {t(errors.currentPassword.message ?? 'validation.currentPasswordRequired')}
-            </p>
-          ) : null}
-        </div>
-
-        <div>
-          <label htmlFor="new-password" className="block text-sm font-medium">
-            {t('security.newPassword')}
-          </label>
-          <input
-            id="new-password"
-            type="password"
-            autoComplete="new-password"
-            disabled={disabled}
-            aria-invalid={errors.newPassword ? true : undefined}
-            aria-describedby="new-password-hint new-password-error"
-            className="mt-1 w-full rounded border border-neutral-300 px-3 py-2"
-            {...register('newPassword')}
-          />
-          <p id="new-password-hint" className="mt-1 text-xs text-neutral-500">
-            {t('security.passwordHint')}
-          </p>
-          {errors.newPassword ? (
-            <p id="new-password-error" className="mt-1 text-sm text-red-700" aria-live="polite">
-              {t(errors.newPassword.message ?? 'validation.passwordPolicy')}
-            </p>
-          ) : null}
-        </div>
-
-        <div>
-          <label htmlFor="confirm-password" className="block text-sm font-medium">
-            {t('security.confirmPassword')}
-          </label>
-          <input
-            id="confirm-password"
-            type="password"
-            autoComplete="new-password"
-            disabled={disabled}
-            aria-invalid={errors.confirmNewPassword ? true : undefined}
-            aria-describedby={errors.confirmNewPassword ? 'confirm-password-error' : undefined}
-            className="mt-1 w-full rounded border border-neutral-300 px-3 py-2"
-            {...register('confirmNewPassword')}
-          />
-          {errors.confirmNewPassword ? (
-            <p id="confirm-password-error" className="mt-1 text-sm text-red-700" aria-live="polite">
-              {t(errors.confirmNewPassword.message ?? 'validation.passwordsMismatch')}
-            </p>
-          ) : null}
-        </div>
-
-        <button
-          type="submit"
+        <FormField
+          id="current-password"
+          label={t('security.currentPassword')}
           disabled={disabled}
-          className="self-start rounded bg-neutral-900 px-4 py-2 text-white disabled:opacity-50"
+          error={
+            errors.currentPassword
+              ? t(errors.currentPassword.message ?? 'validation.currentPasswordRequired')
+              : undefined
+          }
         >
-          {mutation.isPending ? t('actions.saving') : t('security.submit')}
-        </button>
+          {(field) => (
+            <PasswordInput
+              {...field}
+              autoComplete="current-password"
+              showLabel={t('security.showPassword')}
+              hideLabel={t('security.hidePassword')}
+              {...register('currentPassword')}
+            />
+          )}
+        </FormField>
+
+        <FormField
+          id="new-password"
+          label={t('security.newPassword')}
+          helperText={t('security.passwordHint')}
+          disabled={disabled}
+          error={
+            errors.newPassword
+              ? t(errors.newPassword.message ?? 'validation.passwordPolicy')
+              : undefined
+          }
+        >
+          {(field) => (
+            <PasswordInput
+              {...field}
+              autoComplete="new-password"
+              showLabel={t('security.showPassword')}
+              hideLabel={t('security.hidePassword')}
+              {...register('newPassword')}
+            />
+          )}
+        </FormField>
+
+        <FormField
+          id="confirm-password"
+          label={t('security.confirmPassword')}
+          disabled={disabled}
+          error={
+            errors.confirmNewPassword
+              ? t(errors.confirmNewPassword.message ?? 'validation.passwordsMismatch')
+              : undefined
+          }
+        >
+          {(field) => (
+            <PasswordInput
+              {...field}
+              autoComplete="new-password"
+              showLabel={t('security.showPassword')}
+              hideLabel={t('security.hidePassword')}
+              {...register('confirmNewPassword')}
+            />
+          )}
+        </FormField>
+
+        <Button
+          type="submit"
+          className="self-start"
+          isLoading={mutation.isPending}
+          loadingLabel={t('actions.saving')}
+        >
+          {t('security.submit')}
+        </Button>
       </div>
     </form>
   );

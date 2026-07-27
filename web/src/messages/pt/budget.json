@@ -42,6 +42,7 @@
     "deleteAria": "Excluir {label}"
   },
   "empty": {
+    "title": "Ainda não há orçamento",
     "body": "Ainda não há itens de orçamento. Você pode começar com uma sugestão IA ou adicionar itens manualmente.",
     "cta": {
       "ai": "Sugerir com IA",

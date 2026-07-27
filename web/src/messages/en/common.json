@@ -26,5 +26,135 @@
     "showing": "{count, plural, one {# result} other {# results}} on this page",
     "prev": "Previous",
     "next": "Next"
+  },
+  "landing": {
+    "eyebrow": "AI-assisted planning",
+    "heading": "Turn your event idea into an <em>actionable plan</em>",
+    "description": "EventFlow proposes an editable checklist and budget, helps you discover approved vendors and request structured quotes. Every AI suggestion stays pending your review — nothing is applied until you approve it.",
+    "ctaGroupLabel": "Get started with EventFlow",
+    "featuresHeading": "What you can do today",
+    "featuresDescription": "These are the capabilities available in EventFlow. Nothing more, nothing less.",
+    "featuresListLabel": "EventFlow capabilities",
+    "features": {
+      "plan": {
+        "title": "Suggested starting plan",
+        "description": "Describe your event and get a proposed set of phases and tasks as an editable starting point."
+      },
+      "checklist": {
+        "title": "Editable checklist",
+        "description": "Generate a task list with relative due dates and adjust it before applying it to your event."
+      },
+      "budget": {
+        "title": "Suggested budget",
+        "description": "Get a proposed breakdown of line items and edit it in your event's currency."
+      },
+      "vendors": {
+        "title": "Vendor directory",
+        "description": "Search and filter approved vendors by category and city."
+      },
+      "quotes": {
+        "title": "Structured quotes",
+        "description": "Send requests with a consistent brief and compare the responses side by side."
+      },
+      "hitl": {
+        "title": "You stay in control",
+        "description": "Every AI suggestion is shown as a proposal: accept it, edit it or discard it."
+      }
+    },
+    "metadata": {
+      "title": "EventFlow — Turn your event idea into an actionable plan",
+      "description": "Plan weddings, quinceañeras, christenings, baby showers, birthdays and small corporate events with AI assistance: editable checklist and budget, approved vendors and comparable quotes. Every suggestion waits for your approval."
+    },
+    "preview": {
+      "ariaLabel": "Event planning stories",
+      "pause": "Pause carousel",
+      "resume": "Resume carousel",
+      "slideStatus": "Slide {current} of {total}",
+      "controls": {
+        "wedding": "Show wedding suggestion",
+        "celebration": "Show celebration suggestion",
+        "baptism": "Show christening suggestion",
+        "birthday": "Show birthday or baby shower suggestion",
+        "corporate": "Show corporate event suggestion"
+      },
+      "slides": {
+        "wedding": {
+          "eyebrow": "AI suggestion",
+          "title": "Budget optimisation",
+          "description": "We spot opportunities to cut costs without affecting the experience or the quality of your event.",
+          "imageAlt": "Elegant wedding reception with guests and floral decoration."
+        },
+        "celebration": {
+          "eyebrow": "Smart recommendation",
+          "title": "Ideas that fit you",
+          "description": "Get suggestions for decor, services and experiences based on your style, budget and guest count.",
+          "imageAlt": "Social celebration with guests, careful decoration and warm lighting."
+        },
+        "baptism": {
+          "eyebrow": "Personalised checklist",
+          "title": "Move forward step by step",
+          "description": "EventFlow builds a task plan tailored to your event so you always know what to do and when.",
+          "imageAlt": "Christening celebration with delicate decoration and a family atmosphere."
+        },
+        "birthday": {
+          "eyebrow": "Smart planning",
+          "title": "Everything under control",
+          "description": "Organise every detail, vendor and key date in one place, without losing track of anything.",
+          "imageAlt": "Birthday or baby shower celebration with elegant decor and a warm atmosphere."
+        },
+        "corporate": {
+          "eyebrow": "Centralised management",
+          "title": "Better coordinated vendors",
+          "description": "Compare proposals, track deliverables and keep all your vendor information organised in one space.",
+          "imageAlt": "Premium corporate event with attendees in an elegant venue."
+        }
+      }
+    },
+    "howItWorks": {
+      "eyebrow": "How it works",
+      "heading": "From idea to plan in three steps",
+      "description": "EventFlow does not organise the event for you: it gives you an ordered starting point and you decide what to keep.",
+      "listLabel": "Steps to plan with EventFlow",
+      "steps": {
+        "define": {
+          "title": "Describe your event",
+          "description": "Event type, date, guest count, city and estimated budget. That is enough to get started."
+        },
+        "propose": {
+          "title": "AI proposes a plan",
+          "description": "You get phases and tasks with relative dates, a budget breakdown and the vendor categories usually needed."
+        },
+        "decide": {
+          "title": "You decide what gets applied",
+          "description": "Every suggestion is shown as a proposal: accept it, edit it or discard it. Nothing reaches your event without your approval."
+        }
+      }
+    },
+    "forVendors": {
+      "eyebrow": "For vendors",
+      "heading": "Receive quote requests with the full picture",
+      "description": "If you provide event services, EventFlow brings you organizers who already know what they need.",
+      "listLabel": "What you can do as a vendor",
+      "items": {
+        "profile": {
+          "title": "Your profile and packages",
+          "description": "Publish your approved profile, your services and your portfolio so organizers can find you in the directory."
+        },
+        "quotes": {
+          "title": "Structured requests",
+          "description": "Every request arrives with the event brief, so you reply with a comparable quote without back and forth."
+        },
+        "reviews": {
+          "title": "Moderated reviews",
+          "description": "Reviews left by organizers go through moderation before they appear on your profile."
+        }
+      },
+      "ctaGroupLabel": "Get started as a vendor"
+    },
+    "finalCta": {
+      "heading": "Start planning with more clarity",
+      "description": "Create your event, review what AI proposes and keep only what makes sense for you.",
+      "ctaGroupLabel": "Actions to start planning"
+    }
   }
 }

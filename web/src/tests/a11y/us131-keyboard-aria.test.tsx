@@ -21,25 +21,55 @@ vi.mock('next/navigation', () => ({
 const messages = { auth: esLatamAuth, common: esLatamCommon };
 
 describe('US-131 QA-002 · teclado + foco + ARIA + labels (LoginForm /login)', () => {
-  it('AC-02 · NFR-A11Y-002: Tab recorre email → password → submit en orden coherente', async () => {
+  it('AC-02 · NFR-A11Y-002: Tab recorre el formulario en orden coherente', async () => {
     const user = userEvent.setup();
     renderWithProviders(<LoginForm />, { messages });
-    // El foco parte del `document.body`; el primer Tab entra al campo email.
-    await user.tab();
+
+    // El campo email recibe el foco al montar (`autoFocus`): la pantalla es de propósito único y
+    // la referencia Stitch («Foco») muestra ese estado inicial.
     expect(screen.getByLabelText('Correo electrónico')).toHaveFocus();
+
+    // Orden actualizado respecto de la versión anterior de esta suite: el enlace de recuperación
+    // vive ahora en la fila del label de contraseña (queda ANTES del campo en el DOM, como en el
+    // patrón de referencia) y `PasswordInput` añade el toggle mostrar/ocultar DESPUÉS del campo.
+    await user.tab();
+    expect(screen.getByRole('link', { name: 'Olvidé mi contraseña' })).toHaveFocus();
     await user.tab();
     expect(screen.getByLabelText('Contraseña')).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Mostrar contraseña' })).toHaveFocus();
     await user.tab();
     expect(screen.getByRole('button', { name: 'Iniciar sesión' })).toHaveFocus();
   });
 
-  it('AC-02: Shift+Tab retrocede en orden inverso (password → email)', async () => {
+  it('AC-02: Shift+Tab retrocede en orden inverso (password → enlace → email)', async () => {
     const user = userEvent.setup();
     renderWithProviders(<LoginForm />, { messages });
-    await user.tab(); // email
+    await user.tab(); // enlace de recuperación
     await user.tab(); // password
     await user.tab({ shift: true });
+    expect(screen.getByRole('link', { name: 'Olvidé mi contraseña' })).toHaveFocus();
+    await user.tab({ shift: true });
     expect(screen.getByLabelText('Correo electrónico')).toHaveFocus();
+  });
+
+  it('AC-03: el toggle de contraseña es operable por teclado y anuncia su estado', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<LoginForm />, { messages });
+    const password = screen.getByLabelText('Contraseña');
+    expect(password).toHaveAttribute('type', 'password');
+
+    const toggle = screen.getByRole('button', { name: 'Mostrar contraseña' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    await user.click(toggle);
+
+    // El nombre accesible cambia con el estado; el nodo del input NO se reemplaza (mismo `type`
+    // alternado), de modo que el valor y el gestor de contraseñas sobreviven.
+    expect(password).toHaveAttribute('type', 'text');
+    expect(screen.getByRole('button', { name: 'Ocultar contraseña' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
   });
 
   it('AC-03 · NFR-A11Y-004: submit sin campos dispara mensajes de error con `aria-describedby` asociado', async () => {

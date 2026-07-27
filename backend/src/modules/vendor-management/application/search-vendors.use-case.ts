@@ -3,6 +3,11 @@
 // para detectar `hasNext`, y armado del cursor de la siguiente página. Vendor authenticated
 // se excluye de sus propios resultados (SEC-03).
 //
+// El mismo use case sirve al directorio autenticado (`GET /vendors`) y al público
+// (`GET /public/vendors`): el filtro de negocio —sólo vendors `approved` y no borrados— vive en
+// el repository y es idéntico en ambos. La única diferencia es `currentUser`, que en el caso
+// público es `null`: sin sesión no hay nadie a quien auto-excluir.
+//
 // Los slugs (`categoryCode`, `locationCode`) inexistentes o inactivos producen `INVALID_FILTERS`
 // con un `details.invalid` que enumera *todos* los fallos a la vez (D3 strict).
 import type { SupportedCurrency } from '../../../shared/constants/currencies.js';
@@ -52,7 +57,8 @@ export class SearchVendorsUseCase {
   ) {}
 
   async execute(args: {
-    currentUser: SearchVendorsCurrentUser;
+    /** `null` en el directorio público: no hay sesión, así que no hay auto-exclusión. */
+    currentUser: SearchVendorsCurrentUser | null;
     query: SearchVendorsQuery;
   }): Promise<SearchVendorsResult> {
     const { currentUser, query } = args;
@@ -79,7 +85,7 @@ export class SearchVendorsUseCase {
       if (cursor === null) throw new InvalidCursorError();
     }
 
-    const excludeUserId = currentUser.role === 'vendor' ? currentUser.id : null;
+    const excludeUserId = currentUser?.role === 'vendor' ? currentUser.id : null;
 
     const rows = await this.repository.searchApprovedVendors({
       filters: {

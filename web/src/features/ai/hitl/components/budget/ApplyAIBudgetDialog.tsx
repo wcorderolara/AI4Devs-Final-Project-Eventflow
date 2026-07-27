@@ -5,8 +5,24 @@
 // botón "Aplicar" que envía `editedPayload` (subset editado; si no hay edits envía nada).
 // A11Y: `role="dialog"`, `aria-labelledby`, `aria-describedby`, focus trap, ESC, `aria-busy`,
 // `aria-live` para status. Consumidor pasa `initialItems` y `currencyCode` desde la recomendación.
+//
+// PB-P2-033: la tabla de preview pasa a las primitivas `Table` del design system y los controles
+// a `Checkbox` / `Input` / `Button`. Corrige además la CTA primaria, que era `bg-blue-600` — azul
+// está explícitamente prohibido como acción primaria (FC-01 / UI-DEC-003: la marca es violeta).
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
+import {
+  Alert,
+  Button,
+  Checkbox,
+  Input,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from '@/shared/design-system';
 import { Money } from '@/shared/i18n';
 
 export interface BudgetItemPreview {
@@ -120,7 +136,9 @@ export function ApplyAIBudgetDialog({
     const edited =
       included.length !== rows.length ||
       included.some(
-        (r) => r.editedAmount !== r.estimatedAmount || (r.editedLabel !== '' && r.editedLabel !== (r.categoryName ?? '')),
+        (r) =>
+          r.editedAmount !== r.estimatedAmount ||
+          (r.editedLabel !== '' && r.editedLabel !== (r.categoryName ?? '')),
       );
     onSubmit({
       editedPayload: { currencyCode, items },
@@ -150,117 +168,131 @@ export function ApplyAIBudgetDialog({
           <h2 id="apply-ai-budget-dialog-title" className="text-lg font-semibold">
             {t('title')}
           </h2>
-          <p id="apply-ai-budget-dialog-desc" className="mt-1 text-sm text-neutral-600">
+          <p
+            id="apply-ai-budget-dialog-desc"
+            className="mt-1 font-body text-body-sm text-secondary"
+          >
             {t('description')}
           </p>
         </header>
 
-        <div role="region" aria-label={t('itemsRegionLabel')} className="max-h-[50vh] overflow-y-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left">
-                <th className="w-8 pb-2">{t('col.include')}</th>
-                <th className="pb-2">{t('col.category')}</th>
-                <th className="pb-2">{t('col.label')}</th>
-                <th className="pb-2 text-right">{t('col.amount')}</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div
+          role="region"
+          aria-label={t('itemsRegionLabel')}
+          className="max-h-[50vh] overflow-y-auto"
+        >
+          <Table ariaLabel={t('itemsRegionLabel')} density="compact">
+            <TableHead>
+              <TableRow>
+                <TableHeaderCell density="compact" className="w-8">
+                  {t('col.include')}
+                </TableHeaderCell>
+                <TableHeaderCell density="compact">{t('col.category')}</TableHeaderCell>
+                <TableHeaderCell density="compact">{t('col.label')}</TableHeaderCell>
+                <TableHeaderCell density="compact" align="end">
+                  {t('col.amount')}
+                </TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {rows.map((r, idx) => {
                 const inputId = `apply-ai-budget-row-${idx}`;
-                const catName = r.categoryName ?? (translateCategory ? translateCategory(r.category) : r.category);
+                const catName =
+                  r.categoryName ??
+                  (translateCategory ? translateCategory(r.category) : r.category);
                 return (
-                  <tr key={r.category} className="border-t">
-                    <td className="py-2">
-                      <input
-                        type="checkbox"
-                        aria-label={t('toggleAria', { category: catName })}
+                  <TableRow key={r.category}>
+                    <TableCell density="compact">
+                      {/* El nombre accesible lo aporta el label sólo-lector: la columna ya
+                          identifica visualmente el control. */}
+                      <Checkbox
+                        label={
+                          <span className="sr-only">{t('toggleAria', { category: catName })}</span>
+                        }
                         checked={r.included}
                         onChange={(e) =>
                           setRows((prev) =>
-                            prev.map((row, i) => (i === idx ? { ...row, included: e.target.checked } : row)),
+                            prev.map((row, i) =>
+                              i === idx ? { ...row, included: e.target.checked } : row,
+                            ),
                           )
                         }
                         disabled={submitting}
                       />
-                    </td>
-                    <td className="py-2">
+                    </TableCell>
+                    <TableCell density="compact">
                       <label htmlFor={`${inputId}-label`} className="font-medium">
                         {catName}
                       </label>
-                    </td>
-                    <td className="py-2">
-                      <input
+                    </TableCell>
+                    <TableCell density="compact">
+                      <Input
                         id={`${inputId}-label`}
                         type="text"
-                        className="w-full rounded border border-neutral-300 px-2 py-1"
+                        inputSize="sm"
                         placeholder={catName}
                         value={r.editedLabel}
                         onChange={(e) =>
                           setRows((prev) =>
-                            prev.map((row, i) => (i === idx ? { ...row, editedLabel: e.target.value } : row)),
+                            prev.map((row, i) =>
+                              i === idx ? { ...row, editedLabel: e.target.value } : row,
+                            ),
                           )
                         }
                         disabled={submitting || !r.included}
                       />
-                    </td>
-                    <td className="py-2 text-right">
-                      <input
+                    </TableCell>
+                    <TableCell density="compact" align="end">
+                      <Input
                         id={`${inputId}-amount`}
                         type="text"
                         inputMode="decimal"
+                        inputSize="sm"
                         aria-label={t('amountAria', { category: catName })}
-                        className="w-28 rounded border border-neutral-300 px-2 py-1 text-right"
+                        fullWidth={false}
+                        className="w-28 text-right tabular-nums"
                         value={r.editedAmount}
                         onChange={(e) =>
                           setRows((prev) =>
-                            prev.map((row, i) => (i === idx ? { ...row, editedAmount: e.target.value } : row)),
+                            prev.map((row, i) =>
+                              i === idx ? { ...row, editedAmount: e.target.value } : row,
+                            ),
                           )
                         }
                         disabled={submitting || !r.included}
                       />
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
+            </TableBody>
             <tfoot>
-              <tr className="border-t font-semibold">
-                <td colSpan={3} className="py-2 text-right">
+              <tr className="border-t border-subtle font-semibold">
+                <td colSpan={3} className="px-3 py-2 text-right">
                   {t('total')}
                 </td>
-                <td className="py-2 text-right">
+                <td className="px-3 py-2 text-right tabular-nums">
                   <Money amount={total} currency={currencyCode} />
                 </td>
               </tr>
             </tfoot>
-          </table>
+          </Table>
         </div>
 
-        {errorMessage ? (
-          <p role="alert" aria-live="polite" className="mt-3 rounded bg-red-50 p-2 text-sm text-red-700">
-            {errorMessage}
-          </p>
-        ) : null}
+        {errorMessage ? <Alert variant="error" live className="mt-3" title={errorMessage} /> : null}
 
         <div className="mt-6 flex justify-end gap-2">
-          <button
-            ref={cancelBtnRef}
-            type="button"
-            onClick={onCancel}
-            disabled={submitting}
-            className="rounded border border-neutral-300 px-4 py-2 text-sm"
-          >
+          <Button ref={cancelBtnRef} variant="secondary" onClick={onCancel} disabled={submitting}>
             {t('cta.cancel')}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
             onClick={handleApply}
             disabled={!anyIncluded || submitting}
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            isLoading={submitting}
+            loadingLabel={t('cta.applying')}
           >
-            {submitting ? t('cta.applying') : t('cta.apply')}
-          </button>
+            {t('cta.apply')}
+          </Button>
         </div>
       </div>
     </div>

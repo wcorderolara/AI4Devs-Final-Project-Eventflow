@@ -13,8 +13,22 @@
 // - A11Y: tabla semántica con `<caption sr-only>`, `<th scope>`, botón con `aria-label` que
 //   referencia el business name. `VendorStatusBadge` complementa color con literal i18n.
 // - Empty/loading/error/next-page states con i18n.
+//
+// PB-P2-033: compone las primitivas `Table` del design system (el `VendorStatusBadge` ya usaba
+// `StatusBadge` desde PB-P2-029); el color y la densidad pasan a tokens semánticos.
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import {
+  Button,
+  EmptyState,
+  ErrorState,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from '@/shared/design-system';
 import { DEFAULT_PAGE_SIZE, PageSizeSelector, type PageSize } from '@/shared/ui';
 import { useAdminVendorsList } from '../hooks/adminVendorsQueries';
 import type {
@@ -23,11 +37,17 @@ import type {
   AdminVendorStatus,
 } from '../api/adminVendorsApi.types';
 import { VendorStatusBadge } from './VendorStatusBadge';
-import { VendorModerationDialog, type VendorModerationDialogVendor } from './VendorModerationDialog';
+import {
+  VendorModerationDialog,
+  type VendorModerationDialogVendor,
+} from './VendorModerationDialog';
 import { VendorFiltersPanel } from './VendorFiltersPanel';
 
 /** Filtro operativo por defecto — Decisión PO D5: el panel abre en `status=pending`. */
-const DEFAULT_FILTERS: AdminVendorListFilters = { status: ['pending'], pageSize: DEFAULT_PAGE_SIZE };
+const DEFAULT_FILTERS: AdminVendorListFilters = {
+  status: ['pending'],
+  pageSize: DEFAULT_PAGE_SIZE,
+};
 
 export function VendorModerationTable(): React.JSX.Element {
   const t = useTranslations('admin.vendor.panel');
@@ -45,10 +65,10 @@ export function VendorModerationTable(): React.JSX.Element {
   return (
     <section aria-labelledby="admin-vendors-title" className="space-y-4">
       <header>
-        <h1 id="admin-vendors-title" className="text-2xl font-bold">
+        <h1 id="admin-vendors-title" className="font-heading text-h2 font-semibold text-primary">
           {t('title')}
         </h1>
-        <p className="mt-1 text-sm text-neutral-600">{t('subtitle')}</p>
+        <p className="mt-1 font-body text-body-sm text-secondary">{t('subtitle')}</p>
       </header>
 
       <VendorFiltersPanel value={filters} onChange={setFilters} />
@@ -61,113 +81,90 @@ export function VendorModerationTable(): React.JSX.Element {
       </div>
 
       {query.isPending ? (
-        <p role="status" className="text-sm text-neutral-600">
+        <p role="status" className="font-body text-body-sm text-secondary">
           {t('loading')}
         </p>
       ) : query.isError ? (
-        <p
-          role="alert"
-          className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800"
-        >
-          {t('error')}
-        </p>
+        <ErrorState title={t('error')} />
       ) : items.length === 0 ? (
-        <p className="rounded-md border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-600">
-          {t('empty')}
-        </p>
+        <EmptyState title={t('empty')} live />
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-neutral-200 text-sm">
-            <caption className="sr-only">{t('caption')}</caption>
-            <thead className="bg-neutral-50">
-              <tr>
-                <th scope="col" className="px-3 py-2 text-left font-medium text-neutral-700">
-                  {t('col.businessName')}
-                </th>
-                <th scope="col" className="px-3 py-2 text-left font-medium text-neutral-700">
-                  {t('col.owner')}
-                </th>
-                <th scope="col" className="px-3 py-2 text-left font-medium text-neutral-700">
-                  {t('col.status')}
-                </th>
-                <th scope="col" className="px-3 py-2 text-left font-medium text-neutral-700">
-                  {t('col.lastAction')}
-                </th>
-                <th scope="col" className="px-3 py-2 text-left font-medium text-neutral-700">
-                  {t('col.createdAt')}
-                </th>
-                <th scope="col" className="px-3 py-2 text-right font-medium text-neutral-700">
-                  {t('col.actions')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 bg-white">
-              {items.map((v) => {
-                const status = v.status as AdminVendorStatus;
-                const isTerminal = status === 'rejected';
-                return (
-                  <tr key={v.id} data-testid={`admin-vendor-row-${v.id}`}>
-                    <td className="px-3 py-2">
-                      <div className="font-medium text-neutral-900">{v.businessName}</div>
-                      {v.slug ? (
-                        <div className="text-xs text-neutral-500">{v.slug}</div>
-                      ) : null}
-                    </td>
-                    <td className="px-3 py-2 text-neutral-700">{v.owner.email}</td>
-                    <td className="px-3 py-2">
-                      <VendorStatusBadge status={status} isHidden={v.isHidden} />
-                    </td>
-                    <td className="px-3 py-2">
-                      {v.lastAdminAction ? (
-                        <span className="text-xs text-neutral-700">
-                          {v.lastAdminAction.action} ·{' '}
-                          {new Date(v.lastAdminAction.createdAt).toLocaleDateString()}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-neutral-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2">
-                      {new Date(v.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-3 py-2 text-right">
-                      <button
-                        type="button"
-                        aria-label={t('moderateAria', { businessName: v.businessName })}
-                        onClick={() =>
-                          setSelected({
-                            id: v.id,
-                            businessName: v.businessName,
-                            slug: v.slug,
-                            currentStatus: status,
-                            isHidden: v.isHidden,
-                          })
-                        }
-                        disabled={isTerminal}
-                        className="rounded-md border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:text-neutral-400"
-                      >
-                        {t('moderate')}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <Table
+          caption={t('caption')}
+          density="compact"
+          containerClassName="rounded-card border border-subtle bg-surface"
+        >
+          <TableHead>
+            <TableRow>
+              <TableHeaderCell density="compact">{t('col.businessName')}</TableHeaderCell>
+              <TableHeaderCell density="compact">{t('col.owner')}</TableHeaderCell>
+              <TableHeaderCell density="compact">{t('col.status')}</TableHeaderCell>
+              <TableHeaderCell density="compact">{t('col.lastAction')}</TableHeaderCell>
+              <TableHeaderCell density="compact">{t('col.createdAt')}</TableHeaderCell>
+              <TableHeaderCell density="compact" align="end">
+                {t('col.actions')}
+              </TableHeaderCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {items.map((v) => {
+              const status = v.status as AdminVendorStatus;
+              const isTerminal = status === 'rejected';
+              return (
+                <TableRow key={v.id} data-testid={`admin-vendor-row-${v.id}`}>
+                  <TableCell density="compact" header description={v.slug ?? undefined}>
+                    {v.businessName}
+                  </TableCell>
+                  <TableCell density="compact">{v.owner.email}</TableCell>
+                  <TableCell density="compact">
+                    <VendorStatusBadge status={status} isHidden={v.isHidden} />
+                  </TableCell>
+                  <TableCell density="compact">
+                    {v.lastAdminAction ? (
+                      <span className="text-caption text-secondary">
+                        {v.lastAdminAction.action} ·{' '}
+                        {new Date(v.lastAdminAction.createdAt).toLocaleDateString()}
+                      </span>
+                    ) : (
+                      <span className="text-caption text-muted">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell density="compact">
+                    {new Date(v.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell density="compact" align="end">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      aria-label={t('moderateAria', { businessName: v.businessName })}
+                      onClick={() =>
+                        setSelected({
+                          id: v.id,
+                          businessName: v.businessName,
+                          slug: v.slug,
+                          currentStatus: status,
+                          isHidden: v.isHidden,
+                        })
+                      }
+                      disabled={isTerminal}
+                    >
+                      {t('moderate')}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       )}
 
       {query.hasNextPage && !query.isFetchingNextPage ? (
-        <button
-          type="button"
-          onClick={() => void query.fetchNextPage()}
-          className="rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm hover:bg-neutral-50"
-        >
+        <Button variant="secondary" onClick={() => void query.fetchNextPage()}>
           {t('loadMore')}
-        </button>
+        </Button>
       ) : null}
       {query.isFetchingNextPage ? (
-        <p role="status" className="text-sm text-neutral-600">
+        <p role="status" className="font-body text-body-sm text-secondary">
           {t('loadingMore')}
         </p>
       ) : null}

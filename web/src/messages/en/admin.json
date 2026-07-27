@@ -116,7 +116,9 @@
         "reset": "Clear filters",
         "apply": "Apply",
         "errorRatingRange": "Minimum rating must be less than or equal to maximum.",
-        "errorDateRange": "Start date must be less than or equal to end date."
+        "errorDateRange": "Start date must be less than or equal to end date.",
+        "appliedFilters": "Applied filters",
+        "removeFilter": "Remove filter: {filter}"
       }
     },
     "moderate": {
@@ -529,7 +531,8 @@
       "status": "Status",
       "search": "Search",
       "searchPlaceholder": "Email or name…",
-      "all": "All"
+      "all": "All",
+      "clearSearch": "Clear search"
     },
     "status": {
       "active": "Active",

@@ -11,8 +11,22 @@
 // - A11Y: tabla semántica con `<caption sr-only>`, `<th scope>`, botón con `aria-label` que
 //   referencia el ID de review. `AdminActionBadge` complementa el color con un literal i18n.
 // - Empty/loading/error/next-page states con i18n.
+//
+// PB-P2-033: compone las primitivas `Table` del design system; el color, la densidad y los
+// estados dejan de ser clases de paleta cruda y pasan a los tokens semánticos.
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import {
+  Button,
+  EmptyState,
+  ErrorState,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from '@/shared/design-system';
 import { DEFAULT_PAGE_SIZE, PageSizeSelector, type PageSize } from '@/shared/ui';
 import { useAdminReviewsList } from '../hooks/adminReviewsQueries';
 import type {
@@ -40,10 +54,10 @@ export function ReviewModerationTable(): React.JSX.Element {
   return (
     <section aria-labelledby="admin-reviews-title" className="space-y-4">
       <header>
-        <h1 id="admin-reviews-title" className="text-2xl font-bold">
+        <h1 id="admin-reviews-title" className="font-heading text-h2 font-semibold text-primary">
           {t('title')}
         </h1>
-        <p className="mt-1 text-sm text-neutral-600">{t('subtitle')}</p>
+        <p className="mt-1 font-body text-body-sm text-secondary">{t('subtitle')}</p>
       </header>
 
       <ReviewFiltersPanel value={filters} onChange={setFilters} />
@@ -56,119 +70,98 @@ export function ReviewModerationTable(): React.JSX.Element {
       </div>
 
       {query.isPending ? (
-        <p role="status" className="text-sm text-neutral-600">
+        <p role="status" className="font-body text-body-sm text-secondary">
           {t('loading')}
         </p>
       ) : query.isError ? (
-        <p role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-          {t('error')}
-        </p>
+        <ErrorState title={t('error')} />
       ) : items.length === 0 ? (
-        <p className="rounded-md border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-600">
-          {t('empty')}
-        </p>
+        <EmptyState title={t('empty')} live />
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-neutral-200 text-sm">
-            <caption className="sr-only">{t('caption')}</caption>
-            <thead className="bg-neutral-50">
-              <tr>
-                <th scope="col" className="px-3 py-2 text-left font-medium text-neutral-700">
-                  {t('col.rating')}
-                </th>
-                <th scope="col" className="px-3 py-2 text-left font-medium text-neutral-700">
-                  {t('col.author')}
-                </th>
-                <th scope="col" className="px-3 py-2 text-left font-medium text-neutral-700">
-                  {t('col.vendor')}
-                </th>
-                <th scope="col" className="px-3 py-2 text-left font-medium text-neutral-700">
-                  {t('col.event')}
-                </th>
-                <th scope="col" className="px-3 py-2 text-left font-medium text-neutral-700">
-                  {t('col.comment')}
-                </th>
-                <th scope="col" className="px-3 py-2 text-left font-medium text-neutral-700">
-                  {t('col.status')}
-                </th>
-                <th scope="col" className="px-3 py-2 text-left font-medium text-neutral-700">
-                  {t('col.lastAction')}
-                </th>
-                <th scope="col" className="px-3 py-2 text-left font-medium text-neutral-700">
-                  {t('col.createdAt')}
-                </th>
-                <th scope="col" className="px-3 py-2 text-right font-medium text-neutral-700">
-                  {t('col.actions')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 bg-white">
-              {items.map((r) => {
-                const status = r.status as AdminReviewStatus;
-                return (
-                  <tr key={r.id} data-testid={`admin-review-row-${r.id}`}>
-                    <td className="px-3 py-2">
-                      {r.rating}
-                      <span aria-hidden="true">{'★'}</span>
-                    </td>
-                    <td className="px-3 py-2">{r.author.displayName}</td>
-                    <td className="px-3 py-2">{r.vendor.businessName}</td>
-                    <td className="px-3 py-2">{r.event.title}</td>
-                    <td className="px-3 py-2 max-w-md truncate">{r.comment ?? '—'}</td>
-                    <td className="px-3 py-2">
-                      <AdminActionBadge status={status} />
-                    </td>
-                    <td className="px-3 py-2">
-                      {r.lastAdminAction ? (
-                        <span className="text-xs text-neutral-700">
-                          {r.lastAdminAction.action} ·{' '}
-                          {new Date(r.lastAdminAction.createdAt).toLocaleDateString()}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-neutral-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2">
-                      {new Date(r.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-3 py-2 text-right">
-                      <button
-                        type="button"
-                        aria-label={t('moderateAria', { id: r.id })}
-                        onClick={() =>
-                          setSelected({
-                            id: r.id,
-                            vendorId: r.vendor.id,
-                            vendorSlug: r.vendor.slug ?? undefined,
-                            currentStatus: status,
-                            ratingSnapshot: r.rating,
-                          })
-                        }
-                        disabled={status === 'removed'}
-                        className="rounded-md border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:text-neutral-400"
-                      >
-                        {t('moderate')}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <Table
+          caption={t('caption')}
+          density="compact"
+          containerClassName="rounded-card border border-subtle bg-surface"
+        >
+          <TableHead>
+            <TableRow>
+              <TableHeaderCell density="compact">{t('col.rating')}</TableHeaderCell>
+              <TableHeaderCell density="compact">{t('col.author')}</TableHeaderCell>
+              <TableHeaderCell density="compact">{t('col.vendor')}</TableHeaderCell>
+              <TableHeaderCell density="compact">{t('col.event')}</TableHeaderCell>
+              <TableHeaderCell density="compact">{t('col.comment')}</TableHeaderCell>
+              <TableHeaderCell density="compact">{t('col.status')}</TableHeaderCell>
+              <TableHeaderCell density="compact">{t('col.lastAction')}</TableHeaderCell>
+              <TableHeaderCell density="compact">{t('col.createdAt')}</TableHeaderCell>
+              <TableHeaderCell density="compact" align="end">
+                {t('col.actions')}
+              </TableHeaderCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {items.map((r) => {
+              const status = r.status as AdminReviewStatus;
+              return (
+                <TableRow key={r.id} data-testid={`admin-review-row-${r.id}`}>
+                  <TableCell density="compact">
+                    {r.rating}
+                    <span aria-hidden="true">{'★'}</span>
+                  </TableCell>
+                  <TableCell density="compact">{r.author.displayName}</TableCell>
+                  <TableCell density="compact">{r.vendor.businessName}</TableCell>
+                  <TableCell density="compact">{r.event.title}</TableCell>
+                  <TableCell density="compact" className="max-w-md truncate">
+                    {r.comment ?? '—'}
+                  </TableCell>
+                  <TableCell density="compact">
+                    <AdminActionBadge status={status} />
+                  </TableCell>
+                  <TableCell density="compact">
+                    {r.lastAdminAction ? (
+                      <span className="text-caption text-secondary">
+                        {r.lastAdminAction.action} ·{' '}
+                        {new Date(r.lastAdminAction.createdAt).toLocaleDateString()}
+                      </span>
+                    ) : (
+                      <span className="text-caption text-muted">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell density="compact">
+                    {new Date(r.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell density="compact" align="end">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      aria-label={t('moderateAria', { id: r.id })}
+                      onClick={() =>
+                        setSelected({
+                          id: r.id,
+                          vendorId: r.vendor.id,
+                          vendorSlug: r.vendor.slug ?? undefined,
+                          currentStatus: status,
+                          ratingSnapshot: r.rating,
+                        })
+                      }
+                      disabled={status === 'removed'}
+                    >
+                      {t('moderate')}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       )}
 
       {query.hasNextPage && !query.isFetchingNextPage ? (
-        <button
-          type="button"
-          onClick={() => void query.fetchNextPage()}
-          className="rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm hover:bg-neutral-50"
-        >
+        <Button variant="secondary" onClick={() => void query.fetchNextPage()}>
           {t('loadMore')}
-        </button>
+        </Button>
       ) : null}
       {query.isFetchingNextPage ? (
-        <p role="status" className="text-sm text-neutral-600">
+        <p role="status" className="font-body text-body-sm text-secondary">
           {t('loadingMore')}
         </p>
       ) : null}

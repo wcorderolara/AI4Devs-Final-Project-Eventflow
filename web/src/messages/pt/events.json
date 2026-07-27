@@ -50,12 +50,13 @@
   "dashboard": {
     "back": "Voltar aos meus eventos",
     "notFound": "Este evento não existe ou não está disponível.",
-    "comingSoon": "Em breve",
     "sections": {
       "tasks": "Tarefas",
       "budget": "Orçamento",
       "quotes": "Cotações"
-    }
+    },
+    "sectionsLabel": "Seções do evento",
+    "localeCard": "Moeda / Idioma"
   },
   "cancelDialog": {
     "title": "Cancelar evento",

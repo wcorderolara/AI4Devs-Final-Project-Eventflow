@@ -53,11 +53,20 @@
       "title": "Editar mi perfil",
       "subtitle": "Actualiza tus datos comerciales. Los cambios mayores requerirán nueva revisión del equipo.",
       "loading": "Cargando tu perfil…",
-      "links": { "createNew": "Crear mi perfil" },
+      "links": {
+        "createNew": "Crear mi perfil"
+      },
       "fields": {
-        "businessName": { "label": "Nombre comercial" },
-        "bio": { "label": "Descripción", "help": "Entre 50 y 1000 caracteres." },
-        "location": { "label": "Ciudad principal" }
+        "businessName": {
+          "label": "Nombre comercial"
+        },
+        "bio": {
+          "label": "Descripción",
+          "help": "Entre 50 y 1000 caracteres."
+        },
+        "location": {
+          "label": "Ciudad principal"
+        }
       },
       "buttons": {
         "save": "Guardar cambios",
@@ -156,7 +165,8 @@
     },
     "dropzone": {
       "placeholder": "Arrastra una imagen aquí o presiona Enter para elegir una",
-      "helper": "JPG, PNG o WebP. Máximo 5 MB. El lado más largo se ajusta a 2048 px."
+      "helper": "JPG, PNG o WebP. Máximo 5 MB. El lado más largo se ajusta a 2048 px.",
+      "remove": "Quitar {name}"
     },
     "actions": {
       "upload": "Subir imagen",
@@ -213,7 +223,9 @@
       "title": "Cambiar mis categorías de servicio",
       "subtitle": "Elige entre 1 y 5 categorías. Cada cambio aceptado dispara una nueva revisión del equipo.",
       "loading": "Cargando tus categorías…",
-      "links": { "createNew": "Crear mi perfil" },
+      "links": {
+        "createNew": "Crear mi perfil"
+      },
       "counter": {
         "remaining": "Cambios de categorías restantes: {remaining} de {max}.",
         "reached": "Ya alcanzaste el máximo de 5 cambios de categorías."
@@ -294,11 +306,21 @@
       "submit": "Crear paquete",
       "submitting": "Creando…",
       "fields": {
-        "packageName": { "label": "Nombre del paquete" },
-        "description": { "label": "Descripción" },
-        "basePrice": { "label": "Precio base" },
-        "currency": { "label": "Moneda" },
-        "category": { "label": "Categoría" }
+        "packageName": {
+          "label": "Nombre del paquete"
+        },
+        "description": {
+          "label": "Descripción"
+        },
+        "basePrice": {
+          "label": "Precio base"
+        },
+        "currency": {
+          "label": "Moneda"
+        },
+        "category": {
+          "label": "Categoría"
+        }
       }
     },
     "deactivate": {
@@ -398,8 +420,8 @@
     }
   },
   "directory": {
-    "title": "Buscar proveedores",
-    "subtitle": "Filtra por categoría, ciudad y rango de precio. Los resultados vienen paginados.",
+    "title": "Directorio de proveedores",
+    "subtitle": "Explora los proveedores aprobados de EventFlow. Filtra por categoría, ciudad y rango de precio.",
     "loading": "Cargando proveedores…",
     "error": "No pudimos cargar el directorio. Reintenta en unos segundos.",
     "empty": {
@@ -433,6 +455,11 @@
       "noCategories": "Sin categorías",
       "priceRange": "Rango de precio",
       "ratingAria": "{avg} estrellas, {count} reviews"
+    },
+    "invalidFilters": "Alguno de los filtros no es válido. Revísalos o límpialos para volver a empezar.",
+    "metadata": {
+      "title": "Proveedores para eventos | EventFlow",
+      "description": "Explora los proveedores aprobados en EventFlow y filtra por categoría, ciudad y rango de precio. Consulta su perfil y pide cotizaciones estructuradas."
     }
   },
   "booking": {

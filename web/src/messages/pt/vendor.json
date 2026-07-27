@@ -53,11 +53,20 @@
       "title": "Editar o meu perfil",
       "subtitle": "Atualize os seus dados comerciais. As alterações principais exigirão nova revisão da equipa.",
       "loading": "A carregar o seu perfil…",
-      "links": { "createNew": "Criar o meu perfil" },
+      "links": {
+        "createNew": "Criar o meu perfil"
+      },
       "fields": {
-        "businessName": { "label": "Nome comercial" },
-        "bio": { "label": "Descrição", "help": "Entre 50 e 1000 caracteres." },
-        "location": { "label": "Cidade principal" }
+        "businessName": {
+          "label": "Nome comercial"
+        },
+        "bio": {
+          "label": "Descrição",
+          "help": "Entre 50 e 1000 caracteres."
+        },
+        "location": {
+          "label": "Cidade principal"
+        }
       },
       "buttons": {
         "save": "Guardar alterações",
@@ -156,7 +165,8 @@
     },
     "dropzone": {
       "placeholder": "Arraste uma imagem aqui ou prima Enter para escolher uma",
-      "helper": "JPG, PNG ou WebP. Até 5 MB. O lado maior é ajustado para 2048 px."
+      "helper": "JPG, PNG ou WebP. Até 5 MB. O lado maior é ajustado para 2048 px.",
+      "remove": "Remover {name}"
     },
     "actions": {
       "upload": "Enviar imagem",
@@ -213,7 +223,9 @@
       "title": "Alterar as minhas categorias de serviço",
       "subtitle": "Escolha entre 1 e 5 categorias. Cada alteração aceite dispara uma nova revisão da equipa.",
       "loading": "A carregar as suas categorias…",
-      "links": { "createNew": "Criar o meu perfil" },
+      "links": {
+        "createNew": "Criar o meu perfil"
+      },
       "counter": {
         "remaining": "Alterações de categorias restantes: {remaining} de {max}.",
         "reached": "Já atingiu o máximo de 5 alterações de categorias."
@@ -294,11 +306,21 @@
       "submit": "Criar pacote",
       "submitting": "Criando…",
       "fields": {
-        "packageName": { "label": "Nome do pacote" },
-        "description": { "label": "Descrição" },
-        "basePrice": { "label": "Preço base" },
-        "currency": { "label": "Moeda" },
-        "category": { "label": "Categoria" }
+        "packageName": {
+          "label": "Nome do pacote"
+        },
+        "description": {
+          "label": "Descrição"
+        },
+        "basePrice": {
+          "label": "Preço base"
+        },
+        "currency": {
+          "label": "Moeda"
+        },
+        "category": {
+          "label": "Categoria"
+        }
       }
     },
     "deactivate": {
@@ -398,8 +420,8 @@
     }
   },
   "directory": {
-    "title": "Buscar fornecedores",
-    "subtitle": "Filtre por categoria, cidade e faixa de preço. Os resultados vêm paginados.",
+    "title": "Diretório de fornecedores",
+    "subtitle": "Explore os fornecedores aprovados do EventFlow. Filtre por categoria, cidade e faixa de preço.",
     "loading": "Carregando fornecedores…",
     "error": "Não conseguimos carregar o diretório. Tente novamente em alguns segundos.",
     "empty": {
@@ -433,6 +455,11 @@
       "noCategories": "Sem categorias",
       "priceRange": "Faixa de preço",
       "ratingAria": "{avg} estrelas, {count} avaliações"
+    },
+    "invalidFilters": "Algum dos filtros não é válido. Revise-os ou limpe-os para começar de novo.",
+    "metadata": {
+      "title": "Fornecedores para eventos | EventFlow",
+      "description": "Explore os fornecedores aprovados no EventFlow e filtre por categoria, cidade e faixa de preço. Veja o perfil e peça cotações estruturadas."
     }
   },
   "booking": {

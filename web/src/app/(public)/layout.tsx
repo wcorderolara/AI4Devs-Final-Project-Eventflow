@@ -1,28 +1,24 @@
-import { useTranslations } from 'next-intl';
-import Link from 'next/link';
-import { LanguageSelector } from '@/shared/i18n';
-import { Footer, Logo, SkipLink } from '@/shared/navigation';
+import { getServerSessionClaims } from '@/shared/auth-session/serverSession';
+import { Footer, PublicHeader, SkipLink } from '@/shared/navigation';
 
+/**
+ * Layout de las superficies públicas.
+ *
+ * La sesión se resuelve **aquí**, en el servidor, y se pasa al header: es lo que permite que un
+ * visitante con sesión reciba directamente la acción de su workspace en el HTML inicial, en vez
+ * de «Iniciar sesión / Registrarse» seguido de un cambio al hidratar.
+ *
+ * El `PublicHeader` sustituye a la fila de enlaces que vivía aquí en línea (marca + directorio +
+ * login + registro + idioma), que no tenía navegación mobile ni conocía la sesión. El resto del
+ * layout —skip link, `main`, footer— se conserva igual.
+ */
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
-  const t = useTranslations('navigation');
+  const claims = getServerSessionClaims();
+
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-surface">
       <SkipLink />
-      <header className="flex items-center justify-between gap-4 border-b border-neutral-200 px-6 py-3">
-        <Logo />
-        <nav className="flex items-center gap-4 text-sm">
-          <Link href="/vendors" className="hover:underline">
-            {t('public.directory')}
-          </Link>
-          <Link href="/login" className="hover:underline">
-            {t('public.login')}
-          </Link>
-          <Link href="/register" className="hover:underline">
-            {t('public.register')}
-          </Link>
-          <LanguageSelector />
-        </nav>
-      </header>
+      <PublicHeader claims={claims} />
       <main id="main-content" className="flex flex-1 flex-col">
         {children}
       </main>

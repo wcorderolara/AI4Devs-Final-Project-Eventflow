@@ -4,9 +4,15 @@
 // canónicas (Aplicar / Editar / Descartar) con orden de tab, `aria-live="polite"` para anunciar
 // resultados y telemetría `hitl.action.*`. El consumidor pasa `aiRecommendationId`, un opcional
 // `EditorComponent` para el modal de edición (por `type`) y las query keys a invalidar.
+//
+// PB-P2-032: el trío de acciones pasa a `AIRecommendationActions` del design system (mismo orden
+// canónico, tokens aprobados y apilado en móvil) y los dos overlays propios —un `div` con
+// `role="dialog"` sin focus trap ni bloqueo de scroll— pasan a `Modal` y `ConfirmationDialog`.
+// La API pública, las mutaciones, la telemetría y el flujo HITL no cambian.
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { QueryKey } from '@tanstack/react-query';
+import { AIRecommendationActions, ConfirmationDialog, Modal } from '@/shared/design-system';
 import { useApplyAIRecommendation } from '../hooks/useApplyAIRecommendation';
 import { useDiscardAIRecommendation } from '../hooks/useDiscardAIRecommendation';
 
@@ -28,7 +34,11 @@ interface HITLActionsProps {
 }
 
 function emitTelemetry(action: 'applied' | 'discarded' | 'edited_apply', type: string): void {
-  const payload = JSON.stringify({ event: `hitl.action.${action}`, type, ts: new Date().toISOString() });
+  const payload = JSON.stringify({
+    event: `hitl.action.${action}`,
+    type,
+    ts: new Date().toISOString(),
+  });
   try {
     if (typeof navigator !== 'undefined' && 'sendBeacon' in navigator) {
       const blob = new Blob([payload], { type: 'application/json' });
@@ -38,7 +48,12 @@ function emitTelemetry(action: 'applied' | 'discarded' | 'edited_apply', type: s
   } catch {
     // fallback below
   }
-  void fetch('/api/v1/telemetry', { method: 'POST', body: payload, keepalive: true, credentials: 'include' }).catch(() => undefined);
+  void fetch('/api/v1/telemetry', {
+    method: 'POST',
+    body: payload,
+    keepalive: true,
+    credentials: 'include',
+  }).catch(() => undefined);
 }
 
 export function HITLActions({
@@ -86,57 +101,62 @@ export function HITLActions({
   };
 
   return (
-    <div className="hitl-actions" data-testid="hitl-actions">
-      <div role="group" aria-label={t('actions.groupLabel')}>
-        {/* Orden de tab canónico: Aplicar → Editar → Descartar */}
-        <button
-          type="button"
-          disabled={isBusy}
-          onClick={() => handleApply(undefined)}
-          aria-label={t('actions.applyAria')}
-        >
-          {t('actions.apply')}
-        </button>
-        {EditorComponent && (
-          <button
-            type="button"
-            disabled={isBusy}
-            onClick={() => setEditing(true)}
-            aria-label={t('actions.editAria')}
-          >
-            {t('actions.edit')}
-          </button>
-        )}
-        <button
-          type="button"
-          disabled={isBusy}
-          onClick={() => setConfirmingDiscard(true)}
-          aria-label={t('actions.discardAria')}
-        >
-          {t('actions.discard')}
-        </button>
-      </div>
+    <div data-testid="hitl-actions">
+      {/* Orden de tab canónico: Aplicar → Editar → Descartar. Lo garantiza el propio
+          `AIRecommendationActions`: el orden es del sistema, no de cada consumidor. */}
+      <AIRecommendationActions
+        groupLabel={t('actions.groupLabel')}
+        isBusy={isBusy}
+        accept={{
+          label: t('actions.apply'),
+          ariaLabel: t('actions.applyAria'),
+          onSelect: () => void handleApply(undefined),
+        }}
+        edit={
+          EditorComponent
+            ? {
+                label: t('actions.edit'),
+                ariaLabel: t('actions.editAria'),
+                onSelect: () => setEditing(true),
+              }
+            : undefined
+        }
+        reject={{
+          label: t('actions.discard'),
+          ariaLabel: t('actions.discardAria'),
+          onSelect: () => setConfirmingDiscard(true),
+        }}
+      />
 
       {editing && EditorComponent && (
-        <div role="dialog" aria-modal="true" aria-label={t('actions.editDialogLabel')}>
+        <Modal
+          open
+          onClose={() => setEditing(false)}
+          title={t('actions.editDialogLabel')}
+          showCloseButton={false}
+          // Cerrar por fuera con un formulario a medias perdería la edición; `Esc` sigue
+          // disponible porque el editor conserva su propio botón de cancelar.
+          closeOnOverlayClick={false}
+        >
           <EditorComponent
             initialValue={initialOutput}
             onSubmit={(payload) => void handleApply(payload)}
             onCancel={() => setEditing(false)}
           />
-        </div>
+        </Modal>
       )}
 
       {confirmingDiscard && (
-        <div role="alertdialog" aria-modal="true" aria-label={t('actions.discardDialogLabel')}>
-          <p>{t('actions.discardConfirm')}</p>
-          <button type="button" onClick={() => void handleDiscard()}>
-            {t('actions.discardConfirmYes')}
-          </button>
-          <button type="button" onClick={() => setConfirmingDiscard(false)}>
-            {t('actions.discardConfirmCancel')}
-          </button>
-        </div>
+        <ConfirmationDialog
+          open
+          onClose={() => setConfirmingDiscard(false)}
+          title={t('actions.discardDialogLabel')}
+          description={t('actions.discardConfirm')}
+          confirmLabel={t('actions.discardConfirmYes')}
+          cancelLabel={t('actions.discardConfirmCancel')}
+          isLoading={discard.isPending}
+          onConfirm={() => void handleDiscard()}
+        />
       )}
 
       <div role="status" aria-live="polite" className="sr-only">

@@ -33,7 +33,10 @@ interface LocalBusinessJsonLd {
   aggregateRating?: AggregateRating;
 }
 
-export function buildLocalBusinessLd(vendor: PublicVendorDTO, siteUrl: string): LocalBusinessJsonLd {
+export function buildLocalBusinessLd(
+  vendor: PublicVendorDTO,
+  siteUrl: string,
+): LocalBusinessJsonLd {
   const ld: LocalBusinessJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
@@ -68,9 +71,6 @@ function safeSerialize(value: unknown): string {
 export function JsonLdLocalBusiness({ vendor, siteUrl }: Props) {
   const ld = buildLocalBusinessLd(vendor, siteUrl);
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: safeSerialize(ld) }}
-    />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeSerialize(ld) }} />
   );
 }

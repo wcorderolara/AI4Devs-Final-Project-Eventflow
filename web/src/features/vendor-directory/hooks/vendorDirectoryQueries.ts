@@ -51,6 +51,6 @@ export function useVendorDirectorySearch(input: Partial<VendorSearchQuery>) {
         ...filters,
         cursor: pageParam as string | undefined,
       }),
-    getNextPageParam: (last) => (last.page.hasNext ? last.page.cursor ?? undefined : undefined),
+    getNextPageParam: (last) => (last.page.hasNext ? (last.page.cursor ?? undefined) : undefined),
   });
 }

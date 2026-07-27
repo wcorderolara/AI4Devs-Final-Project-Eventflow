@@ -26,5 +26,135 @@
     "showing": "{count, plural, one {# resultado} other {# resultados}} en esta página",
     "prev": "Anterior",
     "next": "Siguiente"
+  },
+  "landing": {
+    "eyebrow": "Planificación asistida por IA",
+    "heading": "Convierte la idea de tu evento en un <em>plan accionable</em>",
+    "description": "EventFlow te propone checklist y presupuesto editables, te ayuda a descubrir proveedores aprobados y a pedir cotizaciones estructuradas. Cada sugerencia de IA queda pendiente de tu revisión: nada se aplica hasta que tú lo apruebas.",
+    "ctaGroupLabel": "Empezar con EventFlow",
+    "featuresHeading": "Lo que puedes hacer hoy",
+    "featuresDescription": "Estas son las capacidades disponibles en EventFlow. Ni más, ni menos.",
+    "featuresListLabel": "Capacidades de EventFlow",
+    "features": {
+      "plan": {
+        "title": "Plan inicial sugerido",
+        "description": "Describe tu evento y recibe una propuesta de fases y tareas como punto de partida editable."
+      },
+      "checklist": {
+        "title": "Checklist editable",
+        "description": "Genera una lista de tareas con fechas relativas y ajústala antes de aplicarla a tu evento."
+      },
+      "budget": {
+        "title": "Presupuesto sugerido",
+        "description": "Obtén una distribución de partidas propuesta y edítala en la moneda de tu evento."
+      },
+      "vendors": {
+        "title": "Directorio de proveedores",
+        "description": "Busca y filtra proveedores aprobados por categoría y ciudad."
+      },
+      "quotes": {
+        "title": "Cotizaciones estructuradas",
+        "description": "Envía solicitudes con un brief consistente y compara las respuestas lado a lado."
+      },
+      "hitl": {
+        "title": "Tú tienes el control",
+        "description": "Toda sugerencia de IA se muestra como propuesta: la aceptas, la editas o la descartas."
+      }
+    },
+    "metadata": {
+      "title": "EventFlow — Convierte la idea de tu evento en un plan accionable",
+      "description": "Planifica bodas, XV años, bautizos, baby showers, cumpleaños y eventos corporativos pequeños con ayuda de IA: checklist y presupuesto editables, proveedores aprobados y cotizaciones comparables. Cada sugerencia queda pendiente de tu aprobación."
+    },
+    "preview": {
+      "ariaLabel": "Historias de planificación de eventos",
+      "pause": "Pausar carrusel",
+      "resume": "Reanudar carrusel",
+      "slideStatus": "Diapositiva {current} de {total}",
+      "controls": {
+        "wedding": "Mostrar sugerencia para boda",
+        "celebration": "Mostrar sugerencia para celebración",
+        "baptism": "Mostrar sugerencia para bautizo",
+        "birthday": "Mostrar sugerencia para cumpleaños o baby shower",
+        "corporate": "Mostrar sugerencia para evento corporativo"
+      },
+      "slides": {
+        "wedding": {
+          "eyebrow": "Sugerencia de IA",
+          "title": "Optimización de presupuesto",
+          "description": "Detectamos oportunidades para reducir costos sin afectar la experiencia ni la calidad de tu evento.",
+          "imageAlt": "Recepción de boda elegante con invitados y decoración floral."
+        },
+        "celebration": {
+          "eyebrow": "Recomendación inteligente",
+          "title": "Ideas que se adaptan a ti",
+          "description": "Recibe sugerencias de decoración, servicios y experiencias según tu estilo, presupuesto y número de invitados.",
+          "imageAlt": "Celebración social con invitados, decoración cuidada e iluminación cálida."
+        },
+        "baptism": {
+          "eyebrow": "Checklist personalizado",
+          "title": "Avanza paso a paso",
+          "description": "EventFlow crea un plan de tareas adaptado a tu evento para que siempre sepas qué hacer y cuándo hacerlo.",
+          "imageAlt": "Celebración de bautizo con decoración delicada y ambiente familiar."
+        },
+        "birthday": {
+          "eyebrow": "Planificación inteligente",
+          "title": "Todo bajo control",
+          "description": "Organiza cada detalle, proveedor y fecha importante desde un solo lugar, sin perder de vista ningún pendiente.",
+          "imageAlt": "Celebración de cumpleaños o baby shower con decoración elegante y ambiente cálido."
+        },
+        "corporate": {
+          "eyebrow": "Gestión centralizada",
+          "title": "Proveedores mejor coordinados",
+          "description": "Compara propuestas, controla entregables y mantén toda la información de tus proveedores organizada en un mismo espacio.",
+          "imageAlt": "Evento corporativo premium con asistentes en un espacio elegante."
+        }
+      }
+    },
+    "howItWorks": {
+      "eyebrow": "Cómo funciona",
+      "heading": "De la idea al plan en tres pasos",
+      "description": "EventFlow no organiza el evento por ti: te da un punto de partida ordenado y tú decides qué conservar.",
+      "listLabel": "Pasos para planificar con EventFlow",
+      "steps": {
+        "define": {
+          "title": "Describe tu evento",
+          "description": "Tipo de evento, fecha, número de invitados, ciudad y presupuesto estimado. Con eso basta para empezar."
+        },
+        "propose": {
+          "title": "La IA te propone un plan",
+          "description": "Recibes fases y tareas con fechas relativas, una distribución de presupuesto y las categorías de proveedores que suelen hacer falta."
+        },
+        "decide": {
+          "title": "Tú decides qué se aplica",
+          "description": "Cada sugerencia se muestra como propuesta: la aceptas, la editas o la descartas. Nada entra en tu evento sin tu aprobación."
+        }
+      }
+    },
+    "forVendors": {
+      "eyebrow": "Para proveedores",
+      "heading": "Recibe solicitudes de cotización con la información completa",
+      "description": "Si prestas servicios para eventos, EventFlow te acerca a organizadores que ya tienen definido qué necesitan.",
+      "listLabel": "Lo que puedes hacer como proveedor",
+      "items": {
+        "profile": {
+          "title": "Tu perfil y tus paquetes",
+          "description": "Publica tu perfil aprobado, tus servicios y tu portafolio para que los organizadores te encuentren en el directorio."
+        },
+        "quotes": {
+          "title": "Solicitudes estructuradas",
+          "description": "Cada solicitud llega con el brief del evento, así que respondes con una cotización comparable sin ida y vuelta."
+        },
+        "reviews": {
+          "title": "Reseñas moderadas",
+          "description": "Las reseñas que dejan los organizadores pasan por moderación antes de publicarse en tu perfil."
+        }
+      },
+      "ctaGroupLabel": "Empezar como proveedor"
+    },
+    "finalCta": {
+      "heading": "Empieza a planificar con más claridad",
+      "description": "Crea tu evento, revisa lo que la IA te propone y quédate sólo con lo que tenga sentido para ti.",
+      "ctaGroupLabel": "Acciones para empezar a planificar"
+    }
   }
 }

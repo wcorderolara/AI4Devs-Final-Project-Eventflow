@@ -48,7 +48,9 @@ const ERROR_CODE_KEYS = new Set([
   'UNAUTHORIZED',
 ]);
 
-export function AIRecommendedCategories({ eventId }: AIRecommendedCategoriesProps): React.JSX.Element {
+export function AIRecommendedCategories({
+  eventId,
+}: AIRecommendedCategoriesProps): React.JSX.Element {
   const t = useTranslations('ai.vendorCategories');
   const { data: event, isLoading: eventLoading, isError: eventError } = useEvent(eventId);
   const mutation = useGenerateAIVendorCategories();
@@ -63,17 +65,15 @@ export function AIRecommendedCategories({ eventId }: AIRecommendedCategoriesProp
   };
 
   const errorCode = mutation.error instanceof ApiError ? mutation.error.code : null;
-  const errorLabelKey = errorCode && ERROR_CODE_KEYS.has(errorCode) ? `errors.${errorCode}` : 'errors.UNKNOWN';
+  const errorLabelKey =
+    errorCode && ERROR_CODE_KEYS.has(errorCode) ? `errors.${errorCode}` : 'errors.UNKNOWN';
 
   if (hidden) return <div data-testid="ai-vendor-categories-hidden" aria-hidden />;
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6" data-testid="ai-vendor-categories">
       <div>
-        <Link
-          href={`/organizer/events/${eventId}`}
-          className="text-sm text-neutral-600 underline"
-        >
+        <Link href={`/organizer/events/${eventId}`} className="text-sm text-neutral-600 underline">
           {t('back')}
         </Link>
       </div>
@@ -100,7 +100,10 @@ export function AIRecommendedCategories({ eventId }: AIRecommendedCategoriesProp
       )}
 
       {eventError && (
-        <div role="alert" className="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+        <div
+          role="alert"
+          className="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-800"
+        >
           {t('errors.EVENT_LOAD_FAILED')}
         </div>
       )}
@@ -130,7 +133,7 @@ export function AIRecommendedCategories({ eventId }: AIRecommendedCategoriesProp
           <button
             type="button"
             onClick={handleGenerate}
-            className="mt-4 rounded-md bg-purple-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-purple-800 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="mt-4 rounded-md bg-purple-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-purple-800 focus-ring"
           >
             {t('generateCta')}
           </button>

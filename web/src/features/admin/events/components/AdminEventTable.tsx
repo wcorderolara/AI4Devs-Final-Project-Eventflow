@@ -5,14 +5,30 @@
 //   con `aria-label` que referencia el título del evento.
 // - Status badge complementa color con texto i18n (no color-only).
 // - Empty/loading/error/next-page states con literales i18n.
-import Link from 'next/link';
+//
+// PB-P2-033: compone las primitivas `Table` del design system y sustituye los badges de estado
+// con paleta cruda por `StatusBadge`, que ya mapea estado → tono semántico y garantiza que el
+// color no sea la única señal (UI-DEC-014).
+
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
+import {
+  Badge,
+  Button,
+  EmptyState,
+  ErrorState,
+  STATUS_BADGE_TONE,
+  StatusBadge,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+  TextLink,
+} from '@/shared/design-system';
 import { Money } from '@/shared/i18n';
-import type {
-  AdminEventListItemModel,
-  AdminEventsListFilters,
-} from '../api/adminEventsApi.types';
+import type { AdminEventListItemModel, AdminEventsListFilters } from '../api/adminEventsApi.types';
 import { useAdminEventsList } from '../hooks/adminEventsQueries';
 
 interface Props {
@@ -32,7 +48,13 @@ function formatDate(value: string | null, locale: string): string {
   }
 }
 
-function EstimatedBudgetCell({ value, currency }: { value: string | null; currency: string }): React.JSX.Element {
+function EstimatedBudgetCell({
+  value,
+  currency,
+}: {
+  value: string | null;
+  currency: string;
+}): React.JSX.Element {
   if (!value) return <>—</>;
   const n = Number(value);
   if (Number.isNaN(n)) return <>{`${currency} ${value}`}</>;
@@ -52,26 +74,18 @@ export function AdminEventTable({ filters }: Props): React.JSX.Element {
 
   if (query.isPending) {
     return (
-      <p role="status" className="text-sm text-neutral-600">
+      <p role="status" className="font-body text-body-sm text-secondary">
         {t('loading')}
       </p>
     );
   }
 
   if (query.isError) {
-    return (
-      <p role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-        {t('error')}
-      </p>
-    );
+    return <ErrorState title={t('error')} />;
   }
 
   if (items.length === 0) {
-    return (
-      <p className="rounded-md border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-600">
-        {t('empty')}
-      </p>
-    );
+    return <EmptyState title={t('empty')} />;
   }
 
   // El locale nativo del navegador es aceptable para render de moneda/fecha en el panel admin
@@ -80,102 +94,82 @@ export function AdminEventTable({ filters }: Props): React.JSX.Element {
 
   return (
     <div className="space-y-3">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-neutral-200 text-sm">
-          <caption className="sr-only">{t('caption')}</caption>
-          <thead className="bg-neutral-50">
-            <tr>
-              <th scope="col" className="px-3 py-2 text-left font-medium text-neutral-700">
-                {t('col.title')}
-              </th>
-              <th scope="col" className="px-3 py-2 text-left font-medium text-neutral-700">
-                {t('col.status')}
-              </th>
-              <th scope="col" className="px-3 py-2 text-left font-medium text-neutral-700">
-                {t('col.eventType')}
-              </th>
-              <th scope="col" className="px-3 py-2 text-left font-medium text-neutral-700">
-                {t('col.owner')}
-              </th>
-              <th scope="col" className="px-3 py-2 text-left font-medium text-neutral-700">
-                {t('col.eventDate')}
-              </th>
-              <th scope="col" className="px-3 py-2 text-right font-medium text-neutral-700">
-                {t('col.guests')}
-              </th>
-              <th scope="col" className="px-3 py-2 text-right font-medium text-neutral-700">
-                {t('col.estimatedBudget')}
-              </th>
-              <th scope="col" className="px-3 py-2 text-right font-medium text-neutral-700">
-                {t('col.actions')}
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-neutral-100 bg-white">
-            {items.map((ev) => {
-              const badgeClass =
-                ev.status === 'active'
-                  ? 'bg-green-100 text-green-800'
-                  : ev.status === 'completed'
-                    ? 'bg-blue-100 text-blue-800'
-                    : ev.status === 'cancelled'
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-neutral-100 text-neutral-800';
-              return (
-                <tr key={ev.id} className={ev.deletedAt ? 'opacity-70' : undefined}>
-                  <th scope="row" className="px-3 py-2 font-medium text-neutral-900">
-                    <span className="block truncate max-w-xs">{ev.title}</span>
-                    {ev.deletedAt ? (
-                      <span className="mt-1 inline-block rounded bg-neutral-200 px-1.5 py-0.5 text-xs text-neutral-700">
-                        {t('deletedBadge')}
-                      </span>
-                    ) : null}
-                  </th>
-                  <td className="px-3 py-2">
-                    <span className={`inline-flex rounded px-2 py-0.5 text-xs font-medium ${badgeClass}`}>
-                      {tStatus(ev.status)}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 text-neutral-700">{ev.eventType.label}</td>
-                  <td className="px-3 py-2 text-neutral-700">
-                    <span className="block">{ev.owner.fullName ?? ev.owner.email}</span>
-                    {ev.owner.fullName ? (
-                      <span className="block text-xs text-neutral-500">{ev.owner.email}</span>
-                    ) : null}
-                  </td>
-                  <td className="px-3 py-2 text-neutral-700">{formatDate(ev.eventDate, locale)}</td>
-                  <td className="px-3 py-2 text-right text-neutral-700">
-                    {ev.guestsCount ?? '—'}
-                  </td>
-                  <td className="px-3 py-2 text-right text-neutral-700">
-                    <EstimatedBudgetCell value={ev.estimatedBudget} currency={ev.currency} />
-                  </td>
-                  <td className="px-3 py-2 text-right">
-                    <Link
-                      href={`/admin/events/${ev.id}`}
-                      aria-label={t('viewAria', { title: ev.title })}
-                      className="rounded-md border border-neutral-300 bg-white px-3 py-1 text-xs text-neutral-800 hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
-                    >
-                      {t('view')}
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <Table
+        caption={t('caption')}
+        density="compact"
+        containerClassName="rounded-card border border-subtle bg-surface"
+      >
+        <TableHead>
+          <TableRow>
+            <TableHeaderCell density="compact">{t('col.title')}</TableHeaderCell>
+            <TableHeaderCell density="compact">{t('col.status')}</TableHeaderCell>
+            <TableHeaderCell density="compact">{t('col.eventType')}</TableHeaderCell>
+            <TableHeaderCell density="compact">{t('col.owner')}</TableHeaderCell>
+            <TableHeaderCell density="compact">{t('col.eventDate')}</TableHeaderCell>
+            <TableHeaderCell density="compact" align="numeric">
+              {t('col.guests')}
+            </TableHeaderCell>
+            <TableHeaderCell density="compact" align="numeric">
+              {t('col.estimatedBudget')}
+            </TableHeaderCell>
+            <TableHeaderCell density="compact" align="end">
+              {t('col.actions')}
+            </TableHeaderCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {items.map((ev) => (
+            <TableRow key={ev.id} className={ev.deletedAt ? 'opacity-muted' : undefined}>
+              <TableCell density="compact" header>
+                <span className="block max-w-xs truncate">{ev.title}</span>
+                {ev.deletedAt ? <Badge className="mt-1">{t('deletedBadge')}</Badge> : null}
+              </TableCell>
+              <TableCell density="compact">
+                {/* `STATUS_BADGE_TONE` mapea el estado de dominio al tono aprobado; el texto
+                    traducido sigue siendo la señal primaria. */}
+                <StatusBadge status={STATUS_BADGE_TONE[ev.status] ?? 'neutral'}>
+                  {tStatus(ev.status)}
+                </StatusBadge>
+              </TableCell>
+              <TableCell density="compact">{ev.eventType.label}</TableCell>
+              <TableCell
+                density="compact"
+                description={ev.owner.fullName ? ev.owner.email : undefined}
+              >
+                {ev.owner.fullName ?? ev.owner.email}
+              </TableCell>
+              <TableCell density="compact">{formatDate(ev.eventDate, locale)}</TableCell>
+              <TableCell density="compact" align="numeric">
+                {ev.guestsCount ?? '—'}
+              </TableCell>
+              <TableCell density="compact" align="numeric">
+                <EstimatedBudgetCell value={ev.estimatedBudget} currency={ev.currency} />
+              </TableCell>
+              <TableCell density="compact" align="end">
+                {/* Navegación: es un enlace, no un botón (Component Foundations §23 — la acción
+                    de fila vive en una celda de acciones con nombre accesible propio). */}
+                <TextLink
+                  href={`/admin/events/${ev.id}`}
+                  aria-label={t('viewAria', { title: ev.title })}
+                  className="text-body-sm"
+                >
+                  {t('view')}
+                </TextLink>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
 
       {query.hasNextPage ? (
         <div className="flex justify-center pt-2">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             onClick={() => query.fetchNextPage()}
             disabled={query.isFetchingNextPage}
-            className="rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm hover:bg-neutral-50 disabled:bg-neutral-100"
           >
             {query.isFetchingNextPage ? t('loadingMore') : t('loadMore')}
-          </button>
+          </Button>
         </div>
       ) : null}
     </div>

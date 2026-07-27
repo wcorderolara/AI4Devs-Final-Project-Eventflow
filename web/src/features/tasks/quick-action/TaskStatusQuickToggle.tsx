@@ -10,8 +10,16 @@
 //   * Spinner inline durante `mutation.isPending`.
 //   * Animación reducida vía CSS `@media (prefers-reduced-motion: reduce)`.
 //   * Target táctil ≥ 44 × 44 px (estilo aplicado en CSS externo — se documenta como convención).
+//
+// PB-P2-030 — El aviso de fallo pasa del banner ad-hoc (`banner banner--error`, hojas de estilo
+// propias fuera del sistema) al `Alert` compartido del design system, con `Button` para el
+// reintento. Mantiene `role="alert"` (`live` lo activa para la variante `error`), el mismo copy y
+// la misma lógica de reintento. Es un mensaje **persistente en la página**, no un toast: el error
+// crítico no puede desvanecerse (CMP-DEC-022 / Component Foundations §27).
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Alert, Button } from '@/shared/design-system';
+import { cx } from '@/shared/design-system/internal/cx';
 import type { TaskListItemDTO } from '../list/api/tasksListApi.types';
 import type { CanonicalTaskStatus } from '../mutate/domain/taskStatusTransitions';
 import {
@@ -19,10 +27,7 @@ import {
   type EventMutabilityStatus,
   type QuickActionMatrixRow,
 } from './compute-quick-actions';
-import {
-  extractErrorMapping,
-  useQuickActionStatusMutation,
-} from './useQuickActionStatusMutation';
+import { extractErrorMapping, useQuickActionStatusMutation } from './useQuickActionStatusMutation';
 
 export interface TaskStatusQuickToggleProps {
   eventId: string;
@@ -80,7 +85,14 @@ export function TaskStatusQuickToggle({
     : 'tasks.status.disabled.mutation_pending';
 
   return (
-    <div className="task-quick-toggle" data-event-status={eventStatus ?? 'unknown'}>
+    // Las clases BEM originales (`task-quick-toggle__check`, …) nunca tuvieron hoja de estilo:
+    // los dos controles se renderizaban como texto plano pegado. Pasan a utilidades del design
+    // system, con el target táctil ≥ 44 px que el comentario de cabecera ya declaraba como
+    // convención pero que ningún CSS aplicaba.
+    // Los controles se apilan a ancho completo dentro de la tarjeta del tablero: la acción
+    // principal («marcar como hecha») queda como botón sólido y la secundaria («omitir») como
+    // texto, jerarquía que a la altura de una card se lee mejor que dos botones en fila.
+    <div className="flex flex-col gap-1" data-event-status={eventStatus ?? 'unknown'}>
       {checkRow && (
         <button
           type="button"
@@ -90,13 +102,25 @@ export function TaskStatusQuickToggle({
           aria-disabled={disabled ? 'true' : undefined}
           disabled={disabled}
           title={disabled ? t(disabledTooltipKey as never) : undefined}
-          className="task-quick-toggle__check"
+          className={cx(
+            'focus-ring inline-flex min-h-touch w-full items-center justify-center gap-1.5',
+            'rounded-button border px-3 py-2 font-ui text-body-sm font-medium',
+            'transition-colors duration-fast ease-standard motion-reduce:transition-none',
+            task.status === 'done'
+              ? 'border-feedback-success bg-feedback-success text-feedback-success'
+              : 'border-subtle bg-surface text-primary shadow-surface-subtle hover:border-interactive hover:bg-action-primary hover:text-action-primary-foreground',
+            'disabled:cursor-not-allowed disabled:opacity-disabled',
+          )}
           onClick={(): void => void apply(checkRow)}
           data-testid={`task-quick-check-${task.id}`}
         >
-          <span className="task-quick-toggle__label">{t(checkRow.labelKey as never)}</span>
+          <span>{t(checkRow.labelKey as never)}</span>
           {mutation.isPending && (
-            <span className="task-quick-toggle__spinner" aria-hidden="true" role="presentation" />
+            <span
+              className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none"
+              aria-hidden="true"
+              role="presentation"
+            />
           )}
         </button>
       )}
@@ -109,7 +133,12 @@ export function TaskStatusQuickToggle({
           aria-disabled={disabled ? 'true' : undefined}
           disabled={disabled}
           title={disabled ? t(disabledTooltipKey as never) : undefined}
-          className="task-quick-toggle__secondary"
+          className={cx(
+            'focus-ring inline-flex min-h-touch w-full items-center justify-center rounded-button px-3 py-2',
+            'font-ui text-body-sm font-medium text-secondary hover:text-feedback-error',
+            'transition-colors duration-fast ease-standard motion-reduce:transition-none',
+            'disabled:cursor-not-allowed disabled:opacity-disabled',
+          )}
           onClick={(): void => void apply(secondaryRow)}
           data-testid={`task-quick-secondary-${task.id}`}
         >
@@ -123,18 +152,23 @@ export function TaskStatusQuickToggle({
       </span>
 
       {toastMessage && (
-        <div className="banner banner--error" role="alert" aria-live="assertive">
+        // `live` ⇒ `role="alert"` en la variante `error`: el aviso se inserta tras una acción
+        // fallida del usuario, así que debe interrumpir. No se añade `aria-live` manual: el rol
+        // `alert` ya implica `assertive` y duplicarlo provoca anuncios repetidos.
+        <Alert
+          variant="error"
+          live
+          className="mt-2"
+          action={
+            toastMessage.retry && checkRow ? (
+              <Button variant="secondary" size="sm" onClick={(): void => void apply(checkRow)}>
+                {t('tasks.status.error.retry' as never)}
+              </Button>
+            ) : undefined
+          }
+        >
           <span>{t(toastMessage.key as never)}</span>
-          {toastMessage.retry && checkRow && (
-            <button
-              type="button"
-              className="btn btn--secondary btn--small"
-              onClick={(): void => void apply(checkRow)}
-            >
-              {t('tasks.status.error.retry' as never)}
-            </button>
-          )}
-        </div>
+        </Alert>
       )}
     </div>
   );

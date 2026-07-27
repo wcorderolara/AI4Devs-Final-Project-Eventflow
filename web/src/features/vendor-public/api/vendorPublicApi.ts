@@ -29,9 +29,7 @@ export interface PublicVendorErrorResult {
 }
 
 export type PublicVendorLookupResult =
-  | PublicVendorFetchResult
-  | PublicVendorNotFoundResult
-  | PublicVendorErrorResult;
+  PublicVendorFetchResult | PublicVendorNotFoundResult | PublicVendorErrorResult;
 
 export const vendorsPublicApi = {
   async get(slug: string): Promise<PublicVendorLookupResult> {

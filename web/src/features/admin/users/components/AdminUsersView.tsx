@@ -1,7 +1,29 @@
 'use client';
 
+// PB-P2-033: la tabla de usuarios pasa a las primitivas `Table` del design system; los badges
+// de estado y de dato sembrado a `StatusBadge` / `Badge`, y los estados de carga / error /
+// vacío a `Skeleton` / `ErrorState` / `TableStatusRow` + `EmptyState`.
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  FormField,
+  SearchInput,
+  Select,
+  Skeleton,
+  StatusBadge,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+  TableStatusRow,
+} from '@/shared/design-system';
 import { DEFAULT_PAGE_SIZE, Pagination, type PageSize } from '@/shared/ui';
 import { useAdminUsers } from '../hooks/useAdminUsers';
 import type { AdminUserRole, AdminUserStatus, AdminUsersQuery } from '../api/adminUsersApi.types';
@@ -75,144 +97,128 @@ export function AdminUsersView(): React.JSX.Element {
     <section aria-labelledby="admin-users-title" className="space-y-4">
       <header className="flex flex-wrap items-baseline justify-between gap-3">
         <div>
-          <h1 id="admin-users-title" className="text-2xl font-bold">
+          <h1 id="admin-users-title" className="font-heading text-h2 font-semibold text-primary">
             {t('title')}
           </h1>
-          <p className="mt-1 text-sm text-neutral-600">{t('subtitle')}</p>
+          <p className="mt-1 font-body text-body-sm text-secondary">{t('subtitle')}</p>
         </div>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => {
             void refetch();
           }}
           disabled={isRefetching}
-          className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+          isLoading={isRefetching}
+          loadingLabel={t('actions.refreshing')}
         >
-          {isRefetching ? t('actions.refreshing') : t('actions.refresh')}
-        </button>
+          {t('actions.refresh')}
+        </Button>
       </header>
 
-      <div className="flex flex-wrap items-end gap-3 rounded-md border border-neutral-200 bg-neutral-50 p-3">
-        <label className="flex flex-col text-xs font-medium text-neutral-700">
-          {t('filters.role')}
-          <select
-            value={role}
-            onChange={(e) => applyFilters({ role: e.target.value })}
-            className="mt-1 rounded-md border border-neutral-300 bg-white px-2 py-1 text-sm"
-          >
-            <option value="">{t('filters.all')}</option>
-            {ROLES.map((r) => (
-              <option key={r} value={r}>
-                {tRoles(r)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col text-xs font-medium text-neutral-700">
-          {t('filters.status')}
-          <select
-            value={status}
-            onChange={(e) => applyFilters({ status: e.target.value })}
-            className="mt-1 rounded-md border border-neutral-300 bg-white px-2 py-1 text-sm"
-          >
-            <option value="">{t('filters.all')}</option>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {t(`status.${s}`)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex min-w-[220px] flex-1 flex-col text-xs font-medium text-neutral-700">
-          {t('filters.search')}
-          <input
-            type="search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            onBlur={() => applyFilters({ q })}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') applyFilters({ q });
-            }}
-            placeholder={t('filters.searchPlaceholder')}
-            className="mt-1 rounded-md border border-neutral-300 bg-white px-2 py-1 text-sm"
-          />
-        </label>
-      </div>
+      {/* Los filtros comparten la superficie operativa del design system (`Card` sutil) y
+          consumen `FormField` + `Select` / `SearchInput`: el label deja de ser un `<label>`
+          envolvente con clases crudas y pasa a la asociación explícita id ↔ control. */}
+      <Card variant="subtle" padding="sm" className="flex flex-wrap items-end gap-3">
+        <FormField label={t('filters.role')}>
+          {(control) => (
+            <Select
+              {...control}
+              selectSize="sm"
+              fullWidth={false}
+              value={role}
+              onChange={(e) => applyFilters({ role: e.target.value })}
+              placeholder={t('filters.all')}
+              options={ROLES.map((r) => ({ value: r, label: tRoles(r) }))}
+            />
+          )}
+        </FormField>
+        <FormField label={t('filters.status')}>
+          {(control) => (
+            <Select
+              {...control}
+              selectSize="sm"
+              fullWidth={false}
+              value={status}
+              onChange={(e) => applyFilters({ status: e.target.value })}
+              placeholder={t('filters.all')}
+              options={STATUSES.map((s) => ({ value: s, label: t(`status.${s}`) }))}
+            />
+          )}
+        </FormField>
+        <FormField label={t('filters.search')} className="min-w-[220px] flex-1">
+          {(control) => (
+            <SearchInput
+              {...control}
+              inputSize="sm"
+              value={q}
+              clearLabel={t('filters.clearSearch')}
+              onClear={() => applyFilters({ q: '' })}
+              onChange={(e) => setQ(e.target.value)}
+              onBlur={() => applyFilters({ q })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') applyFilters({ q });
+              }}
+              placeholder={t('filters.searchPlaceholder')}
+            />
+          )}
+        </FormField>
+      </Card>
 
       {isPending ? (
-        <div role="status" aria-busy="true" className="h-40 animate-pulse rounded-md bg-neutral-100" />
-      ) : null}
-
-      {isError ? (
-        <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-          {t('error')}
+        <div role="status" aria-busy="true">
+          <Skeleton variant="tableRow" count={5} />
         </div>
       ) : null}
+
+      {isError ? <ErrorState title={t('error')} /> : null}
 
       {data ? (
-        <div className="overflow-x-auto rounded-md border border-neutral-200 bg-white">
-          <table className="min-w-full text-sm">
-            <thead className="bg-neutral-50">
-              <tr className="text-left text-xs font-semibold uppercase tracking-wide text-neutral-600">
-                <th scope="col" className="px-3 py-2">
-                  {t('columns.name')}
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  {t('columns.email')}
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  {t('columns.role')}
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  {t('columns.status')}
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  {t('columns.language')}
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  {t('columns.createdAt')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.items.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-3 py-8 text-center text-neutral-500">
-                    {t('empty')}
-                  </td>
-                </tr>
-              ) : (
-                data.items.map((u) => (
-                  <tr key={u.id} className="border-t border-neutral-100">
-                    <td className="px-3 py-2 font-medium text-neutral-900">
+        <Table
+          caption={t('title')}
+          density="compact"
+          containerClassName="rounded-card border border-subtle bg-surface"
+        >
+          <TableHead>
+            <TableRow>
+              <TableHeaderCell density="compact">{t('columns.name')}</TableHeaderCell>
+              <TableHeaderCell density="compact">{t('columns.email')}</TableHeaderCell>
+              <TableHeaderCell density="compact">{t('columns.role')}</TableHeaderCell>
+              <TableHeaderCell density="compact">{t('columns.status')}</TableHeaderCell>
+              <TableHeaderCell density="compact">{t('columns.language')}</TableHeaderCell>
+              <TableHeaderCell density="compact">{t('columns.createdAt')}</TableHeaderCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {data.items.length === 0 ? (
+              // El vacío vive DENTRO del `<tbody>`: sacarlo fuera dejaría la tabla anunciada
+              // como «tabla con 0 filas» sin explicación (Component Foundations §23).
+              <TableStatusRow colSpan={6} live>
+                <EmptyState title={t('empty')} variant="compact" />
+              </TableStatusRow>
+            ) : (
+              data.items.map((u) => (
+                <TableRow key={u.id}>
+                  <TableCell density="compact" header>
+                    <span className="inline-flex flex-wrap items-center gap-2">
                       {u.name ?? '—'}
-                      {u.isSeed ? (
-                        <span className="ml-2 rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-blue-700">
-                          {t('badges.seed')}
-                        </span>
-                      ) : null}
-                    </td>
-                    <td className="px-3 py-2 text-neutral-700">{u.email}</td>
-                    <td className="px-3 py-2 text-neutral-700">{tRoles(u.role)}</td>
-                    <td className="px-3 py-2">
-                      <span
-                        className={
-                          u.status === 'active'
-                            ? 'rounded bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700'
-                            : 'rounded bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700'
-                        }
-                      >
-                        {t(`status.${u.status}`)}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-neutral-700">{u.preferredLanguage}</td>
-                    <td className="px-3 py-2 text-neutral-600">{formatDate(u.createdAt, locale)}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                      {u.isSeed ? <Badge variant="seed">{t('badges.seed')}</Badge> : null}
+                    </span>
+                  </TableCell>
+                  <TableCell density="compact">{u.email}</TableCell>
+                  <TableCell density="compact">{tRoles(u.role)}</TableCell>
+                  <TableCell density="compact">
+                    <StatusBadge status={u.status === 'active' ? 'success' : 'warning'}>
+                      {t(`status.${u.status}`)}
+                    </StatusBadge>
+                  </TableCell>
+                  <TableCell density="compact">{u.preferredLanguage}</TableCell>
+                  <TableCell density="compact">{formatDate(u.createdAt, locale)}</TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       ) : null}
 
       {data ? (
