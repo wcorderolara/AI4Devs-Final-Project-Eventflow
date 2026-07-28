@@ -48,12 +48,20 @@ export function MarketingFeatureCard({
       variant={emphasis && !href ? 'selected' : undefined}
       aria-label={ariaLabel}
       data-testid={testId}
-      className={cx('h-full', className)}
+      className={cx(
+        'group h-full',
+        // Una card de capacidad no es interactiva (no navega), pero sigue mereciendo respuesta al
+        // puntero: eleva y marca el borde en `hover` como el `Card` interactivo, sin fingir que es
+        // un enlace. El icono acompaña el gesto. Se apaga con `prefers-reduced-motion`.
+        !href &&
+          'transition-[box-shadow,border-color] duration-standard ease-standard hover:border-interactive hover:shadow-surface-raised motion-reduce:transition-none',
+        className,
+      )}
     >
       {icon ? (
         <span
           aria-hidden="true"
-          className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-button bg-ai-surface text-ai-icon [&>svg]:h-icon-md [&>svg]:w-icon-md"
+          className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-card bg-ai-surface text-ai-icon ring-1 ring-inset ring-ai-border/40 transition-colors duration-standard ease-standard group-hover:bg-ai-surface-hover [&>svg]:h-icon-md [&>svg]:w-icon-md"
         >
           {icon}
         </span>

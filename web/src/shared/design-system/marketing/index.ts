@@ -7,6 +7,7 @@ export {
   type MarketingFeatureGridProps,
 } from './MarketingFeatureGrid';
 export { MarketingHero, type MarketingHeroLayout, type MarketingHeroProps } from './MarketingHero';
+export { MarketingStep, type MarketingStepProps } from './MarketingStep';
 export {
   MarketingSection,
   type MarketingSectionAlign,
