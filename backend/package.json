@@ -20,6 +20,7 @@
     "test:coverage": "vitest run --coverage",
     "test:ci": "vitest run --reporter=verbose",
     "test:integration:smoke": "vitest run tests/integration/db-smoke.integration.spec.ts",
+    "test:demo-readiness": "vitest run tests/integration/us145-demo-readiness.integration.spec.ts",
     "docker:build": "docker build -t eventflow-backend:local .",
     "docker:run": "docker run --rm -p 3000:3000 -e PORT=3000 eventflow-backend:local",
     "seed": "tsx src/scripts/seed.ts",
