@@ -44,6 +44,12 @@ export function SeedResetDialog({ isOpen, onClose, onReset }: Props): React.JSX.
 
   const canSubmit = confirmText === CONFIRM_TOKEN && !mutation.isPending;
 
+  // EC-02/EC-03: mensaje neutro y localizado según el código del backend. Nunca renderizamos el
+  // texto crudo del error (evita filtrar stack/SQL/PII); solo un mensaje controlado + correlationId.
+  const errorMessage =
+    mutation.error?.status === 409 ? t('errorInProgress') : t('error');
+  const errorCorrelationId = mutation.error?.correlationId;
+
   return (
     <Dialog open={isOpen} onClose={close} className="relative z-50">
       <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
@@ -86,9 +92,14 @@ export function SeedResetDialog({ isOpen, onClose, onReset }: Props): React.JSX.
             </label>
 
             {mutation.isError ? (
-              <p role="alert" className="rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-800">
-                {mutation.error?.message ?? t('error')}
-              </p>
+              <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-800">
+                <p>{errorMessage}</p>
+                {errorCorrelationId ? (
+                  <p className="mt-1 font-mono text-[0.7rem] text-red-700">
+                    {t('correlationId', { id: errorCorrelationId })}
+                  </p>
+                ) : null}
+              </div>
             ) : null}
 
             <div className="mt-4 flex justify-end gap-2">

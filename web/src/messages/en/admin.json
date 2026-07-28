@@ -588,13 +588,20 @@
       "cancel": "Cancel",
       "confirm": "Reset now",
       "resetting": "Resetting…",
-      "error": "Reset failed. Check backend logs."
+      "error": "Reset failed. Check backend logs.",
+      "errorInProgress": "A reset is already in progress. Wait for it to finish before trying again.",
+      "correlationId": "Correlation ID: {id}"
     },
     "report": {
       "title": "Reset completed",
       "duration": "Duration: {ms}ms",
       "deleted": "Deleted",
-      "reseeded": "Recreated"
+      "reseeded": "Recreated",
+      "correlationId": "Correlation ID: {id}"
+    },
+    "unavailable": {
+      "title": "Reset unavailable in this environment",
+      "description": "Demo data reset is only available in the demo environment. There is nothing to run here."
     }
   }
 }
