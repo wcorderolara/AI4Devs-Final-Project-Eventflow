@@ -13,12 +13,14 @@ import { usersMeEnvelope } from '@/tests/msw/handlers/auth';
 import { server } from '@/tests/msw/server';
 
 const replace = vi.fn();
+const refresh = vi.fn();
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), replace, prefetch: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), replace, refresh, prefetch: vi.fn() }),
 }));
 
 afterEach(() => {
   replace.mockClear();
+  refresh.mockClear();
 });
 
 function LogoutProbe() {
@@ -57,6 +59,9 @@ describe('US-005 FE-001 — useLogout', () => {
     expect(queryClient.getQueryData(['me'])).toBeUndefined();
     expect(queryClient.getQueryData(['auth', 'x'])).toBeUndefined();
     expect(queryClient.getQueryData(['events'])).toEqual({ keep: true });
+    // Invalida el Router Cache: los Server Component layouts vuelven a leer `eventflow_role` y el
+    // rol de esta sesión no sobrevive en un layout cacheado tras el siguiente login (bug de menú).
+    expect(refresh).toHaveBeenCalled();
   });
 
   it('EC-01: 401 se trata igual que 204 (limpieza + redirect)', async () => {

@@ -10,7 +10,7 @@ import { describe, expect, it, vi } from 'vitest';
 // `useLogin` (US-003) usa `useRouter` de `next/navigation`; jsdom no provee el AppRouterContext.
 // Se mockea con el mismo patrón preexistente en `tests/integration/auth/login-form.test.tsx`.
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }),
 }));
 
 import esLatamAuth from '@/messages/es-LATAM/auth.json';

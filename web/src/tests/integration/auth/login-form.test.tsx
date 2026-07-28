@@ -15,12 +15,14 @@ import { loginSuccessEnvelope } from '@/tests/msw/handlers/auth';
 import { server } from '@/tests/msw/server';
 
 const push = vi.fn();
+const refresh = vi.fn();
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push, replace: vi.fn(), prefetch: vi.fn() }),
+  useRouter: () => ({ push, replace: vi.fn(), refresh, prefetch: vi.fn() }),
 }));
 
 afterEach(() => {
   push.mockClear();
+  refresh.mockClear();
 });
 
 function renderLogin(from?: string, locale: 'es-LATAM' | 'en' = 'es-LATAM') {
@@ -55,6 +57,9 @@ describe('US-003 FE-002/FE-005 — flujo de login', () => {
     renderLogin();
     await submitCredentials(user);
     await waitFor(() => expect(push).toHaveBeenCalledWith('/organizer'));
+    // Refresca los Server Components para que `initialRole` (cookie `eventflow_role`) refleje el
+    // rol recién autenticado y no el de una sesión previa cacheada en el Router Cache.
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
   });
 
   it('AC-02: rol vendor y admin redirigen a su layout', async () => {

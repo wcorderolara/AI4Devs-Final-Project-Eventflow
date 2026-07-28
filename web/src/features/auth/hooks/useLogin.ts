@@ -32,6 +32,13 @@ export function roleHome(role: RegisteredUser['role']): string {
  * Mutation de login (US-003 / FE-004, FE-005). En éxito invalida `['me']` (el SessionProvider
  * rehidrata vía `GET /users/me`, AC-02) y redirige: `from` interno validado > dashboard del rol
  * devuelto por el backend.
+ *
+ * Tras redirigir se llama `router.refresh()`: `router.push`/`replace` son navegaciones *soft* y
+ * NO re-ejecutan los Server Component layouts, que resuelven `initialRole` leyendo la cookie
+ * `eventflow_role` en el servidor. Sin el refresh, el Router Cache sirve el layout con el rol de
+ * la sesión anterior — p.ej. iniciar sesión como `organizer` justo tras cerrar sesión de `admin`
+ * (mismo browser) mostraba el menú de admin hasta un recargado completo. El refresh invalida ese
+ * cache y re-renderiza con la cookie ya actualizada.
  */
 export function useLogin(
   options: { from?: string | null } = {},
@@ -44,6 +51,7 @@ export function useLogin(
     onSuccess: async (user) => {
       await queryClient.invalidateQueries({ queryKey: ['me'] });
       router.push(safeInternalPath(options.from) ?? roleHome(user.role));
+      router.refresh();
     },
   });
 }

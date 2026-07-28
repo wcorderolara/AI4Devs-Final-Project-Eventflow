@@ -22,6 +22,7 @@ import {
   MarketingFeatureGridItem,
   MarketingHero,
   MarketingSection,
+  MarketingStep,
 } from '@/shared/design-system';
 import {
   getPublicHeroCtas,
@@ -153,9 +154,11 @@ export function LandingPage({ claims }: LandingPageProps): React.JSX.Element {
       >
         {/* `ordered`: los pasos tienen secuencia, y el lector de pantalla debe anunciarla. */}
         <MarketingFeatureGrid ariaLabel={t('howItWorks.listLabel')} columns={3} ordered>
-          {STEP_KEYS.map((key) => (
+          {STEP_KEYS.map((key, i) => (
             <MarketingFeatureGridItem key={key}>
-              <MarketingFeatureCard
+              <MarketingStep
+                index={i + 1}
+                total={STEP_KEYS.length}
                 icon={STEP_ICONS[key]}
                 title={t(`howItWorks.steps.${key}.title`)}
                 description={t(`howItWorks.steps.${key}.description`)}
@@ -224,6 +227,10 @@ export function LandingPage({ claims }: LandingPageProps): React.JSX.Element {
         heading={t('finalCta.heading')}
         description={t('finalCta.description')}
         data-testid="landing-final-cta"
+        // Halo violeta detrás del cierre: da profundidad a la banda oscura para que se lea como un
+        // final intencional y no como un rectángulo negro vacío. Puramente decorativo
+        // (`before:`), no afecta al contraste del texto blanco encima.
+        className="relative isolate overflow-hidden before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:-z-10 before:h-full before:bg-[radial-gradient(60%_120%_at_50%_-10%,rgba(123,78,232,0.28),transparent_70%)] before:content-['']"
       >
         <MarketingCTAGroup
           align="center"
