@@ -25,6 +25,10 @@ export function useLogout(): ReturnType<typeof useMutation<void, Error, void>> {
     // Cookie UX de rol (no HttpOnly) usada por el routing guard (US-105/US-107).
     document.cookie = 'eventflow_role=; path=/; max-age=0; SameSite=Lax';
     router.replace('/login');
+    // `replace` es una navegación *soft*: no re-ejecuta los Server Component layouts que resuelven
+    // `initialRole` desde la cookie `eventflow_role`. `router.refresh()` invalida el Router Cache
+    // para que el rol de la sesión cerrada no sobreviva en un layout cacheado tras el próximo login.
+    router.refresh();
   };
 
   return useMutation<void, Error, void>({
