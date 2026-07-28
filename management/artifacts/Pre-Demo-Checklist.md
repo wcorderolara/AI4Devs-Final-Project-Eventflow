@@ -34,7 +34,7 @@
 | **d** | **Captcha en modo test** | Backend: `CAPTCHA_PROVIDER=mock`. Frontend: `NEXT_PUBLIC_CAPTCHA_PROVIDER=mock`. Confirmar que el login demo **no** exige captcha real. | Captcha en **modo mock/stub determinista**; el login demo no se bloquea. | Ajustar `CAPTCHA_PROVIDER=mock` y `NEXT_PUBLIC_CAPTCHA_PROVIDER=mock` para el entorno demo y reiniciar los servicios. | NFR-TEST-006; Doc 21 (env vars captcha); `backend/src/config/env.ts` |
 | **e** | **Smoke tests pasados** | Backend arriba: `GET /health` → `200`, `GET /health/ready` → `200`. Smoke E2E: `npm run test:e2e:smoke` (o `smoke.spec.ts` / `demo-organizer-smoke.spec.ts`) contra la Demo URL. | `/health` y `/health/ready` en `200`; smoke E2E **en verde** (login, dashboard, crear evento, ver sugerencia IA). | Revisar logs (CloudWatch, US-141), corregir la causa raíz y re-ejecutar el smoke (US-146 / PB-P3-007). | Doc 21 §23.3, NFR-TEST-004; `web/src/tests/e2e/smoke.spec.ts` |
 | **f** | **Métricas admin visibles** | Sesión admin → abrir `/admin/metrics`; confirmar KPIs/metricas en pantalla. | Panel de métricas admin **visible** con datos (usuarios, vendors, eventos, etc.). | Verificar sesión admin y carga del panel; recargar el seed (ítem a) si faltan datos. | Doc 3 §14.4; ruta `/admin/metrics` |
-| **g** | **Toggle Mock/OpenAI en estado deseado** | Confirmar en el entorno backend `LLM_PROVIDER` (`openai`/`mock`), `AI_DEMO_MODE`, `AI_USE_MOCK_FALLBACK`. | **Preferido:** `LLM_PROVIDER=openai` + `AI_USE_MOCK_FALLBACK=true` (IA real con red de seguridad). **Contingencia:** `LLM_PROVIDER=mock` + `AI_DEMO_MODE=true` (determinista). | Ajustar el toggle según el runbook (US-144 / PB-P3-005) y re-verificar; dejar constancia del estado elegido en el §3 run log. | Doc 21 §23.2 y tabla env vars; runbook US-144 |
+| **g** | **Toggle Mock/OpenAI en estado deseado** | Confirmar en el entorno backend `LLM_PROVIDER` (`openai`/`mock`), `AI_DEMO_MODE`, `AI_USE_MOCK_FALLBACK`. | **Preferido:** `LLM_PROVIDER=openai` + `AI_USE_MOCK_FALLBACK=true` (IA real con red de seguridad). **Contingencia:** `LLM_PROVIDER=mock` + `AI_DEMO_MODE=true` (determinista). | Ajustar el toggle según el [runbook del toggle IA](./AI-Provider-Toggle-Runbook.md) (US-144 / PB-P3-005) y re-verificar; dejar constancia del estado elegido en el §3 run log. | Doc 21 §23.2 y tabla env vars; [runbook US-144](./AI-Provider-Toggle-Runbook.md) |
 
 ---
 
@@ -73,7 +73,7 @@
 
 | Fecha | Responsable | Ítem forzado a fallo | Acción correctiva aplicada | ¿Pasó a verde? | Notas |
 | ----- | ----------- | -------------------- | -------------------------- | -------------- | ----- |
-| _(pendiente)_ | | p. ej. (g) `LLM_PROVIDER` en proveedor equivocado / caída de OpenAI (EC-02) | Conmutar a `LLM_PROVIDER=mock` + `AI_DEMO_MODE=true` (runbook US-144) | | Registrar el estado deseado del toggle |
+| _(pendiente)_ | | p. ej. (g) `LLM_PROVIDER` en proveedor equivocado / caída de OpenAI (EC-02) | Conmutar a `LLM_PROVIDER=mock` + `AI_DEMO_MODE=true` ([runbook US-144](./AI-Provider-Toggle-Runbook.md)) | | Registrar el estado deseado del toggle |
 
 **Criterio de cierre (DoD):** DR-01 con los 7 ítems en verde y total < 10 min, y DR-02 confirmando
 que una acción correctiva devuelve un ítem a verde.
@@ -84,7 +84,7 @@ que una acción correctiva devuelve un ítem a verde.
 
 - **Guion de demo:** [`Demo-Script.md`](./Demo-Script.md) (US-142 / PB-P3-003) — el checklist se corre **antes** del guion.
 - **Reset del entorno demo:** US-140 (`/admin/seed`) · seed idempotente `npm run seed` (PB-P0-014).
-- **Toggle IA:** `LLM_PROVIDER` / `AI_DEMO_MODE` / `AI_USE_MOCK_FALLBACK` (`backend/src/config/env.ts`) · runbook US-144 (PB-P3-005) · NFR-AI-008.
+- **Toggle IA:** `LLM_PROVIDER` / `AI_DEMO_MODE` / `AI_USE_MOCK_FALLBACK` (`backend/src/config/env.ts`) · [runbook del toggle IA](./AI-Provider-Toggle-Runbook.md) (US-144 / PB-P3-005) · NFR-AI-008.
 - **Captcha:** `CAPTCHA_PROVIDER` / `NEXT_PUBLIC_CAPTCHA_PROVIDER` (modo `mock` en demo) · NFR-TEST-006.
 - **Smoke:** `web/src/tests/e2e/smoke.spec.ts`, `demo-organizer-smoke.spec.ts` · `npm run test:e2e:smoke` · US-146 (PB-P3-007).
 - **Observabilidad:** `/health`, `/health/ready` · CloudWatch (US-141) · métricas admin `/admin/metrics`.
