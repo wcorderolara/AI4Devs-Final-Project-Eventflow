@@ -132,7 +132,7 @@ Esta matriz documenta la **cobertura completa de cada Epic / Feature del Epic Ma
 | EPIC-OBS-001 | Logger | US-113 | Logger estructurado JSON | Should Have | Draft | — |
 | EPIC-OBS-001 | Correlation | US-114 | Correlation ID por request | Should Have | Draft | — |
 | EPIC-OBS-001 | Métricas IA | US-115 | Métricas mínimas de IA | Should Have | Draft | — |
-| EPIC-OBS-001 | Healthcheck | US-116 | /healthz /readyz | Should Have | Draft | — |
+| EPIC-OBS-001 | Healthcheck | US-116 | /health /health/ready | Should Have | Draft | — |
 | EPIC-AI-001 | Puerto LLMProvider | US-117 | Implementar puerto LLMProvider | Must Have (P0) | Draft | — |
 | EPIC-AI-001 | OpenAIProvider | US-118 | Implementar OpenAIProvider | Must Have (P0) | Draft | Primary MVP |
 | EPIC-AI-001 | MockAIProvider | US-119 | Implementar Mock determinista | Must Have (P0) | Draft | Tests + demo |
