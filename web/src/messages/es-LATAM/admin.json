@@ -588,13 +588,20 @@
       "cancel": "Cancelar",
       "confirm": "Resetear ahora",
       "resetting": "Reseteando…",
-      "error": "No se pudo completar el reset. Revisa los logs del backend."
+      "error": "No se pudo completar el reset. Revisa los logs del backend.",
+      "errorInProgress": "Ya hay un reset en curso. Espera a que termine antes de volver a intentarlo.",
+      "correlationId": "ID de correlación: {id}"
     },
     "report": {
       "title": "Reset completado",
       "duration": "Duración: {ms}ms",
       "deleted": "Eliminados",
-      "reseeded": "Recreados"
+      "reseeded": "Recreados",
+      "correlationId": "ID de correlación: {id}"
+    },
+    "unavailable": {
+      "title": "Reset no disponible en este entorno",
+      "description": "El reset de datos demo solo está disponible en el entorno de demostración. Aquí no hay ninguna acción que ejecutar."
     }
   }
 }

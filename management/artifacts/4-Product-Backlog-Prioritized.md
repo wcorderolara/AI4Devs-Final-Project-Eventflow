@@ -218,7 +218,7 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 | Type | Technical |
 | MoSCoW | Must Have |
 | Dependencies | — |
-| Acceptance Summary | - Proyecto Node + Express + TS inicializado y compilable.<br>- Carpetas por dominio siguiendo Clean/Hex (Doc 14).<br>- Middlewares ordenados correctamente.<br>- Endpoint `/healthz` operativo.<br>- Lint, typecheck y test runner configurados. |
+| Acceptance Summary | - Proyecto Node + Express + TS inicializado y compilable.<br>- Carpetas por dominio siguiendo Clean/Hex (Doc 14).<br>- Middlewares ordenados correctamente.<br>- Endpoint `/health` operativo.<br>- Lint, typecheck y test runner configurados. |
 | Traceability | Doc 12, Doc 13, Doc 14 · ADR-ARCH-001 |
 | Notes | Sin BFF, sin microservicios. Modular monolith. |
 
@@ -512,7 +512,7 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 | Type | DevOps |
 | MoSCoW | Must Have |
 | Dependencies | PB-P0-002 |
-| Acceptance Summary | - Imagen construye sin warnings.<br>- Tamaño razonable (multi-stage).<br>- Container arranca con `/healthz` OK.<br>- Sin secrets en la imagen. |
+| Acceptance Summary | - Imagen construye sin warnings.<br>- Tamaño razonable (multi-stage).<br>- Container arranca con `/health` OK.<br>- Sin secrets en la imagen. |
 | Traceability | Doc 21 · NFR-PERF-* · ADR-DEVOPS-001 |
 | Notes | Frontend va por Amplify (no requiere Dockerfile MVP). |
 
@@ -2058,7 +2058,7 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 | Type | DevOps |
 | MoSCoW | Must Have |
 | Dependencies | PB-P0-016, PB-P0-017 |
-| Acceptance Summary | - Servicio gestionado configurado.<br>- Deploy automatizado.<br>- `/healthz` accesible. |
+| Acceptance Summary | - Servicio gestionado configurado.<br>- Deploy automatizado.<br>- `/health` accesible. |
 | Traceability | Doc 21 |
 | Notes | — |
 
@@ -2506,7 +2506,7 @@ flowchart TB
 
 | Release | Goal | Included Priorities | Key Backlog Items | Exit Criteria |
 |---|---|---|---|---|
-| **R0 — Technical Foundation** | Plataforma técnica desplegable y reproducible. | P0 completo | PB-P0-001..018 | Backend con `/healthz` operativo, frontend bootstrap, DB migrada, seed corriendo localmente, CI verde. |
+| **R0 — Technical Foundation** | Plataforma técnica desplegable y reproducible. | P0 completo | PB-P0-001..018 | Backend con `/health` operativo, frontend bootstrap, DB migrada, seed corriendo localmente, CI verde. |
 | **R1 — Organizer Planning Loop** | Organizer puede registrarse, crear evento y planificar con IA. | P1: Auth + Events + AI Planning Must + Tasks + Budget + i18n | PB-P1-001..023, PB-P1-047..049 | Demo: registro → evento → AI Plan → checklist → budget aceptado HITL. |
 | **R2 — Vendor Quote Loop** | Vendor onboarding + flujo bilateral de cotización. | P1: Vendors + QuoteRequest + Quote response + Admin gobernanza vendor | PB-P1-024..034, PB-P1-041..046 | Demo: vendor crea perfil → admin aprueba → organizer busca → envía QR → vendor responde. |
 | **R3 — Decision & Closure Loop** | Comparación, booking simulado y reseñas + notificaciones. | P1: Comparator + Booking + Reviews; P2: Notifications + AI Should + Observability + QA suites + Deploy AWS | PB-P1-035..040, PB-P2-001..024 | Demo end-to-end completa, deploy en AWS QA/Demo, suites E2E verdes. |

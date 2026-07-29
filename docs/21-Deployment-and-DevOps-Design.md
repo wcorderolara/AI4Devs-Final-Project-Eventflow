@@ -670,6 +670,13 @@ flowchart LR
 | `seed-reset.yml` | Manual (workflow_dispatch) | Ejecuta endpoint protegido de reset de seed en QA/Demo, con confirmación. |
 | `smoke.yml` (opcional) | Después de deploy | Smoke tests E2E mínimos contra la URL pública. |
 
+> **Nota de alineación US-146 (PB-P3-007).** `smoke.yml` está **implementado** (login, listado de
+> eventos, generación IA con Mock, comparador) y, aunque esta tabla lo marca "opcional", **PB-P3-007
+> lo promueve a Must Have** del MVP demo: es requerido como red de seguridad pre-demo. Se mantiene
+> **post-deploy y no bloqueante de merge** (su fallo dispara notificación + evaluación de rollback
+> manual, §16.4). Disparadores reales: `workflow_dispatch` (manual) y `workflow_run` tras
+> `deploy-backend`. Runbook operativo: `management/artifacts/Demo-URL-Smoke-Runbook.md`.
+
 ### 16.2 Diagrama del pipeline (Mermaid)
 
 ```mermaid
@@ -981,6 +988,13 @@ Notas:
 - Contingencia: cambiar a `LLM_PROVIDER=mock` desde Secrets Manager.
 
 ### 25.4 Smoke test manual mínimo
+
+> **Nota de alineación US-146 (PB-P3-007).** Este smoke **manual** de 7 pasos queda como
+> **respaldo**. El smoke **automatizado** de US-146 (`web/src/tests/demo-smoke/` · `smoke.yml` ·
+> `npm run test:e2e:demo-smoke`) cubre un subconjunto determinista contra la URL pública Demo
+> (login, listado de eventos, generación IA con Mock, comparador) en <5 min, con precheck
+> `GET /health` y evidencia en fallo. Procedimiento y precondiciones:
+> `management/artifacts/Demo-URL-Smoke-Runbook.md`.
 
 1. Abrir URL del frontend.
 2. Iniciar sesión con usuario sembrado.

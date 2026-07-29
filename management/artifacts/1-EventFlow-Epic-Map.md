@@ -1804,7 +1804,7 @@ Asegurar que el proyecto cumpla la rúbrica académica AI4Devs: evidencia trazab
 | EPIC-FE-001 | transversal | — | — | — | — | ADR-FE-001 |
 | EPIC-SEC-001 | transversal | — | BR-AUTH-011, BR-PRIVACY-* | — | transversal | ADR-SEC-001 |
 | EPIC-AI-001 | FR-AI-009..018 | UC-AI-001..009 | BR-AI-005..015 | AIRecommendation | `/api/v1/events/:id/ai/*`, `/api/v1/ai-recommendations/:id/*` | ADR-AI-001 |
-| EPIC-OBS-001 | NFR-OBS-* | — | BR-AI-007/010, BR-ADMIN-004 | AdminAction, AIRecommendation | `/healthz`, `/readyz` | ADR-DEVOPS-00n |
+| EPIC-OBS-001 | NFR-OBS-* | — | BR-AI-007/010, BR-ADMIN-004 | AdminAction, AIRecommendation | `/health`, `/health/ready` | ADR-DEVOPS-00n |
 | EPIC-QA-001 | transversal | — | — | — | — | ADR-TEST-001 |
 | EPIC-OPS-001 | transversal | — | — | — | base | ADR-DEVOPS-001 |
 | EPIC-DEMO-001 | Doc 3 §14.4 | UC-DEMO-001 | BR-SEED-* | — | — | — |

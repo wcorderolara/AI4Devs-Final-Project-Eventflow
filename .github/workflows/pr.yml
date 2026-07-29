@@ -259,3 +259,57 @@ jobs:
       # AC-03: smoke post-migración (conectividad Prisma + tablas migradas).
       - name: Smoke post-migración
         run: npm run test:integration:smoke
+
+  # US-145 (PB-P3-006) — Demo readiness guard: quality gate ejecutado DESPUÉS del seed.
+  # Garantiza que el vendor demo principal tiene ≥1 `confirmed_intent` + ≥1 reseña verificada
+  # (sin falso verde). Un fallo (exit ≠ 0) bloquea el merge/demo (Doc 20 §9; NFR-TEST-002/004).
+  # Postgres efímero + migrate deploy + `npm run seed` + `npm run test:demo-readiness`.
+  # SEC-02: LLM_PROVIDER=mock explícito; NUNCA inyecta OPENAI_API_KEY (guard us132-no-openai-key).
+  demo-readiness-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        # DB-001: imagen pinneada por versión (compatibilidad Prisma + tamaño).
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: eventflow_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/eventflow_ci
+      # Precondiciones del runner de seed (US-085): gate de seguridad + provider determinista.
+      SEED_DEMO_ENABLED: 'true'
+      NODE_ENV: test
+      LLM_PROVIDER: mock
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run db:generate
+      # Aplica el schema a la Postgres efímera (forward-only) vía la composite action reusable.
+      - name: Aplicar migraciones (composite action)
+        uses: ./.github/actions/prisma-migrate
+        with:
+          database-url: ${{ env.DATABASE_URL }}
+          working-directory: backend
+      # Paso de seed reproducible (US-085) — produce el estado a verificar.
+      - name: Seed demo
+        run: npm run seed
+      # Quality gate: la guardia de demo readiness corre DESPUÉS del seed. Rojo ⇒ bloquea merge/demo.
+      - name: Demo readiness guard (post-seed)
+        run: npm run test:demo-readiness

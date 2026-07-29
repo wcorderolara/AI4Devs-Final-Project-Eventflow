@@ -1,0 +1,74 @@
+name: smoke-demo
+
+# US-146 (PB-P3-007) — Smoke automatizado sobre la URL pública Demo (docs/21 §16.1).
+#
+# Ejecuta el subconjunto `@demo-smoke` (login → eventos → IA Mock → comparador) contra el entorno
+# Demo YA desplegado (frontend Amplify + backend App Runner). NO es un gate bloqueante de merge:
+# corre POST-DEPLOY y por disparo manual; ante fallo publica evidencia y notifica para evaluar un
+# rollback manual (docs/21 §16.4). NUNCA inyecta la clave de OpenAI como secret/env — el entorno
+# Demo opera IA en modo Mock (US-144); el smoke solo verifica que el flujo responde de forma
+# determinista (AC-03 / VR-03).
+#
+# Precondiciones (verificadas por el propio smoke, fail-fast sin falso verde):
+#   - Secrets configurados: DEMO_SMOKE_BASE_URL (FE), DEMO_SMOKE_API_URL (BE), credenciales demo.
+#   - GET /health = 200 en el backend (VR-04); si no, aborta antes de los flujos (EC-01).
+on:
+  # Disparo manual (runbook AC-05).
+  workflow_dispatch:
+  # Post-deploy: tras completar el deploy del backend en `main` (docs/21 §16.1).
+  workflow_run:
+    workflows: ['deploy-backend']
+    types: [completed]
+
+# SEC: privilegio mínimo — solo lectura del contenido; sin id-token ni escritura.
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: web
+
+jobs:
+  demo-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # En el trigger post-deploy, corre solo si el deploy terminó en éxito (evita smoke sobre un
+    # deploy fallido). En `workflow_dispatch` corre siempre.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    env:
+      # Inyectados por GitHub Actions secrets / Secrets Manager (VR-02 · SEC-02) — nunca hardcodeados.
+      DEMO_SMOKE_BASE_URL: ${{ secrets.DEMO_SMOKE_BASE_URL }}
+      DEMO_SMOKE_API_URL: ${{ secrets.DEMO_SMOKE_API_URL }}
+      DEMO_SMOKE_ORGANIZER_EMAIL: ${{ secrets.DEMO_SMOKE_ORGANIZER_EMAIL }}
+      DEMO_SMOKE_ORGANIZER_PASSWORD: ${{ secrets.DEMO_SMOKE_ORGANIZER_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      # Solo el navegador necesario para el smoke (chromium).
+      - name: Install Playwright browser
+        run: npm run test:e2e:install
+      # AC-01/AC-02/AC-03/AC-04: smoke real-URL. Fail-fast si falta config o /health ≠ 200
+      # (globalSetup). Sin secretos configurados, la suite se salta limpiamente (no falso verde).
+      - name: Demo URL smoke (post-deploy)
+        run: npm run test:e2e:demo-smoke
+      # AC-06: evidencia en fallo (screenshots + trazas + video) como artefacto retenido.
+      - name: Upload Playwright evidence on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-smoke-report-${{ github.run_id }}
+          path: |
+            web/playwright-report-demo-smoke/
+            web/test-results/
+          if-no-files-found: warn
+          retention-days: 7
+      # docs/21 §16.4: notificación en fallo para evaluar rollback manual (no automatiza rollback).
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error title=Demo smoke rojo::El smoke contra la URL Demo falló (run ${{ github.run_id }}). Revisa la evidencia adjunta y evalúa rollback manual (docs/21 §16.4) o reset del entorno Demo (US-140)."

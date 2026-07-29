@@ -19,6 +19,7 @@ import {
   TableHeaderCell,
   TableRow,
 } from '@/shared/design-system';
+import { ApiError } from '@/shared/api-client';
 import { useSeedStatus } from '../hooks/useAdminSeed';
 import type { SeedResetReportDTO } from '../api/adminSeedApi.types';
 import { SeedResetDialog } from './SeedResetDialog';
@@ -77,9 +78,14 @@ function CountsTable({
 export function SeedDemoPanel(): React.JSX.Element {
   const t = useTranslations('admin.seed');
   const locale = useLocale();
-  const { data, isPending, isError, refetch, isRefetching } = useSeedStatus();
+  const { data, isPending, isError, error, refetch, isRefetching } = useSeedStatus();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [lastReport, setLastReport] = useState<SeedResetReportDTO | null>(null);
+
+  // EC-01 / THR-012: fuera del entorno Demo el backend no registra la ruta y responde 404. Ese 404
+  // es la señal autoritativa de "no disponible aquí": ocultamos el control operativo y mostramos un
+  // aviso neutro que **no** revela la existencia del endpoint ni el flag `SEED_DEMO_ENABLED`.
+  const isUnavailable = isError && error instanceof ApiError && error.status === 404;
 
   return (
     <section aria-labelledby="admin-seed-title" className="space-y-4">
@@ -90,29 +96,37 @@ export function SeedDemoPanel(): React.JSX.Element {
           </h1>
           <p className="mt-1 font-body text-body-sm text-secondary">{t('subtitle')}</p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => void refetch()}
-            disabled={isRefetching || isPending}
-            isLoading={isRefetching}
-            loadingLabel={t('actions.refreshing')}
-          >
-            {t('actions.refresh')}
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => setDialogOpen(true)}
-            leadingIcon={<AlertTriangle />}
-          >
-            {t('actions.reset')}
-          </Button>
-        </div>
+        {isUnavailable ? null : (
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => void refetch()}
+              disabled={isRefetching || isPending}
+              isLoading={isRefetching}
+              loadingLabel={t('actions.refreshing')}
+            >
+              {t('actions.refresh')}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setDialogOpen(true)}
+              leadingIcon={<AlertTriangle />}
+            >
+              {t('actions.reset')}
+            </Button>
+          </div>
+        )}
       </header>
 
-      <Alert variant="warning">{t('warning')}</Alert>
+      {isUnavailable ? (
+        <Alert variant="info" title={t('unavailable.title')}>
+          {t('unavailable.description')}
+        </Alert>
+      ) : (
+        <Alert variant="warning">{t('warning')}</Alert>
+      )}
 
       {isPending ? (
         <div role="status" aria-busy="true">
@@ -120,7 +134,7 @@ export function SeedDemoPanel(): React.JSX.Element {
         </div>
       ) : null}
 
-      {isError ? <ErrorState title={t('errors.statusLoad')} /> : null}
+      {isError && !isUnavailable ? <ErrorState title={t('errors.statusLoad')} /> : null}
 
       {data ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -162,6 +176,10 @@ export function SeedDemoPanel(): React.JSX.Element {
           }
         >
           <p className="text-caption">{t('report.duration', { ms: lastReport.durationMs })}</p>
+          {/* AC-03: correlationId visible en éxito para trazabilidad end-to-end con `AdminAction`. */}
+          <p className="mt-1 font-mono text-caption text-secondary">
+            {t('report.correlationId', { id: lastReport.correlationId })}
+          </p>
           <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
             <div>
               <h3 className="mb-1 font-ui text-caption font-semibold uppercase tracking-ef-wide text-secondary">
@@ -189,11 +207,13 @@ export function SeedDemoPanel(): React.JSX.Element {
         </Alert>
       ) : null}
 
-      <SeedResetDialog
-        isOpen={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        onReset={setLastReport}
-      />
+      {isUnavailable ? null : (
+        <SeedResetDialog
+          isOpen={dialogOpen}
+          onClose={() => setDialogOpen(false)}
+          onReset={setLastReport}
+        />
+      )}
     </section>
   );
 }
