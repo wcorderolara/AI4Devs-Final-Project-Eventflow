@@ -1,15 +1,26 @@
-# Deploy backend a AWS App Runner (US-136 / PB-P2-022 · AC-02 · Doc 21 §10).
+# Deploy backend a AWS EC2 (US-136 / PB-P2-022 · ADR-DEVOPS-008 · Doc 21 §10).
 #
-# Build & push de la imagen Docker (backend/Dockerfile, PB-P0-016) a Amazon ECR y disparo del
-# deploy en App Runner. Autenticación por OIDC (sin claves largas en el repo — SEC-02).
+# Build & push de la imagen Docker (backend/Dockerfile, PB-P0-016) a Amazon ECR y redeploy sobre la
+# instancia EC2 (Docker + Caddy TLS) vía AWS Systems Manager (SSM) — sin SSH, sin claves largas.
+# Autenticación por OIDC (SEC-02). App Runner (ADR-DEVOPS-003) quedó como objetivo futuro: no está
+# disponible en el plan de la cuenta (Free Tier restringido → `SubscriptionRequiredException`), por
+# lo que el runtime real es EC2 (decisión ADR-DEVOPS-008).
 #
-# Prerrequisitos para que corra en vivo (configurar en el repo/AWS cuando exista PB-P2-023/024):
-#   - Variables de repo: AWS_REGION, AWS_ACCOUNT_ID, ECR_REPO (default eventflow-backend),
-#     APPRUNNER_SERVICE_ARN.
-#   - Secret/OIDC: rol IAM `AWS_DEPLOY_ROLE_ARN` con confianza al OIDC de GitHub y permisos
-#     ecr:* (push) + apprunner:StartDeployment/DescribeService.
-#   - El servicio App Runner debe existir (creado por infra/apprunner/provision-apprunner.sh
-#     fase 2, tras RDS PB-P2-023). Hasta entonces este workflow queda inactivo por gating.
+# Cómo se activa (config de repo/AWS — hasta entonces el job queda inactivo por gating):
+#   - Variables de repo: AWS_REGION (p.ej. us-east-1), ECR_REPO (default eventflow-backend),
+#     opcional EC2_INSTANCE_ID (si se omite, se resuelve por tag Name=eventflow-backend).
+#   - Variable/OIDC: AWS_DEPLOY_ROLE_ARN — rol IAM con confianza al OIDC de GitHub y permisos:
+#       ecr:GetAuthorizationToken, ecr:BatchCheckLayerAvailability, ecr:PutImage,
+#       ecr:InitiateLayerUpload/UploadLayerPart/CompleteLayerUpload (push);
+#       ssm:CreateDocument/UpdateDocument/DescribeDocument (documento de redeploy);
+#       ssm:SendCommand, ssm:GetCommandInvocation; ec2:DescribeInstances (resolver instancia).
+#     La instancia EC2 usa su propio instance role (EventflowEc2Role) para ECR-read + SSM-read de
+#     los secretos /eventflow/<env>/* — este workflow NO maneja secretos de app (SEC-02/SEC-03).
+#
+# Migraciones: `prisma migrate deploy` corre EN LA INSTANCIA (única con ruta de red a RDS; el SG de
+# RDS sólo admite el SG de la EC2), embebido en el documento SSM. Es idempotente: aplica sólo las
+# migraciones committeadas pendientes. El drift/validación de migraciones se verifica en pr.yml
+# (US-139) antes del merge; una migración destructiva requiere plan documentado (VR-04).
 #
 # Los quality gates (US-132 / PB-P0-017) corren en pr.yml/ci.yml y preceden al merge (no se
 # duplican aquí). Este workflow asume que main/staging ya pasaron las compuertas.
@@ -21,11 +32,10 @@ on:
     branches: [main, staging]
     paths:
       - 'backend/**'
+      - 'infra/ec2/EventflowRedeploy.ssm.json'
       - '.github/workflows/deploy-backend.yml'
   workflow_dispatch:
 
-# Gating: sólo corre si el repo declaró el rol de deploy (evita fallos mientras PB-P2-023/024
-# no existan). Cuando se configure AWS_DEPLOY_ROLE_ARN, el deploy se activa automáticamente.
 concurrency:
   group: deploy-backend-${{ github.ref }}
   cancel-in-progress: false
@@ -36,9 +46,15 @@ permissions:
 
 jobs:
   deploy:
+    # Gating: sólo corre si el repo declaró el rol de deploy. Cuando se configure
+    # AWS_DEPLOY_ROLE_ARN, el CD a EC2 se activa automáticamente.
     if: ${{ vars.AWS_DEPLOY_ROLE_ARN != '' }}
     runs-on: ubuntu-latest
     environment: ${{ github.ref_name == 'main' && 'demo' || 'qa' }}
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECR_REPO: ${{ vars.ECR_REPO || 'eventflow-backend' }}
+      ENV_TAG: ${{ github.ref_name == 'main' && 'demo' || 'qa' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -48,42 +64,83 @@ jobs:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      # US-137 / PB-P2-023 (OPS-003 · AC-04): aplicar migraciones Prisma contra RDS ANTES de
-      # servir la nueva imagen. `DATABASE_URL` se lee de SSM Parameter Store (SecureString) por
-      # ambiente; nunca se imprime ni se versiona (SEC-02/SEC-03). Migración destructiva → requiere
-      # plan documentado (VR-04). La validación (migrate diff/status) corre en pr.yml (US-139).
-      - name: Run Prisma migrations (deploy)
-        env:
-          SSM_ENV: ${{ github.ref_name == 'main' && 'demo' || 'qa' }}
-        run: |
-          cd backend
-          npm ci --no-audit --no-fund
-          DATABASE_URL="$(aws ssm get-parameter --name "/eventflow/${SSM_ENV}/DATABASE_URL" \
-            --with-decryption --query Parameter.Value --output text --region "${{ vars.AWS_REGION }}")" \
-            npx prisma migrate deploy
-
       - name: Login to Amazon ECR
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build & push image
+        id: build
         env:
           REGISTRY: ${{ steps.ecr.outputs.registry }}
-          ECR_REPO: ${{ vars.ECR_REPO || 'eventflow-backend' }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           IMAGE="$REGISTRY/$ECR_REPO:$IMAGE_TAG"
           docker build --platform linux/amd64 -t "$IMAGE" ./backend
           docker push "$IMAGE"
-          # También etiqueta el ambiente (demo/qa) como tag flotante consumible por App Runner.
-          ENV_TAG="${{ github.ref_name == 'main' && 'demo' || 'qa' }}"
+          # Tag flotante por ambiente (demo/qa) para trazabilidad y rollbacks manuales.
           docker tag "$IMAGE" "$REGISTRY/$ECR_REPO:$ENV_TAG"
           docker push "$REGISTRY/$ECR_REPO:$ENV_TAG"
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
 
-      - name: Trigger App Runner deployment
-        if: ${{ vars.APPRUNNER_SERVICE_ARN != '' }}
+      - name: Ensure SSM redeploy document
         run: |
-          aws apprunner start-deployment \
-            --service-arn "${{ vars.APPRUNNER_SERVICE_ARN }}" \
-            --region "${{ vars.AWS_REGION }}"
-          echo "Deploy de App Runner disparado (redeploy de la nueva imagen — P-12)."
+          if aws ssm describe-document --name EventflowRedeploy >/dev/null 2>&1; then
+            aws ssm update-document --name EventflowRedeploy --document-version '$LATEST' \
+              --document-format JSON --content file://infra/ec2/EventflowRedeploy.ssm.json \
+              --query 'DocumentDescription.Name' --output text 2>/dev/null \
+              || echo "EventflowRedeploy sin cambios (contenido idéntico)"
+          else
+            aws ssm create-document --name EventflowRedeploy --document-type Command \
+              --document-format JSON --content file://infra/ec2/EventflowRedeploy.ssm.json \
+              --query 'DocumentDescription.Name' --output text
+          fi
+
+      - name: Redeploy backend on EC2 (SSM)
+        env:
+          IMAGE: ${{ steps.build.outputs.image }}
+        run: |
+          set -euo pipefail
+          # Resolver instancia: var explícita o por tag Name=eventflow-backend.
+          IID="${{ vars.EC2_INSTANCE_ID }}"
+          if [ -z "$IID" ]; then
+            IID=$(aws ec2 describe-instances --region "$AWS_REGION" \
+              --filters Name=tag:Name,Values=eventflow-backend "Name=instance-state-name,Values=running" \
+              --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          fi
+          [ -n "$IID" ] && [ "$IID" != "None" ] || { echo "::error::No se resolvió la instancia EC2"; exit 1; }
+          # Versión de Prisma pinneada desde backend/package.json (migrate deploy en la instancia).
+          PV=$(node -p "require('./backend/package.json').devDependencies.prisma || require('./backend/package.json').dependencies.prisma")
+          echo "Instancia=$IID · imagen=$IMAGE · prisma=$PV · env=$ENV_TAG"
+          CMD=$(aws ssm send-command --region "$AWS_REGION" \
+            --document-name EventflowRedeploy --instance-ids "$IID" \
+            --comment "CD deploy-backend ${{ github.sha }}" \
+            --parameters imageRef="$IMAGE",envName="$ENV_TAG",region="$AWS_REGION",prismaVersion="$PV" \
+            --query 'Command.CommandId' --output text)
+          echo "CommandId=$CMD"
+          aws ssm wait command-executed --region "$AWS_REGION" --command-id "$CMD" --instance-id "$IID" || true
+          STATUS=$(aws ssm get-command-invocation --region "$AWS_REGION" --command-id "$CMD" --instance-id "$IID" --query 'Status' --output text)
+          echo "----- SSM StandardOutputContent -----"
+          aws ssm get-command-invocation --region "$AWS_REGION" --command-id "$CMD" --instance-id "$IID" --query 'StandardOutputContent' --output text
+          echo "----- SSM Status: $STATUS -----"
+          if [ "$STATUS" != "Success" ]; then
+            echo "::error::Redeploy SSM terminó en estado $STATUS"
+            aws ssm get-command-invocation --region "$AWS_REGION" --command-id "$CMD" --instance-id "$IID" --query 'StandardErrorContent' --output text
+            exit 1
+          fi
+
+      - name: Post-deploy health check
+        env:
+          HEALTH_URL: ${{ vars.DEMO_BACKEND_HEALTH_URL }}
+        run: |
+          # Verificación best-effort del healthcheck público tras el redeploy (si se declaró la URL).
+          if [ -z "$HEALTH_URL" ]; then
+            echo "DEMO_BACKEND_HEALTH_URL no configurado — se omite el health check post-deploy."
+            exit 0
+          fi
+          for i in $(seq 1 10); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -m 10 "$HEALTH_URL" || true)
+            echo "intento $i: HTTP $code"
+            [ "$code" = "200" ] && { echo "backend saludable"; exit 0; }
+            sleep 6
+          done
+          echo "::warning::El healthcheck no devolvió 200 tras el redeploy (revisar logs de la instancia)."

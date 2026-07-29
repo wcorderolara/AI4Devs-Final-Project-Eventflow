@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "2.2",
+  "description": "EventFlow backend redeploy on EC2 (ADR-DEVOPS-008): pull image from ECR, run Prisma migrate deploy against RDS from the instance, and restart the backend container. Secrets are read from SSM Parameter Store on the instance and never echoed (SEC-02/SEC-03). Consumed by .github/workflows/deploy-backend.yml.",
+  "parameters": {
+    "imageRef": {
+      "type": "String",
+      "description": "Full ECR image reference to deploy (registry/repo:tag).",
+      "allowedPattern": "^[0-9]+\\.dkr\\.ecr\\.[a-z0-9-]+\\.amazonaws\\.com/[A-Za-z0-9._/-]+:[A-Za-z0-9._-]+$"
+    },
+    "envName": {
+      "type": "String",
+      "description": "SSM environment whose secrets are injected.",
+      "default": "demo",
+      "allowedValues": ["demo", "qa"]
+    },
+    "region": {
+      "type": "String",
+      "description": "AWS region for ECR login and SSM parameter reads.",
+      "default": "us-east-1",
+      "allowedPattern": "^[a-z0-9-]+$"
+    },
+    "prismaVersion": {
+      "type": "String",
+      "description": "Prisma CLI version used to apply migrations (pinned to backend/package.json).",
+      "default": "5.22.0",
+      "allowedPattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    }
+  },
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "redeploy",
+      "inputs": {
+        "runCommand": [
+          "set -euo pipefail",
+          "IMAGE='{{ imageRef }}'",
+          "ENVN='{{ envName }}'",
+          "REGION='{{ region }}'",
+          "PV='{{ prismaVersion }}'",
+          "REGISTRY=\"${IMAGE%%/*}\"",
+          "echo \"[cd-redeploy] image=$IMAGE env=$ENVN region=$REGION prisma=$PV\"",
+          "aws ecr get-login-password --region \"$REGION\" | docker login --username AWS --password-stdin \"$REGISTRY\" >/dev/null",
+          "docker pull \"$IMAGE\" >/dev/null",
+          "DB=$(aws ssm get-parameter --name /eventflow/$ENVN/DATABASE_URL --with-decryption --query Parameter.Value --output text --region $REGION)",
+          "JWT=$(aws ssm get-parameter --name /eventflow/$ENVN/JWT_SECRET --with-decryption --query Parameter.Value --output text --region $REGION)",
+          "SES=$(aws ssm get-parameter --name /eventflow/$ENVN/SESSION_SECRET --with-decryption --query Parameter.Value --output text --region $REGION)",
+          "docker network create eventflow >/dev/null 2>&1 || true",
+          "echo '[cd-redeploy] applying prisma migrations (migrate deploy — idempotent, applies only committed pending migrations)'",
+          "docker run --rm --network eventflow -e DATABASE_URL=\"$DB\" -w /app --entrypoint sh \"$IMAGE\" -c \"npx --yes prisma@$PV migrate deploy\"",
+          "echo '[cd-redeploy] restarting backend container'",
+          "docker rm -f backend >/dev/null 2>&1 || true",
+          "docker run -d --name backend --restart always --network eventflow -e NODE_ENV=development -e PORT=3000 -e DATABASE_URL=\"$DB\" -e JWT_SECRET=\"$JWT\" -e SESSION_SECRET=\"$SES\" -e CORS_ORIGINS='https://main.d2jh1ql4whmeue.amplifyapp.com,https://staging.d2jh1ql4whmeue.amplifyapp.com' -e CORS_CREDENTIALS=true -e SESSION_COOKIE_SAMESITE=none -e SESSION_COOKIE_SECURE=true -e LLM_PROVIDER=mock -e CAPTCHA_PROVIDER=mock \"$IMAGE\" >/dev/null",
+          "docker image prune -f >/dev/null 2>&1 || true",
+          "sleep 5",
+          "echo '[cd-redeploy] running containers:'",
+          "docker ps",
+          "echo '[cd-redeploy] done'"
+        ]
+      }
+    }
+  ]
+}
