@@ -1,5 +1,9 @@
 # EventFlow — Final Project Delivery
 
+> **🚀 Demo desplegada:** <https://main.d2jh1ql4whmeue.amplifyapp.com> — acceso con los [usuarios de prueba del seed](#demo-desplegada--acceso-y-usuarios-de-prueba) (`Demo1234!`, captcha mock `__test__`).
+> **🎨 Identidad gráfica (Stitch):** <https://stitch.withgoogle.com/projects/10889252267442839867>
+> **📦 Entrega final:** reportes y runbooks de cierre en [`deliverables/final/`](./deliverables/final/).
+
 ## Overview
 
 EventFlow es un MVP de planificación de eventos asistida por IA y gestión simplificada de cotizaciones de proveedores, orientado inicialmente al mercado de Guatemala con visión futura hacia España y LATAM. La documentación disponible posiciona el producto como un workspace web responsive para organizadores, proveedores y administradores, con foco en plan, checklist, presupuesto y flujo estructurado de cotizaciones, evitando documentarlo como marketplace transaccional completo en v1.
@@ -33,11 +37,61 @@ Este repositorio contiene una entrega académica **con documentación técnica c
 - CI con GitHub Actions (lint, typecheck, unit, integration, e2e, drift de OpenAPI, drift de migraciones, seed idempotency).
 - 49 pull requests reales mergeados a `main` (ver [Pull Requests](#pull-requests--historial-real-de-merges) más abajo).
 
+**Despliegue (Entregable final — publicado):**
+
+- Aplicación desplegada y accesible en <https://main.d2jh1ql4whmeue.amplifyapp.com> (frontend Amplify + backend EC2 Free Tier con Caddy TLS + RDS PostgreSQL, ADR-DEVOPS-008), con el mismo seed demo del entorno local. Ver [Demo desplegada](#demo-desplegada--acceso-y-usuarios-de-prueba).
+- Runbooks operativos de la demo (smoke sobre la URL, toggle de proveedor IA) y guion de demo guiada en [`deliverables/final/`](./deliverables/final/).
+
 **Pendiente en esta entrega académica:**
 
-- Despliegue a URL pública AWS (Amplify + App Runner + RDS + S3) — provisioning y pipeline CD (PB-P0-017/018 y US-137/139).
-- Video demo grabado end-to-end sobre entorno desplegado.
-- Cierre de las user stories P1 restantes y del bloque P2/P3 completo.
+- Video demo grabado end-to-end sobre el entorno desplegado.
+- Cierre de las user stories P3 restantes de ejecución de código.
+
+---
+
+## Demo desplegada — acceso y usuarios de prueba
+
+La versión de la aplicación está **desplegada y accesible públicamente**:
+
+| Recurso | URL / referencia |
+| ------- | ---------------- |
+| **Frontend (Amplify Hosting)** | <https://main.d2jh1ql4whmeue.amplifyapp.com> |
+| **Backend (EC2 Free Tier + Caddy TLS)** | <https://18-235-214-199.sslip.io> — healthcheck `GET /health` → `{"status":"ok"}` (`/health/ready` → `postgres:ok`, `aiProvider:mock`) |
+| **Base de datos** | AWS RDS PostgreSQL con seed demo (US-137) |
+| **Guion de demo guiada** | [`deliverables/final/3-Demo-Script.md`](./deliverables/final/3-Demo-Script.md) |
+| **Runbook de smoke sobre la URL** | [`deliverables/final/5-Demo-URL-Smoke-Runbook.md`](./deliverables/final/5-Demo-URL-Smoke-Runbook.md) |
+
+> El frontend Amplify consume el backend mediante un **proxy same-origin** (`/api/v1/*` vía Next.js rewrite, ADR-DEVOPS-008), de modo que la cookie de sesión HTTP-only es first-party. App Runner (ADR-DEVOPS-003) quedó como objetivo futuro: no está disponible en el plan de la cuenta AWS (Free Tier restringido), por lo que el backend se desplegó en **EC2 Free Tier + Caddy TLS** (decisión formalizada en **ADR-DEVOPS-008**).
+
+### Cómo acceder
+
+1. Abrir <https://main.d2jh1ql4whmeue.amplifyapp.com>.
+2. Iniciar sesión con cualquier **usuario de prueba** del seed demo (tabla siguiente). En modo captcha `mock`, el token válido es el literal `__test__`.
+3. Recorrer los flujos por rol con el [Guion de Demo Guiada](./deliverables/final/3-Demo-Script.md) o la [Evaluator Flows Guide](./docs/Evaluator-Flows-Guide.md).
+
+### Usuarios de prueba (seed demo)
+
+El entorno desplegado corre el **mismo seed idempotente** que el entorno local. Todos comparten la contraseña `Demo1234!`.
+
+| Rol | Cuentas | Password |
+| --- | ------- | -------- |
+| Admin | `admin@seed.eventflow.test` | `Demo1234!` |
+| Organizer | `organizer0@seed.eventflow.test` … `organizer5@seed.eventflow.test` | `Demo1234!` |
+| Vendor | `vendor0@seed.eventflow.test` … `vendor11@seed.eventflow.test` | `Demo1234!` |
+
+> Convención de credenciales, lista completa de cuentas y estrategia de reset: [`backend/docs/operations/seed.md`](./backend/docs/operations/seed.md). Guion de pruebas por rol: [`docs/Evaluator-Flows-Guide.md`](./docs/Evaluator-Flows-Guide.md).
+>
+> Si la demo estuviera indisponible o el seed alterado, el stack completo puede reconstruirse localmente siguiendo el **Local Setup** de abajo.
+
+---
+
+## Identidad gráfica — Diseño en Stitch
+
+La identidad gráfica y el lenguaje visual del MVP (landing pública, componentes y superficie del organizer/vendor) se construyeron a partir de un proyecto de **Google Stitch**, del cual se derivaron los UI/UX Foundations documentados en [`docs/ux-ui/`](./docs/ux-ui/).
+
+- **Proyecto Stitch (identidad gráfica):** <https://stitch.withgoogle.com/projects/10889252267442839867>
+
+Desde ese proyecto se destilaron el [Visual Language Reference](./docs/ux-ui/EventFlow-Visual-Language-Reference.md), los [Design Tokens](./docs/ux-ui/EventFlow-Design-Tokens.md), las [UI Foundations](./docs/ux-ui/EventFlow-UI-Foundations.md) y las [Component Foundations](./docs/ux-ui/EventFlow-Component-Foundations.md), que a su vez guiaron la superficie pública implementada (landing "Stitch", header con sesión y directorio de proveedores — PRs [#60](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/60)–[#62](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/62)).
 
 ---
 
@@ -228,6 +282,19 @@ Paquete académico final disponible en `/deliverables`:
 | 5 | Historias de usuario | Backlog curado por épica, con criterios de aceptación y trazabilidad a FRD/Use Cases. | FRD, Use Cases, Business Rules, AI Features, Security Design. | [Ver](./deliverables/5-Historias-de-usuario.md) |
 | 6 | Tickets de trabajo | Backlog técnico organizado por área (backend, frontend, DB, IA, seguridad, testing, DevOps, docs). | Backend/Frontend Technical Design, AI Architecture, Database Physical Design, Testing Strategy, DevOps Design. | [Ver](./deliverables/6-Tickets-de-trabajo.md) |
 | 7 | Pull requests | Plan recomendado de PRs por fase de implementación con estado de evidencia. | Architecture, Backend, Frontend, DevOps, Testing. | [Ver](./deliverables/7-Pull-requests.md) |
+
+### Entrega Final — reportes y runbooks de cierre ([`deliverables/final/`](./deliverables/final/))
+
+Documentos de consolidación de la entrega final (evidencia académica, PromptOps, guion de demo, índice de ADRs y runbooks operativos de la demo desplegada). Índice detallado en [`deliverables/final/README.md`](./deliverables/final/README.md).
+
+| # | Documento | Propósito | User Story | Link |
+|---:|---|---|---|---|
+| 1 | Reporte final de evidencia académica | Consolida por enlace toda la evidencia SDLC, de implementación, PromptOps y demo; congela el estado de la entrega. | US-150 (PB-P3-011) | [Ver](./deliverables/final/1-Academic-Evidence-Report.md) |
+| 2 | Catálogo de prompts y outputs (PromptOps) | Prompt, output ejemplar (datos sintéticos del MockAIProvider), guardrails y HITL por capacidad IA. | US-149 (PB-P2-026) | [Ver](./deliverables/final/2-AI-Prompt-Evidence-Catalog.md) |
+| 3 | Guion de Demo Guiada (10–15 min) | Guion paso a paso para recorrer los flujos MVP end-to-end sobre el entorno con seed. | US-142 (PB-P3-003) | [Ver](./deliverables/final/3-Demo-Script.md) |
+| 4 | Índice maestro de ADRs | Índice navegable de los 46 ADRs (generado desde `docs/22`). | — | [Ver](./deliverables/final/4-ADR-Index.md) |
+| 5 | Runbook — Smoke sobre la URL de Demo | Smoke E2E mínimo (login, eventos, IA Mock, comparador) contra la URL pública, manual o post-deploy. | US-146 (PB-P3-007) | [Ver](./deliverables/final/5-Demo-URL-Smoke-Runbook.md) |
+| 6 | Runbook — Toggle `LLM_PROVIDER` / `AI_DEMO_MODE` | Alternar proveedor IA (OpenAI/Mock) y activar modo demo determinista. | US-144 (PB-P3-005) | [Ver](./deliverables/final/6-AI-Provider-Toggle-Runbook.md) |
 
 ---
 
@@ -469,7 +536,7 @@ Este repositorio está organizado para:
 
 ## Pull Requests — historial real de merges
 
-Fuente autoritativa: [https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pulls?state=all](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pulls?state=all). A la fecha de esta actualización hay **49 PRs** (48 mergeados a `main`, 1 cerrado sin merge, 0 abiertos). El plan de PRs recomendado sigue en [`deliverables/7-Pull-requests.md`](./deliverables/7-Pull-requests.md); los merges reales siguieron el `Backlog Execution Order` de `management/artifacts/4-Product-Backlog-Prioritized.md`.
+Fuente autoritativa: [https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pulls?state=all](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pulls?state=all). A la fecha de esta actualización hay **62 PRs** (61 mergeados a `main`, 1 cerrado sin merge — PR #20, 0 abiertos). El plan de PRs recomendado sigue en [`deliverables/7-Pull-requests.md`](./deliverables/7-Pull-requests.md); los merges reales siguieron el `Backlog Execution Order` de `management/artifacts/4-Product-Backlog-Prioritized.md`.
 
 ### Entregables académicos y foundation de management
 
@@ -536,6 +603,26 @@ Fuente autoritativa: [https://github.com/wcorderolara/AI4Devs-Final-Project-Even
 
 > PR [#20](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/20) fue **cerrado sin merge** (revisión R1 sustituida por PR #21 consolidado — trazabilidad honesta del proceso).
 
+### MVP P2, superficie pública y Demo Readiness (PRs #50 – #62)
+
+| PR | Backlog Items | Contenido |
+|---:|---|---|
+| [#50](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/50) | — | Cambios y preparación para la Segunda Entrega |
+| [#51](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/51) | PB-P2-001 (US-022/059) | AI Quote Comparison Summary — HITL informativo + surface panel |
+| [#52](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/52) | PB-P2-002/003 (US-024/026) | AI Task Priority + AI Regenerate — HITL iterativo cross-cutting |
+| [#53](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/53) | PB-P2-004/005 | Notificaciones T-7 (job + surface) + QuoteRequest received handler in-tx |
+| [#54](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/54) | PB-P2-006/007/008 (US-069/070/072) | Cierre EPIC-NOT-001 — notificaciones bilaterales in-tx + mark-as-read |
+| [#55](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/55) | PB-P2-009/010/011 (US-073/113/114) | Bandeja vendor unificada + logger Pino JSON + correlation ID end-to-end |
+| [#56](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/56) | PB-P2-012/013/014 (US-115/116/126) | AI metrics + healthcheck `GET /health` + coverage gate |
+| [#57](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/57) | PB-P2-015..017 (US-127/128/129) | Contract MSW + E2E Playwright + suite IA MockAIProvider |
+| [#58](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/58) | PB-P2-018/019/020 (US-130/131/132) | Cierre Fase 2 EPIC-QA-001 |
+| [#59](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/59) | PB-P2-024/025/026 (US-138/147/148/149) | Secrets Manager, índice de ADRs, matriz de trazabilidad y catálogo PromptOps |
+| [#60](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/60) | — | Superficie pública — landing Stitch, header con sesión, directorio de proveedores y carrusel del hero |
+| [#61](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/61) | — | Alineación de la suite E2E con la nueva landing y el directorio dependiente de datos |
+| [#62](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/62) | — | Refresh de landing pública + fix de rol tras login/logout |
+
+> Evidencia de PRs completa (incluye entregables, cierres y fixes): [historial de Pull Requests en GitHub](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pulls?state=all).
+
 ---
 
 ## Current Delivery Status
@@ -560,24 +647,26 @@ Fuente autoritativa: [https://github.com/wcorderolara/AI4Devs-Final-Project-Even
 - Product Backlog Prioritized (P0–P4).
 - User Story lifecycle **completo end-to-end para los 4 niveles de priorización (P0–P3 + P4 demo)** — refinement, decision resolution, approval, technical specs y development tasks para las 150 US archivadas (PRs #3, #4, #5).
 
-### Completed implementation (P0 foundation + P1 MVP)
+### Completed implementation (P0 foundation + P1 MVP + P2 + superficie pública)
 
 Materializado en el repositorio y verificable con el pipeline canónico (§ [Local Setup](#local-setup--cómo-levantar-el-entorno-para-revisión)):
 
 - **Foundation P0** — Prisma schema + migrations + índices + constraints + seed demo LATAM idempotente + backend modular monolith + validación Zod + error envelope + endpoints AUTH/Event/Quote/AI + snapshot OpenAPI + cookies HTTP-only firmadas + captcha + rate limiting + middleware chain order + RBAC + suite negativa + `LLMProvider` con adapters OpenAI/Mock/Anthropic stub + PromptOps + persistencia IA + timeout/fallback + validación JSON + frontend bootstrap + QA tooling + Docker + CI. Backing PRs: [#7](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/7)–[#16](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/16).
 - **MVP P1** — Auth end-to-end, ciclo de vida de eventos, IA HITL, task management, presupuesto, Vendor CRUD + portafolio + servicios + directorio + perfil público SEO, flujo Quote/BookingIntent bilateral + jobs de expiración, Reviews con moderación admin, Admin CRUD ServiceCategory/EventType + panel de eventos read-only + metrics dashboard + AdminAction log viewer, i18n con 4 locales + configuración de idioma por evento + currency display consistente + AI locale enforcement. Backing PRs: [#17](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/17)–[#49](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/49).
+- **MVP P2 + demo readiness** — AI Quote Comparison Summary, AI Task Priority + Regenerate (HITL iterativo), notificaciones bilaterales (EPIC-NOT-001), bandeja vendor unificada, logger Pino JSON + correlation ID, AI metrics + healthcheck `GET /health`, coverage gate, contract MSW + suite IA MockAIProvider, Secrets Manager + índice de ADRs + matriz de trazabilidad + catálogo PromptOps, y superficie pública (landing Stitch + header con sesión + directorio de proveedores). Backing PRs: [#50](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/50)–[#62](https://github.com/wcorderolara/AI4Devs-Final-Project-Eventflow/pull/62).
 - **Suites de pruebas ejecutables** — Vitest (unit + integration) + Supertest (API) + MSW + Playwright (E2E). Se auto-omiten los tests DB-gated si no hay Postgres; en CI corre Postgres efímero.
-- **49 PRs reales** mergeados o cerrados con trazabilidad en GitHub (ver § anterior).
+- **62 PRs reales** mergeados o cerrados con trazabilidad en GitHub (ver § anterior).
 
-### Pending deployment evidence
+### Deployment evidence
 
-- No existe URL pública desplegada (Amplify Hosting / App Runner) que demuestre la aplicación. La revisión de esta entrega se hace **levantando el entorno localmente** (ver § [Local Setup](#local-setup--cómo-levantar-el-entorno-para-revisión)).
-- No existen recursos AWS provisionados (RDS, S3, Secrets Manager, CloudWatch) — corresponden a **US-137/PB-P0-017** y **US-139/PB-P0-018** (pipeline CD), pendientes en esta entrega.
-- El pipeline CI en GitHub Actions **sí** está ejecutándose por PR (lint + typecheck + tests + build + drift OpenAPI + drift migraciones + seed idempotency).
+- **URL pública desplegada:** <https://main.d2jh1ql4whmeue.amplifyapp.com> (frontend Amplify Hosting + backend en EC2 Free Tier con Caddy TLS en <https://18-235-214-199.sslip.io> + RDS PostgreSQL, ADR-DEVOPS-008), accesible con los [usuarios de prueba del seed](#usuarios-de-prueba-seed-demo). La revisión puede hacerse sobre la demo o **levantando el entorno localmente** (ver § [Local Setup](#local-setup--cómo-levantar-el-entorno-para-revisión)).
+- **Nota sobre App Runner:** el diseño original (ADR-DEVOPS-003, US-136) contemplaba AWS App Runner, pero no está habilitado en el plan de la cuenta (Free Tier restringido, `SubscriptionRequiredException`). El backend se desplegó en EC2 como desviación ADR-aprobada (**ADR-DEVOPS-008**); App Runner queda como objetivo al habilitar la cuenta.
+- El smoke E2E mínimo sobre la URL pública está documentado en [`deliverables/final/5-Demo-URL-Smoke-Runbook.md`](./deliverables/final/5-Demo-URL-Smoke-Runbook.md) y automatizado por el workflow `smoke.yml`.
+- El pipeline CI en GitHub Actions se ejecuta por PR (lint + typecheck + tests + build + drift OpenAPI + drift migraciones + seed idempotency).
 
 ### Pending user stories
 
-- Bloque P2 (US-095..130 remanentes) y P3 (US-140..150) — refinement/tech specs/dev tasks completadas; ejecución de código pendiente.
+- Bloque P2 mergeado en su mayoría (PRs #51–#59); ítems remanentes de P3 (US-140..150 de ejecución de código) con refinement/tech specs/dev tasks completadas y ejecución parcial.
 - Backlog remanente P1 (algunas US como US-068..073 y otras trazadas al Epic Map) — ver `management/artifacts/4-Product-Backlog-Prioritized.md`.
 
 ### Pending visual/demo evidence
