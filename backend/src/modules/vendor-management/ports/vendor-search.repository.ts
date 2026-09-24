@@ -26,7 +26,7 @@ export interface VendorSearchQueryInput {
 
 export interface VendorSearchRow {
   id: string;
-  slug: string;
+  slug: string | null;
   businessName: string;
   locationCode: string | null;
   categoryCodes: string[];

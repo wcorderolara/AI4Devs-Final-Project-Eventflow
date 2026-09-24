@@ -10,11 +10,12 @@ import type { VendorCardDTO } from '../api/vendorDirectoryApi.types';
 export interface VendorCardProps {
   vendor: VendorCardDTO;
   /**
-   * Convierte el título en un enlace al perfil público (`/vendors/:slug`).
+   * Hace la card entera clicable hacia el perfil público (`/vendors/:slug`).
    *
-   * Sólo el título, no la card entera: dentro de la card hay más texto (rating, categorías) y
-   * envolverlo todo produciría un nombre accesible larguísimo al recorrer los enlaces de la
-   * página. Con el título como enlace, el destino se anuncia con el nombre del negocio.
+   * El `<a>` real sigue siendo sólo el título ("stretched link"): su `::after` se estira sobre
+   * toda la card para ampliar el área de clic, pero el nombre accesible del enlace se mantiene
+   * como el nombre del negocio en vez de concatenar rating y categorías.
+   * Si el vendor no tiene `slug` (perfil legacy) no se renderiza enlace: evita `/vendors/null`.
    */
   linkToProfile?: boolean;
   /**
@@ -34,15 +35,22 @@ export function VendorCard({
   const t = useTranslations('vendor.directory.card');
   const titleId = useId();
   const Heading = `h${headingLevel}` as 'h2' | 'h3' | 'h4';
+  const profileHref =
+    linkToProfile && vendor.slug ? `/vendors/${encodeURIComponent(vendor.slug)}` : null;
   return (
     <article
       aria-labelledby={titleId}
-      className="flex flex-col gap-2 rounded-md border border-neutral-200 bg-white p-4 shadow-sm"
+      className={`relative flex flex-col gap-2 rounded-md border border-neutral-200 bg-white p-4 shadow-sm${
+        profileHref ? ' transition-shadow hover:border-neutral-300 hover:shadow-md' : ''
+      }`}
     >
       <header>
         <Heading id={titleId} className="text-base font-semibold text-neutral-900">
-          {linkToProfile ? (
-            <Link href={`/vendors/${vendor.slug}`} className="focus-ring rounded hover:underline">
+          {profileHref ? (
+            <Link
+              href={profileHref}
+              className="focus-ring rounded after:absolute after:inset-0 after:rounded-md after:content-[''] hover:underline"
+            >
               {vendor.businessName}
             </Link>
           ) : (
