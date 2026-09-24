@@ -14,7 +14,7 @@ import type {
 
 interface RawVendorRow {
   id: string;
-  slug: string;
+  slug: string | null;
   business_name: string;
   location_id: string | null;
   rating_avg: string | null;

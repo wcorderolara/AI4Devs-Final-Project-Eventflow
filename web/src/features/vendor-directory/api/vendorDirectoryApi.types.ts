@@ -19,7 +19,8 @@ export interface VendorPriceRangeDTO {
 
 export interface VendorCardDTO {
   id: string;
-  slug: string;
+  // `vendor_profiles.slug` es nullable (perfiles legacy previos a US-040).
+  slug: string | null;
   businessName: string;
   locationCode: string | null;
   categories: string[];
