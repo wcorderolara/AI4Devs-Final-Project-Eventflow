@@ -145,7 +145,7 @@ Cada `EventType` debe tener:
 ### 7.1 Autenticación y roles
 
 - Registro y login por email + password.
-- OAuth opcional con Google (recomendado, no obligatorio).
+- OAuth con Google **habilitado** en la fase de delivery actual (US-008, promovida por **ADR-ARCH-005**; SSO/OAuth de ADR-SEC-007 pasa de futuro a habilitado). No reemplaza el login email + password (sigue siendo el flujo canónico).
 - Asignación de rol al registrarse: organizador o proveedor (admin se crea por seed/configuración).
 - Recuperación de contraseña básica (link por email simulado o real, según infra disponible).
 - Sesión persistente.
@@ -292,7 +292,7 @@ Mínimos requeridos por el Product Owner (sección 11 del documento de decisione
 | 15 | Notificaciones in-app + email simulado | Should |
 | 16 | Resumen IA del comparador | Should |
 | 17 | Generación IA de perfil de proveedor | Could |
-| 18 | OAuth Google | Could |
+| 18 | OAuth Google | Could → **habilitado** en delivery actual (US-008 / ADR-ARCH-005) |
 | 19 | i18n completo (4 idiomas) | Must |
 | 20 | Moneda configurable | Must |
 

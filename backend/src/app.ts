@@ -14,6 +14,10 @@ import { rateLimitMiddleware } from './shared/interface/middlewares/rate-limit.m
 import { notFoundMiddleware } from './shared/interface/middlewares/not-found.middleware.js';
 import { errorHandlerMiddleware } from './shared/interface/middlewares/error-handler.middleware.js';
 import { identityAccessRouter } from './modules/identity-access/interface/identity-access.routes.js';
+// US-008 (PB-P4-001 / API-001): endpoints OAuth Google. Se montan solo cuando el flujo es
+// enrutable (`GOOGLE_OAUTH_ENABLED=true` o entorno no-productivo con mock) — 404 natural si no.
+import { createOAuthGoogleRouter } from './modules/identity-access/interface/oauth-google.routes.js';
+import { isGoogleOAuthRoutable } from './infrastructure/oauth/oauth-provider.factory.js';
 import { userProfileRouter } from './modules/user-profile/interface/user-profile.routes.js';
 import { eventPlanningRouter } from './modules/event-planning/interface/events.routes.js';
 import { locationsRouter } from './modules/event-planning/interface/catalog.routes.js';
@@ -119,6 +123,11 @@ export function createApp(): Express {
 
   // 7. Router de API versionada. Las rutas se agregan por feature story.
   const apiV1 = Router();
+  // US-008 (PB-P4-001 / API-001): OAuth Google bajo `/api/v1/auth/google`. Se monta ANTES de
+  // `/auth` (identityAccessRouter) para captar los sub-paths `/auth/google*` de forma específica.
+  if (isGoogleOAuthRoutable()) {
+    apiV1.use('/auth/google', createOAuthGoogleRouter());
+  }
   // US-094 / API-001: contrato AUTH y perfil propio bajo `/api/v1`.
   apiV1.use('/auth', identityAccessRouter);
   apiV1.use('/users', userProfileRouter);

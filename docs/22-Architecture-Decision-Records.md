@@ -158,7 +158,7 @@ Las **decisiones rectoras** del MVP son:
 5. **Defensa cruzada en fronteras**: validación Zod en API, parametrización Prisma en BD, sanitización de prompts en IA, redacción de logs y secretos.
 6. **Cero secretos en el cliente** y **cero tokens en `localStorage`**: cookies HTTP-only firmadas, secretos solo en backend / Secrets Manager.
 
-El presente ADR Log formaliza un total de **46 ADRs** distribuidos en nueve categorías.
+El presente ADR Log formaliza un total de **48 ADRs** distribuidos en nueve categorías (incluye ADR-DEVOPS-008 y ADR-ARCH-005).
 
 ---
 
@@ -170,6 +170,7 @@ El presente ADR Log formaliza un total de **46 ADRs** distribuidos en nueve cate
 | ADR-ARCH-002 | Apply Clean / Hexagonal Architecture Inside Backend Modules | Architecture | Accepted | MVP | Explicit | D12, D14 |
 | ADR-ARCH-003 | Use REST JSON API Instead of GraphQL, tRPC, gRPC, or WebSockets | Architecture | Accepted | MVP | Explicit | D12, D13, D16 |
 | ADR-ARCH-004 | Keep MVP Free of Marketplace Transactional Capabilities | Architecture | Accepted | MVP | Explicit | D2, D3, D8.1, D19 |
+| ADR-ARCH-005 | Promote v1.1-Targeted Deferred Backlog Items (PB-P4 target v1.1) Into the Current Delivery Phase | Architecture | Accepted | MVP | Explicit | D2, D22 |
 | ADR-BE-001 | Use Node.js + Express + TypeScript for Backend | Backend | Accepted | MVP | Explicit | D12, D14 |
 | ADR-BE-002 | Use Prisma as ORM and Keep Prisma in Infrastructure Layer | Backend | Accepted | MVP | Explicit | D14, D18 |
 | ADR-BE-003 | Enforce Business Rules in Application/Domain Layers, Not Controllers | Backend | Accepted | MVP | Explicit | D14, D4 |
@@ -476,6 +477,82 @@ El MVP **no implementa** pagos reales, contratos digitales, escrow, disputas, ni
 ### Trazabilidad
 
 D2, D3 §Out of Scope, D8.1, D19 §Out of Scope.
+
+---
+
+## ADR-ARCH-005 — Promote v1.1-Targeted Deferred Backlog Items (PB-P4 target v1.1) Into the Current Delivery Phase
+
+| Campo | Valor |
+|---|---|
+| Estado | Accepted |
+| Fecha | 2026-08-13 |
+| Categoría | Architecture |
+| Alcance | MVP |
+| Source type | Explicit |
+| Drivers | Decisión explícita de Product Owner de ampliar el alcance de esta fase; capacidad de entrega disponible; cierre de brechas funcionales (OAuth, multi-rol, multi-colaborador, respuesta a reseñas, IA de vendor, AnthropicProvider) |
+| Documentos fuente | D2, D22, Product-Backlog-Prioritized §4.1 y §11 |
+
+### Contexto
+
+El `Product-Backlog-Prioritized.md` (§4.1 Decisiones PO aplicadas y §11 Backlog P4 — Future / Out of Scope) difirió un conjunto de items fuera del MVP inicial, cada uno con un `Recommended target`. Un subconjunto de esos items quedó marcado con target **v1.1** (no "Future / Out of Scope"): representan capacidades pospuestas por secuenciación, no por estar fuera del producto.
+
+El Product Owner decidió explícitamente que **todos los items del Backlog P4 con `Recommended target = v1.1` comienzan a realizarse en la fase de delivery actual**. Esta decisión requiere un ADR de override porque contradice la clasificación de diferición registrada en el backlog priorizado, y porque varios de esos items estaban además sujetos a ADRs candidatos o de stub (p. ej. SSO/OAuth como candidato futuro, AnthropicProvider como stub).
+
+### Decisión
+
+Se promueven al alcance de la fase de delivery actual los siguientes items P4 con target v1.1:
+
+| Backlog ID (origen) | Related US / Epic | Título | Reconciliación técnica requerida |
+|---|---|---|---|
+| PB-P4-001 | US-008 / EPIC-AUTH-001 | OAuth Google login | Habilita SSO/OAuth (antes ADR-SEC-007 candidato futuro). |
+| PB-P4-002 | US-023 / EPIC-AIP-001 | Vendor genera bio/paquetes con IA (AI-007) | Bajo human-in-the-loop (ADR-AI-005) y validación de schema (ADR-AI-007). |
+| PB-P4-009 | EPIC-FUT-001 | Multi-colaboradores por evento | Revisar modelo de ownership/asignación (ADR-SEC-003). |
+| PB-P4-015 | EPIC-FUT-022 | Multi-rol por usuario | Revisar RBAC single-role → multi-role (ADR-SEC-003). |
+| PB-P4-016 | EPIC-FUT-018 | AnthropicProvider funcional | Override parcial de ADR-AI-004 (stub) cuando se ejecute su US. |
+| PB-P4-017 | EPIC-FUT-019 | Respuesta del vendor a reseñas | Sin cambios de moderación automática (sigue manual). |
+
+Los items P4 con target **Future / Out of Scope** (PB-P4-003, 004, 005, 006, 007, 008, 010, 011, 012, 013, 014) **permanecen fuera de alcance** y no son afectados por este ADR. Las guardrails de MVP que los excluyen (pagos reales, e-signature, WhatsApp, chat real-time, app nativa, push/SMS, FX automático, RAG/Vector DB, moderación IA de reseñas, booking autónomo, billing) siguen vigentes (ADR-ARCH-004, ADR-AI-008 y §9 de este documento).
+
+Este ADR **no reordena** el backlog priorizado ni renumera items. La promoción se aplica a nivel de scope; la ubicación/secuenciación concreta de cada US promovida la determina el flujo de delivery de cada historia (refinement → approval → technical-spec → development-tasks).
+
+### Alternativas consideradas
+
+| Alternativa | Resultado | Razón |
+|---|---|---|
+| Mantener todos los P4 diferidos | Rechazado | Contradice la decisión explícita del PO para esta fase. |
+| Promover todos los P4 (incluidos Future / Out of Scope) | Rechazado | Reintroduciría scope creek prohibido (pagos, e-signature, chat, etc.). |
+| Promover solo los P4 con target v1.1 | Aceptado | Refleja la decisión del PO sin romper las guardrails de MVP. |
+
+### Consecuencias positivas
+
+- Cierra brechas funcionales de autenticación (OAuth), autorización (multi-rol/multi-colaborador) y experiencia (respuesta a reseñas, IA de vendor).
+- Desbloquea el delivery de US-008 y de las demás US v1.1 sin ambigüedad de scope.
+
+### Consecuencias negativas / tradeoffs
+
+- Aumenta el alcance de la fase actual y su carga de QA/seguridad.
+- Requiere reconciliación puntual de ADRs afectados (ADR-SEC-007, ADR-AI-004) al ejecutar cada US.
+
+### Implicaciones de implementación
+
+- Cada US promovida se procesa por el flujo estándar de delivery; su Technical Specification y Development Tasks se generan bajo este ADR como autoridad de scope.
+- ADR-SEC-007 (SSO/OAuth) pasa de candidato futuro a habilitado para US-008; mantiene los requisitos de ADR-SEC-002 (cookies HTTP-only) y ADR-SEC-006 (CSRF/CORS/headers).
+- ADR-AI-004 (AnthropicProvider stub) se mantiene salvo cuando se ejecute PB-P4-016, momento en el que su override se documentará en el ADR de AI correspondiente.
+
+### Implicaciones de testing
+
+- Cada US promovida debe cumplir sus quality gates (unit, integración, seguridad negativa, E2E) como cualquier item del MVP (ADR-TEST-004).
+
+### Riesgos y mitigaciones
+
+| Riesgo | Mitigación |
+|---|---|
+| Scope creep hacia items Future / Out of Scope | Este ADR limita la promoción exclusivamente a los P4 con target v1.1; el resto sigue bloqueado por ADR-ARCH-004 y §9. |
+| Desalineación de ADRs técnicos (SEC-007, AI-004) | Reconciliar por US al momento de su delivery. |
+
+### Trazabilidad
+
+Product-Backlog-Prioritized §4.1 y §11 (PB-P4-001, -002, -009, -015, -016, -017), D2 (Decisiones PO), ADR-SEC-007, ADR-AI-004, ADR-SEC-003, ADR-AI-005/007.
 
 ---
 
@@ -3263,7 +3340,7 @@ Decisiones que probablemente requerirán un ADR formal después del MVP:
 | ADR-ARCH-005 | Extracción de módulo a microservicio | Cuando un módulo del monolito sature un solo dominio. |
 | ADR-AI-009 | Adopción de Anthropic como segundo proveedor activo | Cuando justifique uso productivo. |
 | ADR-AI-010 | Function calling / tool use estructurado | Cuando se introduzca interacción con herramientas externas. |
-| ADR-SEC-007 | MFA y SSO/OAuth | Cuando se requiera login federado. |
+| ADR-SEC-007 | MFA y SSO/OAuth | **Reconciliación:** SSO/OAuth con Google **habilitado** e implementado en US-008 (por ADR-ARCH-005); mantiene ADR-SEC-002 (cookies HTTP-only) y ADR-SEC-006 (CSRF/CORS/headers). **MFA** y otros proveedores federados siguen siendo futuro (cuando se requiera). |
 | ADR-SEC-008 | WAF y protección DDoS | Cuando el tráfico justifique CloudFront + WAF. |
 | ADR-DEVOPS-008 | Trazas distribuidas (OpenTelemetry) | Cuando se necesite tracing detallado. |
 | ADR-DEVOPS-009 | Migración de App Runner a ECS Fargate | Cuando se requieran controles más finos. |

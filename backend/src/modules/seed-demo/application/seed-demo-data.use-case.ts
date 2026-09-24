@@ -419,6 +419,28 @@ export class SeedDemoDataUseCase {
       counts,
     );
 
+    // US-008 (SEED-001, opcional): usuario demo SOLO-OAuth (sin contraseña) con `google_sub`, para
+    // demostrar el login OAuth de un usuario existente (AC-01). El `google_sub` coincide con la
+    // identidad por defecto del `MockOAuthProvider`, de modo que en Local/CI/Demo el botón
+    // "Continuar con Google" inicia sesión directamente en esta cuenta. Idempotente (por email).
+    await ensure(
+      () => tx.user.findUnique({ where: { email: 'demo.google@seed.eventflow.test' } }),
+      () =>
+        tx.user.create({
+          data: {
+            email: 'demo.google@seed.eventflow.test',
+            passwordHash: null,
+            googleSub: 'mock-google-sub-demo',
+            fullName: 'Demo Google',
+            role: 'organizer',
+            status: 'active',
+            preferredLanguage: 'es_LATAM',
+            isSeed: true,
+          },
+        }),
+      counts,
+    );
+
     const organizers = [];
     for (let i = 0; i < ORGANIZER_NAMES.length; i += 1) {
       const email = seedEmail('organizer', i);

@@ -11,6 +11,7 @@ import { describe, expect, it, vi } from 'vitest';
 // Se mockea con el mismo patrón preexistente en `tests/integration/auth/login-form.test.tsx`.
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 import esLatamAuth from '@/messages/es-LATAM/auth.json';

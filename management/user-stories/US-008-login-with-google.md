@@ -9,12 +9,15 @@
 | Feature            | OAuth Google (Could Have)            |
 | Module / Domain    | Auth                                 |
 | User Role          | Anonymous                            |
-| Priority           | Could Have                           |
-| Status             | Draft                                |
+| Priority           | Could Have (promovida a delivery actual vía ADR-ARCH-005) |
+| Status             | Approved                             |
 | Owner              | Product Owner / Business Analyst     |
-| Sprint / Milestone | MVP (Could) / Future si se difiere   |
+| Approved By        | PO/BA Review                         |
+| Approval Date      | 2026-08-13                           |
+| Ready for Development Tasks | Yes                          |
+| Sprint / Milestone | Fase de delivery actual (promovida desde Backlog P4 / v1.1) |
 | Created Date       | 2026-06-09                           |
-| Last Updated       | 2026-06-09                           |
+| Last Updated       | 2026-08-13                           |
 
 ---
 
@@ -49,6 +52,16 @@ OAuth Google es una capacidad **Could Have** para el MVP, listada en EPIC-AUTH-0
 
 ---
 
+## ✅ PO/BA Decisions Applied
+
+| # | Decisión | Fuente | Efecto en esta US |
+| - | -------- | ------ | ----------------- |
+| 1 | **Promover US-008 a la fase de delivery actual.** Los items del Backlog P4 con `Recommended target = v1.1` (incluido PB-P4-001) dejan de estar diferidos y se realizan en esta fase. | Decisión PO 2026-08-13 · **ADR-ARCH-005** · Product-Backlog-Prioritized §4.1 y §11 | Levanta el bloqueo de scope MVP. US-008 pasa a `Ready for Approval`. |
+| 2 | **Habilitar SSO/OAuth para US-008.** ADR-SEC-007 (SSO/OAuth) pasa de candidato futuro a habilitado para esta historia, manteniendo ADR-SEC-002 (cookies HTTP-only) y ADR-SEC-006 (CSRF/CORS/headers). | ADR-ARCH-005 · ADR-SEC-007 | Autoriza el flujo OAuth Google descrito en los AC. |
+| 3 | **Sin multi-rol por OAuth.** La cuenta sigue single-role; en primer signup se selecciona `organizer` o `vendor`. Admin nunca vía Google. | US original · ADR-SEC-003 | Confirma VR-03 y el escenario negativo de admin. |
+
+---
+
 ## 🔗 Traceability
 
 | Source                 | Reference                              |
@@ -60,7 +73,7 @@ OAuth Google es una capacidad **Could Have** para el MVP, listada en EPIC-AUTH-0
 | Data Entity / Entities | User (campo `google_sub`)              |
 | API Endpoint(s)        | GET /api/v1/auth/google, GET /api/v1/auth/google/callback |
 | NFR Reference(s)       | NFR-SEC-003                            |
-| Related ADR(s)         | ADR-SEC-001                            |
+| Related ADR(s)         | ADR-ARCH-005, ADR-SEC-001, ADR-SEC-002, ADR-SEC-003, ADR-SEC-006, ADR-SEC-007 |
 | Related Document(s)    | /docs/19                               |
 
 ---
@@ -69,8 +82,8 @@ OAuth Google es una capacidad **Could Have** para el MVP, listada en EPIC-AUTH-0
 
 ### MVP Scope
 
-* Scope Classification: Requires PO Decision (incluido como Could)
-* MVP Relevance: Could Have
+* Scope Classification: In scope — promovida a delivery actual (ADR-ARCH-005; decisión PO 2026-08-13)
+* MVP Relevance: Promovida desde Could Have / Backlog P4 (v1.1)
 
 ### Explicitly Out of Scope
 
@@ -104,7 +117,7 @@ OAuth Google es una capacidad **Could Have** para el MVP, listada en EPIC-AUTH-0
 
 **Given** existe User con ese email registrado por email/password sin Google
 **When** completa OAuth
-**Then** el sistema vincula `google_sub` al User existente tras confirmación del usuario.
+**Then** el sistema solicita confirmación explícita de vinculación al usuario; solo tras confirmar, vincula `google_sub` al User existente y establece la sesión. Si el usuario no confirma, no se vincula y la sesión queda anónima.
 
 ---
 
@@ -375,7 +388,7 @@ Not applicable for this story.
 * [x] UX states identificados.
 * [x] API definida.
 * [x] Tests definidos.
-* [ ] PO confirma incluir en MVP o diferir.
+* [x] PO confirma incluir en MVP o diferir. → **Promovida a delivery actual** (ADR-ARCH-005, decisión PO 2026-08-13).
 
 ---
 
@@ -390,5 +403,5 @@ Not applicable for this story.
 
 ## 📝 Notes
 
-* Confirmar con PO si esta historia entra al MVP o se difiere a Future (EPIC-FUT correspondiente).
+* Decisión PO resuelta (2026-08-13, ADR-ARCH-005): US-008 se promueve a la fase de delivery actual desde el Backlog P4 (v1.1). Ya no se difiere.
 * Verificar política de datos (no almacenar id_token, sólo `sub`).

@@ -107,6 +107,11 @@ function buildDeps(user: AuthUserWithSecret | null): {
       create: () => Promise.reject(new Error('unused')),
       updateProfile: () => Promise.reject(new Error('unused')),
       updatePasswordHash: () => Promise.resolve(),
+      // US-008 / BE-004: métodos OAuth no usados en este flujo (stubs).
+      findByGoogleSub: () => Promise.resolve(null),
+      findOAuthAccountByEmail: () => Promise.resolve(null),
+      linkGoogleSub: () => Promise.reject(new Error('unused')),
+      createOAuthUser: () => Promise.reject(new Error('unused')),
     },
     hasher: { hash: (p) => Promise.resolve(`h:${p}`), verify: verifySpy },
     verifySpy,

@@ -223,6 +223,13 @@ export const ErrorCodes = {
   // envelope emite un `correlationId` server-generated (nunca propaga el
   // valor inválido del cliente). Ver `docs/16 §errores comunes`.
   INVALID_CORRELATION_ID: 'INVALID_CORRELATION_ID',
+  // US-008 (PB-P4-001): Login con Google (OAuth). Códigos estables del flujo OIDC. Los mensajes
+  // al usuario son SIEMPRE neutros (SEC-05 / VR-01/VR-02); el `reason` interno solo se registra
+  // en el log de observabilidad (`auth.oauth.google.failure`), nunca en la respuesta.
+  OAUTH_STATE_INVALID: 'OAUTH_STATE_INVALID', // 400 — state ausente/alterado/expirado (SEC-03, NT-02)
+  OAUTH_VERIFICATION_FAILED: 'OAUTH_VERIFICATION_FAILED', // 400 — id_token inválido/expirado/aud/iss/nonce o email_verified=false (VR-01/02, EC-01, NT-01/03)
+  OAUTH_ACCOUNT_CONFLICT: 'OAUTH_ACCOUNT_CONFLICT', // 409 — google_sub ya vinculado a otra cuenta / email con otro google_sub
+  OAUTH_CONTINUATION_INVALID: 'OAUTH_CONTINUATION_INVALID', // 410 — token de continuación (rol/vinculación) inválido o expirado
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

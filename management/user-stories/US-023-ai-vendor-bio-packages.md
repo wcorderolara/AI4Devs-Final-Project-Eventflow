@@ -9,12 +9,15 @@
 | Feature            | AI-007 Bio/paquetes IA del proveedor  |
 | Module / Domain    | AI / Vendors                         |
 | User Role          | Vendor                               |
-| Priority           | Could Have                           |
-| Status             | Draft                                |
+| Priority           | Could Have (promovida a delivery actual vía ADR-ARCH-005) |
+| Status             | Approved                             |
 | Owner              | Product Owner / Business Analyst     |
-| Sprint / Milestone | MVP (Could) / Future si se difiere   |
+| Approved By        | PO/BA Review                         |
+| Approval Date      | 2026-08-13                           |
+| Ready for Development Tasks | Yes                          |
+| Sprint / Milestone | Fase de delivery actual (promovida desde Backlog P4 / v1.1) |
 | Created Date       | 2026-06-09                           |
-| Last Updated       | 2026-06-09                           |
+| Last Updated       | 2026-08-13                           |
 
 ---
 
@@ -49,6 +52,16 @@ AI-007 (Could Have) ayuda al vendor a redactar bio y descripciones de servicios.
 
 ---
 
+## ✅ PO/BA Decisions Applied
+
+| # | Decisión | Fuente | Efecto en esta US |
+| - | -------- | ------ | ----------------- |
+| 1 | **Promover US-023 a la fase de delivery actual.** Los items del Backlog P4 con `Recommended target = v1.1` (incluido PB-P4-002) dejan de estar diferidos y se realizan en esta fase. | Decisión PO 2026-08-13 · **ADR-ARCH-005** · Product-Backlog-Prioritized §4.1 y §11 | Levanta el bloqueo de scope MVP. US-023 pasa a `Ready for Approval`. |
+| 2 | **Human-in-the-loop obligatorio.** La IA propone bio/paquetes; el vendor revisa y guarda. No hay auto-publicación ni moderación automática. | US original · ADR-AI-005 · ADR-AI-007 | Confirma AC-01/AC-02 y el guardrail de no-moderación IA. |
+| 3 | **Persistir `AIRecommendation`** (`kind='vendor_bio'`/`'vendor_packages'`) con validación de schema y fallback. | US original · ADR-AI-001/003/007 | El esquema ya soporta `vendor_bio` (`AIRecommendation.vendorProfileId` nullable). |
+
+---
+
 ## 🔗 Traceability
 
 | Source                 | Reference                                |
@@ -60,7 +73,7 @@ AI-007 (Could Have) ayuda al vendor a redactar bio y descripciones de servicios.
 | Data Entity / Entities | VendorProfile, VendorService, AIRecommendation |
 | API Endpoint(s)        | POST /api/v1/vendors/me/ai/bio, POST /api/v1/vendors/me/ai/packages |
 | NFR Reference(s)       | NFR-AI-001                               |
-| Related ADR(s)         | ADR-AI-001                               |
+| Related ADR(s)         | ADR-ARCH-005, ADR-AI-001, ADR-AI-003, ADR-AI-005, ADR-AI-007, ADR-SEC-003 |
 | Related Document(s)    | /docs/7                                  |
 
 ---
@@ -69,8 +82,8 @@ AI-007 (Could Have) ayuda al vendor a redactar bio y descripciones de servicios.
 
 ### MVP Scope
 
-* Scope Classification: In Scope (Could)
-* MVP Relevance: Could Have
+* Scope Classification: In scope — promovida a delivery actual (ADR-ARCH-005; decisión PO 2026-08-13)
+* MVP Relevance: Promovida desde Could Have / Backlog P4 (v1.1)
 
 ### Explicitly Out of Scope
 
@@ -346,7 +359,7 @@ AI-007 (Could Have) ayuda al vendor a redactar bio y descripciones de servicios.
 * [x] UX states identificados.
 * [x] API definida.
 * [x] Tests definidos.
-* [ ] PO/BA validó (Could → confirmar inclusión MVP).
+* [x] PO/BA validó (Could → confirmar inclusión MVP). → **Promovida a delivery actual** (ADR-ARCH-005, decisión PO 2026-08-13).
 
 ---
 
@@ -361,4 +374,4 @@ AI-007 (Could Have) ayuda al vendor a redactar bio y descripciones de servicios.
 
 ## 📝 Notes
 
-* Considerar diferir a Future si el plan no alcanza.
+* Decisión PO resuelta (2026-08-13, ADR-ARCH-005): US-023 se promueve a la fase de delivery actual desde el Backlog P4 (v1.1). Ya no se difiere.

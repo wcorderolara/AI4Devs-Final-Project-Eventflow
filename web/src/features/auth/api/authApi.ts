@@ -48,4 +48,28 @@ export const authRegisterApi = {
   async resetPassword(input: ResetPasswordRequestDTO): Promise<void> {
     await httpPost<unknown, ResetPasswordRequestDTO>('/auth/password/reset', { body: input });
   },
+
+  /**
+   * US-008 / FE-002: completa el signup OAuth con el rol elegido. La continuación viaja en la
+   * cookie HTTP-only emitida por el callback (`credentials: 'include'`); el backend responde 201
+   * con la sesión emitida. Errores: 410 OAUTH_CONTINUATION_INVALID (continuación ausente/expirada).
+   */
+  async completeGoogleSignup(role: 'organizer' | 'vendor'): Promise<RegisteredUser> {
+    const dto = await httpPost<AuthUserEnvelopeDTO, { role: 'organizer' | 'vendor' }>(
+      '/auth/google/complete-signup',
+      { body: { role } },
+    );
+    return mapAuthUserEnvelopeToRegisteredUser(dto);
+  },
+
+  /**
+   * US-008 / FE-003: confirma la vinculación de la cuenta Google a una cuenta email/password
+   * existente (AC-03). Solo procede con confirmación explícita; el backend responde 200 con sesión.
+   */
+  async confirmGoogleLink(): Promise<RegisteredUser> {
+    const dto = await httpPost<AuthUserEnvelopeDTO, { confirm: true }>('/auth/google/confirm-link', {
+      body: { confirm: true },
+    });
+    return mapAuthUserEnvelopeToRegisteredUser(dto);
+  },
 };

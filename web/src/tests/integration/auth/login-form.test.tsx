@@ -18,6 +18,8 @@ const push = vi.fn();
 const refresh = vi.fn();
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push, replace: vi.fn(), refresh, prefetch: vi.fn() }),
+  // US-008: LoginForm lee `?oauth=cancelled` con useSearchParams (EC-02).
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 afterEach(() => {

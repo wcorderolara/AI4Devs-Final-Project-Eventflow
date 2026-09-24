@@ -29,7 +29,7 @@ El documento es **implementation-ready**: cada política tiene un identificador,
 ### 2.1 Incluye
 
 - Modelo de amenazas adaptado a un MVP académico.
-- Diseño de autenticación basado en email + contraseña, sin OAuth obligatorio.
+- Diseño de autenticación basado en email + contraseña, con **OAuth Google habilitado** como método adicional (US-008, promovido por ADR-ARCH-005; ADR-SEC-007 SSO/OAuth pasa de futuro a habilitado). OAuth no es obligatorio ni reemplaza email + password.
 - Estrategia de sesión y cookies HTTP-only firmadas.
 - Política de contraseñas, hashing (`argon2id` / `bcrypt`) y reset por token de un solo uso.
 - Anti-bot (captcha) y rate limiting para flujos sensibles.
@@ -1343,7 +1343,7 @@ correlationIdMiddleware
 | ID | Capacidad | Disparador típico |
 |---|---|---|
 | ROAD-SEC-001 | MFA con TOTP | Crecimiento de usuarios y cuentas admin sensibles. |
-| ROAD-SEC-002 | OAuth social (Google) endurecido | Demanda UX. |
+| ROAD-SEC-002 | OAuth social (Google) | **Implementado** en US-008 (ADR-ARCH-005): OIDC Authorization Code, verificación de `id_token` con JWK (`aud`/`iss`/`exp`/`nonce`/`email_verified`), `state`+`nonce` anti-CSRF, cookie HTTP-only. Endurecimiento adicional (rate limiting avanzado, más proveedores) queda como futuro. |
 | ROAD-SEC-003 | CSRF token doble | Si se requiere `SameSite=None`. |
 | ROAD-SEC-004 | Refresh tokens rotativos | Si la sesión migra a JWT explícito. |
 | ROAD-SEC-005 | Malware scanning de uploads | Cuando se acepten archivos de mayor riesgo. |

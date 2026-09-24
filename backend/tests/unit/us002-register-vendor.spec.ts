@@ -124,6 +124,19 @@ class MemUsers implements UserRepository {
   updatePasswordHash(): Promise<void> {
     return Promise.resolve();
   }
+  // US-008 / BE-004: métodos OAuth no usados en este flujo (stubs).
+  findByGoogleSub(): Promise<AuthUser | null> {
+    return Promise.resolve(null);
+  }
+  findOAuthAccountByEmail(): Promise<null> {
+    return Promise.resolve(null);
+  }
+  linkGoogleSub(): Promise<AuthUser> {
+    return Promise.reject(new Error('not used'));
+  }
+  createOAuthUser(): Promise<AuthUser> {
+    return Promise.reject(new Error('not used'));
+  }
 }
 
 describe('US-002 BE-002/OBS-001 — flujo vendor del use case (N4)', () => {

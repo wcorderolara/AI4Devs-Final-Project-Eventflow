@@ -3,11 +3,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LogIn } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { ApiError } from '@/shared/api-client';
 import { Alert, Button, FormField, Input, PasswordInput, TextLink } from '@/shared/design-system';
 import { CaptchaWidget } from './CaptchaWidget';
+import { GoogleSignInButton } from './GoogleSignInButton';
 import { useLogin } from '../hooks/useLogin';
 import { loginSchema, type LoginFormValues } from '../schemas/loginSchema';
 
@@ -44,6 +46,10 @@ const KNOWN_ERROR_CODES = new Set([
  */
 export function LoginForm({ from }: { from?: string | null }): React.JSX.Element {
   const t = useTranslations('auth.login');
+  const tg = useTranslations('auth.google');
+  const searchParams = useSearchParams();
+  // EC-02 (US-008): el usuario canceló el consentimiento OAuth (`?oauth=cancelled`) → aviso neutro.
+  const oauthCancelled = searchParams?.get('oauth') === 'cancelled';
   const mutation = useLogin({ from });
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [captchaVisible, setCaptchaVisible] = useState(false);
@@ -119,6 +125,12 @@ export function LoginForm({ from }: { from?: string | null }): React.JSX.Element
       {globalError ? (
         <Alert ref={errorRef} variant="error" live tabIndex={-1} className="mt-6">
           {globalError}
+        </Alert>
+      ) : null}
+
+      {oauthCancelled && !globalError ? (
+        <Alert variant="warning" live className="mt-6">
+          {tg('cancelled')}
         </Alert>
       ) : null}
 
@@ -199,6 +211,12 @@ export function LoginForm({ from }: { from?: string | null }): React.JSX.Element
         >
           {t('submit')}
         </Button>
+
+        {/* US-008 / FE-001: alternativa OAuth Google (server-driven). Separador decorativo. */}
+        <div className="flex items-center gap-3" aria-hidden="true">
+          <span className="h-px flex-1 bg-subtle" />
+        </div>
+        <GoogleSignInButton />
       </div>
 
       <p className="mt-8 border-t border-subtle pt-6 text-center font-body text-body-sm text-secondary">

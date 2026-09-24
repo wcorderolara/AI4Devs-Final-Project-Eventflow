@@ -16,6 +16,10 @@ export class ChangePasswordUseCase {
     const user = await this.users.findByIdWithSecret(userId);
     if (!user) throw new UnauthorizedError();
 
+    // US-008 (DB-001): una cuenta creada solo por OAuth Google no tiene `passwordHash`; no puede
+    // cambiar una contraseña que no existe → 401 genérico (mismo mensaje anti-enumeración).
+    if (user.passwordHash === null) throw new UnauthorizedError('Invalid credentials');
+
     const ok = await this.hasher.verify(input.currentPassword, user.passwordHash);
     if (!ok) throw new UnauthorizedError('Invalid credentials');
 

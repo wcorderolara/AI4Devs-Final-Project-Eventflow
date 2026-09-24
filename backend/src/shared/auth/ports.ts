@@ -5,6 +5,8 @@ import type {
   AuthUser,
   AuthUserWithSecret,
   CreateUserInput,
+  CreateOAuthUserInput,
+  OAuthAccount,
   UpdateProfileInput,
   ResolvedSession,
 } from './types.js';
@@ -22,6 +24,22 @@ export interface UserRepository {
   updateProfile(userId: string, fields: UpdateProfileInput): Promise<AuthUser>;
   /** Actualiza el hash de contraseña (change-password directo, no reset). */
   updatePasswordHash(userId: string, passwordHash: string): Promise<void>;
+
+  // ── OAuth Google (US-008 / BE-004) ──────────────────────────────────────────
+  /** Login OAuth: resuelve al usuario cuyo `google_sub` coincide (vista pública). */
+  findByGoogleSub(googleSub: string): Promise<AuthUser | null>;
+  /** Vista de resolución por email para decidir login/signup/link (incluye `hasPassword`/`googleSub`). */
+  findOAuthAccountByEmail(email: string): Promise<OAuthAccount | null>;
+  /**
+   * Vincula un `google_sub` a una cuenta existente (AC-03). Falla con conflicto si el `google_sub`
+   * ya pertenece a otra cuenta (UNIQUE). Devuelve la vista pública actualizada.
+   */
+  linkGoogleSub(userId: string, googleSub: string): Promise<AuthUser>;
+  /**
+   * Crea un usuario SOLO-OAuth (sin contraseña) con su `google_sub` (AC-02). Falla con conflicto
+   * si el email o el `google_sub` ya existen.
+   */
+  createOAuthUser(input: CreateOAuthUserInput): Promise<AuthUser>;
 }
 
 export interface SessionRepository {
@@ -99,7 +117,11 @@ export type AuthEventName =
   | 'auth.password_reset.completed'
   | 'auth.password_reset.failed'
   | 'auth.captcha.failed'
-  | 'auth.rate_limited';
+  | 'auth.rate_limited'
+  // US-008 (PB-P4-001 / OBS-001): flujo OAuth Google. `success` en login/signup/link exitoso;
+  // `failure` ante state/verificación/conflicto. NUNCA se loguea `id_token` ni PII sensible (SEC-05).
+  | 'auth.oauth.google.success'
+  | 'auth.oauth.google.failure';
 
 /**
  * Logger de eventos de seguridad de auth (OBS-001). El adapter DEBE redactar/omitir secretos:
