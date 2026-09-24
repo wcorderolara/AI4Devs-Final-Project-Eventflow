@@ -13,6 +13,11 @@ export {
 } from './schemas/passwordResetSchemas';
 export { LoginForm } from './components/LoginForm';
 export { useLogin, safeInternalPath, roleHome } from './hooks/useLogin';
+// US-008 (PB-P4-001): OAuth Google — botón, selección de rol y confirmación de vinculación.
+export { GoogleSignInButton } from './components/GoogleSignInButton';
+export { RoleSelectorOnSignup } from './components/RoleSelectorOnSignup';
+export { LinkAccountConfirmation } from './components/LinkAccountConfirmation';
+export { useCompleteGoogleSignup, useConfirmGoogleLink } from './hooks/useGoogleOAuth';
 export { loginSchema, type LoginFormValues } from './schemas/loginSchema';
 export { RegisterOrganizerPage } from './pages/RegisterOrganizerPage';
 export { RegisterOrganizerForm } from './components/RegisterOrganizerForm';

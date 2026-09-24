@@ -242,6 +242,12 @@ import { AITimeoutError } from '../../domain/errors/ai-timeout.error.js';
 import { AIProviderError } from '../../domain/errors/ai-provider.error.js';
 import { PrismaPersistenceError } from '../../domain/errors/prisma-persistence.error.js';
 import { InfrastructureError } from '../../domain/errors/infrastructure.error.js';
+import {
+  OAuthStateInvalidError,
+  OAuthVerificationError,
+  OAuthAccountConflictError,
+  OAuthContinuationInvalidError,
+} from '../../domain/errors/oauth.errors.js';
 import { ErrorCodes } from '../../domain/errors/error-codes.js';
 import type { ErrorDetail } from '../../response/types.js';
 import { logger } from '../../infrastructure/logger/index.js';
@@ -289,6 +295,20 @@ function mapError(err: unknown): MappedError {
   if (err instanceof MethodNotAllowedError) {
     // US-005 EC-03: método HTTP no permitido en la ruta → 405.
     return { status: 405, code: ErrorCodes.METHOD_NOT_ALLOWED, message: err.message };
+  }
+  // US-008 (PB-P4-001): catálogo OAuth Google. Mensajes neutros (SEC-05); el `reason` NO se
+  // serializa (solo se registra en el log de observabilidad).
+  if (err instanceof OAuthStateInvalidError) {
+    return { status: 400, code: ErrorCodes.OAUTH_STATE_INVALID, message: err.message };
+  }
+  if (err instanceof OAuthVerificationError) {
+    return { status: 400, code: ErrorCodes.OAUTH_VERIFICATION_FAILED, message: err.message };
+  }
+  if (err instanceof OAuthAccountConflictError) {
+    return { status: 409, code: ErrorCodes.OAUTH_ACCOUNT_CONFLICT, message: err.message };
+  }
+  if (err instanceof OAuthContinuationInvalidError) {
+    return { status: 410, code: ErrorCodes.OAUTH_CONTINUATION_INVALID, message: err.message };
   }
   // US-004: catálogo del reset de contraseña (EC-01..03).
   if (err instanceof TokenExpiredError) {

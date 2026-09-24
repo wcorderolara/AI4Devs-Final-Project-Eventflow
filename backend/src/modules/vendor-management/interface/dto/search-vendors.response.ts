@@ -13,7 +13,7 @@ export interface VendorPriceRange {
 
 export interface VendorCardResponse {
   id: string;
-  slug: string;
+  slug: string | null;
   businessName: string;
   locationCode: string | null;
   categories: string[];

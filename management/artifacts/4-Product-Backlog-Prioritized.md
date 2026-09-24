@@ -88,8 +88,8 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 
 | User Story | Tema | Decisión PO aplicada | Resultado en backlog |
 |---|---|---|---|
-| US-008 | Login con Google | Diferir a **P4 / Future / v1.1**. | Movida a Backlog P4 — no entra al MVP. |
-| US-023 | Vendor genera bio/paquetes con IA | Diferir a **P4 / Future / v1.1**. | Movida a Backlog P4 — no entra al MVP. |
+| US-008 | Login con Google | ~~Diferir a P4 / Future / v1.1~~ → **Promovida a delivery actual** (override PO 2026-08-13, ADR-ARCH-005). | Promovida desde Backlog P4 (v1.1) a la fase de delivery actual. |
+| US-023 | Vendor genera bio/paquetes con IA | ~~Diferir a P4 / Future / v1.1~~ → **Promovida a delivery actual** (override PO 2026-08-13, ADR-ARCH-005). | Promovida desde Backlog P4 (v1.1) a la fase de delivery actual. |
 | US-022 | Resumen IA del comparador | Mantener en **P2 / Should Have**. | Incluida en Backlog P2. |
 | US-024 | Top 3 tareas urgentes IA | Mantener en **P2 / Should Have**. | Incluida en Backlog P2. |
 | US-026 | Regenerar sugerencia con feedback | Mantener en **P2 / Should Have**. | Incluida en Backlog P2. |
@@ -2388,6 +2388,8 @@ El orden del backlog se rige por los siguientes principios, en orden de preceden
 ## 11. Backlog P4 — Future / Out of Scope
 
 > Estos items **no entran al MVP**. Se documentan para evitar scope creep y dejar pista para iteraciones futuras.
+
+> **Override de scope (2026-08-13, ADR-ARCH-005 — Decisión PO):** los items P4 con `Recommended target = v1.1` (**PB-P4-001, PB-P4-002, PB-P4-009, PB-P4-015, PB-P4-016, PB-P4-017**) quedan **promovidos a la fase de delivery actual** y dejan de estar diferidos. Los items con target `Future` / `Future (out of scope)` **permanecen fuera de alcance**. Ver `docs/22-Architecture-Decision-Records.md` → ADR-ARCH-005.
 
 | Backlog ID | Related US / Epic | Title | Reason for deferral | Recommended target |
 |---|---|---|---|---|

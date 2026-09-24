@@ -24,9 +24,13 @@ export interface AuthUser {
   updatedAt: Date;
 }
 
-/** Vista interna con el hash — SOLO para verificación de credenciales; jamás se serializa. */
+/**
+ * Vista interna con el hash — SOLO para verificación de credenciales; jamás se serializa.
+ * US-008 (DB-001): `passwordHash` es `null` para cuentas creadas solo por OAuth Google
+ * (sin contraseña). Los consumidores deben tratar `null` como "sin credencial de password".
+ */
 export interface AuthUserWithSecret extends AuthUser {
-  passwordHash: string;
+  passwordHash: string | null;
 }
 
 export interface CreateUserInput {
@@ -42,6 +46,30 @@ export interface UpdateProfileInput {
   name?: string;
   phone?: string | null;
   preferredLanguage?: SupportedLanguage;
+}
+
+/**
+ * Vista de resolución de cuenta para el flujo OAuth (US-008 / BE-004). Expone lo mínimo para
+ * decidir el camino login/signup/link sin serializar secretos: incluye si la cuenta tiene
+ * contraseña (`hasPassword`) y su `googleSub` actual (para detectar conflictos de vinculación).
+ * NUNCA se retorna al cliente; es de uso interno del `HandleGoogleCallbackUseCase`.
+ */
+export interface OAuthAccount {
+  id: string;
+  email: string;
+  role: UserRoleName;
+  status: UserStatusName;
+  hasPassword: boolean;
+  googleSub: string | null;
+}
+
+/** Alta de un usuario creado SOLO por OAuth Google (sin contraseña) — US-008 / BE-004. */
+export interface CreateOAuthUserInput {
+  email: string;
+  googleSub: string;
+  name: string;
+  role: PublicRegistrationRole;
+  preferredLanguage: SupportedLanguage;
 }
 
 /** Identidad resuelta desde una sesión válida (para poblar `req.user`). */

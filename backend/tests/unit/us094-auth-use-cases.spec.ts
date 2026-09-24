@@ -102,6 +102,19 @@ class FakeUserRepo implements UserRepository {
     this.byId.get(userId)!.passwordHash = passwordHash;
     return Promise.resolve();
   }
+  // US-008 / BE-004: métodos OAuth no usados en las pruebas de US-094 (stubs).
+  findByGoogleSub(): Promise<AuthUser | null> {
+    return Promise.resolve(null);
+  }
+  findOAuthAccountByEmail(): Promise<null> {
+    return Promise.resolve(null);
+  }
+  linkGoogleSub(): Promise<AuthUser> {
+    return Promise.reject(new Error('not used'));
+  }
+  createOAuthUser(): Promise<AuthUser> {
+    return Promise.reject(new Error('not used'));
+  }
 }
 
 class FakeSessionRepo implements SessionRepository {

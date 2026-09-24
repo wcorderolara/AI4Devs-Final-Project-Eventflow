@@ -95,6 +95,23 @@ export function calculateT7SeedDueDate(eventDate: Date | null): Date | null {
   return d;
 }
 
+/**
+ * Slug del vendor demo. Replica `slugify` de `vendor-management` (no importable cross-module,
+ * ADR-ARCH-001): minúsculas, sin diacríticos, sólo `[a-z0-9-]`.
+ */
+function seedVendorSlug(businessName: string): string {
+  return businessName
+    .toLowerCase()
+    .normalize('NFD')
+    // eslint-disable-next-line no-misleading-character-class
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 async function ensure<T>(
   find: () => Promise<T | null>,
   create: () => Promise<T>,
@@ -402,6 +419,28 @@ export class SeedDemoDataUseCase {
       counts,
     );
 
+    // US-008 (SEED-001, opcional): usuario demo SOLO-OAuth (sin contraseña) con `google_sub`, para
+    // demostrar el login OAuth de un usuario existente (AC-01). El `google_sub` coincide con la
+    // identidad por defecto del `MockOAuthProvider`, de modo que en Local/CI/Demo el botón
+    // "Continuar con Google" inicia sesión directamente en esta cuenta. Idempotente (por email).
+    await ensure(
+      () => tx.user.findUnique({ where: { email: 'demo.google@seed.eventflow.test' } }),
+      () =>
+        tx.user.create({
+          data: {
+            email: 'demo.google@seed.eventflow.test',
+            passwordHash: null,
+            googleSub: 'mock-google-sub-demo',
+            fullName: 'Demo Google',
+            role: 'organizer',
+            status: 'active',
+            preferredLanguage: 'es_LATAM',
+            isSeed: true,
+          },
+        }),
+      counts,
+    );
+
     const organizers = [];
     for (let i = 0; i < ORGANIZER_NAMES.length; i += 1) {
       const email = seedEmail('organizer', i);
@@ -464,12 +503,16 @@ export class SeedDemoDataUseCase {
       // US-042 SEED-001: el primer vendor demo carga `categoryChangeCount=4` para poder
       // demostrar el bloqueo `409 CATEGORY_CHANGE_LIMIT` al 5to/6to cambio sin scripting.
       const isCategoryLimitDemoVendor = i === 0;
-      const profile = await ensure(
+      // El directorio y el perfil público navegan por `slug` (`/vendors/:slug`): sin él la card
+      // enlaza a `/vendors/null`. `VENDOR_BUSINESSES` son únicos, así que el slug también.
+      const slug = seedVendorSlug(VENDOR_BUSINESSES[i]!);
+      let profile = await ensure(
         () => tx.vendorProfile.findUnique({ where: { userId: user.id } }),
         () =>
           tx.vendorProfile.create({
             data: {
               userId: user.id,
+              slug,
               businessName: VENDOR_BUSINESSES[i]!,
               bio: `${VENDOR_BUSINESSES[i]} — proveedor demo de eventos LATAM.`,
               status: 'approved',
@@ -482,6 +525,10 @@ export class SeedDemoDataUseCase {
           }),
         counts,
       );
+      // Re-run sobre una BD sembrada antes de este fix: completa el slug faltante.
+      if (profile.slug === null) {
+        profile = await tx.vendorProfile.update({ where: { id: profile.id }, data: { slug } });
+      }
       // Un servicio por vendor, categoría rotada.
       const category = categories[i % categories.length]!;
       await ensure(

@@ -151,7 +151,15 @@ enum AIPromptVersionStatus {
 model User {
   id                String       @id @default(uuid()) @db.Uuid
   email             String       @unique
-  passwordHash      String       @map("password_hash")
+  // US-008 (PB-P4-001 / DB-001): `password_hash` pasa a NULLABLE para admitir cuentas creadas
+  // SOLO por OAuth Google (sin contraseña). Invariante de aplicación: un User debe tener
+  // `passwordHash` O `googleSub` (al menos un método de autenticación) — se valida en la capa
+  // de aplicación (BE-003), no como CHECK físico (Tech Spec §10).
+  passwordHash      String?      @map("password_hash")
+  // US-008 (PB-P4-001 / DB-001): `sub` OIDC de Google (identificador estable del usuario en el
+  // proveedor). Nullable (cuentas email/password no lo tienen), UNIQUE (una cuenta por identidad
+  // Google), indexado por el `@unique`. NUNCA se persiste el `id_token` ni otros claims (SEC-05).
+  googleSub         String?      @unique @map("google_sub")
   fullName          String?      @map("full_name")
   // US-094 (PB-P0-004): teléfono opcional de perfil propio (editable por PATCH /users/me).
   phone             String?
@@ -963,18 +971,18 @@ model AIRecommendation {
   // hijos cuando el padre se elimina (los hijos siguen siendo válidos; el 404 al *regenerar*
   // desde un padre eliminado se cubre en aplicación, D-01 del execution record).
   parentRecommendationId String? @map("parent_recommendation_id") @db.Uuid
-  rootRecommendationId   String? @map("root_recommendation_id")   @db.Uuid
+  rootRecommendationId   String? @map("root_recommendation_id") @db.Uuid
   regenerationFeedback   String? @map("regeneration_feedback")
 
-  event         Event?          @relation(fields: [eventId], references: [id], onDelete: Restrict)
-  promptVersion AIPromptVersion @relation(fields: [aiPromptVersionId], references: [id], onDelete: Restrict)
-  requestedBy   User            @relation(fields: [requestedByUserId], references: [id], onDelete: Restrict)
-  vendorProfile VendorProfile?  @relation(fields: [vendorProfileId], references: [id], onDelete: Restrict)
-  quoteRequest  QuoteRequest?   @relation(fields: [quoteRequestId], references: [id], onDelete: Restrict)
+  event         Event?             @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  promptVersion AIPromptVersion    @relation(fields: [aiPromptVersionId], references: [id], onDelete: Restrict)
+  requestedBy   User               @relation(fields: [requestedByUserId], references: [id], onDelete: Restrict)
+  vendorProfile VendorProfile?     @relation(fields: [vendorProfileId], references: [id], onDelete: Restrict)
+  quoteRequest  QuoteRequest?      @relation(fields: [quoteRequestId], references: [id], onDelete: Restrict)
   // US-031 (PB-P1-017): relación inversa con `event_tasks.ai_recommendation_id`.
-  eventTasks    EventTask[]     @relation("EventTaskAIRecommendation")
+  eventTasks    EventTask[]        @relation("EventTaskAIRecommendation")
   // US-037 (PB-P1-021): relación inversa con `budget_items.ai_recommendation_id`.
-  budgetItems   BudgetItem[]    @relation("BudgetItemAIRecommendation")
+  budgetItems   BudgetItem[]       @relation("BudgetItemAIRecommendation")
   // US-026 (PB-P2-003): relaciones inversas del linaje self-referente.
   parent        AIRecommendation?  @relation("AIRecommendationLineage", fields: [parentRecommendationId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   children      AIRecommendation[] @relation("AIRecommendationLineage")

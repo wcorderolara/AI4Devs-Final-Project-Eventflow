@@ -75,7 +75,7 @@ describe.skipIf(!dbUp)('US-001 QA-002 — registro end-to-end sin HTTP (Postgres
     expect(row).not.toBeNull();
     expect(row?.role).toBe('organizer');
     expect(row?.status).toBe('active');
-    expect(row?.passwordHash.startsWith('$argon2id$')).toBe(true);
+    expect(row?.passwordHash?.startsWith('$argon2id$')).toBe(true);
     expect(row?.passwordHash).toContain('m=19456,t=2,p=1');
 
     const session = await prisma.session.findUnique({ where: { id: sessionId } });

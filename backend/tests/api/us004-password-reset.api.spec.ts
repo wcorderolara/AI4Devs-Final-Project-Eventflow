@@ -104,7 +104,7 @@ describe.skipIf(!dbUp)('US-004 QA-002 — reset con token (catálogo EC-01..03)'
     expect(reset.status).toBe(204);
 
     const row = await prisma.user.findUnique({ where: { email } });
-    expect(row?.passwordHash.startsWith('$argon2id$')).toBe(true);
+    expect(row?.passwordHash?.startsWith('$argon2id$')).toBe(true);
 
     const login = await request(app)
       .post('/api/v1/auth/login')

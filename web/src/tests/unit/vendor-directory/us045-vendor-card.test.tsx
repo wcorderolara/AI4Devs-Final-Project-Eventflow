@@ -57,6 +57,28 @@ describe('US-045 QA-005 — VendorCard', () => {
     expect(screen.queryByText(/rango de precio/i)).toBeNull();
   });
 
+  it('linkToProfile: enlaza al perfil por slug y estira el enlace sobre toda la card', () => {
+    render(wrap(<VendorCard vendor={card()} linkToProfile />));
+    const link = screen.getByRole('link', { name: 'Banquetes El Quetzal' });
+    expect(link.getAttribute('href')).toBe('/vendors/banquetes-el-quetzal');
+    // Stretched link: el `::after` absoluto cubre la card (`relative`) → toda la card es clicable.
+    expect(link.className).toContain('after:absolute');
+    expect(link.className).toContain('after:inset-0');
+    expect(screen.getByRole('article').className).toContain('relative');
+  });
+
+  it('linkToProfile sin slug: no renderiza enlace (evita /vendors/null)', () => {
+    render(wrap(<VendorCard vendor={card({ slug: null })} linkToProfile />));
+    expect(screen.queryByRole('link')).toBeNull();
+    expect(screen.getByRole('article', { name: 'Banquetes El Quetzal' })).toBeDefined();
+  });
+
+  it('A11Y: sin violaciones axe con linkToProfile', async () => {
+    const { container } = render(wrap(<VendorCard vendor={card()} linkToProfile />));
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
+  });
+
   it('A11Y: sin violaciones axe', async () => {
     const { container } = render(wrap(<VendorCard vendor={card()} />));
     const results = await axe(container);

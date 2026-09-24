@@ -53,6 +53,24 @@ export const configSchema = z.object({
   RESET_TOKEN_TTL_MINUTES: z.coerce.number().int().positive().default(30),
   BCRYPT_SALT_ROUNDS: z.coerce.number().int().min(10).max(15).default(12), // SEC-05
 
+  // OAUTH GOOGLE (US-008 / PB-P4-001 — ADR-SEC-007 habilitado vía ADR-ARCH-005).
+  // Feature flag: cuando `false` (default) los endpoints `/auth/google*` devuelven 404 natural
+  // (no se montan) y el botón del frontend no aparece. Cuando `true` exige client id/secret y
+  // redirect URI (validado en `superRefine`). Secretos SOLO backend / Secrets Manager (ADR-SEC-005);
+  // NUNCA `NEXT_PUBLIC_*` y NUNCA hardcodeados en el repo.
+  GOOGLE_OAUTH_ENABLED: booleanFromEnv.default(false),
+  GOOGLE_OAUTH_CLIENT_ID: z.string().optional(),
+  GOOGLE_OAUTH_CLIENT_SECRET: z.string().optional(),
+  // Redirect URI del CALLBACK backend registrada en Google Cloud Console (por entorno). Ej.
+  // `http://localhost:3000/api/v1/auth/google/callback`.
+  GOOGLE_OAUTH_REDIRECT_URI: z.string().url().optional(),
+  // Base URL de la app web para las redirecciones post-callback (botón/selección de rol/
+  // confirmación). Default = origin del frontend en desarrollo.
+  GOOGLE_OAUTH_WEB_APP_URL: z.string().url().default('http://localhost:3000'),
+  // TTL (segundos) de la cookie firmada de `state`/`nonce` y del token de continuación de corta
+  // vida (rol/confirmación de vinculación). De un solo uso; ventana corta anti-replay (SEC-03).
+  OAUTH_STATE_TTL_SECONDS: z.coerce.number().int().positive().default(600),
+
   // AI
   LLM_PROVIDER: z.enum(['openai', 'mock', 'anthropic']),
   OPENAI_API_KEY: z.string().optional(),
@@ -301,6 +319,33 @@ const validatedConfigSchema = configSchema.superRefine((cfg, ctx) => {
       path: ['HCAPTCHA_SECRET_KEY'],
       message: 'CAPTCHA_PROVIDER=hcaptcha requiere HCAPTCHA_SECRET_KEY.',
     });
+  }
+
+  // ── OAuth Google (US-008 / PB-P4-001; SEC-01/SEC-04 · ADR-SEC-005) ─────────
+  // Cuando el feature flag está activo, las credenciales y la redirect URI son obligatorias
+  // (fail-fast en boot; nunca levantar el flujo OAuth sin client id/secret/redirect).
+  if (cfg.GOOGLE_OAUTH_ENABLED) {
+    if (!cfg.GOOGLE_OAUTH_CLIENT_ID) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['GOOGLE_OAUTH_CLIENT_ID'],
+        message: 'GOOGLE_OAUTH_ENABLED=true requiere GOOGLE_OAUTH_CLIENT_ID.',
+      });
+    }
+    if (!cfg.GOOGLE_OAUTH_CLIENT_SECRET) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['GOOGLE_OAUTH_CLIENT_SECRET'],
+        message: 'GOOGLE_OAUTH_ENABLED=true requiere GOOGLE_OAUTH_CLIENT_SECRET.',
+      });
+    }
+    if (!cfg.GOOGLE_OAUTH_REDIRECT_URI) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['GOOGLE_OAUTH_REDIRECT_URI'],
+        message: 'GOOGLE_OAUTH_ENABLED=true requiere GOOGLE_OAUTH_REDIRECT_URI.',
+      });
+    }
   }
 
   // ── AI execution: timeout/fallback (US-123 / PB-P0-011; AC-03, AC-07, SEC-04) ─────────────────
