@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PASSWORD_MIN_LENGTH } from './registerOrganizerSchema';
+import { PASSWORD_MIN_LENGTH } from '@/shared/validation/passwordPolicy';
 
 /**
  * Schemas del flujo de recuperación (US-004 / FE-001, FE-002). Copias disciplinadas de

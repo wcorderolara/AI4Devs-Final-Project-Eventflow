@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { PASSWORD_MIN_LENGTH } from '../schemas/registerOrganizerSchema';
+import { PASSWORD_MIN_LENGTH } from '@/shared/validation/passwordPolicy';
 
 export type PasswordStrength = 'weak' | 'medium' | 'strong';
 
