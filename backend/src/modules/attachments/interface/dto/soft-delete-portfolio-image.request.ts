@@ -2,8 +2,9 @@
 // El body es opcional; cuando viene, `deletion_reason` debe ser 1..500 chars y `.strict()`
 // rechaza extras. El path param se valida como UUID por `imageIdParam` (VR-01).
 import { z } from 'zod';
+import { uuidParamsSchema } from '../../../../shared/validation/uuid-params.js';
 
-export const ImageIdParamSchema = z.object({ imageId: z.string().uuid() });
+export const ImageIdParamSchema = uuidParamsSchema('imageId').strip();
 export type ImageIdParam = z.infer<typeof ImageIdParamSchema>;
 
 export const SoftDeletePortfolioImageBodySchema = z

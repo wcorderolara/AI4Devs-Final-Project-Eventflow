@@ -4,6 +4,7 @@
 //   `filters.dropped` (EC-01, VR-03..07). El parser custom `parseListEventTasksQuery` es la
 //   fuente de verdad de la tolerancia; devuelve `{ filters, pagination, filtersDropped }`.
 import { z } from 'zod';
+import { uuidParamsSchema } from '../../../../../shared/validation/uuid-params.js';
 
 /** Estados de tarea válidos como filtro. Alineado con el enum físico tras US-031. */
 export const LIST_EVENT_TASKS_STATUSES = [
@@ -28,9 +29,7 @@ export type ListEventTasksRange = (typeof LIST_EVENT_TASKS_RANGES)[number];
 export const DEFAULT_RANGE: ListEventTasksRange = 'all';
 
 /** Param schema (path). UUID inválido → 400 VALIDATION (VR-01, NT-01). */
-export const listEventTasksParamsSchema = z
-  .object({ eventId: z.string().uuid() })
-  .strict();
+export const listEventTasksParamsSchema = uuidParamsSchema('eventId');
 
 export type ListEventTasksParams = z.infer<typeof listEventTasksParamsSchema>;
 

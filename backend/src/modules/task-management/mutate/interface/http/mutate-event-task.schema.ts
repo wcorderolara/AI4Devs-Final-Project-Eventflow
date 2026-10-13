@@ -6,14 +6,13 @@
 // La validación condicional de `due_date` en el pasado la ejecuta el use case (depende de
 // `currentStatus`), no el schema — el schema solo garantiza formato ISO-8601 con offset.
 import { z } from 'zod';
+import { uuidParamsSchema } from '../../../../../shared/validation/uuid-params.js';
 
 /** Tolerancia de skew reloj cliente/servidor para `due_date` en el pasado (EC-08, VR-08). */
 export const DUE_DATE_PAST_TOLERANCE_MS = 60_000;
 
 /** Path params — UUID v4 estricto (VR-01, VR-02). */
-export const taskMutationParamsSchema = z
-  .object({ eventId: z.string().uuid(), taskId: z.string().uuid() })
-  .strict();
+export const taskMutationParamsSchema = uuidParamsSchema('eventId', 'taskId');
 
 /**
  * Set canónico de claves aceptadas por PATCH content (Tech Spec §7). Cualquier otra key es

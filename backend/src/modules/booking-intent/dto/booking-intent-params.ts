@@ -1,4 +1,5 @@
 // Param DTO — `:bookingIntentId` (US-096 / BE-001).
 import { z } from 'zod';
-export const BookingIntentIdParamSchema = z.object({ bookingIntentId: z.string().uuid() }).strict();
+import { uuidParamsSchema } from '../../../shared/validation/uuid-params.js';
+export const BookingIntentIdParamSchema = uuidParamsSchema('bookingIntentId');
 export type BookingIntentIdParam = z.infer<typeof BookingIntentIdParamSchema>;

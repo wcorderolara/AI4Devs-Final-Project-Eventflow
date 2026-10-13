@@ -7,6 +7,7 @@
 // y disparan errores de dominio con `code` del catálogo. `validateRequestMiddleware`
 // produce `ValidationError` genérica cuando Zod falla.
 import { z } from 'zod';
+import { uuidParamsSchema } from '../../../shared/validation/uuid-params.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Fragmentos reutilizables
@@ -39,11 +40,7 @@ const SORT_ORDER_SCHEMA = z.number().int().nonnegative();
 // Path params
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const EventTypeIdParamsSchema = z
-  .object({
-    id: z.string().uuid(),
-  })
-  .strict();
+export const EventTypeIdParamsSchema = uuidParamsSchema('id');
 export type EventTypeIdParams = z.infer<typeof EventTypeIdParamsSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────────

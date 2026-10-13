@@ -3,12 +3,11 @@
 // El límite se re-verifica **defensivamente** post-dedup en el use case; Zod pre-dedup se limita
 // a un tope holgado para acotar payload y capturar la mayoría de payloads inválidos temprano.
 import { z } from 'zod';
+import { uuidParamsSchema } from '../../../../../shared/validation/uuid-params.js';
 
 export const BULK_CONFIRM_MAX_IDS = 50;
 
-export const confirmAITasksBulkParamsSchema = z.object({
-  eventId: z.string().uuid(),
-});
+export const confirmAITasksBulkParamsSchema = uuidParamsSchema('eventId').strip();
 
 export const confirmAITasksBulkBodySchema = z.object({
   taskIds: z.array(z.string().uuid()).min(1, { message: 'taskIds must not be empty' }).max(200, {

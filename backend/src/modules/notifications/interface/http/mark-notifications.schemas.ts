@@ -9,13 +9,10 @@ import {
   LIST_NOTIFICATIONS_CHANNEL,
   type ListNotificationsChannel,
 } from './list-notifications.query.schema.js';
+import { uuidParamsSchema } from '../../../../shared/validation/uuid-params.js';
 
 /** Path param `notificationId` — UUID v4 canónico (patrón EventFlow). */
-export const notificationIdParamSchema = z
-  .object({
-    notificationId: z.string().uuid(),
-  })
-  .strict();
+export const notificationIdParamSchema = uuidParamsSchema('notificationId');
 
 export type NotificationIdParam = z.infer<typeof notificationIdParamSchema>;
 

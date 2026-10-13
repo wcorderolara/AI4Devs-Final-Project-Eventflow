@@ -3,6 +3,7 @@
 // eso la Zod schema deja el campo opcional (una schema `.strict()` con `required` emitiría
 // `400 VALIDATION_ERROR` desde el middleware de validación, incumpliendo D1).
 import { z } from 'zod';
+import { uuidParamsSchema } from '../../../shared/validation/uuid-params.js';
 
 export const CompareQuotesQuerySchema = z
   .object({
@@ -21,5 +22,5 @@ export type CompareQuotesQuery = z.infer<typeof CompareQuotesQuerySchema>;
  * Nota: el resto del módulo usa `:eventId` (US-096); esta ruta preserva `:id` según §7 del
  * Tech Spec para el contrato estable con el frontend.
  */
-export const CompareQuotesEventIdParamSchema = z.object({ id: z.string().uuid() }).strict();
+export const CompareQuotesEventIdParamSchema = uuidParamsSchema('id');
 export type CompareQuotesEventIdParam = z.infer<typeof CompareQuotesEventIdParamSchema>;

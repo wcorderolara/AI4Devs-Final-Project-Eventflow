@@ -9,6 +9,7 @@
 // `ValidationError` genérica cuando Zod falla — sin acoplar el shared middleware a
 // mapeos por campo.
 import { z } from 'zod';
+import { uuidParamsSchema } from '../../../shared/validation/uuid-params.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Fragmentos reutilizables
@@ -38,11 +39,7 @@ const SORT_ORDER_SCHEMA = z.number().int().nonnegative();
 // Path params
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const ServiceCategoryIdParamsSchema = z
-  .object({
-    id: z.string().uuid(),
-  })
-  .strict();
+export const ServiceCategoryIdParamsSchema = uuidParamsSchema('id');
 export type ServiceCategoryIdParams = z.infer<typeof ServiceCategoryIdParamsSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────────
