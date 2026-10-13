@@ -151,6 +151,8 @@ export function CreateTaskDialog({
       open={isOpen}
       onClose={onClose}
       title={t('title')}
+      // `lg` es el ancho más cercano al `max-w-form` (720px) que tenía el overlay propio.
+      size="lg"
       showCloseButton={false}
       initialFocus={titleInputRef}
       footer={
