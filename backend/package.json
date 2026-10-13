@@ -41,9 +41,9 @@
     "openapi:docs": "tsx scripts/openapi-docs.ts",
     "promptops:hash": "tsx scripts/promptops-hash.ts",
     "promptops:check": "vitest run tests/unit/us121-",
-    "test:us122": "vitest run tests/unit/us122- tests/integration/us122-",
-    "test:us123": "vitest run tests/unit/us123-",
-    "test:us124": "vitest run tests/unit/us124-"
+    "test:us122": "vitest run tests/unit/us122- tests/integration/us122- tests/unit/architecture-guards",
+    "test:us123": "vitest run tests/unit/us123- tests/unit/architecture-guards",
+    "test:us124": "vitest run tests/unit/us124- tests/unit/architecture-guards"
   },
   "prisma": {
     "schema": "prisma/schema.prisma"
