@@ -33,6 +33,7 @@ import { RegenerateAiRecommendationBodySchema } from '../dto/regenerate.request.
 import { StructuredDomainEventLogger } from '../../../infrastructure/observability/structured-domain-event-logger.js';
 import { PrismaAIRecommendationRepository } from '../infrastructure/prisma-ai-recommendation.repository.js';
 import { PrismaAIRecommendationHitlRepository } from '../infrastructure/prisma-ai-recommendation-hitl.repository.js';
+import { RegistryPromptVersionIdResolver } from '../infrastructure/prompt-version-id.resolver.js';
 import { createAIExecutionService } from '../infrastructure/ai-execution.factory.js';
 import { ValidatedAIExecutionService } from '../application/ai-validation/validated-ai-execution.service.js';
 import { AiGenerationService } from '../application/ai-generation.service.js';
@@ -72,8 +73,11 @@ const generationService = new AiGenerationService({
   validated: new ValidatedAIExecutionService(),
   fallbackEligible: execution.isFallbackEligible(),
 });
+// US-122: id real de `AIPromptVersion` (sync memoizado del registry US-121 en el primer uso).
+const promptVersions = new RegistryPromptVersionIdResolver(repo);
 const generateUseCase = new GenerateAiRecommendationUseCase(
   repo,
+  promptVersions,
   generationService,
   new PrismaEventAccessReader(),
   new PrismaVendorProfileReader(),
@@ -143,6 +147,7 @@ const regenerateUseCase = new RegenerateAIRecommendationUseCase(
   new OutputSchemaResolver(),
   regenerateConfig,
   logger,
+  promptVersions,
 );
 const recommendations = new AIRecommendationsController({
   get: new GetAIRecommendationUseCase(repo),

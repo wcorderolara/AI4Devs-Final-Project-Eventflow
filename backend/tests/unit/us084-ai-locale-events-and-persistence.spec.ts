@@ -11,8 +11,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { GenerateAiRecommendationUseCase } from '../../src/modules/ai-assistance/application/generate-ai-recommendation.use-case.js';
 import type { AiGenerationService } from '../../src/modules/ai-assistance/application/ai-generation.service.js';
-import type { AIRecommendationRepository } from '../../src/modules/ai-assistance/ports/ai-recommendation.repository.js';
-import type { CreateAiRecommendationData } from '../../src/modules/ai-assistance/domain/ai-recommendation.js';
+import type { PersistAiRecommendationInput } from '../../src/modules/ai-assistance/domain/ai-recommendation.js';
+import { FakeAIRecommendationRepository, fakePromptVersions } from '../helpers/ai-recommendation-fixtures.js';
 import type {
   EventAccessReader,
   EventLanguageReader,
@@ -23,16 +23,17 @@ import type { DomainEventLogger } from '../../src/shared/observability/domain-ev
 import type { SupportedLanguage } from '../../src/shared/constants/languages.js';
 import { MockAIProvider } from '../../src/modules/ai-assistance/infrastructure/providers/mock/mock-ai-provider.js';
 
+// PR-5: output válido para el schema de `event_plan` (la persistencia US-122 re-valida).
 const OUTPUT = {
-  theme: 'test',
-  stages: [{ name: 'ceremonia', description: 'x' }],
+  summary: 'test',
+  phases: [{ name: 'ceremonia', tasks: ['x'] }],
 };
 
 function makeUseCase(opts: {
   language: SupportedLanguage;
   eventLang?: SupportedLanguage | null;
   fallbackUsed?: boolean;
-  captureCreate?: (d: CreateAiRecommendationData) => void;
+  captureCreate?: (d: PersistAiRecommendationInput) => void;
 }): {
   uc: GenerateAiRecommendationUseCase;
   logger: DomainEventLogger;
@@ -66,18 +67,29 @@ function makeUseCase(opts: {
         languageCode: opts.language,
       },
       sanitizedInput: { guests: 100 },
+      execMeta: {
+        featureType: 'event_plan',
+        provider: 'mock' as const,
+        originalProvider: 'mock' as const,
+        fallbackUsed: opts.fallbackUsed ?? false,
+        timeoutMs: 60000,
+        latencyMs: 1,
+        status: 'success' as const,
+      },
+      schemaValid: true,
     }),
   } as unknown as AiGenerationService;
 
-  const repo: AIRecommendationRepository = {
-    createPending: vi.fn().mockImplementation((d: CreateAiRecommendationData) => {
-      opts.captureCreate?.(d);
-      return Promise.resolve({ id: 'rec-1' });
-    }),
-  } as unknown as AIRecommendationRepository;
+  const repo = new FakeAIRecommendationRepository();
+  const create = repo.create.bind(repo);
+  repo.create = (d: PersistAiRecommendationInput) => {
+    opts.captureCreate?.(d);
+    return create(d);
+  };
 
   const uc = new GenerateAiRecommendationUseCase(
     repo,
+    fakePromptVersions,
     generation,
     events,
     vendors,
@@ -132,7 +144,7 @@ describe('US-084 QA-002 — logs i18n del provider IA (ai.locale.applied / ai.lo
   });
 
   it('AC-03: el repo recibe `aiMeta.languageCode` = locale efectivo (event.language override)', async () => {
-    let captured: CreateAiRecommendationData | null = null;
+    let captured: PersistAiRecommendationInput | null = null;
     const { uc } = makeUseCase({
       language: 'pt',
       eventLang: 'pt',
@@ -148,8 +160,8 @@ describe('US-084 QA-002 — logs i18n del provider IA (ai.locale.applied / ai.lo
       languageCode: 'es-LATAM',
     });
     expect(captured).not.toBeNull();
-    expect(captured!.aiMeta.languageCode).toBe('pt');
-    expect(captured!.aiMeta.fallbackUsed).toBe(false);
+    expect(captured!.languageCode).toBe('pt');
+    expect(captured!.fallbackUsed).toBe(false);
   });
 });
 

@@ -90,14 +90,18 @@ describe.skipIf(!dbUp)('QA-003 (con BD): role, ownership, provider errors', () =
     expect(res.body.error.code).toBe('AI_PROVIDER_TIMEOUT');
   });
 
-  it('NT-09/EC-08: provider output inválido → 422 AI_INVALID_OUTPUT, no persiste', async () => {
+  it('NT-09/EC-08: provider output inválido → 422 AI_INVALID_OUTPUT, no persiste output (sólo failure record)', async () => {
     const organizer = await registerLogin('organizer');
     const eventId = await activeEvent(organizer);
-    const before = await prisma.aIRecommendation.count();
     const res = await organizer.post(`/api/v1/events/${eventId}/ai/event-plan`).send({ input: { __simulate: 'invalid' } });
     expect(res.status).toBe(422);
     expect(res.body.error.code).toBe('AI_INVALID_OUTPUT');
-    expect(await prisma.aIRecommendation.count()).toBe(before);
+    // PR-5 / US-122 AC-08: nunca un `pending` con output inválido; sólo un record `failed` sin payload.
+    const recs = await prisma.aIRecommendation.findMany({ where: { eventId } });
+    expect(recs.filter((r) => r.status !== 'failed')).toHaveLength(0);
+    expect(recs).toHaveLength(1);
+    expect(recs[0]!.outputPayload).toEqual({ errorCode: 'AI_INVALID_OUTPUT' });
+    expect(recs[0]!.inputPayload).toEqual({});
   });
 
   it('NT-07/EC-06: idioma no soportado → 422 UNSUPPORTED_LANGUAGE', async () => {

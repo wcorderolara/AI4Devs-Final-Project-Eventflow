@@ -1,5 +1,5 @@
 // Puerto AIRecommendationRepository (US-097 / BE-002; extendido en US-122 / BE-001). Module-local.
-// US-097 entregó `createPending`/`findById`/`markStatus`. US-122 agrega persistencia con metadata
+// US-097 entregó `findById`/`markStatus`. US-122 agrega persistencia con metadata
 // completa (`create`), failure records seguros (`createFailed`), validación de prompt version
 // (`existsPromptVersion`) y sync idempotente del export de US-121 (`upsertPromptVersion`), todos con
 // soporte opcional de transaction client. Application depende de este port, no de Prisma.
@@ -18,8 +18,6 @@ export interface RepositoryWriteOptions {
 }
 
 export interface AIRecommendationRepository {
-  /** US-097: crea un record `pending` usando un AIPromptVersion placeholder (compat). */
-  createPending(data: CreateAiRecommendationData): Promise<AiRecommendationView>;
   findById(id: string): Promise<AiRecommendationView | null>;
   markStatus(id: string, status: 'accepted' | 'discarded'): Promise<AiRecommendationView>;
 
@@ -29,12 +27,16 @@ export interface AIRecommendationRepository {
   createFailed(input: PersistAiRecommendationFailureInput, options?: RepositoryWriteOptions): Promise<AiRecommendationView>;
   /** US-122: valida existencia de la versión de prompt (AC-03) sin acoplar a FK del caller. */
   existsPromptVersion(promptVersionId: string, options?: RepositoryWriteOptions): Promise<boolean>;
-  /** US-122 (EMERGENT-122-001): upsert idempotente del export `AIPromptVersion` de US-121. */
-  upsertPromptVersion(row: AIPromptVersionSyncRow, options?: RepositoryWriteOptions): Promise<void>;
+  /**
+   * US-122 (EMERGENT-122-001): upsert idempotente del export `AIPromptVersion` de US-121. Devuelve
+   * el id REAL en BD (puede diferir de `row.id` si la fila ya existía por `promptKey`+`version`).
+   */
+  upsertPromptVersion(row: AIPromptVersionSyncRow, options?: RepositoryWriteOptions): Promise<string>;
 
   /**
    * US-059 (PB-P2-001 / BE-002): último `AIRecommendation` por (`eventId`, `kind`,
-   * `inputPayload.category_code`), ordenado por `createdAt DESC`. Retorna `null` si no existe —
+   * `inputPayload.category_code`), ordenado por `createdAt DESC`. Ignora records `failed` (US-122
+   * failure records, sin output útil). Retorna `null` si no existe —
    * el use case lo mapea a `404` uniforme. Reusa el índice existente
    * `(event_id, recommendation_type, created_at DESC)`.
    */
@@ -56,13 +58,13 @@ export interface AIRecommendationRepository {
   }): Promise<number>;
 
   /**
-   * US-026 (PB-P2-003 / BE-006): persiste un `AIRecommendation` hijo del linaje. Reutiliza el
-   * pipeline de `createPending()` (US-097) para heredar el promptVersion placeholder y agrega
-   * las columnas dedicadas `parent_recommendation_id`, `root_recommendation_id`,
-   * `regeneration_feedback` (DB-001).
+   * US-026 (PB-P2-003 / BE-006): persiste un `AIRecommendation` hijo del linaje (`pending`) con el
+   * `promptVersionId` resuelto por `PromptVersionIdResolver` y las columnas dedicadas
+   * `parent_recommendation_id`, `root_recommendation_id`, `regeneration_feedback` (DB-001).
    */
   createRegeneration(
     input: CreateAiRecommendationData & {
+      promptVersionId: string;
       parentRecommendationId: string;
       rootRecommendationId: string;
       regenerationFeedback: string | null;

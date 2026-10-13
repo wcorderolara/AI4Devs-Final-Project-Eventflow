@@ -12,6 +12,7 @@ el frontend nunca importa este puerto ni SDKs de proveedores. Los SDKs concretos
 | `llm-provider.ts` | Interfaz `LLMProvider` (firma operativa `generate()`, US-097) y `LlmGenerationResult`. |
 | `index.ts` | Barrel de import estable para adapters (US-118/119/120). |
 | `ai-recommendation.repository.ts` | Puerto de persistencia de `AIRecommendation` (US-097). |
+| `prompt-version-id.resolver.ts` | Resuelve el `AIPromptVersion.id` real por (feature, idioma) (US-122, PR-5). |
 
 ## Nota de alineación US-097 ↔ US-117 (importante)
 

@@ -43,51 +43,6 @@ export class PrismaAIRecommendationRepository implements AIRecommendationReposit
     return options?.tx ?? this.prisma;
   }
 
-  /**
-   * `ai_prompt_version_id` es requerido (invariante US-099) pero el prompt registry real es
-   * PB-P0-010. US-097 usa un AIPromptVersion placeholder estático (upsert idempotente) hasta
-   * entonces — la promptVersion "real" viaja además en `aiMeta.promptVersion`.
-   */
-  private async placeholderPromptVersionId(): Promise<string> {
-    const pv = await this.prisma.aIPromptVersion.upsert({
-      where: { promptKey_version: { promptKey: 'us097-endpoint-foundation', version: 'v1' } },
-      update: {},
-      create: {
-        promptId: '00000000-0000-4000-8000-000000000097',
-        promptKey: 'us097-endpoint-foundation',
-        version: 'v1',
-        status: 'active',
-        provider: 'mock',
-        templateChecksum: 'us097-static-placeholder',
-        description: 'Placeholder prompt version (US-097; real registry en PB-P0-010)',
-      },
-      select: { id: true },
-    });
-    return pv.id;
-  }
-
-  async createPending(data: CreateAiRecommendationData): Promise<AiRecommendationView> {
-    const aiPromptVersionId = await this.placeholderPromptVersionId();
-    const rec = await this.prisma.aIRecommendation.create({
-      data: {
-        requestedByUserId: data.requestedByUserId,
-        aiPromptVersionId,
-        eventId: data.eventId,
-        vendorProfileId: data.vendorProfileId,
-        quoteRequestId: data.quoteRequestId,
-        kind: data.type,
-        inputPayload: data.input as Prisma.InputJsonValue,
-        outputPayload: data.output as Prisma.InputJsonValue,
-        aiMeta: data.aiMeta as unknown as Prisma.InputJsonValue,
-        status: 'pending',
-        // US-084 (PB-P1-049 / BE-004 · AC-03, AC-05): denormaliza a columnas dedicadas.
-        locale: data.aiMeta.languageCode,
-        localeFallback: data.aiMeta.fallbackUsed,
-      },
-    });
-    return toView(rec);
-  }
-
   async findById(id: string): Promise<AiRecommendationView | null> {
     const rec = await this.prisma.aIRecommendation.findUnique({ where: { id } });
     return rec ? toView(rec) : null;
@@ -101,6 +56,8 @@ export class PrismaAIRecommendationRepository implements AIRecommendationReposit
   // ── US-122 — persistencia con metadata completa ────────────────────────────
 
   async create(input: PersistAiRecommendationInput, options?: RepositoryWriteOptions): Promise<AiRecommendationView> {
+    // `timeoutMs` vive en la columna `timeout_ms`: `ai_meta` conserva el shape `AiMeta` del contrato
+    // HTTP (correlationId/tokenCount sólo si el caller los provee).
     const aiMeta: AiMetaFull = {
       provider: input.provider,
       promptVersion: input.promptVersionLabel ?? input.promptVersionId,
@@ -108,7 +65,6 @@ export class PrismaAIRecommendationRepository implements AIRecommendationReposit
       fallbackUsed: input.fallbackUsed,
       languageCode: input.languageCode,
       correlationId: input.correlationId,
-      timeoutMs: input.timeoutMs,
       tokenCount: input.tokenCount,
     };
     const rec = await this.db(options).aIRecommendation.create({
@@ -194,6 +150,7 @@ export class PrismaAIRecommendationRepository implements AIRecommendationReposit
       where: {
         eventId: input.eventId,
         kind: input.kind,
+        status: { not: 'failed' },
         inputPayload: { path: ['category_code'], equals: input.categoryCode },
       },
       orderBy: { createdAt: 'desc' },
@@ -220,20 +177,17 @@ export class PrismaAIRecommendationRepository implements AIRecommendationReposit
 
   async createRegeneration(
     input: CreateAiRecommendationData & {
+      promptVersionId: string;
       parentRecommendationId: string;
       rootRecommendationId: string;
       regenerationFeedback: string | null;
     },
     options?: RepositoryWriteOptions,
   ): Promise<AiRecommendationView> {
-    // Reuso del placeholder promptVersion de US-097 — el registry real (PB-P0-010) sirve la
-    // versión "real" en aiMeta.promptVersion; el `aiPromptVersionId` es un FK obligatorio del
-    // schema (invariante US-099) que se satisface con el placeholder estático.
-    const aiPromptVersionId = await this.placeholderPromptVersionId();
     const rec = await this.db(options).aIRecommendation.create({
       data: {
         requestedByUserId: input.requestedByUserId,
-        aiPromptVersionId,
+        aiPromptVersionId: input.promptVersionId,
         eventId: input.eventId,
         vendorProfileId: input.vendorProfileId,
         quoteRequestId: input.quoteRequestId,
@@ -269,9 +223,10 @@ export class PrismaAIRecommendationRepository implements AIRecommendationReposit
     };
   }
 
-  async upsertPromptVersion(row: AIPromptVersionSyncRow, options?: RepositoryWriteOptions): Promise<void> {
-    // Idempotente por (promptKey, version); no muta versiones históricas de forma insegura.
-    await this.db(options).aIPromptVersion.upsert({
+  async upsertPromptVersion(row: AIPromptVersionSyncRow, options?: RepositoryWriteOptions): Promise<string> {
+    // Idempotente por (promptKey, version); no muta versiones históricas de forma insegura. Devuelve
+    // el id real (la fila puede preexistir con otro id, p. ej. el placeholder de US-097).
+    const pv = await this.db(options).aIPromptVersion.upsert({
       where: { promptKey_version: { promptKey: row.promptKey, version: row.version } },
       update: { status: row.status, templateChecksum: row.templateChecksum, description: row.description },
       create: {
@@ -284,6 +239,8 @@ export class PrismaAIRecommendationRepository implements AIRecommendationReposit
         templateChecksum: row.templateChecksum,
         description: row.description,
       },
+      select: { id: true },
     });
+    return pv.id;
   }
 }
