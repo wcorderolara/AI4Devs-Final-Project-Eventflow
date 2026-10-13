@@ -5,26 +5,16 @@
 // loguea (SEC-07).
 import type { Response, CookieOptions } from 'express';
 import { config } from '../../config/env.js';
+import { cookieOptions } from './cookie-codec.js';
 
 export const SESSION_COOKIE_NAME: string = config.SESSION_COOKIE_NAME;
 
 /** Vigencia de la cookie/sesión en milisegundos (US-108: `SESSION_COOKIE_MAX_AGE_DAYS`, default 30). */
 export const SESSION_MAX_AGE_MS: number = config.SESSION_COOKIE_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
 
-/** `Secure` explícito si se define; si no, se activa fuera de development/test. */
-function isSecure(): boolean {
-  return config.SESSION_COOKIE_SECURE ?? config.NODE_ENV === 'production';
-}
-
 /** Opciones base de la cookie de sesión (sin `maxAge`, común a set/clear). */
 export function baseCookieOptions(): CookieOptions {
-  return {
-    httpOnly: true,
-    signed: true,
-    secure: isSecure(),
-    sameSite: config.SESSION_COOKIE_SAMESITE, // 'lax' | 'none' | 'strict' (validado en boot)
-    path: '/',
-  };
+  return cookieOptions({ httpOnly: true, signed: true });
 }
 
 /** Emite la cookie de sesión con el `sid` firmado y su vigencia (`SESSION_COOKIE_MAX_AGE_DAYS`). */
@@ -46,13 +36,7 @@ export function clearSessionCookie(res: Response): void {
 export const ROLE_COOKIE_NAME = 'eventflow_role';
 
 function roleCookieOptions(): CookieOptions {
-  return {
-    httpOnly: false,
-    signed: false,
-    secure: isSecure(),
-    sameSite: config.SESSION_COOKIE_SAMESITE,
-    path: '/',
-  };
+  return cookieOptions({ httpOnly: false, signed: false });
 }
 
 export function issueRoleCookie(res: Response, role: string): void {

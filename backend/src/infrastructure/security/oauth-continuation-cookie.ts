@@ -3,60 +3,31 @@
 // la continuación en una cookie HTTP-only FIRMADA de corta vida (no en la URL → no queda en logs
 // ni es legible por JS). Los endpoints POST de continuación la leen y la consumen (single-use).
 // Transporta SOLO `googleSub`/email/rol pendiente — NUNCA el `id_token`.
-import type { Request, Response, CookieOptions } from 'express';
 import { config } from '../../config/env.js';
 import type { OAuthContinuation } from '../../modules/identity-access/application/oauth-flow.types.js';
+import { signedJsonCookie } from './cookie-codec.js';
 
 export const OAUTH_CONTINUATION_COOKIE_NAME = 'eventflow_oauth_continuation';
 
-function isSecure(): boolean {
-  return config.SESSION_COOKIE_SECURE ?? config.NODE_ENV === 'production';
+function isContinuation(value: unknown): value is OAuthContinuation {
+  const c = value as Partial<Record<'action' | 'userId' | 'googleSub' | 'email', unknown>> | null;
+  if (c?.action === 'signup') return typeof c.googleSub === 'string' && typeof c.email === 'string';
+  if (c?.action === 'link') {
+    return typeof c.userId === 'string' && typeof c.googleSub === 'string' && typeof c.email === 'string';
+  }
+  return false;
 }
 
-function continuationCookieOptions(): CookieOptions {
-  return {
-    httpOnly: true,
-    signed: true,
-    secure: isSecure(),
-    // El POST de continuación es same-site (fetch del frontend); `lax` es suficiente y seguro.
-    sameSite: config.SESSION_COOKIE_SAMESITE === 'strict' ? 'lax' : config.SESSION_COOKIE_SAMESITE,
-    path: '/',
-  };
-}
+// El POST de continuación es same-site (fetch del frontend); `lax` es suficiente y seguro.
+const continuationCookie = signedJsonCookie<OAuthContinuation>({
+  name: OAUTH_CONTINUATION_COOKIE_NAME,
+  maxAgeMs: () => config.OAUTH_STATE_TTL_SECONDS * 1000,
+  isValid: isContinuation,
+});
 
-export function issueContinuationCookie(res: Response, continuation: OAuthContinuation): void {
-  res.cookie(OAUTH_CONTINUATION_COOKIE_NAME, JSON.stringify(continuation), {
-    ...continuationCookieOptions(),
-    maxAge: config.OAUTH_STATE_TTL_SECONDS * 1000,
-  });
-}
+export const issueContinuationCookie = continuationCookie.issue;
 
 /** Lee y valida la cookie de continuación firmada. `null` si ausente/alterada/malformada. */
-export function readContinuationCookie(req: Request): OAuthContinuation | null {
-  const raw = req.signedCookies?.[OAUTH_CONTINUATION_COOKIE_NAME] as unknown;
-  if (typeof raw !== 'string' || raw.length === 0) return null;
-  try {
-    const parsed = JSON.parse(raw) as OAuthContinuation;
-    if (parsed?.action === 'signup') {
-      if (typeof parsed.googleSub === 'string' && typeof parsed.email === 'string') return parsed;
-      return null;
-    }
-    if (parsed?.action === 'link') {
-      if (
-        typeof parsed.userId === 'string' &&
-        typeof parsed.googleSub === 'string' &&
-        typeof parsed.email === 'string'
-      ) {
-        return parsed;
-      }
-      return null;
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
+export const readContinuationCookie = continuationCookie.read;
 
-export function clearContinuationCookie(res: Response): void {
-  res.clearCookie(OAUTH_CONTINUATION_COOKIE_NAME, continuationCookieOptions());
-}
+export const clearContinuationCookie = continuationCookie.clear;
