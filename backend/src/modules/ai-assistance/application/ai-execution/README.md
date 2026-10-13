@@ -57,8 +57,10 @@ metadata (`provider`, `originalProvider`, `fallbackUsed`, `fallbackReason`, `tim
 `originalErrorCode`, `correlationId`, `status`) es consumible por **US-122** para persistir
 `AIRecommendation`, incluyendo el path de error (los errores tipados exponen `.meta`).
 
-## Adopción incremental
+## Uso en producción (PR-5)
 
-El path de endpoint de US-097 sigue usando `createLlmProvider()` (demo→mock directo) hasta que un
-use case migre a `createAIExecutionService()`. US-123 entrega la capa; la adopción por los use cases
-de feature es incremental y no rompe el comportamiento existente.
+`interface/ai.routes.ts` construye `AiGenerationService` con `createAIExecutionService()` +
+`ValidatedAIExecutionService` (US-124). `AI_DEMO_MODE=true` conserva la semántica histórica
+(primario = `MockAIProvider`, sin fallback mock→mock). Los errores de output inválido del provider
+se propagan sin convertirse en `AI_PROVIDER_UNAVAILABLE` para que US-124 aplique su retry; tras el
+retry, `executeMockFallback()` es el fallback validado cuando la config lo habilita.

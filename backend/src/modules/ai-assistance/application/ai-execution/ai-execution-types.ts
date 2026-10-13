@@ -42,6 +42,10 @@ export interface AIExecutionMetadata {
 export interface AIExecutionResult<TOutput = unknown> {
   output: TOutput;
   metadata: AIExecutionMetadata;
+  /** `promptVersion` lógico reportado por el provider que produjo el output (aiMeta). */
+  promptVersion: string;
+  /** `fallbackUsed` reportado por el adapter (degradación interna del provider, US-084). */
+  providerFallbackUsed: boolean;
 }
 
 /**

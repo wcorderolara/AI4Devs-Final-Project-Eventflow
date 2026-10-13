@@ -7,8 +7,8 @@
 // AC-04 (amount = round(percentage/100 * budget_estimated) + Σ amount = budget_estimated).
 // EC-03 (categoría desconocida → AiInvalidOutputError). EC-01 (budget_estimated<=0 → AiInvalidBudgetError).
 import { describe, it, expect } from 'vitest';
+import { makeAiGenerationService } from '../helpers/ai-execution-fixtures.js';
 import {
-  AiGenerationService,
   assembleBudgetSuggestionOutput,
 } from '../../src/modules/ai-assistance/application/ai-generation.service.js';
 import { MockAIProvider } from '../../src/modules/ai-assistance/infrastructure/providers/mock/mock-ai-provider.js';
@@ -80,7 +80,7 @@ describe.skip('US-019 BE-003 — assembleBudgetSuggestionOutput', () => {
 });
 
 describe.skip('US-019 BE-005 / EC-01 — pre-validación de budget_estimated', () => {
-  const svc = new AiGenerationService(new MockAIProvider());
+  const svc = makeAiGenerationService(new MockAIProvider());
 
   it('rechaza budget_estimated = 0 con AiInvalidBudgetError antes de llamar al provider', async () => {
     await expect(
@@ -102,7 +102,7 @@ describe.skip('US-019 BE-005 / EC-01 — pre-validación de budget_estimated', (
 });
 
 describe.skip('US-019 AI-003 / EC-03 — mapeo cruzado a service_categories_active', () => {
-  const svc = new AiGenerationService(new MockAIProvider());
+  const svc = makeAiGenerationService(new MockAIProvider());
 
   it('cuando el input incluye service_categories_active, códigos fuera de la whitelist → AiInvalidOutputError', async () => {
     // El mock devuelve `catering|venue|photography|decoration|music_dj|cake`. Whitelist restringida

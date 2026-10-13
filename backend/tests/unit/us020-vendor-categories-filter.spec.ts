@@ -6,8 +6,8 @@
 // US-020 / AI-003, BE-002 — filtro contra service_categories_active + orden desc + integración.
 // AC-01 (orden desc), AC-04 (filtro estricto), EC-01 (log unknown_category), EC-02 (lista vacía).
 import { describe, it, expect, vi } from 'vitest';
+import { makeAiGenerationService } from '../helpers/ai-execution-fixtures.js';
 import {
-  AiGenerationService,
   filterVendorCategories,
   sortVendorCategoriesByPriorityDesc,
 } from '../../src/modules/ai-assistance/application/ai-generation.service.js';
@@ -62,7 +62,7 @@ describe.skip('US-020 BE-003 — sortVendorCategoriesByPriorityDesc', () => {
 });
 
 describe.skip('US-020 AC-01/AC-04/EC-01 — integración con AiGenerationService', () => {
-  const svc = new AiGenerationService(new MockAIProvider());
+  const svc = makeAiGenerationService(new MockAIProvider());
 
   it('sin service_categories_active devuelve la lista completa ordenada desc', async () => {
     const result = await svc.generate(

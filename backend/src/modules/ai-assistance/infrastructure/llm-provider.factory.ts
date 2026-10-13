@@ -7,15 +7,10 @@ import type { ProviderId } from '../ports/ai-contract.js';
 import { MockAIProvider } from './providers/mock/mock-ai-provider.js';
 import { createOpenAIProvider } from './providers/openai/openai-provider.js';
 import { AnthropicProvider } from './providers/anthropic/anthropic-provider.js';
-import { config } from '../../../config/env.js';
 
 /** Resuelve el provider por id/demo-mode. Función pura y testeable (US-120 / BE-004). */
 export function selectProvider(providerId: ProviderId, demoMode: boolean): LLMProvider {
   if (providerId === 'mock' || demoMode) return new MockAIProvider();
   if (providerId === 'openai') return createOpenAIProvider();
   return new AnthropicProvider(); // anthropic → stub explícito (no fallback silencioso)
-}
-
-export function createLlmProvider(): LLMProvider {
-  return selectProvider(config.LLM_PROVIDER, config.AI_DEMO_MODE);
 }

@@ -33,7 +33,8 @@ import { RegenerateAiRecommendationBodySchema } from '../dto/regenerate.request.
 import { StructuredDomainEventLogger } from '../../../infrastructure/observability/structured-domain-event-logger.js';
 import { PrismaAIRecommendationRepository } from '../infrastructure/prisma-ai-recommendation.repository.js';
 import { PrismaAIRecommendationHitlRepository } from '../infrastructure/prisma-ai-recommendation-hitl.repository.js';
-import { createLlmProvider } from '../infrastructure/llm-provider.factory.js';
+import { createAIExecutionService } from '../infrastructure/ai-execution.factory.js';
+import { ValidatedAIExecutionService } from '../application/ai-validation/validated-ai-execution.service.js';
 import { AiGenerationService } from '../application/ai-generation.service.js';
 import { GenerateAiRecommendationUseCase } from '../application/generate-ai-recommendation.use-case.js';
 import {
@@ -64,7 +65,13 @@ import { AIAssistanceController, AIRecommendationsController } from './ai.contro
 const repo = new PrismaAIRecommendationRepository();
 const hitlRepo = new PrismaAIRecommendationHitlRepository();
 const logger = new StructuredDomainEventLogger();
-const generationService = new AiGenerationService(createLlmProvider());
+// PR-5: generación = US-123 (timeout + fallback a mock) + US-124 (validación strict + 1 retry).
+const execution = createAIExecutionService();
+const generationService = new AiGenerationService({
+  execution,
+  validated: new ValidatedAIExecutionService(),
+  fallbackEligible: execution.isFallbackEligible(),
+});
 const generateUseCase = new GenerateAiRecommendationUseCase(
   repo,
   generationService,

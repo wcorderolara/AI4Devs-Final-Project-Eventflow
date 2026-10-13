@@ -9,10 +9,10 @@
 // organizador se activa cuando el input incluye `organizer_pii`. El detector devuelve categorías
 // de PII (nunca contenido) y `AiGenerationService` traduce falla → `AiInvalidOutputError`.
 import { describe, it, expect, vi } from 'vitest';
+import { makeAiGenerationService } from '../helpers/ai-execution-fixtures.js';
 import {
   detectOrganizerPii,
   composeVendorSummary,
-  AiGenerationService,
 } from '../../src/modules/ai-assistance/application/ai-generation.service.js';
 import { AiInvalidOutputError } from '../../src/shared/domain/errors/ai.errors.js';
 import type { LLMProvider } from '../../src/modules/ai-assistance/ports/llm-provider.js';
@@ -119,8 +119,7 @@ describe.skip('US-021 BE-003 — integración `AiGenerationService` para `quote_
   }
 
   it('output con email del organizador → `AiInvalidOutputError` (EC-06 / VR-09)', async () => {
-    const service = new AiGenerationService(
-      stubProvider({
+    const service = makeAiGenerationService(stubProvider({
         brief: 'Contactar al organizador en juan@example.com para coordinar.',
         requirements: ['Cobertura'],
         questions: ['¿Precio?'],
@@ -133,8 +132,7 @@ describe.skip('US-021 BE-003 — integración `AiGenerationService` para `quote_
   });
 
   it('output con dirección postal → `AiInvalidOutputError`', async () => {
-    const service = new AiGenerationService(
-      stubProvider({
+    const service = makeAiGenerationService(stubProvider({
         brief: 'La reunión será en calle Reforma 15, zona 10.',
         requirements: ['Cobertura'],
         questions: ['¿Precio?'],
@@ -153,7 +151,7 @@ describe.skip('US-021 BE-003 — integración `AiGenerationService` para `quote_
       questions: ['¿Precio por hora adicional?'],
       constraints: [],
     });
-    const service = new AiGenerationService(provider);
+    const service = makeAiGenerationService(provider);
     const result = await service.generate(
       'quote_brief',
       {
@@ -187,7 +185,7 @@ describe.skip('US-021 BE-003 — integración `AiGenerationService` para `quote_
       questions: ['?'],
       constraints: [],
     });
-    const service = new AiGenerationService(provider);
+    const service = makeAiGenerationService(provider);
     await expect(
       service.generate(
         'quote_brief',

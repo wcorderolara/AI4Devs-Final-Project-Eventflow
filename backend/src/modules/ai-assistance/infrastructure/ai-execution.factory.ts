@@ -1,10 +1,10 @@
 // Wiring de AIExecutionService con la provider factory real (US-123 / BE-005). Infrastructure:
-// resuelve el provider PRIMARIO por `LLM_PROVIDER` (sin swap por demo-mode) y usa `MockAIProvider`
-// como único target de fallback. Así demo-mode HABILITA fallback (AC-02) en vez de reemplazar el
-// primario, y `LLM_PROVIDER=mock` deja mock como primario con `fallbackUsed=false` (AC-04).
+// resuelve el provider PRIMARIO por `LLM_PROVIDER` y usa `MockAIProvider` como único target de
+// fallback. `LLM_PROVIDER=mock` deja mock como primario con `fallbackUsed=false` (AC-04).
 //
-// Nota: el path de endpoint de US-097 sigue usando `createLlmProvider()` (demo→mock directo) hasta
-// que un use case migre a esta capa; US-123 entrega la capa, la adopción es incremental (ver README).
+// PR-5: es el wiring de producción de los endpoints IA. Se preserva la semántica histórica de
+// `AI_DEMO_MODE` (demo ⇒ MockAIProvider como primario, igual que `selectProvider`), así que en demo
+// el provider efectivo es `mock` y no hay fallback mock→mock.
 import { AIExecutionService } from '../application/ai-execution/ai-execution.service.js';
 import { readAIExecutionConfig, validateAIExecutionConfig } from '../application/ai-execution/ai-execution-config.js';
 import { selectProvider } from './llm-provider.factory.js';
@@ -16,7 +16,8 @@ export function createAIExecutionService(appConfig: AppConfig = defaultConfig): 
   const execConfig = readAIExecutionConfig(appConfig);
   // Defensa en profundidad: el boot ya valida (env.ts superRefine); revalidar con code tipado.
   validateAIExecutionConfig(execConfig);
-  const primaryProvider = selectProvider(execConfig.llmProvider, false);
+  const effective = execConfig.demoMode ? { ...execConfig, llmProvider: 'mock' as const } : execConfig;
+  const primaryProvider = selectProvider(effective.llmProvider, false);
   const mockProvider = new MockAIProvider();
-  return new AIExecutionService({ primaryProvider, mockProvider, config: execConfig });
+  return new AIExecutionService({ primaryProvider, mockProvider, config: effective });
 }
