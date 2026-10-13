@@ -1,6 +1,6 @@
 // US-051 (PB-P1-031 / QA-004 A11Y) — Unit tests DOM de componentes vendor QR.
 // Verifica:
-//   - `StatusBadge`: renderiza etiqueta traducida y expone `aria-live="polite"` (AC A11Y).
+//   - `StatusBadge`: renderiza etiqueta traducida y es región viva `role="status"` (AC A11Y).
 //   - `EventBriefSnapshot`: acepta shape US-049 y shape US-096 legada; empty-state accesible.
 import React from 'react';
 import { describe, expect, it } from 'vitest';
@@ -21,11 +21,11 @@ function withIntl(children: React.ReactNode): React.ReactElement {
 }
 
 describe('US-051 · StatusBadge', () => {
-  it('renderiza la etiqueta traducida y expone aria-live="polite"', () => {
+  it('renderiza la etiqueta traducida y es región viva (role="status", aria-live implícito polite)', () => {
     const { container } = render(withIntl(<StatusBadge status="sent" />));
     const badge = container.querySelector('[data-status="sent"]');
     expect(badge).not.toBeNull();
-    expect(badge?.getAttribute('aria-live')).toBe('polite');
+    expect(badge?.getAttribute('role')).toBe('status');
     expect(badge?.textContent).toBe('Enviada');
   });
 
