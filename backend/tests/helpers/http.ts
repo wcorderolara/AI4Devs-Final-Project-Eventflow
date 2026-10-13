@@ -82,3 +82,15 @@ export function sessionHelpers(app: Express, opts: SessionOpts = {}) {
     registerLogin: (role: TestRole) => registerLogin(app, role, opts),
   };
 }
+
+/**
+ * Cookie de sesión firmada como `cookieParser(SESSION_SECRET)` (`s:<sid>.<hmac>`), lista para
+ * `.set('Cookie', …)`. Para sesiones creadas directamente por Prisma.
+ */
+export function sessionCookie(sid: string): string {
+  const cookieSecret = process.env.SESSION_SECRET ?? '';
+  const cookieName = process.env.SESSION_COOKIE_NAME ?? 'eventflow_session';
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- firmador runtime (test-only)
+  const signature = require('cookie-signature') as { sign: (value: string, secret: string) => string };
+  return `${cookieName}=${encodeURIComponent(`s:${signature.sign(sid, cookieSecret)}`)}`;
+}

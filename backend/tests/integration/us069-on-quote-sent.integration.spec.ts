@@ -14,26 +14,9 @@ import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import app from '../../src/app.js';
 import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { pickCatalogRefsWithCategory } from '../helpers/fixtures/catalog.js';
 
 const prisma = getTestPrisma();
-
-async function pickCatalogRefs(): Promise<{
-  eventTypeId: string;
-  locationId: string;
-  serviceCategoryId: string;
-} | null> {
-  const [eventType, location, category] = await Promise.all([
-    prisma.eventType.findFirst({ where: { isActive: true, deletedAt: null } }),
-    prisma.location.findFirst({ where: { deletedAt: null } }),
-    prisma.serviceCategory.findFirst({ where: { isActive: true, deletedAt: null } }),
-  ]);
-  if (!eventType || !location || !category) return null;
-  return {
-    eventTypeId: eventType.id,
-    locationId: location.id,
-    serviceCategoryId: category.id,
-  };
-}
 
 interface OrganizerFixture {
   userId: string;
@@ -171,12 +154,12 @@ async function cleanup(orgs: OrganizerFixture[], vendors: VendorFixture[]): Prom
 describe.skipIf(!dbUp)(
   'US-069 integration — OnQuoteSentHandler via POST /api/v1/vendor/quote-requests/:id/respond',
   () => {
-    let refs: Awaited<ReturnType<typeof pickCatalogRefs>> = null;
+    let refs: Awaited<ReturnType<typeof pickCatalogRefsWithCategory>> = null;
     const orgs: OrganizerFixture[] = [];
     const vendors: VendorFixture[] = [];
 
     beforeAll(async () => {
-      refs = await pickCatalogRefs();
+      refs = await pickCatalogRefsWithCategory(prisma);
     }, 60_000);
 
     afterAll(async () => {

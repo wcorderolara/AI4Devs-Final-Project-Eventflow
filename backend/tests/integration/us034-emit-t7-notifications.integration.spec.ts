@@ -24,6 +24,7 @@ import { T7_EMAIL, T7_NOTIFICATION } from '../../src/modules/notifications/infra
 import { PrismaOrganizerLanguageLookup } from '../../src/modules/event-planning/infrastructure/prisma-organizer-language.lookup.js';
 import type { ClockPort } from '../../src/shared/domain/clock.port.js';
 import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { pickCatalogRefs } from '../helpers/fixtures/catalog.js';
 
 const prisma = getTestPrisma();
 
@@ -48,15 +49,6 @@ function makeLogger(): { logger: { info: (p: Record<string, unknown>) => void; e
     },
     captured,
   };
-}
-
-async function pickCatalogRefs(): Promise<{ eventTypeId: string; locationId: string } | null> {
-  const [eventType, location] = await Promise.all([
-    prisma.eventType.findFirst({ where: { isActive: true, deletedAt: null } }),
-    prisma.location.findFirst({ where: { deletedAt: null } }),
-  ]);
-  if (!eventType || !location) return null;
-  return { eventTypeId: eventType.id, locationId: location.id };
 }
 
 /** ISO-8601 midnight UTC del día `daysFromNow` relativos a `base`. */
@@ -166,7 +158,7 @@ describe.skipIf(!dbUp)('US-034 integration — EmitT7NotificationsUseCase contra
   const fixtures: OrganizerFixture[] = [];
 
   beforeAll(async () => {
-    refs = await pickCatalogRefs();
+    refs = await pickCatalogRefs(prisma);
   }, 60_000);
 
   afterAll(async () => {

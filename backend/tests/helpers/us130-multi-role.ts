@@ -11,7 +11,7 @@
 import type { Express } from 'express';
 import type { PrismaClient } from '@prisma/client';
 import request from 'supertest';
-import { registerLogin } from './http.js';
+import { registerLogin, sessionCookie } from './http.js';
 import { createActiveEvent } from './fixtures/events.js';
 import { Argon2idPasswordHasher } from '../../src/infrastructure/security/argon2id-password-hasher.js';
 
@@ -54,15 +54,9 @@ export async function adminAgent(app: Express, prisma: PrismaClient): Promise<Ro
     data: { userId: user.id, expiresAt },
     select: { id: true },
   });
-  const cookieSecret = process.env.SESSION_SECRET ?? '';
-  const cookieName = process.env.SESSION_COOKIE_NAME ?? 'eventflow_session';
-  // Firma HMAC exacta al patrón de `cookieParser(SESSION_SECRET)` (ver us071 integration).
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- runtime signer (test-only)
-  const signature = require('cookie-signature') as { sign: (v: string, s: string) => string };
-  const signedValue = `s:${signature.sign(session.id, cookieSecret)}`;
   const agent = request.agent(app);
   // Supertest `agent` mantiene el jar de cookies para requests subsecuentes.
-  agent.jar.setCookie(`${cookieName}=${encodeURIComponent(signedValue)}; Path=/`);
+  agent.jar.setCookie(`${sessionCookie(session.id)}; Path=/`);
   return { agent, userId: user.id, email, role: 'admin' };
 }
 
