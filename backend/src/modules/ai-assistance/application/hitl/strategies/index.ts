@@ -8,6 +8,7 @@ import type {
   ApplyStrategyArgs,
   ApplyStrategyOutcome,
 } from '../../../domain/hitl/apply-strategy.contract.js';
+import type { AiFeatureType } from '../../../domain/ai-features.js';
 import { SideEffectFailedError } from '../../../domain/errors/hitl.errors.js';
 
 // ── event_plan → persiste `Event.ai_plan` (US-017; entidad única) ────────────
@@ -99,43 +100,21 @@ export class BudgetSuggestionApplyStrategy implements ApplyStrategy<BudgetSugges
   }
 }
 
-// ── vendor_categories → no materializa entidad; adopción/click-through (US-020) ─
-export class VendorCategoriesApplyStrategy implements ApplyStrategy {
-  readonly type = 'vendor_categories' as const;
-  async applyInTransaction(_args: ApplyStrategyArgs): Promise<ApplyStrategyOutcome> {
-    // No hay entidad materializada por diseño (US-020 / Doc 16 §35.8). La adopción se registra
-    // vía el log estructurado emitido por el use case.
-    return { appliedEntityType: null, appliedEntityId: null };
-  }
-}
-
-// ── quote_brief → marca brief como listo (handoff a US-023 / PB-P1-030) ──────
-export class QuoteBriefApplyStrategy implements ApplyStrategy {
-  readonly type = 'quote_brief' as const;
-  async applyInTransaction(args: ApplyStrategyArgs): Promise<ApplyStrategyOutcome> {
-    // TODO(US-023 / PB-P1-030): crear `QuoteRequest` con `ai_generated_brief=true` +
-    // `ai_recommendation_id`. Por ahora sólo trazabilidad — el `apply` marca la recomendación
-    // como `accepted` y la creación real del `QuoteRequest` la ejecuta US-023.
-    void args;
-    return { appliedEntityType: null, appliedEntityId: null };
-  }
-}
-
-// ── quote_comparison → adopción (US-097; scope quote_request) ────────────────
-export class QuoteComparisonApplyStrategy implements ApplyStrategy {
-  readonly type = 'quote_comparison' as const;
-  async applyInTransaction(_args: ApplyStrategyArgs): Promise<ApplyStrategyOutcome> {
-    // Feature histórica (US-097) sin repositorio destino. Trazabilidad marcada por el use case.
-    return { appliedEntityType: null, appliedEntityId: null };
-  }
-}
-
-// ── quote_compare_summary → HITL informativo (US-022; no materializa entidad) ─
-// El resumen NO decide: el organizador marca la Quote preferida vía US-058 (`PATCH
-// /quotes/:id/preferred`). Registrar `apply` deja únicamente audit trail; el AIRecommendation
-// pasa a `accepted` sin side effect (mismo diseño que `quote_comparison`).
-export class QuoteCompareSummaryApplyStrategy implements ApplyStrategy {
-  readonly type = 'quote_compare_summary' as const;
+// ── Tipos sin entidad destino → no-op con `applied_entity=null` ──────────────
+// `apply` sólo marca la recomendación como `accepted`; la trazabilidad (adopción) la registra
+// el log estructurado del use case.
+//   * vendor_categories (US-020): sin entidad por diseño (Doc 16 §35.8).
+//   * quote_brief: TODO(US-023 / PB-P1-030) crear `QuoteRequest` con `ai_generated_brief=true`
+//     + `ai_recommendation_id`; la creación real la ejecuta US-023.
+//   * quote_comparison (US-097): feature histórica sin repositorio destino.
+//   * quote_compare_summary (US-022): HITL informativo; la Quote preferida la marca el
+//     organizador vía US-058 (`PATCH /quotes/:id/preferred`).
+//   * task_prioritization: TODO(US-031 / PB-P1-017) actualizar `EventTask.priority` en bloque;
+//     el schema actual no expone `priority`.
+//   * task_priority (US-024): HITL informativo; no altera el checklist oficial (D6/AC-01), el
+//     organizador decide vía US-030.
+export class NoopApplyStrategy implements ApplyStrategy {
+  constructor(readonly type: AiFeatureType) {}
   async applyInTransaction(_args: ApplyStrategyArgs): Promise<ApplyStrategyOutcome> {
     return { appliedEntityType: null, appliedEntityId: null };
   }
@@ -161,37 +140,15 @@ export class VendorBioApplyStrategy implements ApplyStrategy<VendorBioOutput> {
   }
 }
 
-// ── task_prioritization → actualiza EventTask.priority (US-031) ──────────────
-export class TaskPrioritizationApplyStrategy implements ApplyStrategy {
-  readonly type = 'task_prioritization' as const;
-  async applyInTransaction(_args: ApplyStrategyArgs): Promise<ApplyStrategyOutcome> {
-    // TODO(US-031 / PB-P1-017): actualizar `EventTask.priority` en bloque. El schema actual no
-    // expone `priority`; la evolución vive en US-031. Trazabilidad marcada por el use case.
-    return { appliedEntityType: null, appliedEntityId: null };
-  }
-}
-
-// ── task_priority → HITL informativo (US-024; no materializa entidad) ─────────
-// La priorización top 3 NO altera el checklist oficial (HITL strict, D6/AC-01). El organizador
-// decide qué hacer con cada sugerencia (marcar hecho, reprogramar, delegar) vía US-030. `apply`
-// solo deja audit trail; el AIRecommendation pasa a `accepted` sin side effect (mismo diseño
-// que `quote_compare_summary` en US-022).
-export class TaskPriorityApplyStrategy implements ApplyStrategy {
-  readonly type = 'task_priority' as const;
-  async applyInTransaction(_args: ApplyStrategyArgs): Promise<ApplyStrategyOutcome> {
-    return { appliedEntityType: null, appliedEntityId: null };
-  }
-}
-
 export const MVP_APPLY_STRATEGIES = [
   new EventPlanApplyStrategy(),
   new ChecklistApplyStrategy(),
   new BudgetSuggestionApplyStrategy(),
-  new VendorCategoriesApplyStrategy(),
-  new QuoteBriefApplyStrategy(),
-  new QuoteComparisonApplyStrategy(),
-  new QuoteCompareSummaryApplyStrategy(),
+  new NoopApplyStrategy('vendor_categories'),
+  new NoopApplyStrategy('quote_brief'),
+  new NoopApplyStrategy('quote_comparison'),
+  new NoopApplyStrategy('quote_compare_summary'),
   new VendorBioApplyStrategy(),
-  new TaskPrioritizationApplyStrategy(),
-  new TaskPriorityApplyStrategy(),
+  new NoopApplyStrategy('task_prioritization'),
+  new NoopApplyStrategy('task_priority'),
 ] as const;
