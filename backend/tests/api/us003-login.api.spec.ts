@@ -10,11 +10,10 @@ import { createApp } from '../../src/app.js';
 import { config } from '../../src/config/env.js';
 import { authAttemptTracker } from '../../src/infrastructure/auth-composition.js';
 import { dbUp } from '../helpers/test-db.js';
+import { CAPTCHA, uniqEmail } from '../helpers/http.js';
 
 const app = createApp();
-const CAPTCHA = '__test__';
 const PASSWORD = 'segura12345';
-const uniq = (): string => `us003api_${Date.now()}_${Math.floor(Math.random() * 1e6)}@eventflow.test`;
 
 async function registerUser(email: string): Promise<void> {
   const res = await request(app).post('/api/v1/auth/register').send({
@@ -30,7 +29,7 @@ async function registerUser(email: string): Promise<void> {
 
 describe.skipIf(!dbUp)('US-003 QA-003 — POST /api/v1/auth/login', () => {
   it('AC-01/AC-03: 200 con cookie HttpOnly/SameSite=Lax/Path=/ y Max-Age=30d; sin token en JSON', async () => {
-    const email = uniq();
+    const email = uniqEmail('us003api');
     await registerUser(email);
     const res = await request(app)
       .post('/api/v1/auth/login')
@@ -51,7 +50,7 @@ describe.skipIf(!dbUp)('US-003 QA-003 — POST /api/v1/auth/login', () => {
   });
 
   it('AC-02: GET /api/v1/users/me post-login devuelve la identidad para el ruteo por rol', async () => {
-    const email = uniq();
+    const email = uniqEmail('us003api');
     await registerUser(email);
     const agent = request.agent(app);
     await agent.post('/api/v1/auth/logout'); // limpia por si acaso (idempotente sin sesión → 401)
@@ -63,13 +62,13 @@ describe.skipIf(!dbUp)('US-003 QA-003 — POST /api/v1/auth/login', () => {
   });
 
   it('EC-01/VR-04: 401 genérico IDÉNTICO para email inexistente y password incorrecto', async () => {
-    const email = uniq();
+    const email = uniqEmail('us003api');
     await registerUser(email);
 
     const wrongPass = await request(app).post('/api/v1/auth/login').send({ email, password: 'Wrong12345' });
     const ghost = await request(app)
       .post('/api/v1/auth/login')
-      .send({ email: uniq(), password: PASSWORD });
+      .send({ email: uniqEmail('us003api'), password: PASSWORD });
 
     expect(wrongPass.status).toBe(401);
     expect(ghost.status).toBe(401);
@@ -85,7 +84,7 @@ describe.skipIf(!dbUp)('US-003 QA-003 — POST /api/v1/auth/login', () => {
   });
 
   it('AC-04: sesión activa → 409 ALREADY_AUTHENTICATED sin nueva cookie', async () => {
-    const email = uniq();
+    const email = uniqEmail('us003api');
     await registerUser(email);
     const agent = request.agent(app);
     const first = await agent.post('/api/v1/auth/login').send({ email, password: PASSWORD });
@@ -97,7 +96,7 @@ describe.skipIf(!dbUp)('US-003 QA-003 — POST /api/v1/auth/login', () => {
   });
 
   it('EC-02: tras 3 fallos exige captcha (CAPTCHA_REQUIRED → CAPTCHA_INVALID → éxito con token y reset)', async () => {
-    const email = uniq();
+    const email = uniqEmail('us003api');
     await registerUser(email);
 
     // 3 fallos consecutivos (pre-umbral: sin captcha, 401 genérico).
@@ -143,7 +142,7 @@ describe.skipIf(!dbUp)('US-003 SEC-001/AC-05 — 429 RATE_LIMIT_EXCEEDED bucket 
 
   it('excede el máximo → 429 con Retry-After, sin procesar credenciales ni captcha', async () => {
     const agent = request.agent(app);
-    const email = uniq();
+    const email = uniqEmail('us003api');
     await agent.post('/api/v1/auth/login').send({ email, password: 'Wrong12345' });
     await agent.post('/api/v1/auth/login').send({ email, password: 'Wrong12345' });
     const blocked = await agent.post('/api/v1/auth/login').send({ email, password: 'Wrong12345' });

@@ -11,9 +11,9 @@
 import type { Express } from 'express';
 import type { PrismaClient } from '@prisma/client';
 import request from 'supertest';
+import { registerLogin } from './http.js';
 import { Argon2idPasswordHasher } from '../../src/infrastructure/security/argon2id-password-hasher.js';
 
-const CAPTCHA = '__test__';
 const uniqTag = (label: string): string =>
   `us130_${label}_${Date.now()}_${Math.floor(Math.random() * 1e9)}`;
 
@@ -31,15 +31,8 @@ async function registerLoginPublic(
   app: Express,
   role: 'organizer' | 'vendor',
 ): Promise<RoleAgent> {
-  const email = `${uniqTag(role)}@eventflow.test`;
-  const agent = request.agent(app);
-  const body =
-    role === 'vendor'
-      ? { acceptedTerms: true, email, password: 'Secret1234', businessName: 'Vendor Demo SA', role, captchaToken: CAPTCHA }
-      : { acceptedTerms: true, email, password: 'Secret1234', name: role, role, captchaToken: CAPTCHA };
-  const reg = await agent.post('/api/v1/auth/register').send(body);
-  await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
-  return { agent, userId: reg.body.data.id as string, email, role };
+  const { agent, userId, email } = await registerLogin(app, role, { tag: 'us130' });
+  return { agent, userId, email, role };
 }
 
 /**

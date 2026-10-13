@@ -10,34 +10,15 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../../src/app.js';
 import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { sessionHelpers } from '../helpers/http.js';
 
 const prisma = getTestPrisma();
 
 const app = createApp();
-const CAPTCHA = '__test__';
 const SOME_UUID = '11111111-1111-4111-8111-111111111111';
 const OTHER_UUID = '22222222-2222-4222-8222-222222222222';
-const uniqEmail = (p: string): string =>
-  `us036_${p}_${Date.now()}_${Math.floor(Math.random() * 1e6)}@eventflow.test`;
 
-async function agentFor(role: 'organizer' | 'vendor'): Promise<ReturnType<typeof request.agent>> {
-  const email = uniqEmail(role);
-  const agent = request.agent(app);
-  const payload: Record<string, unknown> = {
-    acceptedTerms: true,
-    email,
-    password: 'Secret1234',
-    role,
-    captchaToken: CAPTCHA,
-  };
-  if (role === 'vendor') payload.businessName = 'Vendor Demo SA';
-  else payload.name = 'Organizer';
-  await agent.post('/api/v1/auth/register').send(payload);
-  await agent
-    .post('/api/v1/auth/login')
-    .send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
-  return agent;
-}
+const { agentFor } = sessionHelpers(app, { tag: 'us036', name: 'Organizer' });
 
 describe('US-036 QA-002 (sin BD): auth / validación de body', () => {
   it('SEC-T-01: POST anónimo → 401', async () => {

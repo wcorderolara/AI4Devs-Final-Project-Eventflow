@@ -6,35 +6,14 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../../src/app.js';
 import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { sessionHelpers, uniqEmail } from '../helpers/http.js';
 
 const prisma = getTestPrisma();
 
 const app = createApp();
-const CAPTCHA = '__test__';
 const SOME_UUID = '11111111-1111-4111-8111-111111111111';
-const uniqEmail = (p: string): string =>
-  `us031_${p}_${Date.now()}_${Math.floor(Math.random() * 1e6)}@eventflow.test`;
 
-async function agentFor(role: 'organizer' | 'vendor' | 'admin'): Promise<ReturnType<typeof request.agent>> {
-  const email = uniqEmail(role);
-  const agent = request.agent(app);
-  const payload: Record<string, unknown> = {
-    acceptedTerms: true,
-    email,
-    password: 'Secret1234',
-    role,
-    captchaToken: CAPTCHA,
-  };
-  if (role === 'vendor') payload.businessName = 'Vendor Demo SA';
-  else payload.name = role;
-  const registered = await agent.post('/api/v1/auth/register').send(payload);
-  if (registered.status >= 400 && role === 'admin') {
-    // El registro público no crea admins; se inserta directo por DB si es necesario.
-    // Este helper solo se invoca en tests DB-gated (skipIf) — la creación por DB vive abajo.
-  }
-  await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
-  return agent;
-}
+const { agentFor } = sessionHelpers(app, { tag: 'us031' });
 
 describe('US-031 QA-003 (sin BD): auth y forma del payload', () => {
   it('anónimo → 401 AUTHENTICATION_REQUIRED', async () => {
@@ -289,7 +268,7 @@ describe.skipIf(!dbUp)('US-031 QA-003 (con BD): matrix funcional', () => {
 
   it('AUTH-TS-04 admin → 403 FORBIDDEN', async () => {
     // Crea admin directo por DB (el registro público no admite el rol admin).
-    const adminEmail = uniqEmail('admin');
+    const adminEmail = uniqEmail('us031_admin');
     const admin = await prisma.user.create({
       data: {
         email: adminEmail,

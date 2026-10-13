@@ -5,16 +5,15 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../../src/app.js';
 import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { CAPTCHA, uniqEmail } from '../helpers/http.js';
 
 const prisma = getTestPrisma();
 
 const app = createApp();
-const CAPTCHA = '__test__';
-const uniqEmail = (p: string): string => `us095_${p}_${Date.now()}_${Math.floor(Math.random() * 1e6)}@eventflow.test`;
 
 /** Registra + loguea un organizer y devuelve un agente Supertest con la cookie de sesión. */
 async function organizerAgent(): Promise<ReturnType<typeof request.agent>> {
-  const email = uniqEmail('org');
+  const email = uniqEmail('us095_org');
   const agent = request.agent(app);
   await agent.post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', name: 'Org', role: 'organizer', captchaToken: CAPTCHA });
   await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });

@@ -20,14 +20,11 @@ import request from 'supertest';
 import { Prisma } from '@prisma/client';
 import { createApp } from '../../src/app.js';
 import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { sessionHelpers, type Agent } from '../helpers/http.js';
 
 const prisma = getTestPrisma();
 
 const app = createApp();
-const CAPTCHA = '__test__';
-const rnd = (): string => `${Date.now()}_${Math.floor(Math.random() * 1e9)}`;
-
-type Agent = ReturnType<typeof request.agent>;
 
 let adminAgent: Agent;
 let organizerAgent: Agent;
@@ -37,28 +34,7 @@ let adminUserBId = '';
 const targetReviewId = '11111111-1111-1111-1111-111111111111';
 const targetVendorId = '22222222-2222-2222-2222-222222222222';
 
-async function registerLogin(
-  role: 'organizer' | 'vendor' | 'admin',
-): Promise<{ agent: Agent; userId: string }> {
-  const email = `us080_${role}_${rnd()}@eventflow.test`;
-  const agent = request.agent(app);
-  const reg = await agent.post('/api/v1/auth/register').send({
-    acceptedTerms: true,
-    email,
-    password: 'Secret1234',
-    ...(role === 'vendor' ? { businessName: 'Vendor Demo SA' } : { name: role }),
-    role: role === 'admin' ? 'organizer' : role,
-    captchaToken: CAPTCHA,
-  });
-  const userId = reg.body.data.id as string;
-  if (role === 'admin') {
-    await prisma.user.update({ where: { id: userId }, data: { role: 'admin' } });
-  }
-  await agent
-    .post('/api/v1/auth/login')
-    .send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
-  return { agent, userId };
-}
+const { registerLogin } = sessionHelpers(app, { tag: 'us080', prisma });
 
 async function seedAction(
   adminUserId: string,

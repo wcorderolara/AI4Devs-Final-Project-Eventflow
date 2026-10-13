@@ -9,13 +9,12 @@ import { createApp } from '../../src/app.js';
 import { config } from '../../src/config/env.js';
 import { LoggingPasswordResetNotifier } from '../../src/infrastructure/notifications/logging-password-reset-notifier.js';
 import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { CAPTCHA, uniqEmail } from '../helpers/http.js';
 
 const prisma = getTestPrisma();
 
 const app = createApp();
-const CAPTCHA = '__test__';
 const PASSWORD = 'segura12345';
-const uniq = (): string => `us004api_${Date.now()}_${Math.floor(Math.random() * 1e6)}@eventflow.test`;
 
 async function registerUser(email: string): Promise<void> {
   const res = await request(app).post('/api/v1/auth/register').send({
@@ -42,7 +41,7 @@ async function requestToken(email: string): Promise<string> {
 
 describe.skipIf(!dbUp)('US-004 QA-002/QA-005 — reset-request 202 neutro', () => {
   it('AC-01/AC-03/QA-005: 202 con cuerpo idéntico para email existente, inexistente y repetido', async () => {
-    const email = uniq();
+    const email = uniqEmail('us004api');
     await registerUser(email);
 
     const existing = await request(app)
@@ -50,7 +49,7 @@ describe.skipIf(!dbUp)('US-004 QA-002/QA-005 — reset-request 202 neutro', () =
       .send({ email, captchaToken: CAPTCHA });
     const ghost = await request(app)
       .post('/api/v1/auth/password/reset-request')
-      .send({ email: uniq(), captchaToken: CAPTCHA });
+      .send({ email: uniqEmail('us004api'), captchaToken: CAPTCHA });
     const repeated = await request(app)
       .post('/api/v1/auth/password/reset-request')
       .send({ email, captchaToken: CAPTCHA });
@@ -63,7 +62,7 @@ describe.skipIf(!dbUp)('US-004 QA-002/QA-005 — reset-request 202 neutro', () =
   });
 
   it('AC-01: token persistido con TTL 30 min y solo como hash (nunca el token plano)', async () => {
-    const email = uniq();
+    const email = uniqEmail('us004api');
     await registerUser(email);
     const before = Date.now();
     const raw = await requestToken(email);
@@ -83,7 +82,7 @@ describe.skipIf(!dbUp)('US-004 QA-002/QA-005 — reset-request 202 neutro', () =
 
 describe.skipIf(!dbUp)('US-004 QA-002 — reset con token (catálogo EC-01..03)', () => {
   it('AC-02: token vigente → 204, contraseña argon2id nueva permite login', async () => {
-    const email = uniq();
+    const email = uniqEmail('us004api');
     await registerUser(email);
     const raw = await requestToken(email);
 
@@ -102,7 +101,7 @@ describe.skipIf(!dbUp)('US-004 QA-002 — reset con token (catálogo EC-01..03)'
   });
 
   it('EC-02: reuso del token → 400 TOKEN_USED', async () => {
-    const email = uniq();
+    const email = uniqEmail('us004api');
     await registerUser(email);
     const raw = await requestToken(email);
     await request(app).post('/api/v1/auth/password/reset').send({ token: raw, newPassword: 'NuevaClave99' });
@@ -122,7 +121,7 @@ describe.skipIf(!dbUp)('US-004 QA-002 — reset con token (catálogo EC-01..03)'
   });
 
   it('EC-01: token expirado (expires_at en el pasado) → 410 GONE_TOKEN_EXPIRED', async () => {
-    const email = uniq();
+    const email = uniqEmail('us004api');
     await registerUser(email);
     const raw = await requestToken(email);
     // Expira el token directamente en BD (ventana vencida).

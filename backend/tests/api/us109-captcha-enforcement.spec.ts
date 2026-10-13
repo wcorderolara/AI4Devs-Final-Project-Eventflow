@@ -6,12 +6,11 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../../src/app.js';
 import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { CAPTCHA, uniqEmail } from '../helpers/http.js';
 
 const prisma = getTestPrisma();
 
 const app = createApp();
-const CAPTCHA = '__test__';
-const uniq = (): string => `us109_${Date.now()}_${Math.floor(Math.random() * 1e6)}@eventflow.test`;
 const register = { password: 'Secret1234', name: 'Cap', role: 'organizer', acceptedTerms: true };
 
 describe('US-109 QA-004: token ausente → CAPTCHA_REQUIRED (EC-01, NT-01, sin DB)', () => {
@@ -77,12 +76,12 @@ describe.skipIf(!dbUp)('US-109 QA-003: happy path con mock captcha (DB)', () => 
   it('AC-01: register con __test__ continúa al use case → 201', async () => {
     const res = await request(app)
       .post('/api/v1/auth/register')
-      .send({ ...register, email: uniq(), captchaToken: CAPTCHA });
+      .send({ ...register, email: uniqEmail('us109'), captchaToken: CAPTCHA });
     expect(res.status).toBe(201);
   });
 
   it('AC-02: login con __test__ continúa al use case → 200 + cookie', async () => {
-    const email = uniq();
+    const email = uniqEmail('us109');
     await request(app).post('/api/v1/auth/register').send({ ...register, email, captchaToken: CAPTCHA });
     const res = await request(app).post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
     expect(res.status).toBe(200);
@@ -92,7 +91,7 @@ describe.skipIf(!dbUp)('US-109 QA-003: happy path con mock captcha (DB)', () => 
   it('AC-03: reset-request con __test__ → 202 anti-enumeración', async () => {
     const res = await request(app)
       .post('/api/v1/auth/password/reset-request')
-      .send({ email: uniq(), captchaToken: CAPTCHA });
+      .send({ email: uniqEmail('us109'), captchaToken: CAPTCHA });
     expect(res.status).toBe(202);
   });
 });

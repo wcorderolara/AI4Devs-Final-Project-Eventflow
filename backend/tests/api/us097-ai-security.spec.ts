@@ -3,22 +3,15 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../../src/app.js';
 import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { sessionHelpers, type Agent, type TestRole } from '../helpers/http.js';
 
 const prisma = getTestPrisma();
 
 const app = createApp();
-const CAPTCHA = '__test__';
 const UUID = '11111111-1111-4111-8111-111111111111';
-const rnd = (): string => `${Date.now()}_${Math.floor(Math.random() * 1e9)}`;
-type Agent = ReturnType<typeof request.agent>;
 
-async function registerLogin(role: 'organizer' | 'vendor'): Promise<Agent> {
-  const email = `us097sec_${role}_${rnd()}@eventflow.test`;
-  const agent = request.agent(app);
-  await agent.post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', ...(role === 'vendor' ? { businessName: 'Vendor Demo SA' } : { name: role }), role, captchaToken: CAPTCHA });
-  await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
-  return agent;
-}
+const session = sessionHelpers(app, { tag: 'us097sec' });
+const registerLogin = async (role: TestRole): Promise<Agent> => (await session.registerLogin(role)).agent;
 
 describe('QA-003 (sin BD): anonymous, sin ruta de prompt genérico', () => {
   it('NT-01: anonymous → 401', async () => {

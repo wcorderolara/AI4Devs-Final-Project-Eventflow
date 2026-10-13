@@ -6,9 +6,9 @@ import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../../src/app.js';
 import { dbUp } from '../helpers/test-db.js';
+import { sessionHelpers } from '../helpers/http.js';
 
 const app = createApp();
-const CAPTCHA = '__test__';
 const EVENT_UUID = '11111111-1111-4111-8111-111111111111';
 const TASK_UUID = '22222222-2222-4222-8222-222222222222';
 
@@ -36,27 +36,7 @@ describe('US-029 QA-003 (sin BD): DB-free', () => {
   });
 });
 
-const uniqEmail = (p: string): string =>
-  `us029_${p}_${Date.now()}_${Math.floor(Math.random() * 1e6)}@eventflow.test`;
-
-async function agentFor(role: 'organizer' | 'vendor'): Promise<ReturnType<typeof request.agent>> {
-  const email = uniqEmail(role);
-  const agent = request.agent(app);
-  const payload: Record<string, unknown> = {
-    acceptedTerms: true,
-    email,
-    password: 'Secret1234',
-    role,
-    captchaToken: CAPTCHA,
-  };
-  if (role === 'vendor') payload.businessName = 'Vendor Demo SA';
-  else payload.name = 'Organizer';
-  await agent.post('/api/v1/auth/register').send(payload);
-  await agent
-    .post('/api/v1/auth/login')
-    .send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
-  return agent;
-}
+const { agentFor } = sessionHelpers(app, { tag: 'us029', name: 'Organizer' });
 
 // Helper: crea evento + tarea propia y devuelve sus ids.
 async function seedEventAndTask(

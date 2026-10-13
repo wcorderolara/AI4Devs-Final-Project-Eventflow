@@ -8,13 +8,11 @@ import request from 'supertest';
 import { z } from 'zod';
 import { createApp } from '../../src/app.js';
 import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { sessionHelpers } from '../helpers/http.js';
 
 const prisma = getTestPrisma();
 
 const app = createApp();
-const CAPTCHA = '__test__';
-const uniq = (p: string): string =>
-  `us044contract_${p}_${Date.now()}_${Math.floor(Math.random() * 1e6)}@eventflow.test`;
 
 // ── Schemas de contrato ──────────────────────────────────────────────────
 const vendorServiceSchema = z
@@ -63,22 +61,7 @@ const errorEnvelope = z.object({
     .passthrough(),
 });
 
-async function agentFor(role: 'vendor'): Promise<ReturnType<typeof request.agent>> {
-  const email = uniq(role);
-  const agent = request.agent(app);
-  await agent.post('/api/v1/auth/register').send({
-    acceptedTerms: true,
-    email,
-    password: 'Secret1234',
-    role,
-    captchaToken: CAPTCHA,
-    businessName: 'Vendor Contract US044',
-  });
-  await agent
-    .post('/api/v1/auth/login')
-    .send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
-  return agent;
-}
+const { agentFor } = sessionHelpers(app, { tag: 'us044contract', businessName: 'Vendor Contract US044' });
 
 describe.skipIf(!dbUp)('US-044 QA-004 (con BD): contract shape', () => {
   let vendorApproved: ReturnType<typeof request.agent>;

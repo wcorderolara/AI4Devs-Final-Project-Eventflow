@@ -8,12 +8,10 @@ import { createApp } from '../../src/app.js';
 import { getTestPrisma, dbUp } from '../helpers/test-db.js';
 import { promptRegistry } from '../../src/modules/ai-assistance/infrastructure/prompt-registry/index.js';
 import { US097_PLACEHOLDER_PROMPT_VERSION } from '../../src/modules/ai-assistance/infrastructure/prompt-version-id.resolver.js';
+import { CAPTCHA, rnd, type Agent } from '../helpers/http.js';
 
 const prisma = getTestPrisma();
 const app = createApp();
-const CAPTCHA = '__test__';
-const rnd = (): string => `${Date.now()}_${Math.floor(Math.random() * 1e9)}`;
-type Agent = ReturnType<typeof request.agent>;
 
 async function registerOrganizer(): Promise<Agent> {
   const email = `pr5_ai_${rnd()}@eventflow.test`;
