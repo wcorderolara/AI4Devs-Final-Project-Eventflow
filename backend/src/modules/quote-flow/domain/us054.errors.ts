@@ -1,7 +1,7 @@
 // Errores de dominio del endpoint `POST /api/v1/quotes/:quoteId/reject` (US-054).
 // Mapean 1:1 a los códigos estables del contrato (§7 Tech Spec) y son consumidos por el
 // `errorHandlerMiddleware` para serializar el envelope anidado con `details` cuando aplica.
-import { AppError } from '../../../shared/domain/errors/app.error.js';
+import { AppError, type ErrorDetail, type HttpErrorMapping } from '../../../shared/domain/errors/app.error.js';
 import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
 
 /**
@@ -11,8 +11,13 @@ import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
  */
 export class QuoteNotFoundError extends AppError {
   readonly code = ErrorCodes.QUOTE_NOT_FOUND;
+  override readonly httpStatus = 404;
   constructor(message = 'Quote not found') {
     super(message);
+  }
+
+  override toHttp(): HttpErrorMapping {
+    return { ...super.toHttp(), message: 'Quote not found', masked: true };
   }
 }
 
@@ -22,11 +27,16 @@ export class QuoteNotFoundError extends AppError {
  */
 export class QuoteNotRejectableError extends AppError {
   readonly code = ErrorCodes.QUOTE_NOT_REJECTABLE;
+  override readonly httpStatus = 409;
   constructor(
     public readonly currentStatus: string,
     message = 'Quote is not rejectable in its current state',
   ) {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'current_status', message: this.currentStatus }];
   }
 }
 
@@ -36,7 +46,12 @@ export class QuoteNotRejectableError extends AppError {
  */
 export class InvalidRejectionReasonError extends AppError {
   readonly code = ErrorCodes.INVALID_REJECTION_REASON;
+  override readonly httpStatus = 400;
   constructor(message = 'reason exceeds maximum length of 500 characters') {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'reason', message: 'too_long' }];
   }
 }

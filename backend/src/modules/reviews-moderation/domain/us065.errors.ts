@@ -9,7 +9,7 @@
 //   - `ReviewNotEligibleError` — 403 con `details.reason` ∈
 //     {`no_booking`, `event_not_completed`, `window_expired`, `already_reviewed`} (D6,
 //     EC-01/EC-02/EC-03, AC-03). Diferencia flujos de elegibilidad propios del organizer.
-import { AppError } from '../../../shared/domain/errors/app.error.js';
+import { AppError, type ErrorDetail, type HttpErrorMapping } from '../../../shared/domain/errors/app.error.js';
 import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
 
 export const REVIEW_NOT_ELIGIBLE_REASONS = [
@@ -28,8 +28,13 @@ export type ReviewNotEligibleReason = (typeof REVIEW_NOT_ELIGIBLE_REASONS)[numbe
  */
 export class ReviewTargetNotFoundError extends AppError {
   readonly code = ErrorCodes.RESOURCE_NOT_FOUND;
+  override readonly httpStatus = 404;
   constructor(message = 'Resource not found') {
     super(message);
+  }
+
+  override toHttp(): HttpErrorMapping {
+    return { ...super.toHttp(), message: 'Resource not found', masked: true };
   }
 }
 
@@ -40,10 +45,15 @@ export class ReviewTargetNotFoundError extends AppError {
  */
 export class ReviewNotEligibleError extends AppError {
   readonly code = ErrorCodes.REVIEW_NOT_ELIGIBLE;
+  override readonly httpStatus = 403;
   constructor(
     public readonly reason: ReviewNotEligibleReason,
     message = 'Not eligible to review',
   ) {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'reason', message: this.reason }];
   }
 }

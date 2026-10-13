@@ -6,6 +6,7 @@ import { ErrorCodes } from './error-codes.js';
 
 export class NotFoundError extends AppError {
   readonly code = ErrorCodes.RESOURCE_NOT_FOUND;
+  override readonly httpStatus = 404;
 
   constructor(message = 'Resource not found') {
     super(message);

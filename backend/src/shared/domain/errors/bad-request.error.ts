@@ -4,6 +4,7 @@ import { AppError } from './app.error.js';
 
 export class BadRequestError extends AppError {
   readonly code = 'BAD_REQUEST';
+  override readonly httpStatus = 400;
 
   constructor(message = 'Bad request') {
     super(message);

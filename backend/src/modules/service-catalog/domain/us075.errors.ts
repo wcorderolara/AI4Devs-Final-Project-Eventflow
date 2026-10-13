@@ -1,11 +1,10 @@
 // Errores de dominio del CRUD admin de `ServiceCategory` (US-075 / BE-004..006).
 // Tech Spec §7 Error Handling; Decisiones PO D4/D5/D9. Mapeo 1:1 con `error-codes.ts`.
 //
-// Uniformidad: cada error extiende `AppError` con un `code` estable del catálogo. El
-// mapeo a HTTP status lo hace `errorHandlerMiddleware`. Los `details` que enriquecen
-// el envelope de respuesta se exponen como propiedades públicas para que el handler
-// las serialice sin acoplar el dominio al transporte.
-import { AppError } from '../../../shared/domain/errors/app.error.js';
+// Uniformidad: cada error extiende `AppError` con un `code` estable del catálogo y declara
+// su status HTTP y `details` (`httpStatus` / `httpDetails()`); el `errorHandlerMiddleware`
+// solo serializa el envelope.
+import { AppError, type ErrorDetail, type HttpErrorMapping } from '../../../shared/domain/errors/app.error.js';
 import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
 
 /**
@@ -16,8 +15,13 @@ import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
  */
 export class ServiceCategoryNotFoundError extends AppError {
   readonly code = ErrorCodes.SERVICE_CATEGORY_NOT_FOUND;
+  override readonly httpStatus = 404;
   constructor(message = 'Service category not found') {
     super(message);
+  }
+
+  override toHttp(): HttpErrorMapping {
+    return { ...super.toHttp(), message: 'Service category not found' };
   }
 }
 
@@ -29,6 +33,7 @@ export class ServiceCategoryNotFoundError extends AppError {
  */
 export class InvalidHierarchyDepthError extends AppError {
   readonly code = ErrorCodes.INVALID_HIERARCHY_DEPTH;
+  override readonly httpStatus = 409;
   constructor(message = 'Service category hierarchy depth exceeded') {
     super(message);
   }
@@ -41,6 +46,7 @@ export class InvalidHierarchyDepthError extends AppError {
  */
 export class DuplicateCategoryCodeError extends AppError {
   readonly code = ErrorCodes.DUPLICATE_CODE;
+  override readonly httpStatus = 409;
   constructor(message = 'Service category code already exists') {
     super(message);
   }
@@ -53,11 +59,16 @@ export class DuplicateCategoryCodeError extends AppError {
  */
 export class CategoryInUseError extends AppError {
   readonly code = ErrorCodes.CATEGORY_IN_USE;
+  override readonly httpStatus = 409;
   constructor(
     public readonly usageCount: number,
     message = 'Service category is in use by vendor services',
   ) {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'usage_count', message: String(this.usageCount) }];
   }
 }
 
@@ -68,11 +79,16 @@ export class CategoryInUseError extends AppError {
  */
 export class CategoryHasChildrenError extends AppError {
   readonly code = ErrorCodes.CATEGORY_HAS_CHILDREN;
+  override readonly httpStatus = 409;
   constructor(
     public readonly childrenCount: number,
     message = 'Service category has active subcategories',
   ) {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'children_count', message: String(this.childrenCount) }];
   }
 }
 
@@ -82,6 +98,7 @@ export class CategoryHasChildrenError extends AppError {
  */
 export class InvalidParentIdError extends AppError {
   readonly code = ErrorCodes.INVALID_PARENT_ID;
+  override readonly httpStatus = 400;
   constructor(message = 'Parent service category does not exist') {
     super(message);
   }
@@ -94,6 +111,7 @@ export class InvalidParentIdError extends AppError {
  */
 export class InvalidNameI18nError extends AppError {
   readonly code = ErrorCodes.INVALID_NAME_I18N;
+  override readonly httpStatus = 400;
   constructor(message = "name_i18n['es-LATAM'] is required") {
     super(message);
   }
@@ -105,6 +123,7 @@ export class InvalidNameI18nError extends AppError {
  */
 export class ReasonRequiredError extends AppError {
   readonly code = ErrorCodes.REASON_REQUIRED;
+  override readonly httpStatus = 400;
   constructor(message = 'reason is required') {
     super(message);
   }
@@ -116,6 +135,7 @@ export class ReasonRequiredError extends AppError {
  */
 export class InvalidReasonLengthError extends AppError {
   readonly code = ErrorCodes.INVALID_REASON_LENGTH;
+  override readonly httpStatus = 400;
   constructor(message = 'reason must be between 10 and 500 chars') {
     super(message);
   }

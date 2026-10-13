@@ -1,6 +1,6 @@
 // Errores de dominio — US-022 (PB-P2-001 / AI-006). Mapean 1:1 a los códigos estables del contrato
 // del endpoint `POST /events/:eventId/ai/quote-summary` (Tech Spec §7 Error Handling).
-import { AppError } from '../../../shared/domain/errors/app.error.js';
+import { AppError, type ErrorDetail } from '../../../shared/domain/errors/app.error.js';
 import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
 
 /**
@@ -11,11 +11,16 @@ import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
  */
 export class Us022InvalidCategoryError extends AppError {
   readonly code = ErrorCodes.INVALID_CATEGORY;
+  override readonly httpStatus = 400;
   constructor(
     public readonly categoryCode: string,
     message = 'Service category is not available',
   ) {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'categoryCode', message: this.categoryCode }];
   }
 }
 
@@ -25,8 +30,13 @@ export class Us022InvalidCategoryError extends AppError {
  */
 export class Us022CategoryCodeRequiredError extends AppError {
   readonly code = ErrorCodes.INVALID_FILTERS;
+  override readonly httpStatus = 400;
   constructor(message = 'category_code is required') {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'category_code', message: 'required' }];
   }
 }
 
@@ -36,10 +46,15 @@ export class Us022CategoryCodeRequiredError extends AppError {
  */
 export class Us022InsufficientQuotesError extends AppError {
   readonly code = ErrorCodes.INSUFFICIENT_QUOTES;
+  override readonly httpStatus = 400;
   constructor(
     public readonly eligibleCount: number,
     message = 'At least two eligible quotes are required to generate the AI comparison summary',
   ) {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'eligible_count', message: String(this.eligibleCount) }];
   }
 }

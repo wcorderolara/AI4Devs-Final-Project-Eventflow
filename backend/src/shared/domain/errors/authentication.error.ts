@@ -5,6 +5,7 @@ import { ErrorCodes } from './error-codes.js';
 
 export class AuthenticationError extends AppError {
   readonly code = ErrorCodes.AUTHENTICATION_REQUIRED;
+  override readonly httpStatus = 401;
 
   constructor(message = 'Autenticación requerida') {
     super(message);

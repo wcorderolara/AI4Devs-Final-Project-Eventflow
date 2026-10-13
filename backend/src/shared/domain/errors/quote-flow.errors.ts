@@ -5,6 +5,7 @@ import { ErrorCodes } from './error-codes.js';
 
 export class MaxQuoteRequestsExceededError extends AppError {
   readonly code = ErrorCodes.MAX_QUOTE_REQUESTS_EXCEEDED;
+  override readonly httpStatus = 409;
   constructor(message = 'Maximum active quote requests exceeded for this event/category') {
     super(message);
   }
@@ -12,6 +13,7 @@ export class MaxQuoteRequestsExceededError extends AppError {
 
 export class DuplicateQuoteRequestActiveError extends AppError {
   readonly code = ErrorCodes.DUPLICATE_QUOTE_REQUEST_ACTIVE;
+  override readonly httpStatus = 409;
   constructor(message = 'An active quote request already exists for this event/vendor') {
     super(message);
   }
@@ -19,6 +21,7 @@ export class DuplicateQuoteRequestActiveError extends AppError {
 
 export class QuoteExpiredError extends AppError {
   readonly code = ErrorCodes.QUOTE_EXPIRED;
+  override readonly httpStatus = 410;
   constructor(message = 'Quote has expired') {
     super(message);
   }

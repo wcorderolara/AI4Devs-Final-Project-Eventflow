@@ -9,6 +9,7 @@ import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
 
 export class Us074InvalidCursorError extends AppError {
   readonly code = ErrorCodes.INVALID_CURSOR;
+  override readonly httpStatus = 400;
   constructor(message = 'Invalid cursor') {
     super(message);
   }

@@ -9,18 +9,26 @@
 //   emitir `INVALID_PAGE_SIZE` en lugar del `VALIDATION_ERROR` genérico (EC-04 / VR-02). En la
 //   práctica el Zod refine ya devuelve `VALIDATION_ERROR`; esta clase se conserva por si el
 //   controller quiere elevarla explícitamente (mantenida para paridad con el catálogo VR).
+import { AppError, type HttpErrorMapping } from '../../../shared/domain/errors/app.error.js';
+import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
 
-export class VendorNotFoundForReviewsError extends Error {
+export class VendorNotFoundForReviewsError extends AppError {
+  readonly code = ErrorCodes.VENDOR_NOT_FOUND;
+  override readonly httpStatus = 404;
   constructor(message = 'Vendor not found') {
     super(message);
-    this.name = 'VendorNotFoundForReviewsError';
+  }
+
+  override toHttp(): HttpErrorMapping {
+    return { ...super.toHttp(), message: 'Vendor not found' };
   }
 }
 
-export class Us066InvalidCursorError extends Error {
+export class Us066InvalidCursorError extends AppError {
+  readonly code = ErrorCodes.INVALID_CURSOR;
+  override readonly httpStatus = 400;
   constructor(message = 'Invalid cursor') {
     super(message);
-    this.name = 'Us066InvalidCursorError';
   }
 }
 

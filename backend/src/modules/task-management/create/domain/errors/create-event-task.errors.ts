@@ -3,7 +3,7 @@
 // `EventNotMutableError` se REUSA del módulo `bulk-confirm` — mismo mapeo 409 (Doc 16).
 // `EventNotFoundError` no se define aquí: la no-revelación 404 se satisface con
 // `NotFoundError` del shared kernel (mismo patrón que US-027 y US-031).
-import { AppError } from '../../../../../shared/domain/errors/app.error.js';
+import { AppError, type ErrorDetail } from '../../../../../shared/domain/errors/app.error.js';
 import { ErrorCodes } from '../../../../../shared/domain/errors/error-codes.js';
 
 /**
@@ -12,10 +12,15 @@ import { ErrorCodes } from '../../../../../shared/domain/errors/error-codes.js';
  */
 export class CategoryNotAvailableError extends AppError {
   readonly code = ErrorCodes.CATEGORY_NOT_AVAILABLE;
+  override readonly httpStatus = 400;
   readonly categoryCode: string;
   constructor(categoryCode: string) {
     super(`Category not available (code=${categoryCode})`);
     this.categoryCode = categoryCode;
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'category_code', message: 'not_available' }];
   }
 }
 
@@ -26,8 +31,13 @@ export class CategoryNotAvailableError extends AppError {
  */
 export class DueDateInPastError extends AppError {
   readonly code = ErrorCodes.DUE_DATE_IN_PAST;
+  override readonly httpStatus = 400;
   constructor() {
     super('due_date must be greater than or equal to now()');
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'due_date', message: 'due_date_in_past' }];
   }
 }
 
@@ -37,6 +47,7 @@ export class DueDateInPastError extends AppError {
  */
 export class UnsupportedMediaTypeError extends AppError {
   readonly code = ErrorCodes.UNSUPPORTED_MEDIA_TYPE;
+  override readonly httpStatus = 415;
   constructor() {
     super('Content-Type must be application/json');
   }

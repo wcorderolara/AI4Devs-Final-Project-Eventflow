@@ -6,6 +6,7 @@ import { ErrorCodes } from './error-codes.js';
 
 export class EmailTakenError extends AppError {
   readonly code = ErrorCodes.EMAIL_TAKEN;
+  override readonly httpStatus = 409;
 
   constructor(message = 'Email already registered') {
     super(message);

@@ -13,6 +13,7 @@ export const OAUTH_CONTINUATION_NEUTRAL_MESSAGE = 'No fue posible completar';
 /** `state`/`nonce` ausente, alterado o expirado (SEC-03, NT-02). */
 export class OAuthStateInvalidError extends AppError {
   readonly code = ErrorCodes.OAUTH_STATE_INVALID;
+  override readonly httpStatus = 400;
   /** Causa interna para el log (no se expone al cliente). */
   readonly reason: string;
 
@@ -29,6 +30,7 @@ export class OAuthStateInvalidError extends AppError {
  */
 export class OAuthVerificationError extends AppError {
   readonly code = ErrorCodes.OAUTH_VERIFICATION_FAILED;
+  override readonly httpStatus = 400;
   readonly reason: string;
 
   constructor(reason = 'id_token_invalid') {
@@ -40,6 +42,7 @@ export class OAuthVerificationError extends AppError {
 /** `google_sub` ya vinculado a otra cuenta, o el email tiene otra identidad Google (409). */
 export class OAuthAccountConflictError extends AppError {
   readonly code = ErrorCodes.OAUTH_ACCOUNT_CONFLICT;
+  override readonly httpStatus = 409;
   readonly reason: string;
 
   constructor(reason = 'account_conflict') {
@@ -51,6 +54,7 @@ export class OAuthAccountConflictError extends AppError {
 /** Token de continuación (selección de rol / confirmación de vinculación) inválido o expirado (410). */
 export class OAuthContinuationInvalidError extends AppError {
   readonly code = ErrorCodes.OAUTH_CONTINUATION_INVALID;
+  override readonly httpStatus = 410;
   readonly reason: string;
 
   constructor(reason = 'continuation_invalid') {
