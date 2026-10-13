@@ -9,7 +9,6 @@ import { UnauthorizedError } from '../../../shared/domain/errors/unauthorized.er
 import { MethodNotAllowedError } from '../../../shared/domain/errors/method-not-allowed.error.js';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
 import { captchaVerificationMiddleware } from '../../../shared/interface/middlewares/captcha-verification.middleware.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
 import {
   loginRateLimit,
@@ -17,18 +16,7 @@ import {
   passwordResetRequestRateLimit,
   passwordResetConfirmRateLimit,
 } from '../../../shared/interface/http/auth-rate-limits.js';
-import {
-  userRepository,
-  sessionRepository,
-  passwordResetTokenRepository,
-  passwordHasher,
-  resetTokenGenerator,
-  passwordResetNotifier,
-  clock,
-  authEventLogger,
-  welcomeEmailNotifier,
-  authAttemptTracker,
-} from '../../../infrastructure/auth-composition.js';
+import { userRepository, sessionRepository, passwordResetTokenRepository, passwordHasher, resetTokenGenerator, passwordResetNotifier, clock, authEventLogger, welcomeEmailNotifier, authAttemptTracker, requireSession } from '../../../infrastructure/auth-composition.js';
 import { createNoActiveSessionGuard } from '../../../shared/interface/http/no-active-session.guard.js';
 import { createConditionalCaptchaMiddleware } from '../../../shared/interface/http/conditional-captcha.js';
 import {
@@ -79,7 +67,6 @@ const controller = new IdentityAccessController({
   ),
 });
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
 const noActiveSessionGuard = createNoActiveSessionGuard({ sessions: sessionRepository, clock });
 
 export const identityAccessRouter = Router();
@@ -111,7 +98,7 @@ identityAccessRouter.post(
 // 204 limpiando la cookie. El error-tap emite `auth.logout.no_session` sin alterar el 401 del guard.
 identityAccessRouter.post(
   '/logout',
-  sessionAuth,
+  requireSession,
   asyncHandler(controller.logout),
   ((err, req, _res, next) => {
     if (err instanceof UnauthorizedError) {

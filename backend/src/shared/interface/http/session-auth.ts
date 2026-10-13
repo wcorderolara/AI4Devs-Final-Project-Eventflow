@@ -17,6 +17,11 @@ import { config } from '../../../config/env.js';
 export interface SessionAuthDeps {
   sessions: SessionRepository;
   clock: ClockPort;
+  /**
+   * US-066 / EMERGENT-001: endpoints públicos con conducta condicional por rol. Sin cookie o con
+   * cookie inválida ⇒ `next()` anónimo (sin 401); errores del repositorio se propagan igual.
+   */
+  optional?: boolean;
 }
 
 /** Factory: construye el middleware con las dependencias inyectadas en el composition root. */
@@ -27,6 +32,11 @@ export function createSessionAuthMiddleware(deps: SessionAuthDeps): RequestHandl
     void (async (): Promise<void> => {
       const sid = req.signedCookies?.[cookieName] as unknown;
       if (typeof sid !== 'string' || sid.length === 0) {
+        // Anónimo en modo opcional: continúa sin log.
+        if (deps.optional) {
+          next();
+          return;
+        }
         // Cookie ausente o firma inválida (cookie-parser descarta las mal firmadas). No se revela
         // la causa exacta al cliente (AC-04); el log queda como metadato seguro (redactado).
         logSessionEvent('session.cookie.invalid', {
@@ -44,7 +54,9 @@ export function createSessionAuthMiddleware(deps: SessionAuthDeps): RequestHandl
             correlationId: req.correlationId,
             reason: 'invalid_expired_or_revoked',
           });
-          next(new UnauthorizedError());
+          // En modo opcional se degrada a anónimo.
+          if (deps.optional) next();
+          else next(new UnauthorizedError());
           return;
         }
         req.user = { id: resolved.userId, role: resolved.role };

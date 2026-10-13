@@ -4,19 +4,13 @@
 // otros dos roles del MVP. Sin cache (los KPIs son personales; el cost es bajo con índices).
 import { Router, type Request, type Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { requireSession, requireRole } from '../../../infrastructure/auth-composition.js';
 import { success } from '../../../shared/response/index.js';
 import { UnauthorizedError } from '../../../shared/domain/errors/unauthorized.error.js';
 import { logger } from '../../../shared/infrastructure/logger/index.js';
 
 const prisma = new PrismaClient();
-
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const organizerOnly = roleMiddleware(['organizer']);
-const vendorOnly = roleMiddleware(['vendor']);
 
 /** Rango temporal: inicio de esta semana (lunes 00:00 UTC) hasta el domingo 23:59:59 UTC. */
 function currentWeekRange(now: Date): { start: Date; end: Date } {
@@ -35,7 +29,7 @@ function currentWeekRange(now: Date): { start: Date; end: Date } {
 // ── /api/v1/organizer/metrics ────────────────────────────────────────────────
 
 export const organizerMetricsRouter = Router();
-organizerMetricsRouter.use(sessionAuth, organizerOnly);
+organizerMetricsRouter.use(requireSession, requireRole('organizer'));
 
 organizerMetricsRouter.get(
   '/metrics',
@@ -120,7 +114,7 @@ organizerMetricsRouter.get(
 // ── /api/v1/vendor/metrics ───────────────────────────────────────────────────
 
 export const vendorMetricsRouter = Router();
-vendorMetricsRouter.use(sessionAuth, vendorOnly);
+vendorMetricsRouter.use(requireSession, requireRole('vendor'));
 
 vendorMetricsRouter.get(
   '/metrics',

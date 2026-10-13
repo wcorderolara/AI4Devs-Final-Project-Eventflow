@@ -4,10 +4,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { clock, requireSession, requireRole } from '../../../infrastructure/auth-composition.js';
 import {
   PrismaEventAccessReader,
   PrismaVendorProfileReader,
@@ -99,10 +97,6 @@ const quoteController = new QuotesController({
   prefer: new PreferQuoteUs058UseCase(quoteEvents, clock, logger, prisma),
 });
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const organizer = roleMiddleware(['organizer']);
-const vendor = roleMiddleware(['vendor']);
-const organizerOrVendor = roleMiddleware(['organizer', 'vendor']);
 const v = validateRequestMiddleware;
 
 export const quoteFlowRouter = Router();
@@ -110,29 +104,29 @@ export const quoteFlowRouter = Router();
 // ── QuoteRequest ──────────────────────────────────────────────────────────
 quoteFlowRouter.get(
   '/events/:eventId/quote-requests',
-  sessionAuth,
-  organizer,
+  requireSession,
+  requireRole('organizer'),
   v(z.object({ params: EventIdParamSchema, query: ListQuoteRequestsQuerySchema })),
   asyncHandler(qrController.listByEvent),
 );
 quoteFlowRouter.post(
   '/events/:eventId/quote-requests',
-  sessionAuth,
-  organizer,
+  requireSession,
+  requireRole('organizer'),
   v(z.object({ params: EventIdParamSchema, body: CreateQuoteRequestRequestSchema })),
   asyncHandler(qrController.create),
 );
 quoteFlowRouter.get(
   '/vendors/me/quote-requests',
-  sessionAuth,
-  vendor,
+  requireSession,
+  requireRole('vendor'),
   v(z.object({ query: ListQuoteRequestsQuerySchema })),
   asyncHandler(qrController.listByVendor),
 );
 quoteFlowRouter.get(
   '/quote-requests/:quoteRequestId',
-  sessionAuth,
-  organizerOrVendor,
+  requireSession,
+  requireRole('organizer', 'vendor'),
   v(z.object({ params: QuoteRequestIdParamSchema })),
   asyncHandler(qrController.get),
 );
@@ -140,15 +134,15 @@ quoteFlowRouter.get(
 // el verbo PATCH y la ruta existente (US-096) — DEV-02 evita duplicar `/organizer/...`.
 quoteFlowRouter.patch(
   '/quote-requests/:quoteRequestId/cancel',
-  sessionAuth,
-  organizer,
+  requireSession,
+  requireRole('organizer'),
   v(z.object({ params: QuoteRequestIdParamSchema, body: cancelQuoteRequestBodySchema })),
   asyncHandler(qrController.cancel),
 );
 quoteFlowRouter.patch(
   '/quote-requests/:quoteRequestId/viewed',
-  sessionAuth,
-  vendor,
+  requireSession,
+  requireRole('vendor'),
   v(z.object({ params: QuoteRequestIdParamSchema })),
   asyncHandler(qrController.markViewed),
 );
@@ -157,8 +151,8 @@ quoteFlowRouter.patch(
 // es `:id` (no `:eventId`) según §7 del Tech Spec.
 quoteFlowRouter.get(
   '/events/:id/quotes/compare',
-  sessionAuth,
-  organizer,
+  requireSession,
+  requireRole('organizer'),
   v(z.object({ params: CompareQuotesEventIdParamSchema, query: CompareQuotesQuerySchema })),
   asyncHandler(qrController.compareQuotes),
 );
@@ -166,43 +160,43 @@ quoteFlowRouter.get(
 // ── Quote ─────────────────────────────────────────────────────────────────
 quoteFlowRouter.get(
   '/quote-requests/:quoteRequestId/quote',
-  sessionAuth,
-  organizerOrVendor,
+  requireSession,
+  requireRole('organizer', 'vendor'),
   v(z.object({ params: QuoteRequestIdParamSchema })),
   asyncHandler(quoteController.getForRequest),
 );
 quoteFlowRouter.post(
   '/quote-requests/:quoteRequestId/quote',
-  sessionAuth,
-  vendor,
+  requireSession,
+  requireRole('vendor'),
   v(z.object({ params: QuoteRequestIdParamSchema, body: CreateQuoteRequestBodySchema })),
   asyncHandler(quoteController.create),
 );
 quoteFlowRouter.patch(
   '/quotes/:quoteId',
-  sessionAuth,
-  vendor,
+  requireSession,
+  requireRole('vendor'),
   v(z.object({ params: QuoteIdParamSchema, body: UpdateQuoteRequestBodySchema })),
   asyncHandler(quoteController.update),
 );
-quoteFlowRouter.post('/quotes/:quoteId/send', sessionAuth, vendor, v(z.object({ params: QuoteIdParamSchema })), asyncHandler(quoteController.send));
-quoteFlowRouter.post('/quotes/:quoteId/accept', sessionAuth, organizer, v(z.object({ params: QuoteIdParamSchema })), asyncHandler(quoteController.accept));
+quoteFlowRouter.post('/quotes/:quoteId/send', requireSession, requireRole('vendor'), v(z.object({ params: QuoteIdParamSchema })), asyncHandler(quoteController.send));
+quoteFlowRouter.post('/quotes/:quoteId/accept', requireSession, requireRole('organizer'), v(z.object({ params: QuoteIdParamSchema })), asyncHandler(quoteController.accept));
 // US-054 (PB-P1-032 / BE-005): body opcional `{ reason?: string [0..500] }`.
 quoteFlowRouter.post(
   '/quotes/:quoteId/reject',
-  sessionAuth,
-  organizer,
+  requireSession,
+  requireRole('organizer'),
   v(z.object({ params: QuoteIdParamSchema, body: rejectQuoteBodySchema })),
   asyncHandler(quoteController.reject),
 );
-quoteFlowRouter.post('/quotes/:quoteId/prefer', sessionAuth, organizer, v(z.object({ params: QuoteIdParamSchema })), asyncHandler(quoteController.prefer));
+quoteFlowRouter.post('/quotes/:quoteId/prefer', requireSession, requireRole('organizer'), v(z.object({ params: QuoteIdParamSchema })), asyncHandler(quoteController.prefer));
 // US-058 (PB-P1-035 / BE-004): endpoint canónico del toggle preferred. Body
 // `{is_preferred: boolean}` habilita mark (AC-01), unmark (AC-03) e idempotencia (AC-04) sobre
 // la misma ruta. El legacy POST /prefer sigue disponible y delega al mismo UC con `true` (DEV-01).
 quoteFlowRouter.patch(
   '/quotes/:quoteId/preferred',
-  sessionAuth,
-  organizer,
+  requireSession,
+  requireRole('organizer'),
   v(z.object({ params: QuoteIdParamSchema, body: preferQuoteBodySchema })),
   asyncHandler(quoteController.preferred),
 );

@@ -9,10 +9,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { requireSession, requireRole } from '../../../infrastructure/auth-composition.js';
 import { aiMetricsQuerySchema } from '../../../shared/validation/ai-metrics.query.schema.js';
 import { PrismaAIMetricsRepository } from '../infrastructure/prisma-ai-metrics.repository.js';
 import { GetAIMetricsUseCase } from '../application/get-ai-metrics.use-case.js';
@@ -22,12 +20,9 @@ const repository = new PrismaAIMetricsRepository();
 const getAIMetrics = new GetAIMetricsUseCase(repository);
 const controller = new AIMetricsController({ getAIMetrics });
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const adminOnly = roleMiddleware(['admin']);
-
 export const adminAIMetricsRouter = Router();
 
-adminAIMetricsRouter.use(sessionAuth, adminOnly);
+adminAIMetricsRouter.use(requireSession, requireRole('admin'));
 
 adminAIMetricsRouter.get(
   '/',

@@ -7,10 +7,8 @@
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { clock, requireSession, requireRole } from '../../../infrastructure/auth-composition.js';
 import { success } from '../../../shared/response/index.js';
 import { UnauthorizedError } from '../../../shared/domain/errors/unauthorized.error.js';
 import { StructuredDomainEventLogger } from '../../../infrastructure/observability/structured-domain-event-logger.js';
@@ -38,8 +36,6 @@ import {
 export const qrIdParamSchema = us051QrIdParamSchema;
 export type QrIdParam = Us051QrIdParam;
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const vendorOnly = roleMiddleware(['vendor']);
 const validate = validateRequestMiddleware;
 
 const vendors = new PrismaVendorProfileReader(prisma);
@@ -104,16 +100,16 @@ export const us051VendorQuoteRequestsRouter = Router();
 
 us051VendorQuoteRequestsRouter.get(
   '/vendor/quote-requests/:id',
-  sessionAuth,
-  vendorOnly,
+  requireSession,
+  requireRole('vendor'),
   validate(z.object({ params: qrIdParamSchema })),
   asyncHandler(getDetailHandler),
 );
 
 us051VendorQuoteRequestsRouter.post(
   '/vendor/quote-requests/:id/mark-viewed',
-  sessionAuth,
-  vendorOnly,
+  requireSession,
+  requireRole('vendor'),
   validate(z.object({ params: qrIdParamSchema })),
   asyncHandler(markViewedHandler),
 );
@@ -121,8 +117,8 @@ us051VendorQuoteRequestsRouter.post(
 // US-052 (PB-P1-031): respuesta single-shot con Quote + 2 notifications atómicas.
 us051VendorQuoteRequestsRouter.post(
   '/vendor/quote-requests/:id/respond',
-  sessionAuth,
-  vendorOnly,
+  requireSession,
+  requireRole('vendor'),
   validate(z.object({ params: qrIdParamSchema, body: respondQuoteRequestBodySchema })),
   asyncHandler(respondHandler),
 );

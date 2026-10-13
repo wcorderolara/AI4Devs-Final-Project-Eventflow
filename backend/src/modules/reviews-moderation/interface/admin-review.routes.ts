@@ -9,10 +9,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
-import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { clock, requireSession, requireRole } from '../../../infrastructure/auth-composition.js';
 import { StructuredDomainEventLogger } from '../../../infrastructure/observability/structured-domain-event-logger.js';
 import { prisma } from '../../../infrastructure/prisma/client.js';
 import { ModerateReviewUseCase } from '../application/moderate-review.use-case.js';
@@ -31,13 +29,10 @@ const moderateReviewUseCase = new ModerateReviewUseCase(clock, logger, prisma);
 const listReviewsUseCase = new ListReviewsForAdminUseCase(prisma);
 const controller = new AdminReviewController(moderateReviewUseCase, listReviewsUseCase);
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const adminOnly = roleMiddleware(['admin']);
-
 export const adminReviewRouter = Router();
 
 // Guards comunes: sesión válida + rol admin ANTES de validación (paridad con adminEventsRouter).
-adminReviewRouter.use(sessionAuth, adminOnly);
+adminReviewRouter.use(requireSession, requireRole('admin'));
 
 // US-077: listado paginado admin — se registra ANTES del `/:id/moderate` para preservar orden
 // de match; Express no colisiona (`GET /` vs `POST /:id/moderate`) pero preserva la convención

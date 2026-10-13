@@ -4,10 +4,8 @@
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { PrismaClient, type Prisma } from '@prisma/client';
-import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { requireSession, requireRole } from '../../../infrastructure/auth-composition.js';
 import { success } from '../../../shared/response/index.js';
 import { logger } from '../../../shared/infrastructure/logger/index.js';
 import { encodeCursor, tryDecodeCursor } from '../../../shared/pagination/cursor.js';
@@ -25,11 +23,8 @@ const QuerySchema = z.object({
 // Cursor `{ createdAt, id }`; uno inválido se ignora (primera página), no es 400.
 const CursorSchema = z.object({ createdAt: z.string(), id: z.string() });
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const adminOnly = roleMiddleware(['admin']);
-
 export const adminUsersRouter = Router();
-adminUsersRouter.use(sessionAuth, adminOnly);
+adminUsersRouter.use(requireSession, requireRole('admin'));
 
 adminUsersRouter.get(
   '/',

@@ -9,10 +9,8 @@
 // SEC-01/02/03/04: `roleMiddleware(['organizer'])` rechaza vendor y admin con 403 ANTES del
 // handler. Masked 404 (SEC-06 / AUTH-TS-02) se resuelve en el use case vía `isOwnedEvent`.
 import { Router } from 'express';
-import { roleMiddleware } from '../../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../../shared/interface/http/async-handler.js';
-import { sessionRepository, clock } from '../../../../infrastructure/auth-composition.js';
+import { requireSession, requireRole } from '../../../../infrastructure/auth-composition.js';
 import { GetBudgetUseCase } from '../../application/get-budget.use-case.js';
 import { GetBudgetTelemetry } from '../../application/get-budget-telemetry.js';
 import { PrismaBudgetReadRepository } from '../../infrastructure/prisma-budget-read.repository.js';
@@ -28,14 +26,11 @@ const telemetry = new GetBudgetTelemetry();
 const useCase = new GetBudgetUseCase(repository, currencyReader, telemetry);
 const controller = new GetBudgetController(useCase);
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const organizerOnly = roleMiddleware(['organizer']);
-
 export const budgetRouter = Router();
 
 budgetRouter.get(
   '/events/:eventId/budget',
-  sessionAuth,
-  organizerOnly,
+  requireSession,
+  requireRole('organizer'),
   asyncHandler(controller.handle),
 );

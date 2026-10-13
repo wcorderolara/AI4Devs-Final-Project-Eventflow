@@ -11,10 +11,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { clock, requireSession, requireRole } from '../../../infrastructure/auth-composition.js';
 import {
   PrismaEventAccessReader,
   PrismaVendorProfileReader,
@@ -102,31 +100,26 @@ const controller = new BookingIntentsController({
   }),
 });
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const organizer = roleMiddleware(['organizer']);
-const vendor = roleMiddleware(['vendor']);
-const organizerOrVendor = roleMiddleware(['organizer', 'vendor']);
-
 export const bookingIntentRouter = Router();
 
 bookingIntentRouter.post(
   '/',
-  sessionAuth,
-  organizer,
+  requireSession,
+  requireRole('organizer'),
   validateRequestMiddleware(z.object({ body: CreateBookingIntentRequestSchema })),
   asyncHandler(controller.create),
 );
 bookingIntentRouter.get(
   '/:bookingIntentId',
-  sessionAuth,
-  organizerOrVendor,
+  requireSession,
+  requireRole('organizer', 'vendor'),
   validateRequestMiddleware(z.object({ params: BookingIntentIdParamSchema })),
   asyncHandler(controller.get),
 );
 bookingIntentRouter.post(
   '/:bookingIntentId/confirm',
-  sessionAuth,
-  vendor,
+  requireSession,
+  requireRole('vendor'),
   // US-063 (BE-005 / D1): el body ahora es obligatorio con `{ disclaimer_accepted: true }` para
   // paridad de enforcement server-side con US-060 (create). Bypass en el body ⇒
   // `400 VALIDATION_ERROR` (Zod) o `400 DISCLAIMER_REQUIRED` (use case) según el fallo real.
@@ -137,8 +130,8 @@ bookingIntentRouter.post(
 );
 bookingIntentRouter.post(
   '/:bookingIntentId/cancel',
-  sessionAuth,
-  organizerOrVendor,
+  requireSession,
+  requireRole('organizer', 'vendor'),
   validateRequestMiddleware(z.object({ params: BookingIntentIdParamSchema, body: CancelBookingIntentRequestSchema })),
   asyncHandler(controller.cancel),
 );

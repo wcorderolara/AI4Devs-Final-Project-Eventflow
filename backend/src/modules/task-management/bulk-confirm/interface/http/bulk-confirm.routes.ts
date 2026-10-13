@@ -4,11 +4,9 @@
 // dedicado (no invoca al LLM); usa el rate limit global del middleware pipeline.
 import { Router } from 'express';
 import { validateRequestMiddleware } from '../../../../../shared/interface/middlewares/validate-request.middleware.js';
-import { roleMiddleware } from '../../../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../../../shared/interface/http/async-handler.js';
 import { composeProtectedRoute } from '../../../../../shared/interface/http/compose-route.js';
-import { sessionRepository, clock } from '../../../../../infrastructure/auth-composition.js';
+import { requireRole, requireSession } from '../../../../../infrastructure/auth-composition.js';
 import { ConfirmAITasksBulkUseCase } from '../../application/confirm-ai-tasks-bulk.use-case.js';
 import { BulkConfirmTelemetry } from '../../application/bulk-confirm-telemetry.js';
 import { PrismaAITaskBulkRepository } from '../../infrastructure/prisma-ai-task-bulk.repository.js';
@@ -22,9 +20,6 @@ const telemetry = new BulkConfirmTelemetry();
 const useCase = new ConfirmAITasksBulkUseCase(repository, eventReader, telemetry);
 const controller = new ConfirmAITasksBulkController(useCase);
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const organizerOnly = roleMiddleware(['organizer']);
-
 export const bulkConfirmRouter = Router();
 
 // SEC-02 (`FR-ADMIN-010`): `roleMiddleware(['organizer'])` rechaza admin con 403 FORBIDDEN antes
@@ -33,8 +28,8 @@ export const bulkConfirmRouter = Router();
 bulkConfirmRouter.post(
   '/events/:eventId/tasks/confirm-bulk',
   ...composeProtectedRoute({
-    auth: sessionAuth,
-    role: organizerOnly,
+    auth: requireSession,
+    role: requireRole('organizer'),
     validation: validateRequestMiddleware(confirmAITasksBulkRequestSchema),
     handler: asyncHandler(controller.handle),
   }),

@@ -10,10 +10,9 @@
 // — cualquier rol autenticado ve/muta sólo sus notifs.
 import { Router } from 'express';
 import { z } from 'zod';
-import { createSessionAuthMiddleware } from '../../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../../shared/interface/http/async-handler.js';
 import { validateRequestMiddleware } from '../../../../shared/interface/middlewares/validate-request.middleware.js';
-import { sessionRepository, clock } from '../../../../infrastructure/auth-composition.js';
+import { requireSession } from '../../../../infrastructure/auth-composition.js';
 import { logger as sharedLogger } from '../../../../shared/infrastructure/logger/index.js';
 import { ListMyNotificationsUseCase } from '../../application/list-my-notifications.use-case.js';
 import { MarkNotificationAsReadUseCase } from '../../application/mark-notification-as-read.use-case.js';
@@ -56,23 +55,21 @@ const controller = new NotificationsController({
   markAllAsRead: markAllAsReadUseCase,
 });
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-
 export const notificationsRouter = Router();
 
-notificationsRouter.get('/notifications', sessionAuth, asyncHandler(controller.list));
+notificationsRouter.get('/notifications', requireSession, asyncHandler(controller.list));
 // US-072 (PB-P2-008 / BE-005): mutations con response `204 No Content`. Zod se
 // aplica ANTES del controller para que payloads inválidos disparen 400 uniforme
 // vía `ValidationError` en vez de `ZodError` colapsando a 500.
 notificationsRouter.patch(
   '/notifications/:notificationId/read',
-  sessionAuth,
+  requireSession,
   validateRequestMiddleware(z.object({ params: notificationIdParamSchema })),
   asyncHandler(controller.markAsRead),
 );
 notificationsRouter.post(
   '/notifications/mark-all-read',
-  sessionAuth,
+  requireSession,
   validateRequestMiddleware(z.object({ query: markAllReadQuerySchema })),
   asyncHandler(controller.markAllAsRead),
 );

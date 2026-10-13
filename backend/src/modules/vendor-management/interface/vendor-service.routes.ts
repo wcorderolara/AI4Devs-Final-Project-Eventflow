@@ -6,10 +6,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { clock, requireSession, requireRole } from '../../../infrastructure/auth-composition.js';
 import { CreateVendorServiceUseCase } from '../application/create-vendor-service.use-case.js';
 import { UpdateVendorServiceUseCase } from '../application/update-vendor-service.use-case.js';
 import { DeactivateVendorServiceUseCase } from '../application/deactivate-vendor-service.use-case.js';
@@ -58,32 +56,29 @@ const controller = new VendorServiceController({
   list: listUseCase,
 });
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const vendorOnly = roleMiddleware(['vendor']);
-
 export const vendorServiceRouter = Router();
 
-vendorServiceRouter.get('/', sessionAuth, vendorOnly, asyncHandler(controller.list));
+vendorServiceRouter.get('/', requireSession, requireRole('vendor'), asyncHandler(controller.list));
 
 vendorServiceRouter.post(
   '/',
-  sessionAuth,
-  vendorOnly,
+  requireSession,
+  requireRole('vendor'),
   validateRequestMiddleware(z.object({ body: CreateVendorServiceRequestSchema })),
   asyncHandler(controller.create),
 );
 
 vendorServiceRouter.patch(
   '/:id',
-  sessionAuth,
-  vendorOnly,
+  requireSession,
+  requireRole('vendor'),
   validateRequestMiddleware(z.object({ body: UpdateVendorServiceRequestSchema })),
   asyncHandler(controller.update),
 );
 
 vendorServiceRouter.delete(
   '/:id',
-  sessionAuth,
-  vendorOnly,
+  requireSession,
+  requireRole('vendor'),
   asyncHandler(controller.deactivate),
 );

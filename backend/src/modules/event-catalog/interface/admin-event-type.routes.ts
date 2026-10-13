@@ -11,10 +11,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
-import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { requireSession, requireRole } from '../../../infrastructure/auth-composition.js';
 import { StructuredDomainEventLogger } from '../../../infrastructure/observability/structured-domain-event-logger.js';
 import { prisma } from '../../../infrastructure/prisma/client.js';
 import { CreateEventTypeUseCase } from '../application/create-event-type.use-case.js';
@@ -37,11 +35,8 @@ const softDeleteUC = new SoftDeleteEventTypeUseCase(logger, prisma);
 const listUC = new ListEventTypesUseCase(prisma);
 const controller = new AdminEventTypeController(createUC, updateUC, softDeleteUC, listUC);
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const adminOnly = roleMiddleware(['admin']);
-
 export const adminEventTypeRouter = Router();
-adminEventTypeRouter.use(sessionAuth, adminOnly);
+adminEventTypeRouter.use(requireSession, requireRole('admin'));
 
 adminEventTypeRouter.get('/', asyncHandler(controller.list));
 

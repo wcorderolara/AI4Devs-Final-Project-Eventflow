@@ -8,10 +8,8 @@
 // Composición canónica US-111: `sessionAuth → roleMiddleware(['organizer']) → asyncHandler`.
 // Vendor/admin → 403 antes del handler. Ownership + no-revelación 404 los aplica el use case.
 import { Router } from 'express';
-import { roleMiddleware } from '../../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../../shared/interface/http/async-handler.js';
-import { sessionRepository, clock } from '../../../../infrastructure/auth-composition.js';
+import { requireSession, requireRole } from '../../../../infrastructure/auth-composition.js';
 import { PrismaBudgetItemWriteRepository } from '../../infrastructure/prisma-budget-item-write.repository.js';
 import { PrismaEventBudgetContextReader } from '../../infrastructure/prisma-event-budget-context.reader.js';
 import { PrismaServiceCategoryReadAdapter } from '../../infrastructure/prisma-service-category-read.adapter.js';
@@ -50,26 +48,23 @@ const deleteUseCase = new DeleteBudgetItemUseCase(
 
 const controller = new BudgetItemMutationController(createUseCase, updateUseCase, deleteUseCase);
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const organizerOnly = roleMiddleware(['organizer']);
-
 export const budgetItemMutationRouter = Router();
 
 budgetItemMutationRouter.post(
   '/events/:eventId/budget/items',
-  sessionAuth,
-  organizerOnly,
+  requireSession,
+  requireRole('organizer'),
   asyncHandler(controller.create),
 );
 budgetItemMutationRouter.patch(
   '/events/:eventId/budget/items/:itemId',
-  sessionAuth,
-  organizerOnly,
+  requireSession,
+  requireRole('organizer'),
   asyncHandler(controller.update),
 );
 budgetItemMutationRouter.delete(
   '/events/:eventId/budget/items/:itemId',
-  sessionAuth,
-  organizerOnly,
+  requireSession,
+  requireRole('organizer'),
   asyncHandler(controller.delete),
 );

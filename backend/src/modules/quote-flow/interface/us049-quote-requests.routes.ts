@@ -6,11 +6,9 @@
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
 import { quoteRequestRateLimit } from '../../../shared/interface/http/quote-request-rate-limit.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { requireSession, requireRole } from '../../../infrastructure/auth-composition.js';
 import { success } from '../../../shared/response/index.js';
 import { UnauthorizedError } from '../../../shared/domain/errors/unauthorized.error.js';
 import { logger } from '../../../shared/infrastructure/logger/index.js';
@@ -33,8 +31,6 @@ import {
 } from '../dto/active-qr-count.us050.query.js';
 import { prisma } from '../../../infrastructure/prisma/client.js';
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const organizerOnly = roleMiddleware(['organizer']);
 const validate = validateRequestMiddleware;
 
 const activeCounter = new PrismaQuoteRequestActiveCounterAdapter(prisma);
@@ -74,8 +70,8 @@ export const us049QuoteRequestsRouter = Router();
 // US-049: POST canónico con rate limit 10 req/min.
 us049QuoteRequestsRouter.post(
   '/quote-requests',
-  sessionAuth,
-  organizerOnly,
+  requireSession,
+  requireRole('organizer'),
   quoteRequestRateLimit,
   validate(z.object({ body: createQuoteRequestUs049BodySchema })),
   asyncHandler(createQuoteRequestHandler),
@@ -84,8 +80,8 @@ us049QuoteRequestsRouter.post(
 // US-050: GET pre-check del límite BR-QUOTE-009. Sólo lectura; usa el rate limit global.
 us049QuoteRequestsRouter.get(
   '/quote-requests/active-count',
-  sessionAuth,
-  organizerOnly,
+  requireSession,
+  requireRole('organizer'),
   validate(z.object({ query: activeQrCountUs050QuerySchema })),
   asyncHandler(activeCountHandler),
 );

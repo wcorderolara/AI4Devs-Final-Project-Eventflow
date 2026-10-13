@@ -7,10 +7,8 @@
 // de filtros inválidos (EC-01) sin devolver 400. El param `eventId` se valida en el controller
 // con Zod para preservar el envelope de error canónico.
 import { Router } from 'express';
-import { roleMiddleware } from '../../../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../../../shared/interface/http/async-handler.js';
-import { sessionRepository, clock } from '../../../../../infrastructure/auth-composition.js';
+import { requireSession, requireRole } from '../../../../../infrastructure/auth-composition.js';
 import { ListEventTasksUseCase } from '../../application/list-event-tasks.use-case.js';
 import { ListEventTasksTelemetry } from '../../application/list-event-tasks-telemetry.js';
 import { PrismaEventTaskListRepository } from '../../infrastructure/repositories/prisma-event-task-list.repository.js';
@@ -21,9 +19,6 @@ const telemetry = new ListEventTasksTelemetry();
 const useCase = new ListEventTasksUseCase(repository, telemetry);
 const controller = new ListEventTasksController(useCase);
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const organizerOnly = roleMiddleware(['organizer']);
-
 export const eventTasksListRouter = Router();
 
 // SEC-04/05: `roleMiddleware(['organizer'])` rechaza vendor y admin con 403 antes del handler.
@@ -31,7 +26,7 @@ export const eventTasksListRouter = Router();
 // vía `isOwnedEvent`.
 eventTasksListRouter.get(
   '/events/:eventId/tasks',
-  sessionAuth,
-  organizerOnly,
+  requireSession,
+  requireRole('organizer'),
   asyncHandler(controller.handle),
 );

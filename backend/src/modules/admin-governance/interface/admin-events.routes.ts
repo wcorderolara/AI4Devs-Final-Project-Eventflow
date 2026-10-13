@@ -12,10 +12,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { requireSession, requireRole } from '../../../infrastructure/auth-composition.js';
 import { AdminEventIdParamSchema } from '../dto/admin-event-id.param.js';
 import { AdminEventsQuerySchema } from './admin-events-query.dto.js';
 import { PrismaAdminEventRepository } from '../infrastructure/prisma-admin-event.repository.js';
@@ -33,13 +31,10 @@ const listEvents = new ListEventsForAdminUseCase();
 
 const controller = new AdminEventsController({ viewEvent, listEvents, auditLogger });
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const adminOnly = roleMiddleware(['admin']);
-
 export const adminEventsRouter = Router();
 
 // Guards comunes: sesión válida + rol admin ANTES de validación.
-adminEventsRouter.use(sessionAuth, adminOnly);
+adminEventsRouter.use(requireSession, requireRole('admin'));
 
 // US-078: listado paginado. Se registra ANTES de `/:id` para preservar orden de match
 // (paridad exacta con `adminVendorRouter` de US-074).

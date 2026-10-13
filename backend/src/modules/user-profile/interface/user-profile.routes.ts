@@ -3,14 +3,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import {
-  userRepository,
-  sessionRepository,
-  passwordHasher,
-  clock,
-} from '../../../infrastructure/auth-composition.js';
+import { userRepository, passwordHasher, requireSession } from '../../../infrastructure/auth-composition.js';
 import {
   UpdateCurrentUserProfileSchema,
   ChangePreferredLanguageSchema,
@@ -29,29 +23,27 @@ const controller = new UserProfileController({
   changePassword: new ChangePasswordUseCase(userRepository, passwordHasher),
 });
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-
 export const userProfileRouter = Router();
 
-userProfileRouter.get('/me', sessionAuth, asyncHandler(controller.getMe));
+userProfileRouter.get('/me', requireSession, asyncHandler(controller.getMe));
 
 userProfileRouter.patch(
   '/me',
-  sessionAuth,
+  requireSession,
   validateRequestMiddleware(z.object({ body: UpdateCurrentUserProfileSchema })),
   asyncHandler(controller.updateMe),
 );
 
 userProfileRouter.patch(
   '/me/preferred-language',
-  sessionAuth,
+  requireSession,
   validateRequestMiddleware(z.object({ body: ChangePreferredLanguageSchema })),
   asyncHandler(controller.changeLanguage),
 );
 
 userProfileRouter.post(
   '/me/change-password',
-  sessionAuth,
+  requireSession,
   validateRequestMiddleware(z.object({ body: ChangePasswordSchema })),
   asyncHandler(controller.changePassword),
 );
