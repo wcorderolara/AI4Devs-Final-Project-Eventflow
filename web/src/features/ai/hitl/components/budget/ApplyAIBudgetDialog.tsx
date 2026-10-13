@@ -3,8 +3,8 @@
 // US-037 (PB-P1-021 / FE-003) — Dialog principal. Preview de las items de `budget_suggestion`,
 // edición inline de `estimatedAmount` por fila, toggle de inclusión por fila, total acumulado y
 // botón "Aplicar" que envía `editedPayload` (subset editado; si no hay edits envía nada).
-// A11Y: `role="dialog"`, `aria-labelledby`, `aria-describedby`, focus trap, ESC, `aria-busy`,
-// `aria-live` para status. Consumidor pasa `initialItems` y `currencyCode` desde la recomendación.
+// A11Y: el overlay es el `Modal` del design system (focus trap, ESC, nombre y descripción
+// accesibles). Consumidor pasa `initialItems` y `currencyCode` desde la recomendación.
 //
 // PB-P2-033: la tabla de preview pasa a las primitivas `Table` del design system y los controles
 // a `Checkbox` / `Input` / `Button`. Corrige además la CTA primaria, que era `bg-blue-600` — azul
@@ -16,6 +16,7 @@ import {
   Button,
   Checkbox,
   Input,
+  Modal,
   Table,
   TableBody,
   TableCell,
@@ -76,10 +77,10 @@ export function ApplyAIBudgetDialog({
   onCancel,
   onSubmit,
   replacedItemsCountHint,
-}: ApplyAIBudgetDialogProps): JSX.Element | null {
+}: ApplyAIBudgetDialogProps): JSX.Element {
   const t = useTranslations('ai.budgetApply');
-  const dialogRef = useRef<HTMLDivElement | null>(null);
-  const cancelBtnRef = useRef<HTMLButtonElement | null>(null);
+  // Foco inicial en Cancelar: evita un submit accidental por Enter.
+  const cancelBtnRef = useRef<HTMLElement | null>(null);
 
   const [rows, setRows] = useState<Row[]>(() =>
     initialItems.map((it) => ({
@@ -101,21 +102,6 @@ export function ApplyAIBudgetDialog({
       })),
     );
   }, [initialItems]);
-
-  // ESC cierra; focus trap simple sobre el dialog.
-  useEffect(() => {
-    if (!open) return;
-    const handleKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        onCancel();
-      }
-    };
-    document.addEventListener('keydown', handleKey);
-    // Focus inicial en Cancelar (evita submit accidental por Enter).
-    setTimeout(() => cancelBtnRef.current?.focus(), 0);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [open, onCancel]);
 
   const anyIncluded = rows.some((r) => r.included);
   const total = useMemo(() => totalAmount(rows), [rows]);
@@ -147,35 +133,39 @@ export function ApplyAIBudgetDialog({
     });
   }, [rows, currencyCode, onSubmit, replacedItemsCountHint]);
 
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      role="presentation"
-    >
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="apply-ai-budget-dialog-title"
-        aria-describedby="apply-ai-budget-dialog-desc"
-        aria-busy={submitting}
-        className="w-full max-w-2xl rounded-lg bg-white p-6 shadow-xl focus:outline-none"
-        tabIndex={-1}
-      >
-        <header className="mb-4">
-          <h2 id="apply-ai-budget-dialog-title" className="text-lg font-semibold">
-            {t('title')}
-          </h2>
-          <p
-            id="apply-ai-budget-dialog-desc"
-            className="mt-1 font-body text-body-sm text-secondary"
+    <Modal
+      open={open}
+      onClose={onCancel}
+      size="lg"
+      title={t('title')}
+      description={t('description')}
+      showCloseButton={false}
+      // Cerrar por fuera perdería las ediciones de las filas; `Esc` y Cancelar siguen disponibles.
+      closeOnOverlayClick={false}
+      initialFocus={cancelBtnRef}
+      footer={
+        <>
+          <Button
+            ref={cancelBtnRef as React.Ref<HTMLButtonElement>}
+            variant="secondary"
+            onClick={onCancel}
+            disabled={submitting}
           >
-            {t('description')}
-          </p>
-        </header>
-
+            {t('cta.cancel')}
+          </Button>
+          <Button
+            onClick={handleApply}
+            disabled={!anyIncluded || submitting}
+            isLoading={submitting}
+            loadingLabel={t('cta.applying')}
+          >
+            {t('cta.apply')}
+          </Button>
+        </>
+      }
+    >
+      <div aria-busy={submitting}>
         <div
           role="region"
           aria-label={t('itemsRegionLabel')}
@@ -280,21 +270,7 @@ export function ApplyAIBudgetDialog({
         </div>
 
         {errorMessage ? <Alert variant="error" live className="mt-3" title={errorMessage} /> : null}
-
-        <div className="mt-6 flex justify-end gap-2">
-          <Button ref={cancelBtnRef} variant="secondary" onClick={onCancel} disabled={submitting}>
-            {t('cta.cancel')}
-          </Button>
-          <Button
-            onClick={handleApply}
-            disabled={!anyIncluded || submitting}
-            isLoading={submitting}
-            loadingLabel={t('cta.applying')}
-          >
-            {t('cta.apply')}
-          </Button>
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 }

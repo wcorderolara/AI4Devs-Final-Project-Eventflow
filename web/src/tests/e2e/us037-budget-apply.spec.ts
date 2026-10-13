@@ -136,8 +136,10 @@ test.describe('US-037 QA-006 — Apply AI budget (E2E)', () => {
     await page.getByRole('button', { name: /generate ai/i }).click();
     await page.getByRole('button', { name: /apply ai suggestion/i }).click();
     await page.getByRole('dialog').getByRole('button', { name: /^apply$/i }).click();
-    // Modal de error visible con lista y CTAs.
-    await expect(page.getByRole('alertdialog', { name: /categories are no longer available/i })).toBeVisible();
+    // Modal de error visible con lista y CTAs. Se asserta el título: la raíz del `Modal` es un
+    // contenedor de tamaño cero (el panel va `fixed`) y Playwright la considera oculta.
+    const errorDialog = page.getByRole('alertdialog', { name: /categories are no longer available/i });
+    await expect(errorDialog.getByRole('heading')).toBeVisible();
     await expect(page.getByRole('link', { name: /regenerate suggestion/i })).toBeVisible();
     await expect(page.getByRole('link', { name: /apply manually/i })).toBeVisible();
   });

@@ -85,7 +85,7 @@ describe('US-037 UT-12-FE — <ApplyAIBudgetDialog>', () => {
   });
 
   it('A11Y-01: sin violaciones axe (role=dialog, aria-modal, labelledby, describedby)', async () => {
-    const { container } = render(
+    render(
       wrap(
         <ApplyAIBudgetDialog
           open
@@ -96,7 +96,7 @@ describe('US-037 UT-12-FE — <ApplyAIBudgetDialog>', () => {
         />,
       ),
     );
-    const results = await axe(container);
+    const results = await axe(document.body);
     expect(results).toHaveNoViolations();
   });
 
@@ -132,9 +132,9 @@ describe('US-037 A11Y-02 — <ReplaceConfirmationDialog>', () => {
         />,
       ),
     );
-    const desc = screen.getByRole('alertdialog').querySelector('#replace-confirm-desc');
-    expect(desc?.textContent).toMatch(/3/);
-    expect(desc?.textContent).toMatch(/venue/);
+    const dialog = screen.getByRole('alertdialog');
+    expect(dialog).toHaveAccessibleDescription(/3/);
+    expect(dialog).toHaveAccessibleDescription(/venue/);
   });
 
   it('confirma al pulsar el botón principal', () => {
@@ -154,7 +154,7 @@ describe('US-037 A11Y-02 — <ReplaceConfirmationDialog>', () => {
   });
 
   it('sin violaciones axe', async () => {
-    const { container } = render(
+    render(
       wrap(
         <ReplaceConfirmationDialog
           open
@@ -165,7 +165,7 @@ describe('US-037 A11Y-02 — <ReplaceConfirmationDialog>', () => {
         />,
       ),
     );
-    const results = await axe(container);
+    const results = await axe(document.body);
     expect(results).toHaveNoViolations();
   });
 });
@@ -210,7 +210,7 @@ describe('US-037 UT-13-FE + A11Y-03 — <CategoryInactiveErrorDialog>', () => {
   });
 
   it('sin violaciones axe', async () => {
-    const { container } = render(
+    render(
       wrap(
         <CategoryInactiveErrorDialog
           open
@@ -220,7 +220,7 @@ describe('US-037 UT-13-FE + A11Y-03 — <CategoryInactiveErrorDialog>', () => {
         />,
       ),
     );
-    const results = await axe(container);
+    const results = await axe(document.body);
     expect(results).toHaveNoViolations();
   });
 });

@@ -153,13 +153,14 @@ describe('US-035 — <EmptyBudgetState>', () => {
   });
 });
 
+// Los diálogos se montan en un portal (`Modal` del design system): se consulta `document`.
 describe('US-036 — <AddBudgetItemModal>', () => {
   it('valida label vacío y monto inválido', () => {
     const onSubmit = vi.fn();
-    const { container } = render(
+    render(
       wrap(<AddBudgetItemModal open onSubmit={onSubmit} onCancel={vi.fn()} />),
     );
-    const form = container.querySelector('form')!;
+    const form = document.querySelector('form')!;
     fireEvent.submit(form);
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByText(/label is required/i)).toBeInTheDocument();
@@ -167,13 +168,13 @@ describe('US-036 — <AddBudgetItemModal>', () => {
 
   it('envía valores válidos', () => {
     const onSubmit = vi.fn();
-    const { container } = render(
+    render(
       wrap(<AddBudgetItemModal open onSubmit={onSubmit} onCancel={vi.fn()} />),
     );
     fireEvent.change(screen.getByLabelText(/^label$/i), { target: { value: 'Photo' } });
     fireEvent.change(screen.getByLabelText(/category code/i), { target: { value: 'photography' } });
     fireEvent.change(screen.getByLabelText(/planned amount/i), { target: { value: '1500.50' } });
-    fireEvent.submit(container.querySelector('form')!);
+    fireEvent.submit(document.querySelector('form')!);
     expect(onSubmit).toHaveBeenCalledWith({
       label: 'Photo',
       category_code: 'photography',
@@ -182,10 +183,10 @@ describe('US-036 — <AddBudgetItemModal>', () => {
   });
 
   it('A11Y: sin violaciones', async () => {
-    const { container } = render(
+    render(
       wrap(<AddBudgetItemModal open onSubmit={vi.fn()} onCancel={vi.fn()} />),
     );
-    const results = await axe(container);
+    const results = await axe(document.body);
     expect(results).toHaveNoViolations();
   });
 });
@@ -215,10 +216,10 @@ describe('US-036 — <DeleteBudgetItemDialog>', () => {
   });
 
   it('A11Y: sin violaciones', async () => {
-    const { container } = render(
+    render(
       wrap(<DeleteBudgetItemDialog open item={items[0]!} onCancel={vi.fn()} onConfirm={vi.fn()} />),
     );
-    const results = await axe(container);
+    const results = await axe(document.body);
     expect(results).toHaveNoViolations();
   });
 });
