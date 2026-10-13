@@ -41,8 +41,12 @@ import { QuoteEventNotificationService } from '../../quote-flow/services/quote-e
 import { PrismaQuoteNotificationSenderAdapter } from '../../../infrastructure/notifications/prisma-quote-notification-sender.adapter.js';
 // US-070 (PB-P2-007 / BE-005): handler `booking_confirmed` bilateral in-tx.
 import { OnBookingConfirmedHandler } from '../../notifications/application/on-booking-confirmed.handler.js';
-import { PrismaNotificationBookingConfirmedRepository } from '../../notifications/infrastructure/prisma-notification-booking-confirmed.repository.js';
-import { LoggingSimulatedBookingConfirmedEmailAdapter } from '../../notifications/infrastructure/logging-simulated-booking-confirmed-email.adapter.js';
+import { PrismaNotificationRepository } from '../../notifications/infrastructure/prisma-notification.repository.js';
+import { LoggingSimulatedEmailAdapter } from '../../notifications/infrastructure/logging-simulated-email.adapter.js';
+import {
+  BOOKING_CONFIRMED_EMAIL,
+  BOOKING_CONFIRMED_NOTIFICATION,
+} from '../../notifications/infrastructure/notification-channels.js';
 import { PrismaOrganizerLanguageLookup } from '../../event-planning/infrastructure/prisma-organizer-language.lookup.js';
 import { logger as sharedLogger } from '../../../shared/infrastructure/logger/index.js';
 import { BookingIntentsController } from './booking-intent.controller.js';
@@ -70,9 +74,9 @@ const transactionRunner = {
 // `PrismaOrganizerLanguageLookup` structurally como `RecipientLanguagePreferenceReader`
 // (mismo shape) para ambos recipients.
 const onBookingConfirmedHandler = new OnBookingConfirmedHandler({
-  notificationRepo: new PrismaNotificationBookingConfirmedRepository(prisma),
+  notificationRepo: new PrismaNotificationRepository(BOOKING_CONFIRMED_NOTIFICATION, prisma),
   languageLookup: new PrismaOrganizerLanguageLookup(prisma),
-  emailAdapter: new LoggingSimulatedBookingConfirmedEmailAdapter(sharedLogger),
+  emailAdapter: new LoggingSimulatedEmailAdapter(BOOKING_CONFIRMED_EMAIL, sharedLogger),
   logger: sharedLogger,
 });
 

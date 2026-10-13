@@ -6,7 +6,7 @@
 // Guards defensivos (D7: status != `confirmed_intent` / event ausente / recipient
 // deactivated) NO abortan la transacción: se registran como `warn` estructurado y
 // el handler continúa (skip por recipient) o retorna (skip global). Cualquier
-// fallo del INSERT o del `existsBookingConfirmedForRecipient` propaga a la tx →
+// fallo del INSERT o del `exists` (idempotencia) propaga a la tx →
 // rollback (AC-06).
 //
 // Dedup self-notification (AC-08 / D7): si `event.ownerId == vendorProfile.userId`
@@ -15,8 +15,10 @@
 import type { Prisma } from '@prisma/client';
 import type { SupportedLanguage } from '../../../shared/constants/languages.js';
 import { SUPPORTED_LANGUAGES } from '../../../shared/constants/languages.js';
-import type { NotificationBookingConfirmedRepository } from '../ports/notification-booking-confirmed.repository.js';
-import type { SimulatedBookingConfirmedEmailPort } from '../ports/simulated-booking-confirmed-email.port.js';
+import type {
+  NotificationBookingConfirmedRepository,
+  SimulatedBookingConfirmedEmailPort,
+} from '../ports/notification-channels.port.js';
 import { renderBookingConfirmedTemplate } from '../i18n/booking-confirmed-templates.js';
 import type { BookingConfirmedRole } from '../i18n/booking-confirmed-templates.js';
 
@@ -158,7 +160,7 @@ export class OnBookingConfirmedHandler {
       }
 
       // Idempotencia por recipient (AC-02).
-      const alreadyEmitted = await notificationRepo.existsBookingConfirmedForRecipient(
+      const alreadyEmitted = await notificationRepo.exists(
         recipient.userId,
         bookingIntent.id,
         { tx },

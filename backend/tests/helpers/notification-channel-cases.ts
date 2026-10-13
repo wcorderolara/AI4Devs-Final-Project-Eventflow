@@ -1,14 +1,17 @@
 // PR-6 — Casos compartidos de caracterización de los repositorios de notificación
 // (unit + integration). Cada caso fija `type`, clave de idempotencia y payload exacto.
 import type { Prisma, PrismaClient } from '@prisma/client';
-import { PrismaNotificationQrReceivedRepository } from '../../src/modules/notifications/infrastructure/prisma-notification-qr-received.repository.js';
-import { PrismaNotificationQuoteReceivedRepository } from '../../src/modules/notifications/infrastructure/prisma-notification-quote-received.repository.js';
-import { PrismaNotificationBookingConfirmedRepository } from '../../src/modules/notifications/infrastructure/prisma-notification-booking-confirmed.repository.js';
-import { PrismaNotificationT7Repository } from '../../src/modules/notifications/infrastructure/prisma-notification-t7.repository.js';
+import { PrismaNotificationRepository } from '../../src/modules/notifications/infrastructure/prisma-notification.repository.js';
+import {
+  BOOKING_CONFIRMED_NOTIFICATION,
+  QR_RECEIVED_NOTIFICATION,
+  QUOTE_RECEIVED_NOTIFICATION,
+  T7_NOTIFICATION,
+} from '../../src/modules/notifications/infrastructure/notification-channels.js';
 
 export type Opts = { tx?: Prisma.TransactionClient };
 
-/** Vista uniforme de un repositorio por tipo (los nombres de métodos varían por tipo). */
+/** Vista uniforme del repositorio de un tipo (`exists` + `create`). */
 export interface RepoView {
   exists(userId: string, key: string, opts?: Opts): Promise<boolean>;
   create(input: never, opts?: Opts): Promise<void>;
@@ -42,13 +45,7 @@ export const REPO_CASES: RepoCase[] = [
     type: 'quote_request_received',
     idempotencyKey: IDS.quoteRequestId,
     supportsTx: true,
-    makeRepo: (client) => {
-      const r = new PrismaNotificationQrReceivedRepository(client as PrismaClient);
-      return {
-        exists: (u, k, o) => r.existsQuoteRequestReceivedForQR(u, k, o),
-        create: (i, o) => r.create(i, o),
-      };
-    },
+    makeRepo: (client) => new PrismaNotificationRepository(QR_RECEIVED_NOTIFICATION, client as PrismaClient),
     input: (userId) => ({
       vendorUserId: userId,
       channel: 'in_app',
@@ -76,13 +73,7 @@ export const REPO_CASES: RepoCase[] = [
     type: 'quote_received',
     idempotencyKey: IDS.quoteId,
     supportsTx: true,
-    makeRepo: (client) => {
-      const r = new PrismaNotificationQuoteReceivedRepository(client as PrismaClient);
-      return {
-        exists: (u, k, o) => r.existsQuoteReceivedForQuote(u, k, o),
-        create: (i, o) => r.create(i, o),
-      };
-    },
+    makeRepo: (client) => new PrismaNotificationRepository(QUOTE_RECEIVED_NOTIFICATION, client as PrismaClient),
     input: (userId) => ({
       organizerUserId: userId,
       channel: 'email_simulated',
@@ -110,13 +101,7 @@ export const REPO_CASES: RepoCase[] = [
     type: 'booking_confirmed',
     idempotencyKey: IDS.bookingIntentId,
     supportsTx: true,
-    makeRepo: (client) => {
-      const r = new PrismaNotificationBookingConfirmedRepository(client as PrismaClient);
-      return {
-        exists: (u, k, o) => r.existsBookingConfirmedForRecipient(u, k, o),
-        create: (i, o) => r.create(i, o),
-      };
-    },
+    makeRepo: (client) => new PrismaNotificationRepository(BOOKING_CONFIRMED_NOTIFICATION, client as PrismaClient),
     input: (userId) => ({
       recipientUserId: userId,
       recipientRole: 'vendor',
@@ -148,13 +133,7 @@ export const REPO_CASES: RepoCase[] = [
     type: 'task_due_soon',
     idempotencyKey: IDS.taskId,
     supportsTx: false,
-    makeRepo: (client) => {
-      const r = new PrismaNotificationT7Repository(client as PrismaClient);
-      return {
-        exists: (u, k) => r.existsTaskDueSoonForTask(u, k),
-        create: (i) => r.create(i),
-      };
-    },
+    makeRepo: (client) => new PrismaNotificationRepository(T7_NOTIFICATION, client as PrismaClient),
     input: (userId) => ({
       userId,
       channel: 'email_simulated',

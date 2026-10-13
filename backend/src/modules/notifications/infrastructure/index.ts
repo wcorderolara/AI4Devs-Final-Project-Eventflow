@@ -1,7 +1,9 @@
 // US-034 (PB-P2-004). Adapters del módulo `notifications`.
-export { PrismaNotificationT7Repository } from './prisma-notification-t7.repository.js';
+export { PrismaNotificationRepository, type NotificationTypeSpec } from './prisma-notification.repository.js';
 export {
-  LoggingSimulatedT7EmailAdapter,
-  T7_EMAIL_LOG_ALLOWED_KEYS,
-  type T7EmailLogger,
-} from './logging-simulated-t7-email.adapter.js';
+  LoggingSimulatedEmailAdapter,
+  emailLogAllowedKeys,
+  type SimulatedEmailLogger,
+  type SimulatedEmailSpec,
+} from './logging-simulated-email.adapter.js';
+export { T7_NOTIFICATION, T7_EMAIL, T7_EMAIL_LOG_ALLOWED_KEYS } from './notification-channels.js';

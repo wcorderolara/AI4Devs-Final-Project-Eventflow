@@ -9,22 +9,17 @@
 import type { Prisma } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
 import { IDS, REPO_CASES } from '../helpers/notification-channel-cases.js';
+import { LoggingSimulatedEmailAdapter } from '../../src/modules/notifications/infrastructure/logging-simulated-email.adapter.js';
 import {
-  LoggingSimulatedQrReceivedEmailAdapter,
-  QR_RECEIVED_EMAIL_LOG_ALLOWED_KEYS,
-} from '../../src/modules/notifications/infrastructure/logging-simulated-qr-received-email.adapter.js';
-import {
-  LoggingSimulatedQuoteReceivedEmailAdapter,
-  QUOTE_RECEIVED_EMAIL_LOG_ALLOWED_KEYS,
-} from '../../src/modules/notifications/infrastructure/logging-simulated-quote-received-email.adapter.js';
-import {
+  BOOKING_CONFIRMED_EMAIL,
   BOOKING_CONFIRMED_EMAIL_LOG_ALLOWED_KEYS,
-  LoggingSimulatedBookingConfirmedEmailAdapter,
-} from '../../src/modules/notifications/infrastructure/logging-simulated-booking-confirmed-email.adapter.js';
-import {
-  LoggingSimulatedT7EmailAdapter,
+  QR_RECEIVED_EMAIL,
+  QR_RECEIVED_EMAIL_LOG_ALLOWED_KEYS,
+  QUOTE_RECEIVED_EMAIL,
+  QUOTE_RECEIVED_EMAIL_LOG_ALLOWED_KEYS,
+  T7_EMAIL,
   T7_EMAIL_LOG_ALLOWED_KEYS,
-} from '../../src/modules/notifications/infrastructure/logging-simulated-t7-email.adapter.js';
+} from '../../src/modules/notifications/infrastructure/notification-channels.js';
 import { renderQrReceivedTemplate } from '../../src/modules/notifications/i18n/qr-received-templates.js';
 import { renderQuoteReceivedTemplate } from '../../src/modules/notifications/i18n/quote-received-templates.js';
 import { renderBookingConfirmedTemplate } from '../../src/modules/notifications/i18n/booking-confirmed-templates.js';
@@ -107,7 +102,7 @@ const EMAIL_CASES: EmailCase[] = [
       'organizerId', 'categoryCode', 'language', 'subject', 'body',
     ],
     logEmail: (logger) =>
-      new LoggingSimulatedQrReceivedEmailAdapter(logger).logEmail({
+      new LoggingSimulatedEmailAdapter(QR_RECEIVED_EMAIL, logger).logEmail({
         toUserId: 'u-v',
         quoteRequestId: IDS.quoteRequestId,
         eventId: IDS.eventId,
@@ -138,7 +133,7 @@ const EMAIL_CASES: EmailCase[] = [
       'eventId', 'vendorProfileId', 'language', 'subject', 'body',
     ],
     logEmail: (logger) =>
-      new LoggingSimulatedQuoteReceivedEmailAdapter(logger).logEmail({
+      new LoggingSimulatedEmailAdapter(QUOTE_RECEIVED_EMAIL, logger).logEmail({
         toUserId: 'u-o',
         quoteId: IDS.quoteId,
         quoteRequestId: IDS.quoteRequestId,
@@ -170,7 +165,7 @@ const EMAIL_CASES: EmailCase[] = [
         'quoteId', 'quoteRequestId', 'eventId', 'vendorProfileId', 'language', 'subject', 'body',
       ],
       logEmail: (logger) =>
-        new LoggingSimulatedBookingConfirmedEmailAdapter(logger).logEmail({
+        new LoggingSimulatedEmailAdapter(BOOKING_CONFIRMED_EMAIL, logger).logEmail({
           toUserId: 'u-r',
           recipientRole: role,
           bookingIntentId: IDS.bookingIntentId,
@@ -206,7 +201,7 @@ const EMAIL_CASES: EmailCase[] = [
       'language', 'subject', 'body',
     ],
     logEmail: (logger) =>
-      new LoggingSimulatedT7EmailAdapter(logger).logEmail({
+      new LoggingSimulatedEmailAdapter(T7_EMAIL, logger).logEmail({
         toUserId: 'u-t',
         taskId: IDS.taskId,
         eventId: IDS.eventId,

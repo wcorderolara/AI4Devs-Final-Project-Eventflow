@@ -185,7 +185,7 @@ export class RespondQuoteRequestUs052UseCase {
         });
 
         // 7) US-069 (BE-005): delegar la emisión al `OnQuoteSentHandler` in-tx.
-        // El handler aplica idempotencia (`existsQuoteReceivedForQuote` por
+        // El handler aplica idempotencia (`exists` por
         // `payload->>'quoteId'`), resolución de idioma (fallback ladder D5),
         // guards defensivos D6 (quote no-`sent` / owner deactivated / owner_id null
         // → warn + skip sin abortar la tx) y crea las 2 filas

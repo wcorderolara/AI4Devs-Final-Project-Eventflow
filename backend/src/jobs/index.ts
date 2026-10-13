@@ -29,8 +29,9 @@ import { StructuredDomainEventLogger } from '../infrastructure/observability/str
 import { EmitT7NotificationsJob } from './emit-t7-notifications.job.js';
 import { EmitT7NotificationsUseCase } from '../modules/notifications/application/emit-t7-notifications.use-case.js';
 import { PrismaEventTaskT7Repository } from '../modules/task-management/infrastructure/prisma-event-task-t7.repository.js';
-import { PrismaNotificationT7Repository } from '../modules/notifications/infrastructure/prisma-notification-t7.repository.js';
-import { LoggingSimulatedT7EmailAdapter } from '../modules/notifications/infrastructure/logging-simulated-t7-email.adapter.js';
+import { PrismaNotificationRepository } from '../modules/notifications/infrastructure/prisma-notification.repository.js';
+import { LoggingSimulatedEmailAdapter } from '../modules/notifications/infrastructure/logging-simulated-email.adapter.js';
+import { T7_EMAIL, T7_NOTIFICATION } from '../modules/notifications/infrastructure/notification-channels.js';
 import { PrismaOrganizerLanguageLookup } from '../modules/event-planning/infrastructure/prisma-organizer-language.lookup.js';
 import { NodeCronScheduler } from './node-cron-scheduler.js';
 import type { Scheduler, ScheduledTaskHandle } from './scheduler.port.js';
@@ -136,9 +137,9 @@ export function registerJobs(deps: RegisterJobsDeps = {}): JobRegistryHandle {
       new EmitT7NotificationsUseCase({
         clock,
         taskRepo: new PrismaEventTaskT7Repository(),
-        notificationRepo: new PrismaNotificationT7Repository(),
+        notificationRepo: new PrismaNotificationRepository(T7_NOTIFICATION),
         languageLookup: new PrismaOrganizerLanguageLookup(),
-        emailAdapter: new LoggingSimulatedT7EmailAdapter(),
+        emailAdapter: new LoggingSimulatedEmailAdapter(T7_EMAIL),
         logger,
         batchSize: config.JOBS_EMIT_T7_BATCH_SIZE,
       });

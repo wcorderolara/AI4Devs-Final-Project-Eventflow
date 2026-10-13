@@ -18,8 +18,9 @@ import { PrismaClient, Prisma } from '@prisma/client';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { EmitT7NotificationsUseCase } from '../../src/modules/notifications/application/emit-t7-notifications.use-case.js';
 import { PrismaEventTaskT7Repository } from '../../src/modules/task-management/infrastructure/prisma-event-task-t7.repository.js';
-import { PrismaNotificationT7Repository } from '../../src/modules/notifications/infrastructure/prisma-notification-t7.repository.js';
-import { LoggingSimulatedT7EmailAdapter } from '../../src/modules/notifications/infrastructure/logging-simulated-t7-email.adapter.js';
+import { PrismaNotificationRepository } from '../../src/modules/notifications/infrastructure/prisma-notification.repository.js';
+import { LoggingSimulatedEmailAdapter } from '../../src/modules/notifications/infrastructure/logging-simulated-email.adapter.js';
+import { T7_EMAIL, T7_NOTIFICATION } from '../../src/modules/notifications/infrastructure/notification-channels.js';
 import { PrismaOrganizerLanguageLookup } from '../../src/modules/event-planning/infrastructure/prisma-organizer-language.lookup.js';
 import type { ClockPort } from '../../src/shared/domain/clock.port.js';
 
@@ -161,9 +162,9 @@ function buildUseCase(clock: ClockPort, logger: ReturnType<typeof makeLogger>['l
   return new EmitT7NotificationsUseCase({
     clock,
     taskRepo: new PrismaEventTaskT7Repository(prisma),
-    notificationRepo: new PrismaNotificationT7Repository(prisma),
+    notificationRepo: new PrismaNotificationRepository(T7_NOTIFICATION, prisma),
     languageLookup: new PrismaOrganizerLanguageLookup(prisma),
-    emailAdapter: new LoggingSimulatedT7EmailAdapter(logger),
+    emailAdapter: new LoggingSimulatedEmailAdapter(T7_EMAIL, logger),
     logger,
     batchSize: 100,
   });
