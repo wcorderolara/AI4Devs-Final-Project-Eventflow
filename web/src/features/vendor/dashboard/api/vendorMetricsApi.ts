@@ -1,4 +1,4 @@
-import { httpGet } from '@/shared/api-client';
+import { httpGetData } from '@/shared/api-client';
 
 export interface VendorMetricsDTO {
   hasProfile: boolean;
@@ -27,14 +27,8 @@ export interface VendorMetricsDTO {
   generatedAt: string;
 }
 
-interface Envelope {
-  data: VendorMetricsDTO;
-  meta: { correlationId: string; timestamp: string };
-}
-
 export const vendorMetricsApi = {
   async get(): Promise<VendorMetricsDTO> {
-    const env = await httpGet<Envelope>('/vendor/metrics');
-    return env.data;
+    return httpGetData<VendorMetricsDTO>('/vendor/metrics');
   },
 };

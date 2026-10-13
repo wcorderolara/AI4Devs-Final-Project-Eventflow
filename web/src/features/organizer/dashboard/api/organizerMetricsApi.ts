@@ -1,4 +1,4 @@
-import { httpGet } from '@/shared/api-client';
+import { httpGetData } from '@/shared/api-client';
 
 export interface OrganizerMetricsDTO {
   events: {
@@ -15,14 +15,8 @@ export interface OrganizerMetricsDTO {
   generatedAt: string;
 }
 
-interface Envelope {
-  data: OrganizerMetricsDTO;
-  meta: { correlationId: string; timestamp: string };
-}
-
 export const organizerMetricsApi = {
   async get(): Promise<OrganizerMetricsDTO> {
-    const env = await httpGet<Envelope>('/organizer/metrics');
-    return env.data;
+    return httpGetData<OrganizerMetricsDTO>('/organizer/metrics');
   },
 };

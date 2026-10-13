@@ -1,10 +1,9 @@
-import { httpGet, httpPatch, httpPost } from '@/shared/api-client';
+import { httpGetData, httpPatchData, httpPost } from '@/shared/api-client';
 import type {
   ChangePasswordRequestDTO,
   PreferredLanguage,
   UpdateProfileRequestDTO,
   UserProfile,
-  UserProfileEnvelopeDTO,
 } from './profileApi.types';
 
 /**
@@ -15,25 +14,22 @@ import type {
 export const profileApi = {
   /** AC-01: perfil propio. */
   async getMyProfile(): Promise<UserProfile> {
-    const dto = await httpGet<UserProfileEnvelopeDTO>('/users/me');
-    return dto.data;
+    return httpGetData<UserProfile>('/users/me');
   },
 
   /** AC-02: edición parcial de `name`/`phone`/`preferredLanguage`. */
   async updateProfile(input: UpdateProfileRequestDTO): Promise<UserProfile> {
-    const dto = await httpPatch<UserProfileEnvelopeDTO, UpdateProfileRequestDTO>('/users/me', {
+    return httpPatchData<UserProfile, UpdateProfileRequestDTO>('/users/me', {
       body: input,
     });
-    return dto.data;
   },
 
   /** US-007 / AC-03: atajo dedicado de cambio de idioma preferido. */
   async updatePreferredLanguage(preferredLanguage: PreferredLanguage): Promise<UserProfile> {
-    const dto = await httpPatch<UserProfileEnvelopeDTO, { preferredLanguage: PreferredLanguage }>(
+    return httpPatchData<UserProfile, { preferredLanguage: PreferredLanguage }>(
       '/users/me/preferred-language',
       { body: { preferredLanguage } },
     );
-    return dto.data;
   },
 
   /** AC-04: cambio de contraseña (mantiene la sesión actual). 204 sin body. */

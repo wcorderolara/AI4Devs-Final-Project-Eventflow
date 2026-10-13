@@ -5,7 +5,8 @@
 //   2) queremos el hint nativo de Next.js `{ next: { revalidate } }` para que ISR y edge cache
 //      operen correctamente sobre la respuesta upstream (además del `Cache-Control` del BE);
 //   3) los 404 son parte del contrato — el caller decide si dispara `notFound()` de Next.
-import type { PublicVendorDTO, PublicVendorEnvelope } from './vendorPublicApi.types';
+import type { Envelope } from '@/shared/api-client';
+import type { PublicVendorDTO } from './vendorPublicApi.types';
 
 const REVALIDATE_SECONDS = 300;
 
@@ -61,7 +62,7 @@ export const vendorsPublicApi = {
       return { status: 'error', httpStatus: response.status, errorCode };
     }
 
-    const envelope = (await response.json()) as PublicVendorEnvelope;
+    const envelope = (await response.json()) as Envelope<PublicVendorDTO>;
     return { status: 'ok', data: envelope.data };
   },
 };

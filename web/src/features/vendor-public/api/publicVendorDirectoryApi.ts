@@ -9,11 +9,8 @@
 //
 // El shape es el mismo que devuelve el directorio autenticado, así que se reutilizan sus tipos:
 // no hay una segunda definición del contrato de una tarjeta de proveedor.
-import type {
-  VendorSearchDataDTO,
-  VendorSearchEnvelope,
-  VendorSearchQuery,
-} from '@/features/vendor-directory';
+import type { VendorSearchDataDTO, VendorSearchQuery } from '@/features/vendor-directory';
+import type { Envelope } from '@/shared/api-client';
 
 /** El listado cambia poco entre visitas; 5 min es el mismo horizonte que el perfil público. */
 const REVALIDATE_SECONDS = 300;
@@ -71,7 +68,7 @@ export const publicVendorDirectoryApi = {
 
     if (!response.ok) return { status: 'error', httpStatus: response.status };
 
-    const envelope = (await response.json()) as VendorSearchEnvelope;
+    const envelope = (await response.json()) as Envelope<VendorSearchDataDTO>;
     return { status: 'ok', data: envelope.data };
   },
 };

@@ -41,11 +41,6 @@ export interface VendorSearchDataDTO {
   page: VendorSearchPageDTO;
 }
 
-export interface VendorSearchEnvelope {
-  data: VendorSearchDataDTO;
-  correlationId?: string;
-}
-
 export interface VendorSearchQuery {
   categoryCode?: string;
   locationCode?: string;

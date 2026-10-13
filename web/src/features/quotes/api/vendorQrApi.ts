@@ -1,7 +1,7 @@
 // API client — vendor QR detail + mark-viewed (US-051 / PB-P1-031 / FE-003).
 // Wrapper mínimo sobre `httpGet`/`httpPost` que desanida el envelope `{ data, correlationId }`
 // y adapta el DTO a camelCase para consumo en la UI (StatusBadge, EventBriefSnapshot).
-import { httpGet, httpPost } from '@/shared/api-client';
+import { httpGet, httpGetData, httpPost, httpPostData } from '@/shared/api-client';
 
 export type VendorQuoteRequestStatus =
   | 'sent'
@@ -44,11 +44,6 @@ export interface VendorQuoteRequestDTO {
   updatedAt: string;
 }
 
-interface Envelope<T> {
-  data: T;
-  correlationId: string;
-}
-
 /** Request body del endpoint respond (US-052). `currency_code` es aceptado pero el backend
  * lo ignora y usa la moneda del evento (DEV-04 / SEC-04). */
 export interface RespondVendorQrInput {
@@ -76,25 +71,20 @@ export interface VendorQuoteResponseDTO {
 
 export const vendorQrApi = {
   async detail(id: string): Promise<VendorQuoteRequestDTO> {
-    const envelope = await httpGet<Envelope<VendorQuoteRequestDTO>>(
-      `/vendor/quote-requests/${encodeURIComponent(id)}`,
-    );
-    return envelope.data;
+    return httpGetData<VendorQuoteRequestDTO>(`/vendor/quote-requests/${encodeURIComponent(id)}`);
   },
 
   async markViewed(id: string): Promise<VendorQuoteRequestDTO> {
-    const envelope = await httpPost<Envelope<VendorQuoteRequestDTO>, undefined>(
+    return httpPostData<VendorQuoteRequestDTO, undefined>(
       `/vendor/quote-requests/${encodeURIComponent(id)}/mark-viewed`,
       { body: undefined },
     );
-    return envelope.data;
   },
 
   async respond(id: string, input: RespondVendorQrInput): Promise<VendorQuoteResponseDTO> {
-    const envelope = await httpPost<Envelope<VendorQuoteResponseDTO>, RespondVendorQrInput>(
+    return httpPostData<VendorQuoteResponseDTO, RespondVendorQrInput>(
       `/vendor/quote-requests/${encodeURIComponent(id)}/respond`,
       { body: input },
     );
-    return envelope.data;
   },
 };

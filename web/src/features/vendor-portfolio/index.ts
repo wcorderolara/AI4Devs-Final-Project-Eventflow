@@ -5,7 +5,6 @@ export {
   type AttachmentDimensionsDTO,
   type DeletePortfolioImageInput,
   type PortfolioImageView,
-  type UploadPortfolioImageEnvelopeDTO,
   type UploadPortfolioImageInput,
   type UploadPortfolioImageResponseDTO,
 } from './api/vendorPortfolioApi.types';

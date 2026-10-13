@@ -50,11 +50,6 @@ export interface PublicVendorDTO {
   reviews: PublicVendorReviewDTO[];
 }
 
-export interface PublicVendorEnvelope {
-  data: PublicVendorDTO;
-  meta?: { correlationId?: string };
-}
-
 export interface PublicVendorErrorEnvelope {
   error: { code: string; message: string; correlationId?: string };
 }

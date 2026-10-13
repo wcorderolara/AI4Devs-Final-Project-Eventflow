@@ -2,27 +2,27 @@
 // Un único método `createRequest` que llama `POST /api/v1/quote-requests` y desanida el envelope.
 // Los errores se mapean automáticamente a `ApiError` por el `httpClient`; la vista consume el
 // `errorCode` para pintar el banner i18n (`quotes.create.errors.*`).
-import { httpGet, httpPatch, httpPost } from '@/shared/api-client';
+import { httpGet, httpGetData, httpPatchData, httpPostData } from '@/shared/api-client';
 import type {
-  ActiveQrCountEnvelope,
+  ActiveQrCountDTO,
   ActiveQrCountInput,
   ActiveQrCountView,
-  CancelQrEnvelope,
+  CancelQrDTO,
   CancelQrInput,
   CancelQrView,
-  CompareQuotesEnvelope,
+  CompareQuotesDTO,
   CompareQuotesInput,
   CompareQuotesView,
-  CreateQuoteRequestEnvelope,
+  CreateQuoteRequestDTO,
   CreateQuoteRequestInput,
   CreateQuoteRequestView,
   ListEventQuoteRequestsEnvelope,
   ListEventQuoteRequestsInput,
   ListEventQuoteRequestsView,
-  PreferQuoteEnvelope,
+  PreferQuoteDTO,
   PreferQuoteInput,
   PreferQuoteView,
-  RejectQuoteEnvelope,
+  RejectQuoteDTO,
   RejectQuoteInput,
   RejectQuoteView,
 } from './quotesApi.types';
@@ -38,11 +38,11 @@ import {
 
 export const quotesApi = {
   async createRequest(input: CreateQuoteRequestInput): Promise<CreateQuoteRequestView> {
-    const envelope = await httpPost<CreateQuoteRequestEnvelope, CreateQuoteRequestInput>(
+    const dto = await httpPostData<CreateQuoteRequestDTO, CreateQuoteRequestInput>(
       `/quote-requests`,
       { body: input },
     );
-    return toCreateQuoteRequestView(envelope.data);
+    return toCreateQuoteRequestView(dto);
   },
 
   /**
@@ -56,8 +56,8 @@ export const quotesApi = {
       event_id: input.eventId,
       service_category_id: input.serviceCategoryId,
     }).toString();
-    const envelope = await httpGet<ActiveQrCountEnvelope>(`/quote-requests/active-count?${qs}`);
-    return toActiveQrCountView(envelope.data);
+    const dto = await httpGetData<ActiveQrCountDTO>(`/quote-requests/active-count?${qs}`);
+    return toActiveQrCountView(dto);
   },
 
   /**
@@ -70,11 +70,11 @@ export const quotesApi = {
   async rejectQuote(input: RejectQuoteInput): Promise<RejectQuoteView> {
     const body: { reason?: string } = {};
     if (input.reason !== undefined && input.reason.length > 0) body.reason = input.reason;
-    const envelope = await httpPost<RejectQuoteEnvelope, { reason?: string }>(
+    const dto = await httpPostData<RejectQuoteDTO, { reason?: string }>(
       `/quotes/${encodeURIComponent(input.quoteId)}/reject`,
       { body },
     );
-    return toRejectQuoteView(envelope.data);
+    return toRejectQuoteView(dto);
   },
 
   /**
@@ -90,11 +90,11 @@ export const quotesApi = {
   async cancelQr(input: CancelQrInput): Promise<CancelQrView> {
     const body: { reason?: string } = {};
     if (input.reason !== undefined && input.reason.length > 0) body.reason = input.reason;
-    const envelope = await httpPatch<CancelQrEnvelope, { reason?: string }>(
+    const dto = await httpPatchData<CancelQrDTO, { reason?: string }>(
       `/quote-requests/${encodeURIComponent(input.quoteRequestId)}/cancel`,
       { body },
     );
-    return toCancelQrView(envelope.data);
+    return toCancelQrView(dto);
   },
 
   /**
@@ -106,10 +106,10 @@ export const quotesApi = {
    */
   async compare(input: CompareQuotesInput): Promise<CompareQuotesView> {
     const qs = new URLSearchParams({ categoryCode: input.categoryCode }).toString();
-    const envelope = await httpGet<CompareQuotesEnvelope>(
+    const dto = await httpGetData<CompareQuotesDTO>(
       `/events/${encodeURIComponent(input.eventId)}/quotes/compare?${qs}`,
     );
-    return toCompareQuotesView(envelope.data);
+    return toCompareQuotesView(dto);
   },
 
   /**
@@ -121,11 +121,11 @@ export const quotesApi = {
    * `VALIDATION_ERROR` (400 — body sin `is_preferred` o UUID malformado).
    */
   async preferred(input: PreferQuoteInput): Promise<PreferQuoteView> {
-    const envelope = await httpPatch<PreferQuoteEnvelope, { is_preferred: boolean }>(
+    const dto = await httpPatchData<PreferQuoteDTO, { is_preferred: boolean }>(
       `/quotes/${encodeURIComponent(input.quoteId)}/preferred`,
       { body: { is_preferred: input.isPreferred } },
     );
-    return toPreferQuoteView(envelope.data);
+    return toPreferQuoteView(dto);
   },
 
   /**

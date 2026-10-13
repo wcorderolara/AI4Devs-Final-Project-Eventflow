@@ -57,8 +57,3 @@ export interface AdminMetricsDTO {
   ai: AdminMetricsAI;
   generated_at: string;
 }
-
-export interface AdminMetricsEnvelope {
-  data: AdminMetricsDTO;
-  correlationId: string;
-}

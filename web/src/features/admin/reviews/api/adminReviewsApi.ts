@@ -7,14 +7,12 @@
 // de autorización — el cliente NO infiere role. El listing serializa `status[]` como repeat
 // (`?status=a&status=b`) para respetar la convención del backend (`AdminReviewsQuerySchema`),
 // y coacciona `has_admin_action`/`rating_min`/`rating_max`/`page_size` a snake_case + string.
-import { httpGet, httpPost } from '@/shared/api-client';
+import { httpGetData, httpPostData } from '@/shared/api-client';
 import type {
   AdminReviewListFilters,
   AdminReviewsListDTO,
-  AdminReviewsListEnvelope,
   ModerateReviewBodyDTO,
   ModeratedReviewDTO,
-  ModeratedReviewEnvelope,
 } from './adminReviewsApi.types';
 
 /** Convierte los filtros del cliente al query-string aceptado por el backend. */
@@ -36,18 +34,14 @@ function toQueryString(f: AdminReviewListFilters): string {
 
 export const adminReviewsApi = {
   async moderate(reviewId: string, body: ModerateReviewBodyDTO): Promise<ModeratedReviewDTO> {
-    const envelope = await httpPost<ModeratedReviewEnvelope, ModerateReviewBodyDTO>(
+    return httpPostData<ModeratedReviewDTO, ModerateReviewBodyDTO>(
       `/admin/reviews/${encodeURIComponent(reviewId)}/moderate`,
       { body },
     );
-    return envelope.data;
   },
 
   async list(filters: AdminReviewListFilters = {}): Promise<AdminReviewsListDTO> {
     const qs = toQueryString(filters);
-    const envelope = await httpGet<AdminReviewsListEnvelope>(
-      `/admin/reviews${qs ? `?${qs}` : ''}`,
-    );
-    return envelope.data;
+    return httpGetData<AdminReviewsListDTO>(`/admin/reviews${qs ? `?${qs}` : ''}`);
   },
 };

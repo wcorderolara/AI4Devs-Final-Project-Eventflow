@@ -18,11 +18,6 @@ export interface UploadPortfolioImageResponseDTO {
   dimensions: AttachmentDimensionsDTO;
 }
 
-export interface UploadPortfolioImageEnvelopeDTO {
-  data: UploadPortfolioImageResponseDTO;
-  correlationId: string;
-}
-
 export interface UploadPortfolioImageInput {
   workLabel: string;
   file: File;

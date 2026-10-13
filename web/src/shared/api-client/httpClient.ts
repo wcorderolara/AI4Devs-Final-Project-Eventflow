@@ -149,3 +149,40 @@ export function httpPut<T, B = unknown>(path: string, opts?: HttpClientOptions<B
 export function httpDelete<T>(path: string, opts?: HttpClientOptions): Promise<T> {
   return request<T>('DELETE', path, opts);
 }
+
+/**
+ * Envelope de éxito estándar (Doc 16 §13): el payload viaja en `data`. Según el endpoint, el
+ * `correlationId` llega dentro de `meta` o como sibling de `data`; el cliente solo consume `data`.
+ */
+export interface Envelope<T> {
+  data: T;
+  meta?: { correlationId?: string; timestamp?: string };
+  correlationId?: string;
+}
+
+/** Desanida el `data` de un envelope de éxito. */
+export async function unwrap<T>(envelope: Promise<Envelope<T>>): Promise<T> {
+  return (await envelope).data;
+}
+
+export function httpGetData<T>(path: string, opts?: HttpClientOptions): Promise<T> {
+  return unwrap(httpGet<Envelope<T>>(path, opts));
+}
+export function httpPostData<T, B = unknown>(
+  path: string,
+  opts?: HttpClientOptions<B>,
+): Promise<T> {
+  return unwrap(httpPost<Envelope<T>, B>(path, opts));
+}
+export function httpPatchData<T, B = unknown>(
+  path: string,
+  opts?: HttpClientOptions<B>,
+): Promise<T> {
+  return unwrap(httpPatch<Envelope<T>, B>(path, opts));
+}
+export function httpPutData<T, B = unknown>(path: string, opts?: HttpClientOptions<B>): Promise<T> {
+  return unwrap(httpPut<Envelope<T>, B>(path, opts));
+}
+export function httpDeleteData<T>(path: string, opts?: HttpClientOptions): Promise<T> {
+  return unwrap(httpDelete<Envelope<T>>(path, opts));
+}

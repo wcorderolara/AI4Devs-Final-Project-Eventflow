@@ -29,11 +29,6 @@ export interface CreateReviewDTO {
   createdAt: string;
 }
 
-export interface CreateReviewEnvelope {
-  data: CreateReviewDTO;
-  correlationId: string;
-}
-
 export interface CreateReviewView {
   reviewId: string;
   eventId: string;

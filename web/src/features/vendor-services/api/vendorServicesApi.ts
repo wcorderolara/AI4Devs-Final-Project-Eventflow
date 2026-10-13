@@ -1,35 +1,34 @@
 // API client — vendor-services (US-044 / PB-P1-027 / FE-003).
 // Namespace `vendorsApi.services.*` — 4 métodos: list, create, update, deactivate.
-import { httpDelete, httpGet, httpPatch, httpPost } from '@/shared/api-client';
+import { httpDelete, httpGetData, httpPatchData, httpPostData } from '@/shared/api-client';
 import type {
   CreateVendorServiceInput,
   UpdateVendorServiceInput,
-  VendorServiceEnvelope,
-  VendorServiceListEnvelope,
+  VendorServiceDTO,
   VendorServiceView,
 } from './vendorServicesApi.types';
 import { toVendorServiceView } from './vendorServicesApi.types';
 
 export const vendorServicesApi = {
   async list(): Promise<VendorServiceView[]> {
-    const envelope = await httpGet<VendorServiceListEnvelope>(`/vendors/me/services`);
-    return envelope.data.items.map(toVendorServiceView);
+    const data = await httpGetData<{ items: VendorServiceDTO[] }>(`/vendors/me/services`);
+    return data.items.map(toVendorServiceView);
   },
 
   async create(input: CreateVendorServiceInput): Promise<VendorServiceView> {
-    const envelope = await httpPost<VendorServiceEnvelope, CreateVendorServiceInput>(
+    const dto = await httpPostData<VendorServiceDTO, CreateVendorServiceInput>(
       `/vendors/me/services`,
       { body: input },
     );
-    return toVendorServiceView(envelope.data);
+    return toVendorServiceView(dto);
   },
 
   async update(id: string, input: UpdateVendorServiceInput): Promise<VendorServiceView> {
-    const envelope = await httpPatch<VendorServiceEnvelope, UpdateVendorServiceInput>(
+    const dto = await httpPatchData<VendorServiceDTO, UpdateVendorServiceInput>(
       `/vendors/me/services/${id}`,
       { body: input },
     );
-    return toVendorServiceView(envelope.data);
+    return toVendorServiceView(dto);
   },
 
   async deactivate(id: string): Promise<void> {

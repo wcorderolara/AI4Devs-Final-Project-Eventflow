@@ -1,9 +1,9 @@
-import { httpGet } from '@/shared/api-client';
-import type { AdminUsersEnvelope, AdminUsersListDTO, AdminUsersQuery } from './adminUsersApi.types';
+import { httpGetData } from '@/shared/api-client';
+import type { AdminUsersListDTO, AdminUsersQuery } from './adminUsersApi.types';
 
 export const adminUsersApi = {
   async list(query: AdminUsersQuery = {}): Promise<AdminUsersListDTO> {
-    const envelope = await httpGet<AdminUsersEnvelope>('/admin/users', {
+    return httpGetData<AdminUsersListDTO>('/admin/users', {
       query: {
         role: query.role,
         status: query.status,
@@ -12,6 +12,5 @@ export const adminUsersApi = {
         limit: query.limit,
       },
     });
-    return envelope.data;
   },
 };

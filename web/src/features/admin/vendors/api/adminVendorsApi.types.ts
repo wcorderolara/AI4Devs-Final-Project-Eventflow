@@ -26,11 +26,6 @@ export interface ModeratedVendorDTO {
   adminActionId: string;
 }
 
-export interface ModeratedVendorEnvelope {
-  data: ModeratedVendorDTO;
-  correlationId: string;
-}
-
 export type ModerateVendorErrorCode =
   | 'VALIDATION_ERROR'
   | 'INVALID_UUID'
@@ -84,11 +79,6 @@ export interface AdminVendorsPagination {
 export interface AdminVendorsListDTO {
   items: AdminVendorListItem[];
   pagination: AdminVendorsPagination;
-}
-
-export interface AdminVendorsListEnvelope {
-  data: AdminVendorsListDTO;
-  correlationId: string;
 }
 
 export type AdminVendorsListErrorCode =

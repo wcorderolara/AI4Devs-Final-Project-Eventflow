@@ -21,11 +21,6 @@ export interface AdminUsersListDTO {
   };
 }
 
-export interface AdminUsersEnvelope {
-  data: AdminUsersListDTO;
-  meta: { correlationId: string; timestamp: string };
-}
-
 export interface AdminUsersQuery {
   role?: AdminUserRole;
   status?: AdminUserStatus;

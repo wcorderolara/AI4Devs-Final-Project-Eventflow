@@ -1,5 +1,7 @@
 // US-027 (PB-P1-018 / FE-001) — Tipos del cliente API del listado de tareas.
 // Espeja el DTO canónico del backend `TaskListItemDto` y `pagination` del envelope.
+import type { Envelope } from '@/shared/api-client';
+
 export type TaskListItemStatus =
   | 'pending'
   | 'active'
@@ -42,12 +44,10 @@ export interface TaskProgressDTO {
   skipped: number;
 }
 
-export interface TaskListEnvelopeDTO {
-  data: TaskListItemDTO[];
+export interface TaskListEnvelopeDTO extends Envelope<TaskListItemDTO[]> {
   pagination: TaskListPaginationMeta;
   // US-033: campo aditivo del envelope canónico. El backend lo emite como sibling de `data`.
   progress?: TaskProgressDTO;
-  meta: { correlationId: string; timestamp: string };
 }
 
 export interface TaskListResult {

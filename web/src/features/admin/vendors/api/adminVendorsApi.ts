@@ -7,14 +7,12 @@
 // de autorización — el cliente NO infiere role. El listing serializa `status[]` como repeat
 // (`?status=a&status=b`) para respetar la convención del backend (`AdminVendorsQuerySchema`),
 // y coacciona `is_hidden`/`business_name`/`created_at_*` a snake_case + string.
-import { httpGet, httpPost } from '@/shared/api-client';
+import { httpGetData, httpPostData } from '@/shared/api-client';
 import type {
   AdminVendorListFilters,
   AdminVendorsListDTO,
-  AdminVendorsListEnvelope,
   ModerateVendorBodyDTO,
   ModeratedVendorDTO,
-  ModeratedVendorEnvelope,
 } from './adminVendorsApi.types';
 
 /** Convierte los filtros del cliente al query-string aceptado por el backend. */
@@ -35,10 +33,7 @@ function toQueryString(f: AdminVendorListFilters): string {
 export const adminVendorsApi = {
   async list(filters: AdminVendorListFilters = {}): Promise<AdminVendorsListDTO> {
     const qs = toQueryString(filters);
-    const envelope = await httpGet<AdminVendorsListEnvelope>(
-      `/admin/vendors${qs ? `?${qs}` : ''}`,
-    );
-    return envelope.data;
+    return httpGetData<AdminVendorsListDTO>(`/admin/vendors${qs ? `?${qs}` : ''}`);
   },
 
   async moderate(
@@ -48,10 +43,9 @@ export const adminVendorsApi = {
     // Se omite `reason` del body cuando no fue provisto — el backend valida cross-field D4.
     const clean: ModerateVendorBodyDTO = { action: body.action };
     if (body.reason !== undefined && body.reason.length > 0) clean.reason = body.reason;
-    const envelope = await httpPost<ModeratedVendorEnvelope, ModerateVendorBodyDTO>(
+    return httpPostData<ModeratedVendorDTO, ModerateVendorBodyDTO>(
       `/admin/vendors/${encodeURIComponent(vendorId)}/moderate`,
       { body: clean },
     );
-    return envelope.data;
   },
 };

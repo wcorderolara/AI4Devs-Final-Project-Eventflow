@@ -5,5 +5,18 @@ export {
   generateCorrelationId,
   CORRELATION_ID_HEADER,
 } from './attachCorrelationId';
-export { httpGet, httpPost, httpPatch, httpPut, httpDelete } from './httpClient';
+export {
+  httpGet,
+  httpPost,
+  httpPatch,
+  httpPut,
+  httpDelete,
+  httpGetData,
+  httpPostData,
+  httpPatchData,
+  httpPutData,
+  httpDeleteData,
+  unwrap,
+  type Envelope,
+} from './httpClient';
 export type { HttpClientOptions } from './types';

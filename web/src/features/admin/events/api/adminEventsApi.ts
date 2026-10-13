@@ -1,9 +1,7 @@
-import { httpGet } from '@/shared/api-client';
+import { httpGet, httpGetData } from '@/shared/api-client';
 import type {
-  AdminEventEnvelopeDTO,
   AdminEventModel,
   AdminEventsListDTO,
-  AdminEventsListEnvelope,
   AdminEventsListFilters,
 } from './adminEventsApi.types';
 
@@ -33,16 +31,12 @@ function toListQueryString(f: AdminEventsListFilters): string {
 export const adminEventsApi = {
   /** US-016 / AC-01: detalle admin del evento (read-only, incluye soft-deleted). */
   async getEvent(id: string): Promise<AdminEventModel> {
-    const dto = await httpGet<AdminEventEnvelopeDTO>(`/admin/events/${id}`);
-    return dto.data;
+    return httpGetData<AdminEventModel>(`/admin/events/${id}`);
   },
 
   /** US-078 / AC-01: listado admin paginado con filtros combinados. */
   async list(filters: AdminEventsListFilters = {}): Promise<AdminEventsListDTO> {
     const qs = toListQueryString(filters);
-    const envelope = await httpGet<AdminEventsListEnvelope>(
-      `/admin/events${qs ? `?${qs}` : ''}`,
-    );
-    return envelope.data;
+    return httpGetData<AdminEventsListDTO>(`/admin/events${qs ? `?${qs}` : ''}`);
   },
 };

@@ -21,11 +21,6 @@ export interface AdminEventTypeNode {
 
 export type AdminEventTypesListDTO = AdminEventTypeNode[];
 
-export interface AdminEventTypesListEnvelope {
-  data: AdminEventTypesListDTO;
-  meta: { correlationId: string; timestamp?: string };
-}
-
 // ── Bodies ─────────────────────────────────────────────────────────────────
 
 export interface CreateEventTypeBodyDTO {
@@ -46,9 +41,4 @@ export interface UpdateEventTypeBodyDTO {
 
 export interface DeleteEventTypeBodyDTO {
   reason: string;
-}
-
-export interface AdminEventTypeEnvelope {
-  data: AdminEventTypeNode;
-  meta: { correlationId: string; timestamp?: string };
 }

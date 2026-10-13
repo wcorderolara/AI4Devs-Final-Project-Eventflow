@@ -7,7 +7,6 @@ export type {
   AdminActionsListFilters,
   AdminActionsListPagination,
   AdminActionsListDTO,
-  AdminActionsListEnvelope,
 } from './api/adminActionsApi.types';
 export {
   useAdminActionsList,
