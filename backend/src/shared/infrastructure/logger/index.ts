@@ -7,7 +7,7 @@
 //   logger.info({ event, ...campos })          → tal cual (también `({...}, 'msg')` estilo Pino)
 //   logger.info('event', { ...campos })        → { event, ...campos }
 import pino, { type DestinationStream, type Logger, type LoggerOptions } from 'pino';
-import { config } from '../../../config/env.js';
+import { loggingConfig as config } from '../../../config/logging-config.js';
 import { getAppVersion } from '../../config/app-version.js';
 import { getCorrelationId } from '../../context/correlation-id.js';
 import { redactPII, redactSecrets } from './redactors.js';

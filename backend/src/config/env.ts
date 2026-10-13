@@ -3,14 +3,7 @@
 // con mensaje descriptivo (EC-01, EC-02). La validación se ejecuta antes de montar rutas o
 // conectar Prisma (ver `server.ts`). Categorías per Doc 14 §27.
 import { z } from 'zod';
-
-// Boolean robusto desde string de entorno (US-094). `z.coerce.boolean()` es un footgun: convierte
-// CUALQUIER string no vacío a `true` (Boolean('false') === true). Este parser interpreta el texto.
-const booleanFromEnv = z.preprocess((v) => {
-  if (typeof v === 'boolean') return v;
-  if (typeof v === 'string') return ['true', '1', 'yes', 'on'].includes(v.trim().toLowerCase());
-  return v;
-}, z.boolean());
+import { booleanFromEnv, loggingConfigFields } from './logging-config.js';
 
 // `SameSite` case-insensitive desde entorno (US-108 / BE-001). Normaliza a minúsculas para el
 // enum. `Lax`/`LAX`/`lax` → 'lax'. ADR-SEC-002 / ADR-SEC-006.
@@ -22,7 +15,7 @@ const sameSiteFromEnv = z.preprocess((v) => {
 export const configSchema = z.object({
   // APP
   PORT: z.coerce.number().int().positive().default(3000),
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  NODE_ENV: loggingConfigFields.NODE_ENV,
 
   // DATABASE
   DATABASE_URL: z.string().url(),
@@ -137,14 +130,14 @@ export const configSchema = z.object({
   // (`trace..silent`). Backward-compat: los valores previos (`debug/info/warn/
   // error`) siguen siendo válidos. Default constante `info` (D-03 en execution
   // record — cambiar a env-derivado silenciaría logs en el env de test).
-  LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal', 'silent']).default('info'),
+  LOG_LEVEL: loggingConfigFields.LOG_LEVEL,
   // US-113 (PB-P2-010 / BE-001 / VR-02): pretty-print sólo en desarrollo. El
   // `superRefine` (abajo) hace fail-fast si `LOG_PRETTY=true` en producción.
-  LOG_PRETTY: booleanFromEnv.default(false),
+  LOG_PRETTY: loggingConfigFields.LOG_PRETTY,
   // US-113 (PB-P2-010 / BE-001 / VR-03, SEC-02): permite emitir PII (email,
   // phone, …) sin redactar SÓLO en development. El `superRefine` hace fail-fast
   // si `true` fuera de development.
-  LOG_INCLUDE_PII: booleanFromEnv.default(false),
+  LOG_INCLUDE_PII: loggingConfigFields.LOG_INCLUDE_PII,
   // US-113 (PB-P2-010 / BE-001 / VR-04): alias de `APP_VERSION` para la versión de logs y
   // `/health`. Precedencia en `shared/config/app-version.ts`.
   SERVICE_VERSION: z.string().min(1).optional(),
