@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { PrismaClient } from '@prisma/client';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
 /**
  * Tests de integración US-102 (QA-002/003/004) contra PostgreSQL real.
@@ -7,18 +7,7 @@ import { PrismaClient } from '@prisma/client';
  * + definiciones estructurales. Skip limpio si no hay BD alcanzable.
  */
 
-const prisma = new PrismaClient();
-
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 /** Ejecuta SQL que debe fallar; devuelve el mensaje de error (o '' si no falló). */
 async function violation(sql: string): Promise<string> {

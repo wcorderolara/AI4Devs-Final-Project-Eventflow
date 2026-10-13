@@ -12,24 +12,15 @@
 //   IT-08 — confirm + cancel + nuevo confirm (misma categoría) equilibra `committed`.
 //   CC-01 — Dos `applyOnConfirm` concurrentes sobre el mismo intent: uno gana, otro skip.
 import { afterAll, describe, expect, it } from 'vitest';
-import { PrismaClient, type Prisma } from '@prisma/client';
+import { type Prisma } from '@prisma/client';
 import { UpdateCommittedFromBookingIntentUseCase } from '../../src/modules/budget-management/application/update-committed-from-booking-intent.use-case.js';
 import { PrismaBookingIntentRepository } from '../../src/modules/booking-intent/infrastructure/prisma-booking-intent.repository.js';
 import { PrismaBudgetItemWriteRepository } from '../../src/modules/budget-management/infrastructure/prisma-budget-item-write.repository.js';
 import { BookingSyncCurrencyMismatchError } from '../../src/modules/budget-management/domain/errors/booking-sync.errors.js';
 import type { BudgetSyncEventLogger } from '../../src/shared/logging/budget-sync-events.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const clock = { now: (): Date => new Date('2026-07-15T15:00:00Z') };
 const silentLogger: BudgetSyncEventLogger = {

@@ -10,22 +10,13 @@
 //
 // Patrón `describe.skipIf(!dbUp)` — se salta cuando no hay DB local (CI corre
 // con Postgres).
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import app from '../../src/app.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 async function pickCatalogRefs(): Promise<{ eventTypeId: string; locationId: string } | null> {
   const [eventType, location] = await Promise.all([

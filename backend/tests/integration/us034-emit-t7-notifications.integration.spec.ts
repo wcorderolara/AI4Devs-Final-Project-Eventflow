@@ -14,7 +14,7 @@
 // Patrón `describe.skipIf(!dbUp)` — mismo que `us015-auto-complete-past-events.integration.spec.ts`.
 // Sin BD la suite se salta limpiamente (dev local sin Postgres → 0 fallos). En CI con Postgres
 // arriba corre completa.
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { EmitT7NotificationsUseCase } from '../../src/modules/notifications/application/emit-t7-notifications.use-case.js';
 import { PrismaEventTaskT7Repository } from '../../src/modules/task-management/infrastructure/prisma-event-task-t7.repository.js';
@@ -23,18 +23,9 @@ import { LoggingSimulatedEmailAdapter } from '../../src/modules/notifications/in
 import { T7_EMAIL, T7_NOTIFICATION } from '../../src/modules/notifications/infrastructure/notification-channels.js';
 import { PrismaOrganizerLanguageLookup } from '../../src/modules/event-planning/infrastructure/prisma-organizer-language.lookup.js';
 import type { ClockPort } from '../../src/shared/domain/clock.port.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 class FixedClock implements ClockPort {
   constructor(private readonly t: Date) {}

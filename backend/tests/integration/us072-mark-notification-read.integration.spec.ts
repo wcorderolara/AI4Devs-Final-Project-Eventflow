@@ -13,22 +13,12 @@
 //   * IT-09 401 sin sesión (SEC-T-02) — AC-03.
 //   * IT-10 Zod inválido: `?channel=slack` → 400 VR-03; `notificationId` malformado → 400 VR-02.
 //   * IT-PERF: mark-all sobre 100 notifs seed → P95 < 1.5 s (AC-08).
-import { PrismaClient } from '@prisma/client';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import app from '../../src/app.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 async function seedUserWithSession(
   tag: string,

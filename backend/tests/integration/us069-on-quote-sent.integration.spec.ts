@@ -9,22 +9,13 @@
 //     se ejercita a nivel unit; a nivel HTTP la persistencia SIEMPRE llega con `sent`).
 //   * IT-07 (AC-05): payload contiene set exacto de claves permitidas (SEC-02, no-PII).
 //   * SEED-T-01 (QA-003): reuso del seed — verificación pospuesta al pipeline CI.
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import app from '../../src/app.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 async function pickCatalogRefs(): Promise<{
   eventTypeId: string;

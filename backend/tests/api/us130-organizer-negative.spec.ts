@@ -11,22 +11,12 @@
 // events/cancel, quotes/accept|reject|prefer, booking-intents/*, ai-recommendations/discard.
 import { describe, it, beforeAll } from 'vitest';
 import request from 'supertest';
-import { PrismaClient } from '@prisma/client';
 import { createApp } from '../../src/app.js';
 import { expectAuthError, expectNoLeak } from '../helpers/negative-auth.js';
 import { organizerAgent, vendorAgent, vendorProfileFor, activeEvent, assignedQuoteRequest, seedCommonCatalog } from '../helpers/us130-multi-role.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('t')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const app = createApp();
 const UUID = '11111111-1111-4111-8111-111111111111';

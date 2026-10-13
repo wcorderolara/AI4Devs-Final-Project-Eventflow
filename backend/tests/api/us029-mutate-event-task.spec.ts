@@ -4,20 +4,8 @@
 // DELETE ignora Content-Type (VR-13) — no se testea 415 en DELETE.
 import { describe, it, expect } from 'vitest';
 import request from 'supertest';
-import { PrismaClient } from '@prisma/client';
 import { createApp } from '../../src/app.js';
-
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+import { dbUp } from '../helpers/test-db.js';
 
 const app = createApp();
 const CAPTCHA = '__test__';

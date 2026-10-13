@@ -2,22 +2,12 @@
 // AC-01 distribución bookings, AC-02 invariantes, AC-03 distribución reseñas, AC-04 moderación
 // (AdminAction), AC-05 BudgetItem.committed, AC-06 idempotencia, EC-03 fechas cancelación, EC-04
 // reseña ↔ confirmed_intent.
-import { PrismaClient } from '@prisma/client';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { MockAIProvider } from '../../src/modules/ai-assistance/infrastructure/providers/mock/mock-ai-provider.js';
 import { SeedDemoDataUseCase } from '../../src/modules/seed-demo/application/seed-demo-data.use-case.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const TABLES = [
   'ai_recommendations', 'ai_prompt_versions', 'reviews', 'booking_intents', 'quotes',

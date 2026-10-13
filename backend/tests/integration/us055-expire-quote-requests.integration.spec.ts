@@ -18,25 +18,15 @@
 // El bloque `skipIf(!dbUp)` es el patrón del repo (US-139) — la suite hace skip limpio si
 // no hay Postgres alcanzable (local sin `docker compose up` o CI con DB dummy).
 import { afterAll, describe, expect, it } from 'vitest';
-import { PrismaClient } from '@prisma/client';
 import { ExpireQuoteRequestsUs055UseCase } from '../../src/modules/quote-flow/application/expire-quote-requests.us055.use-case.js';
 import { ExpireQuotesUs053UseCase } from '../../src/modules/quote-flow/application/expire-quotes.us053.use-case.js';
 import { QuoteEventNotificationService } from '../../src/modules/quote-flow/services/quote-event-notification.service.js';
 import { FrozenClock } from '../helpers/frozen-clock.js';
 import type { DomainEventLogger } from '../../src/shared/observability/domain-event-logger.js';
 import type { QuoteNotificationSenderPort } from '../../src/shared/application/quote-notification-sender.port.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const silentLogger: DomainEventLogger = { emit: () => undefined };
 

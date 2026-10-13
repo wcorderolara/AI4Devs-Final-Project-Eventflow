@@ -3,20 +3,10 @@
 // `migrations-validate` de CI, donde la BD SIEMPRE está disponible (service container). Sigue el
 // patrón `skipIf(!dbUp)` del repo para que `npm test` (sin BD, EC-02) no falle; en el job de
 // migraciones el step previo "Verificar DATABASE_URL" garantiza la conexión antes de correrlo.
-import { PrismaClient } from '@prisma/client';
 import { afterAll, describe, expect, it } from 'vitest';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 describe.skipIf(!dbUp)('US-139 — DB smoke (Prisma ↔ Postgres)', () => {
   afterAll(async () => {

@@ -4,22 +4,11 @@
 // acepta '__test__'. El token de reset se captura espiando el notifier (no viaja en la respuesta).
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import request from 'supertest';
-import { PrismaClient } from '@prisma/client';
 import { createApp } from '../../src/app.js';
 import { LoggingPasswordResetNotifier } from '../../src/infrastructure/notifications/logging-password-reset-notifier.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
-const prisma = new PrismaClient();
-
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const app = createApp();
 const CAPTCHA = '__test__';

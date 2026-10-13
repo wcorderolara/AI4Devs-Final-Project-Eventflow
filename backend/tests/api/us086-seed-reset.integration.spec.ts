@@ -7,22 +7,12 @@
 // `createApp()`). Un segundo app con el flag apagado valida el 404 (EC-01).
 process.env.SEED_DEMO_ENABLED = 'true';
 
-import { PrismaClient } from '@prisma/client';
 import request from 'supertest';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../../src/app.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const TABLES = [
   'ai_recommendations', 'ai_prompt_versions', 'reviews', 'booking_intents', 'quotes',

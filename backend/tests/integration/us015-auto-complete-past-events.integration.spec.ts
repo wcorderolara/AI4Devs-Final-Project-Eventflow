@@ -9,23 +9,14 @@
 //
 // Prereq: existen `users`, `locations` y `event_types` (seed corrido previamente en CI/dev).
 // Si no, la suite se salta limpiamente.
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PrismaEventRepository } from '../../src/modules/event-planning/infrastructure/prisma-event.repository.js';
 import { AutoCompletePastEventsUseCase } from '../../src/modules/event-planning/application/auto-complete-past-events.use-case.js';
 import type { ClockPort } from '../../src/shared/domain/clock.port.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 class FixedClock implements ClockPort {
   constructor(private t: Date) {}

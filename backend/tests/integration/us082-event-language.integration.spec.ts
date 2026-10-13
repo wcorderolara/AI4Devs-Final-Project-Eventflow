@@ -3,23 +3,13 @@
 // schema real. Cubre AC-01 (herencia desde organizer) y AC-05 (binding event.languageCode
 // hacia el provider AI). Sigue el patrón `skipIf(!dbUp)` del repo — corre en CI donde hay
 // Postgres, se salta silenciosamente en dev sin BD.
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { describe, expect, it, beforeAll, afterAll } from 'vitest';
 import { PrismaOrganizerLanguageLookup } from '../../src/modules/event-planning/infrastructure/prisma-organizer-language.lookup.js';
 import { PrismaEventLanguageReader } from '../../src/infrastructure/readers/prisma-access-readers.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
-const prisma = new PrismaClient();
-
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const suffix = `us082_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
 
