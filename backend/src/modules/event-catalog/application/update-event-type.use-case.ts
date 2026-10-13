@@ -11,6 +11,7 @@
 import { Prisma, type PrismaClient } from '@prisma/client';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
+import { recordAdminAction } from '../../../infrastructure/persistence/record-admin-action.js';
 import { EventTypeNotFoundError } from '../domain/us076.errors.js';
 import type { UpdateEventTypeBody } from '../interface/event-type.dto.js';
 import { assertNameI18nHasEsLatam } from './create-event-type.use-case.js';
@@ -65,27 +66,24 @@ export class UpdateEventTypeUseCase {
       const updated = await tx.eventType.update({ where: { id }, data: patch });
 
       // 4) AdminAction append-only (`reactivate` cuando aplique).
-      const adminAction = await tx.adminAction.create({
-        data: {
-          adminUserId: currentUserId,
-          action: isReactivating ? 'reactivate' : 'update',
-          targetEntity: 'event_type',
-          targetId: id,
-          metadata: {
-            correlationId: ctx.correlationId ?? null,
-            reason: body.reason ?? null,
-            from: {
-              sort_order: existing.sortOrder,
-              is_active: existing.isActive,
-            },
-            to: {
-              sort_order: updated.sortOrder,
-              is_active: updated.isActive,
-            },
-            patched_fields: Object.keys(body).filter((k) => k !== 'reason'),
-          } as Prisma.InputJsonObject,
+      const adminAction = await recordAdminAction(tx, {
+        adminUserId: currentUserId,
+        action: isReactivating ? 'reactivate' : 'update',
+        targetEntity: 'event_type',
+        targetId: id,
+        correlationId: ctx.correlationId,
+        metadata: {
+          reason: body.reason ?? null,
+          from: {
+            sort_order: existing.sortOrder,
+            is_active: existing.isActive,
+          },
+          to: {
+            sort_order: updated.sortOrder,
+            is_active: updated.isActive,
+          },
+          patched_fields: Object.keys(body).filter((k) => k !== 'reason'),
         },
-        select: { id: true },
       });
 
       this.logger.emit(isReactivating ? 'event_type.reactivated' : 'event_type.updated', {

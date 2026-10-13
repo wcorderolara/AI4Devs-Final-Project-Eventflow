@@ -14,9 +14,10 @@
 //
 // `reason` obligatorio [10..500] chars — validado en el controller (produce
 // `REASON_REQUIRED` o `INVALID_REASON_LENGTH`), NO en el UseCase. Aquí solo se persiste.
-import { Prisma, type PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
+import { recordAdminAction } from '../../../infrastructure/persistence/record-admin-action.js';
 import {
   CategoryHasChildrenError,
   CategoryInUseError,
@@ -62,25 +63,22 @@ export class SoftDeleteServiceCategoryUseCase {
         data: { isActive: false },
       });
 
-      const adminAction = await tx.adminAction.create({
-        data: {
-          adminUserId: currentUserId,
-          action: 'soft_delete',
-          targetEntity: 'service_category',
-          targetId: id,
-          metadata: {
-            correlationId: ctx.correlationId ?? null,
-            reason,
-            snapshot: {
-              code: existing.code,
-              parent_id: existing.parentId,
-              sort_order: existing.sortOrder,
-              depth_level: existing.depthLevel,
-              was_active: existing.isActive,
-            },
-          } as Prisma.InputJsonObject,
+      const adminAction = await recordAdminAction(tx, {
+        adminUserId: currentUserId,
+        action: 'soft_delete',
+        targetEntity: 'service_category',
+        targetId: id,
+        correlationId: ctx.correlationId,
+        metadata: {
+          reason,
+          snapshot: {
+            code: existing.code,
+            parent_id: existing.parentId,
+            sort_order: existing.sortOrder,
+            depth_level: existing.depthLevel,
+            was_active: existing.isActive,
+          },
         },
-        select: { id: true },
       });
 
       this.logger.emit('service_category.soft_deleted', {

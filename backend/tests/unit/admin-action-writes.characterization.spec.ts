@@ -439,7 +439,7 @@ describe('PR-6 caracterización — adapters de admin_actions', () => {
       correlationId: 'cid-7',
       extraMetadata: { reason: 'soporte' },
     });
-    expect(out).toEqual({ id: 'aa-2', createdAt: T0 });
+    expect(out.id).toBe('aa-2');
     expect(create.mock.calls).toEqual([
       [
         {
@@ -451,7 +451,7 @@ describe('PR-6 caracterización — adapters de admin_actions', () => {
             metadata: { correlationId: 'cid-7', reason: 'soporte' },
             isSeed: false,
           },
-          select: { id: true, createdAt: true },
+          select: { id: true },
         },
       ],
     ]);

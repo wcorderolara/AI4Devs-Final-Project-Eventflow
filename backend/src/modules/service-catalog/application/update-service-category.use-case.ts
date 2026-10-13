@@ -20,6 +20,7 @@
 import { Prisma, type PrismaClient } from '@prisma/client';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
+import { recordAdminAction } from '../../../infrastructure/persistence/record-admin-action.js';
 import {
   InvalidHierarchyDepthError,
   InvalidParentIdError,
@@ -105,31 +106,28 @@ export class UpdateServiceCategoryUseCase {
       const updated = await tx.serviceCategory.update({ where: { id }, data: patch });
 
       // 5) AdminAction append-only (`reactivate` cuando aplique).
-      const adminAction = await tx.adminAction.create({
-        data: {
-          adminUserId: currentUserId,
-          action: isReactivating ? 'reactivate' : 'update',
-          targetEntity: 'service_category',
-          targetId: id,
-          metadata: {
-            correlationId: ctx.correlationId ?? null,
-            reason: body.reason ?? null,
-            from: {
-              parent_id: existing.parentId,
-              sort_order: existing.sortOrder,
-              is_active: existing.isActive,
-              depth_level: existing.depthLevel,
-            },
-            to: {
-              parent_id: updated.parentId,
-              sort_order: updated.sortOrder,
-              is_active: updated.isActive,
-              depth_level: updated.depthLevel,
-            },
-            patched_fields: Object.keys(body).filter((k) => k !== 'reason'),
-          } as Prisma.InputJsonObject,
+      const adminAction = await recordAdminAction(tx, {
+        adminUserId: currentUserId,
+        action: isReactivating ? 'reactivate' : 'update',
+        targetEntity: 'service_category',
+        targetId: id,
+        correlationId: ctx.correlationId,
+        metadata: {
+          reason: body.reason ?? null,
+          from: {
+            parent_id: existing.parentId,
+            sort_order: existing.sortOrder,
+            is_active: existing.isActive,
+            depth_level: existing.depthLevel,
+          },
+          to: {
+            parent_id: updated.parentId,
+            sort_order: updated.sortOrder,
+            is_active: updated.isActive,
+            depth_level: updated.depthLevel,
+          },
+          patched_fields: Object.keys(body).filter((k) => k !== 'reason'),
         },
-        select: { id: true },
       });
 
       this.logger.emit(isReactivating ? 'service_category.reactivated' : 'service_category.updated', {

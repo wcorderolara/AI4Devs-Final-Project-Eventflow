@@ -42,6 +42,7 @@
 import { Prisma, VendorProfileStatus, type PrismaClient } from '@prisma/client';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
+import { recordAdminAction } from '../../../infrastructure/persistence/record-admin-action.js';
 import type {
   QuoteEventName,
   QuoteEventNotificationService,
@@ -170,22 +171,19 @@ export class ModerateVendorUseCase {
       // 4) INSERT AdminAction (append-only, BR-ADMIN-011). Payload snapshot en `metadata`.
       // `correlationId` va dentro de `metadata` (deviation D-01 US-016 escalada a US-099 —
       // hasta que `admin_actions.correlation_id` exista como columna dedicada).
-      const adminAction = await tx.adminAction.create({
-        data: {
-          adminUserId: currentUserId,
-          action: body.action,
-          targetEntity: 'vendor_profile',
-          targetId: vendorProfileId,
-          metadata: {
-            correlationId: ctx.correlationId ?? null,
-            reason: body.reason ?? null,
-            from_status: fromStatus,
-            to_status: toStatus,
-            from_is_hidden: fromIsHidden,
-            to_is_hidden: toIsHidden,
-          } as Prisma.InputJsonObject,
+      const adminAction = await recordAdminAction(tx, {
+        adminUserId: currentUserId,
+        action: body.action,
+        targetEntity: 'vendor_profile',
+        targetId: vendorProfileId,
+        correlationId: ctx.correlationId,
+        metadata: {
+          reason: body.reason ?? null,
+          from_status: fromStatus,
+          to_status: toStatus,
+          from_is_hidden: fromIsHidden,
+          to_is_hidden: toIsHidden,
         },
-        select: { id: true },
       });
 
       // 5) UPDATE VendorProfile.admin_action_id — chain vendor → último AdminAction

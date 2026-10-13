@@ -20,6 +20,7 @@
 import { Prisma, type PrismaClient } from '@prisma/client';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
+import { recordAdminAction } from '../../../infrastructure/persistence/record-admin-action.js';
 import {
   DuplicateEventTypeCodeError,
   InvalidNameI18nError,
@@ -81,24 +82,21 @@ export class CreateEventTypeUseCase {
 
       // 3) INSERT AdminAction append-only (Decisión PO D6; BR-ADMIN-011). `metadata`
       // guarda snapshot mínimo — sin FKs cross-domain a `event_types.admin_action_id`.
-      const adminAction = await tx.adminAction.create({
-        data: {
-          adminUserId: currentUserId,
-          action: 'create',
-          targetEntity: 'event_type',
-          targetId: created.id,
-          metadata: {
-            correlationId: ctx.correlationId ?? null,
-            reason: body.reason ?? null,
-            snapshot: {
-              code: created.code,
-              sort_order: created.sortOrder,
-              name_i18n: body.name_i18n,
-              description_i18n: body.description_i18n ?? null,
-            },
-          } as Prisma.InputJsonObject,
+      const adminAction = await recordAdminAction(tx, {
+        adminUserId: currentUserId,
+        action: 'create',
+        targetEntity: 'event_type',
+        targetId: created.id,
+        correlationId: ctx.correlationId,
+        metadata: {
+          reason: body.reason ?? null,
+          snapshot: {
+            code: created.code,
+            sort_order: created.sortOrder,
+            name_i18n: body.name_i18n,
+            description_i18n: body.description_i18n ?? null,
+          },
         },
-        select: { id: true },
       });
 
       this.logger.emit('event_type.created', {
