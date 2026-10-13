@@ -63,7 +63,7 @@ describe('US-011 — cancelar evento', () => {
     await screen.findByText('Boda de Ana');
 
     await user.click(screen.getByRole('button', { name: 'Cancelar' }));
-    // PB-P2-031: `ConfirmDialog` compone `ConfirmationDialog` del design system, que usa
+    // PB-P2-031: `EventActions` usa `ConfirmationDialog` del design system, que usa
     // `role="alertdialog"` — el correcto para una interrupción que exige una decisión.
     const dialog = await screen.findByRole('alertdialog');
     expect(within(dialog).getByText('Cancelar evento')).toBeInTheDocument();

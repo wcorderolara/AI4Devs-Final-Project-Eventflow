@@ -4,9 +4,9 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
 import { ApiError } from '@/shared/api-client';
+import { Alert, ConfirmationDialog } from '@/shared/design-system';
 import type { EventModel } from '../api/eventsApi.types';
 import { useCancelEvent, useDeleteEvent } from '../hooks/useEventsMutations';
-import { ConfirmDialog } from './ConfirmDialog';
 
 /**
  * Acciones de ciclo de vida de un evento (US-010 editar, US-011 cancelar, US-012 soft delete).
@@ -85,31 +85,45 @@ export function EventActions({
         </button>
       ) : null}
 
-      <ConfirmDialog
+      {/* El error de la mutación permanece dentro del diálogo: cerrarlo y volver a abrirlo no
+          puede ser la única forma de enterarse de que la operación falló (CMP-DEC-022). */}
+      <ConfirmationDialog
         open={dialog === 'cancel'}
         title={t('cancelDialog.title')}
         description={t('cancelDialog.description')}
-        confirmLabel={cancelMutation.isPending ? t('cancelDialog.pending') : t('cancelDialog.confirm')}
+        confirmLabel={t('cancelDialog.confirm')}
+        loadingLabel={t('cancelDialog.pending')}
         cancelLabel={t('cancelDialog.dismiss')}
-        destructive
-        pending={cancelMutation.isPending}
-        error={error}
+        variant="destructive"
+        isLoading={cancelMutation.isPending}
         onConfirm={confirmCancel}
         onClose={closeDialog}
-      />
+      >
+        {error ? (
+          <Alert variant="error" live>
+            {error}
+          </Alert>
+        ) : null}
+      </ConfirmationDialog>
 
-      <ConfirmDialog
+      <ConfirmationDialog
         open={dialog === 'delete'}
         title={t('deleteDialog.title')}
         description={t('deleteDialog.description')}
-        confirmLabel={deleteMutation.isPending ? t('deleteDialog.pending') : t('deleteDialog.confirm')}
+        confirmLabel={t('deleteDialog.confirm')}
+        loadingLabel={t('deleteDialog.pending')}
         cancelLabel={t('deleteDialog.dismiss')}
-        destructive
-        pending={deleteMutation.isPending}
-        error={error}
+        variant="destructive"
+        isLoading={deleteMutation.isPending}
         onConfirm={confirmDelete}
         onClose={closeDialog}
-      />
+      >
+        {error ? (
+          <Alert variant="error" live>
+            {error}
+          </Alert>
+        ) : null}
+      </ConfirmationDialog>
     </div>
   );
 }
@@ -118,7 +132,8 @@ function mapError(err: unknown, t: ReturnType<typeof useTranslations>): string {
   if (err instanceof ApiError) {
     if (err.status === 404) return t('errors.NOT_FOUND');
     if (err.code === 'INVALID_STATE' || err.status === 409) return t('errors.INVALID_STATE');
-    if (err.code === 'BUSINESS_RULE_VIOLATION' || err.status === 422) return t('errors.INVALID_STATE');
+    if (err.code === 'BUSINESS_RULE_VIOLATION' || err.status === 422)
+      return t('errors.INVALID_STATE');
   }
   return t('errors.UNEXPECTED');
 }
