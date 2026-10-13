@@ -1,7 +1,7 @@
 // US-042 QA-005 — A11Y (jest-axe) + tests funcionales de CategoryChangeForm.
 // - `aria-live="polite"` en el contador (counter.remaining / counter.reached).
 // - `aria-describedby` en el CTA cuando el límite está alcanzado (5/5).
-// - Modal de confirmación con `role="dialog"`, focus trap básico y captura de ESC.
+// - Modal de confirmación (`ConfirmationDialog` del design system: focus trap y captura de ESC).
 // - Sin violaciones axe en el estado por defecto y con límite alcanzado.
 import { render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';

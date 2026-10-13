@@ -58,7 +58,7 @@ describe('US-041 QA-005 — A11Y VendorProfileEditor (jest-axe)', () => {
 
 describe('US-041 QA-005 — A11Y DeleteProfileDialog (jest-axe)', () => {
   it('sin violaciones axe cuando el modal está abierto', async () => {
-    const { container } = render(
+    render(
       wrap(
         <DeleteProfileDialog
           isOpen
@@ -68,7 +68,7 @@ describe('US-041 QA-005 — A11Y DeleteProfileDialog (jest-axe)', () => {
         />,
       ),
     );
-    const results = await axe(container);
+    const results = await axe(document.body);
     expect(results).toHaveNoViolations();
   });
 
@@ -111,10 +111,10 @@ describe('US-041 flujo del editor', () => {
     const user = userEvent.setup();
     render(wrap(<VendorProfileEditor profile={profileFixture} />));
     await user.click(screen.getByRole('button', { name: /delete my profile/i }));
-    expect(screen.getByRole('dialog', { name: /delete your vendor profile/i })).toBeInTheDocument();
+    expect(screen.getByRole('alertdialog', { name: /delete your vendor profile/i })).toBeInTheDocument();
     await user.click(screen.getAllByRole('button', { name: /^cancel$/i })[0]!);
     await waitFor(() =>
-      expect(screen.queryByRole('dialog', { name: /delete your vendor profile/i })).not.toBeInTheDocument(),
+      expect(screen.queryByRole('alertdialog', { name: /delete your vendor profile/i })).not.toBeInTheDocument(),
     );
   });
 });
