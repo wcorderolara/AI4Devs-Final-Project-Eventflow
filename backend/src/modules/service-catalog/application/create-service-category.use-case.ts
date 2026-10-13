@@ -21,14 +21,18 @@
 // callers legacy (VendorService, EventTask, Quote) que proyectan `label` directo. Sin esta
 // denormalización, esos consumers necesitarían leer `name_i18n` y resolver locale — cambio
 // de scope no autorizado. Idéntico criterio para `description` desde `description_i18n`.
-import { Prisma, type PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
 import { recordAdminAction } from '../../../infrastructure/persistence/record-admin-action.js';
 import {
+  assertNameI18nHasEsLatam,
+  catalogI18nColumns,
+  type CatalogAdminCtx,
+} from '../../../shared/application/catalog-admin.js';
+import {
   DuplicateCategoryCodeError,
   InvalidHierarchyDepthError,
-  InvalidNameI18nError,
   InvalidParentIdError,
 } from '../domain/us075.errors.js';
 import type { CreateServiceCategoryBody as CreateBodyFromDto } from '../interface/service-category.dto.js';
@@ -43,9 +47,7 @@ export type CreateServiceCategoryBody = Omit<CreateBodyFromDto, 'sort_order'> & 
   sort_order?: number;
 };
 
-export interface CreateServiceCategoryCtx {
-  correlationId?: string;
-}
+export type CreateServiceCategoryCtx = CatalogAdminCtx;
 
 export class CreateServiceCategoryUseCase {
   constructor(
@@ -82,17 +84,10 @@ export class CreateServiceCategoryUseCase {
       if (dup) throw new DuplicateCategoryCodeError();
 
       // 3) INSERT categoría — `label` y `description` denormalizados desde i18n['es-LATAM'].
-      const esLatamName = (body.name_i18n as Record<string, string>)['es-LATAM']!;
-      const esLatamDesc = (body.description_i18n as Record<string, string> | undefined)?.['es-LATAM'];
       const created = await tx.serviceCategory.create({
         data: {
           code: body.code,
-          label: esLatamName,
-          description: esLatamDesc ?? null,
-          nameI18n: body.name_i18n as Prisma.InputJsonObject,
-          descriptionI18n: body.description_i18n
-            ? (body.description_i18n as Prisma.InputJsonObject)
-            : undefined,
+          ...catalogI18nColumns(body),
           parentId: body.parent_id ?? null,
           sortOrder: body.sort_order ?? 0,
           depthLevel,
@@ -136,11 +131,3 @@ export class CreateServiceCategoryUseCase {
   }
 }
 
-/** Invariante D3/VR-03 — separado para reuso en `Update`. */
-export function assertNameI18nHasEsLatam(nameI18n: Record<string, unknown> | undefined): void {
-  if (!nameI18n || typeof nameI18n !== 'object') throw new InvalidNameI18nError();
-  const val = (nameI18n as Record<string, unknown>)['es-LATAM'];
-  if (typeof val !== 'string' || val.trim().length === 0) {
-    throw new InvalidNameI18nError();
-  }
-}

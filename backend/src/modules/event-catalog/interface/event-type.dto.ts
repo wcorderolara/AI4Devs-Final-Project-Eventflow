@@ -8,20 +8,17 @@
 // produce `ValidationError` genérica cuando Zod falla.
 import { z } from 'zod';
 import { uuidParamsSchema } from '../../../shared/validation/uuid-params.js';
+import {
+  CATALOG_DESCRIPTION_I18N_SCHEMA,
+  CATALOG_NAME_I18N_SCHEMA,
+  CATALOG_REASON_SCHEMA,
+  CATALOG_SORT_ORDER_SCHEMA,
+  CatalogDeleteBodySchema,
+} from '../../../shared/validation/catalog-admin.schemas.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Fragmentos reutilizables
 // ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * `name_i18n` como record<locale, string> no vacío. La invariante "es-LATAM
- * requerido" (Decisión PO D3 + VR-03) se valida en el UseCase con
- * `InvalidNameI18nError` para emitir el código estable `INVALID_NAME_I18N`.
- */
-const NAME_I18N_SHAPE = z.record(z.string().min(1).max(200));
-
-/** `description_i18n` opcional (Decisión PO D3). */
-const DESCRIPTION_I18N_SHAPE = z.record(z.string().max(2000));
 
 /**
  * `code` slug estable (VR-02). Acepta letras, dígitos, guiones y underscores para
@@ -32,9 +29,6 @@ const CODE_SCHEMA = z
   .min(1)
   .max(64)
   .regex(/^[a-z0-9_-]+$/);
-
-/** `sort_order` >= 0 integer (VR-04). */
-const SORT_ORDER_SCHEMA = z.number().int().nonnegative();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Path params
@@ -50,10 +44,10 @@ export type EventTypeIdParams = z.infer<typeof EventTypeIdParamsSchema>;
 export const CreateEventTypeBodySchema = z
   .object({
     code: CODE_SCHEMA,
-    name_i18n: NAME_I18N_SHAPE,
-    description_i18n: DESCRIPTION_I18N_SHAPE.optional(),
-    sort_order: SORT_ORDER_SCHEMA.optional().default(0),
-    reason: z.string().max(500).optional(),
+    name_i18n: CATALOG_NAME_I18N_SCHEMA,
+    description_i18n: CATALOG_DESCRIPTION_I18N_SCHEMA.optional(),
+    sort_order: CATALOG_SORT_ORDER_SCHEMA.optional().default(0),
+    reason: CATALOG_REASON_SCHEMA,
   })
   .strict();
 export type CreateEventTypeBody = z.infer<typeof CreateEventTypeBodySchema>;
@@ -64,11 +58,11 @@ export type CreateEventTypeBody = z.infer<typeof CreateEventTypeBodySchema>;
 
 export const UpdateEventTypeBodySchema = z
   .object({
-    name_i18n: NAME_I18N_SHAPE.optional(),
-    description_i18n: DESCRIPTION_I18N_SHAPE.optional(),
-    sort_order: SORT_ORDER_SCHEMA.optional(),
+    name_i18n: CATALOG_NAME_I18N_SCHEMA.optional(),
+    description_i18n: CATALOG_DESCRIPTION_I18N_SCHEMA.optional(),
+    sort_order: CATALOG_SORT_ORDER_SCHEMA.optional(),
     is_active: z.boolean().optional(),
-    reason: z.string().max(500).optional(),
+    reason: CATALOG_REASON_SCHEMA,
   })
   .strict()
   .refine(
@@ -85,14 +79,5 @@ export type UpdateEventTypeBody = z.infer<typeof UpdateEventTypeBodySchema>;
 // Soft delete body (BE-003) — DELETE /admin/event-types/:id
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * `reason` recibido como string opcional para que el controller distinga
- * `REASON_REQUIRED` (ausente / vacío) de `INVALID_REASON_LENGTH` (fuera de
- * [10..500]) y emita códigos estables.
- */
-export const DeleteEventTypeBodySchema = z
-  .object({
-    reason: z.string().max(500).optional(),
-  })
-  .strict();
+export const DeleteEventTypeBodySchema = CatalogDeleteBodySchema;
 export type DeleteEventTypeBody = z.infer<typeof DeleteEventTypeBodySchema>;

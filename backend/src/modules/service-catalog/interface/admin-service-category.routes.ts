@@ -1,25 +1,17 @@
-// Rutas Admin ServiceCategory (US-075 / BE-007). Registra 4 endpoints bajo
-// `/api/v1/admin/service-categories`:
+// Rutas Admin ServiceCategory (US-075 / BE-007). Registra los 4 endpoints admin comunes de
+// catálogos bajo `/api/v1/admin/service-categories` (ver `createCatalogAdminRouter`):
 //
 //   GET    /                 → listado tree + flat (incluye `is_active=false`)
 //   POST   /                 → crear categoría root o child (AC-01/AC-02)
 //   PATCH  /:id              → update / reactivate (AC-03)
 //   DELETE /:id              → soft delete con reason (AC-04)
-//
-// Orden canónico: sessionAuth → adminOnly → validateRequest → handler (paridad
-// EXACTA con `adminReviewRouter` de US-067/US-077 y `adminVendorRouter` de US-047/US-074).
-import { Router } from 'express';
-import { z } from 'zod';
-import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { requireSession, requireRole } from '../../../infrastructure/auth-composition.js';
+import { createCatalogAdminRouter } from '../../../shared/interface/http/catalog-admin.js';
 import { StructuredDomainEventLogger } from '../../../infrastructure/observability/structured-domain-event-logger.js';
 import { prisma } from '../../../infrastructure/prisma/client.js';
 import { CreateServiceCategoryUseCase } from '../application/create-service-category.use-case.js';
 import { UpdateServiceCategoryUseCase } from '../application/update-service-category.use-case.js';
 import { SoftDeleteServiceCategoryUseCase } from '../application/soft-delete-service-category.use-case.js';
 import { ListServiceCategoriesUseCase } from '../application/list-service-categories.use-case.js';
-import { AdminServiceCategoryController } from './admin-service-category.controller.js';
 import {
   CreateServiceCategoryBodySchema,
   DeleteServiceCategoryBodySchema,
@@ -29,36 +21,18 @@ import {
 
 // Composition root del sub-módulo. Reusa clock/sessionRepo global + un logger dedicado.
 const logger = new StructuredDomainEventLogger();
-const createUC = new CreateServiceCategoryUseCase(logger, prisma);
-const updateUC = new UpdateServiceCategoryUseCase(logger, prisma);
-const softDeleteUC = new SoftDeleteServiceCategoryUseCase(logger, prisma);
-const listUC = new ListServiceCategoriesUseCase(prisma);
-const controller = new AdminServiceCategoryController(createUC, updateUC, softDeleteUC, listUC);
 
-export const adminServiceCategoryRouter = Router();
-adminServiceCategoryRouter.use(requireSession, requireRole('admin'));
-
-// GET / — sin body/params/query validation (listado plano).
-adminServiceCategoryRouter.get('/', asyncHandler(controller.list));
-
-adminServiceCategoryRouter.post(
-  '/',
-  validateRequestMiddleware(z.object({ body: CreateServiceCategoryBodySchema })),
-  asyncHandler(controller.create),
-);
-
-adminServiceCategoryRouter.patch(
-  '/:id',
-  validateRequestMiddleware(
-    z.object({ params: ServiceCategoryIdParamsSchema, body: UpdateServiceCategoryBodySchema }),
-  ),
-  asyncHandler(controller.update),
-);
-
-adminServiceCategoryRouter.delete(
-  '/:id',
-  validateRequestMiddleware(
-    z.object({ params: ServiceCategoryIdParamsSchema, body: DeleteServiceCategoryBodySchema }),
-  ),
-  asyncHandler(controller.softDelete),
+export const adminServiceCategoryRouter = createCatalogAdminRouter(
+  {
+    create: new CreateServiceCategoryUseCase(logger, prisma),
+    update: new UpdateServiceCategoryUseCase(logger, prisma),
+    softDelete: new SoftDeleteServiceCategoryUseCase(logger, prisma),
+    list: new ListServiceCategoriesUseCase(prisma),
+  },
+  {
+    idParams: ServiceCategoryIdParamsSchema,
+    createBody: CreateServiceCategoryBodySchema,
+    updateBody: UpdateServiceCategoryBodySchema,
+    deleteBody: DeleteServiceCategoryBodySchema,
+  },
 );

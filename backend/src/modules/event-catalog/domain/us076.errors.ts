@@ -12,10 +12,8 @@
 //     `EventTypeInUseError` con `details.usage_count`.
 //
 // Errores compartidos con US-075 (`InvalidNameI18nError`, `ReasonRequiredError`,
-// `InvalidReasonLengthError`): se REUSAN las clases del módulo `service-catalog` en
-// lugar de duplicarlas: duplicar la clase con el mismo `code` duplicaría también su
-// mapeo HTTP. Reusar la clase mantiene un único punto de definición del `code` y del mapeo. El acoplamiento es un import puntual y
-// documentado — no aporta lógica cruzada entre módulos.
+// `InvalidReasonLengthError`): viven en el shared kernel (`catalog-admin.errors.ts`) para
+// mantener un único punto de definición del `code` y de su mapeo HTTP.
 import { AppError, type ErrorDetail, type HttpErrorMapping } from '../../../shared/domain/errors/app.error.js';
 import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
 
@@ -23,7 +21,7 @@ export {
   InvalidNameI18nError,
   ReasonRequiredError,
   InvalidReasonLengthError,
-} from '../../service-catalog/domain/us075.errors.js';
+} from '../../../shared/domain/errors/catalog-admin.errors.js';
 
 /**
  * 404 uniforme cuando el EventType no existe o está soft-deleted. Decisión PO D7 +

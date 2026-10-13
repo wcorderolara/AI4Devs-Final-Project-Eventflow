@@ -18,6 +18,7 @@ import type { PrismaClient } from '@prisma/client';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
 import { recordAdminAction } from '../../../infrastructure/persistence/record-admin-action.js';
+import type { CatalogAdminCtx } from '../../../shared/application/catalog-admin.js';
 import {
   CategoryHasChildrenError,
   CategoryInUseError,
@@ -25,9 +26,7 @@ import {
 } from '../domain/us075.errors.js';
 import { toServiceCategoryView, type ServiceCategoryView } from './service-category.view.js';
 
-export interface SoftDeleteServiceCategoryCtx {
-  correlationId?: string;
-}
+export type SoftDeleteServiceCategoryCtx = CatalogAdminCtx;
 
 export class SoftDeleteServiceCategoryUseCase {
   constructor(

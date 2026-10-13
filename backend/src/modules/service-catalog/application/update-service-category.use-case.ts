@@ -22,17 +22,21 @@ import type { DomainEventLogger } from '../../../shared/observability/domain-eve
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
 import { recordAdminAction } from '../../../infrastructure/persistence/record-admin-action.js';
 import {
+  assertNameI18nHasEsLatam,
+  catalogI18nPatch,
+  isReactivation,
+  patchedFields,
+  type CatalogAdminCtx,
+} from '../../../shared/application/catalog-admin.js';
+import {
   InvalidHierarchyDepthError,
   InvalidParentIdError,
   ServiceCategoryNotFoundError,
 } from '../domain/us075.errors.js';
 import type { UpdateServiceCategoryBody } from '../interface/service-category.dto.js';
-import { assertNameI18nHasEsLatam } from './create-service-category.use-case.js';
 import { toServiceCategoryView, type ServiceCategoryView } from './service-category.view.js';
 
-export interface UpdateServiceCategoryCtx {
-  correlationId?: string;
-}
+export type UpdateServiceCategoryCtx = CatalogAdminCtx;
 
 export class UpdateServiceCategoryUseCase {
   constructor(
@@ -79,21 +83,10 @@ export class UpdateServiceCategoryUseCase {
       }
 
       // 3) Detección reactivate (Decisión PO D7).
-      const wasActive = existing.isActive;
-      const willBeActive = body.is_active ?? wasActive;
-      const isReactivating = !wasActive && willBeActive;
+      const isReactivating = isReactivation(existing.isActive, body.is_active);
 
       // 4) Sync denormalizado de `label` / `description`.
-      const patch: Prisma.ServiceCategoryUpdateInput = {};
-      if (body.name_i18n !== undefined) {
-        const esLatam = (body.name_i18n as Record<string, string>)['es-LATAM']!;
-        patch.nameI18n = body.name_i18n as Prisma.InputJsonObject;
-        patch.label = esLatam;
-      }
-      if (body.description_i18n !== undefined) {
-        patch.descriptionI18n = body.description_i18n as Prisma.InputJsonObject;
-        patch.description = (body.description_i18n as Record<string, string>)['es-LATAM'] ?? null;
-      }
+      const patch: Prisma.ServiceCategoryUpdateInput = catalogI18nPatch(body);
       if (body.parent_id !== undefined) {
         patch.parent = body.parent_id
           ? { connect: { id: body.parent_id } }
@@ -126,7 +119,7 @@ export class UpdateServiceCategoryUseCase {
             is_active: updated.isActive,
             depth_level: updated.depthLevel,
           },
-          patched_fields: Object.keys(body).filter((k) => k !== 'reason'),
+          patched_fields: patchedFields(body),
         },
       });
 

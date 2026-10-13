@@ -16,15 +16,14 @@ import type { PrismaClient } from '@prisma/client';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
 import { recordAdminAction } from '../../../infrastructure/persistence/record-admin-action.js';
+import type { CatalogAdminCtx } from '../../../shared/application/catalog-admin.js';
 import {
   EventTypeInUseError,
   EventTypeNotFoundError,
 } from '../domain/us076.errors.js';
 import { toEventTypeView, type EventTypeView } from './event-type.view.js';
 
-export interface SoftDeleteEventTypeCtx {
-  correlationId?: string;
-}
+export type SoftDeleteEventTypeCtx = CatalogAdminCtx;
 
 export class SoftDeleteEventTypeUseCase {
   constructor(
