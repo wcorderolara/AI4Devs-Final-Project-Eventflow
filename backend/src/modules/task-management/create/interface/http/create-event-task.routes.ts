@@ -9,7 +9,7 @@ import { roleMiddleware } from '../../../../../shared/interface/middlewares/role
 import { createSessionAuthMiddleware } from '../../../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../../../shared/interface/http/async-handler.js';
 import { sessionRepository, clock } from '../../../../../infrastructure/auth-composition.js';
-import { prisma } from '../../../../../shared/infrastructure/prisma/prisma.client.js';
+import { prisma } from '../../../../../infrastructure/prisma/client.js';
 import { CreateEventTaskUseCase } from '../../application/create-event-task.use-case.js';
 import { CreateEventTaskTelemetry } from '../../application/create-event-task-telemetry.js';
 import { PrismaEventTaskCreateRepository } from '../../infrastructure/repositories/prisma-event-task-create.repository.js';

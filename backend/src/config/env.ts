@@ -145,9 +145,8 @@ export const configSchema = z.object({
   // phone, …) sin redactar SÓLO en development. El `superRefine` hace fail-fast
   // si `true` fuera de development.
   LOG_INCLUDE_PII: booleanFromEnv.default(false),
-  // US-113 (PB-P2-010 / BE-001 / VR-04): versión del servicio inyectada en cada
-  // log line. Se resuelve desde env; el helper `resolveServiceVersion()` cae a
-  // `package.json.version` si la env var no está seteada.
+  // US-113 (PB-P2-010 / BE-001 / VR-04): alias de `APP_VERSION` para la versión de logs y
+  // `/health`. Precedencia en `shared/config/app-version.ts`.
   SERVICE_VERSION: z.string().min(1).optional(),
 
   // SEED

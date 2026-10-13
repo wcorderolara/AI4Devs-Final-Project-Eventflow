@@ -1,6 +1,6 @@
 // US-036 (PB-P1-020 / BE-002, R1) — Adapter Prisma para `EventBudgetContextReader`.
 // Un solo query: `events` con `include: budget` y filtro `userId = ownerId AND deleted_at IS NULL`.
-import { prisma } from '../../../shared/infrastructure/prisma/prisma.client.js';
+import { prisma } from '../../../infrastructure/prisma/client.js';
 import type {
   EventBudgetContext,
   EventBudgetContextReader,

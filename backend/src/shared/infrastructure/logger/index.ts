@@ -1,18 +1,74 @@
-// Shared kernel — logger stub (US-090 / BE-004; US-108 / SEC-002). Doc 14 §7.1.
-// Placeholder sobre `console`. El logger estructurado (JSON, correlationId, niveles) es
-// responsabilidad de PB-P0-003 / US-091.
-// Redacción central (US-108 / AC-07, SEC-07): TODO argumento se pasa por `redact()` antes de
-// emitirse, de modo que ninguna clave sensible (cookie, set-cookie, authorization, sid, jti,
-// *secret, *token, *password) pueda filtrarse a stdout aunque un módulo la incluya por error.
-import { redact } from './redact.js';
+// Logger único del backend (US-091 / US-108 / US-113). Pino emite JSON lines a stdout
+// (`docker logs` → CloudWatch) con shape `{level, time, service, env, version, correlationId,
+// msg?, ...campos}`; `correlationId` sale de AsyncLocalStorage salvo que el payload lo traiga.
+// Toda línea pasa por `redactSecrets` + `redactPII` antes de serializarse (AC-03/04, SEC-07).
+//
+// `logger` es una fachada sobre Pino que acepta las dos formas de llamada del código:
+//   logger.info({ event, ...campos })          → tal cual (también `({...}, 'msg')` estilo Pino)
+//   logger.info('event', { ...campos })        → { event, ...campos }
+import pino, { type DestinationStream, type Logger, type LoggerOptions } from 'pino';
+import { config } from '../../../config/env.js';
+import { getAppVersion } from '../../config/app-version.js';
+import { getCorrelationId } from '../../context/correlation-id.js';
+import { redactPII, redactSecrets } from './redactors.js';
 
-function scrub(args: unknown[]): unknown[] {
-  return args.map((arg) => redact(arg));
+const SERVICE_NAME = 'backend-api';
+
+type LogLevel = 'info' | 'warn' | 'error' | 'debug';
+export type AppLogger = Record<LogLevel, (...args: unknown[]) => void>;
+
+/** `destination` permite a los tests capturar la salida real (con redacción) en memoria. */
+export function createPinoLogger(destination?: DestinationStream): Logger {
+  const version = getAppVersion();
+  const options: LoggerOptions = {
+    level: config.LOG_LEVEL,
+    messageKey: 'msg',
+    timestamp: pino.stdTimeFunctions.isoTime,
+    formatters: {
+      level: (label) => ({ level: label }),
+      log: (obj) =>
+        redactPII(redactSecrets(obj), config.NODE_ENV, config.LOG_INCLUDE_PII) as Record<string, unknown>,
+    },
+    mixin: () => ({
+      service: SERVICE_NAME,
+      env: config.NODE_ENV,
+      version,
+      correlationId: getCorrelationId(),
+    }),
+    // Un campo `undefined` del payload (p. ej. `correlationId: input.correlationId`) no pisa el del mixin.
+    mixinMergeStrategy: (mergeObject, mixinObject) => {
+      for (const [key, value] of Object.entries(mergeObject)) {
+        if (value !== undefined) (mixinObject as Record<string, unknown>)[key] = value;
+      }
+      return mixinObject;
+    },
+  };
+  if (destination) return pino(options, destination);
+  // `pino-pretty` sólo en development (env.ts hace fail-fast fuera de dev).
+  return pino(config.LOG_PRETTY ? { ...options, transport: { target: 'pino-pretty' } } : options);
 }
 
-export const logger = {
-  info: (...args: unknown[]): void => console.info(...scrub(args)),
-  warn: (...args: unknown[]): void => console.warn(...scrub(args)),
-  error: (...args: unknown[]): void => console.error(...scrub(args)),
-  debug: (...args: unknown[]): void => console.debug(...scrub(args)),
-};
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Error);
+
+function emit(target: Logger, level: LogLevel, args: unknown[]): void {
+  const [first, second] = args;
+  if (typeof first === 'string') {
+    if (second === undefined) target[level](first);
+    else target[level](isRecord(second) ? { event: first, ...second } : { event: first, detail: second });
+    return;
+  }
+  if (typeof second === 'string') target[level](first as object, second);
+  else target[level](first as object);
+}
+
+export function createLogger(target: Logger): AppLogger {
+  return {
+    info: (...args) => emit(target, 'info', args),
+    warn: (...args) => emit(target, 'warn', args),
+    error: (...args) => emit(target, 'error', args),
+    debug: (...args) => emit(target, 'debug', args),
+  };
+}
+
+export const logger: AppLogger = createLogger(createPinoLogger());

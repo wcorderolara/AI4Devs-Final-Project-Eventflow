@@ -16,10 +16,5 @@ export interface BudgetAiAppliedEvent {
 }
 
 export function emitBudgetAiSuggestionApplied(evt: BudgetAiAppliedEvent): void {
-  logger.info(
-    JSON.stringify({
-      event: 'budget.ai_suggestion.applied',
-      ...evt,
-    }),
-  );
+  logger.info({ event: 'budget.ai_suggestion.applied', ...evt });
 }

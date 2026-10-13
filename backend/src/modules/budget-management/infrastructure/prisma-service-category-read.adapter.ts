@@ -2,7 +2,7 @@
 // Vive dentro de `budget-management/infrastructure/` (módulo dueño del port) para respetar
 // ADR-ARCH-001. Consulta `service_categories WHERE is_active = true AND deleted_at IS NULL`.
 // Sin cache en MVP (dataset chico); memoizable en el composition root si crece.
-import { prisma } from '../../../shared/infrastructure/prisma/prisma.client.js';
+import { prisma } from '../../../infrastructure/prisma/client.js';
 import type {
   ServiceCategoryReadPort,
   ServiceCategoryRow,

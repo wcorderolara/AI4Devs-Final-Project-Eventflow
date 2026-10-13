@@ -51,6 +51,18 @@ describe('US-116 UT-01 (AC-08 · EC-04) — getAppVersion precedencia', () => {
     expect(v).not.toBe('unknown');
   });
 
+  it('SERVICE_VERSION (alias del logger) se usa si falta APP_VERSION; APP_VERSION gana', async () => {
+    vi.stubEnv('APP_VERSION', '');
+    vi.stubEnv('SERVICE_VERSION', '9.9.9-svc');
+    const mod = await import('../../src/shared/config/app-version.js');
+    mod.__resetAppVersionCache();
+    expect(mod.getAppVersion()).toBe('9.9.9-svc');
+
+    vi.stubEnv('APP_VERSION', '1.0.0-app');
+    mod.__resetAppVersionCache();
+    expect(mod.getAppVersion()).toBe('1.0.0-app');
+  });
+
   it('cachea el resultado — el segundo call no re-evalúa env', async () => {
     vi.stubEnv('APP_VERSION', 'cached-value');
     const mod = await import('../../src/shared/config/app-version.js');

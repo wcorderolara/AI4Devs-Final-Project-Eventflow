@@ -1,6 +1,6 @@
 // US-113 (PB-P2-010 / BE-002). `correlationContext` — `AsyncLocalStorage` singleton
 // que propaga `correlationId` a lo largo de la cadena async del request (o del
-// job), consumido por el `mixin` de Pino en `pino-logger.ts`.
+// job), consumido por el `mixin` de Pino en `shared/infrastructure/logger/index.ts`.
 //
 // Contrato (D4):
 //   * `correlationContext.run({ correlationId }, () => next())` en el middleware

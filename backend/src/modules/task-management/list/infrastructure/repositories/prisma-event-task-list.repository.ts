@@ -17,7 +17,7 @@
 //   * `range` compone por AND con `status`, `aiGenerated`, `categoryCode` (AC-05, AC-06).
 //   * El ordenamiento canónico y la paginación se preservan íntegros (EC-08, TS-09).
 import type { Prisma } from '@prisma/client';
-import { prisma } from '../../../../../shared/infrastructure/prisma/prisma.client.js';
+import { prisma } from '../../../../../infrastructure/prisma/client.js';
 import type {
   EventTaskListRepository,
   EventTaskRow,

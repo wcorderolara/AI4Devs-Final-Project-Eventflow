@@ -10,7 +10,7 @@ import {
   TokenExpiredError,
 } from '../../src/shared/domain/errors/password-reset.errors.js';
 import { config } from '../../src/config/env.js';
-import { isSensitiveKey } from '../../src/shared/infrastructure/logger/redact.js';
+import { isSensitiveKey } from '../../src/shared/infrastructure/logger/redactors.js';
 import type {
   PasswordResetTokenRepository,
   ResetTokenGenerator,

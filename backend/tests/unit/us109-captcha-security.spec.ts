@@ -7,7 +7,8 @@ import { dirname, resolve } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import { logCaptchaEvent } from '../../src/infrastructure/observability/captcha-event-logger.js';
 import { logger } from '../../src/shared/infrastructure/logger/index.js';
-import { REDACTED } from '../../src/shared/infrastructure/logger/redact.js';
+import { REDACTED } from '../../src/shared/infrastructure/logger/redactors.js';
+import { captureLogger } from '../helpers/log-capture.js';
 
 describe('US-109 QA-006: eventos de captcha sin datos sensibles (AC-07)', () => {
   it('logCaptchaEvent emite sólo metadatos seguros (sin token/secret)', () => {
@@ -26,13 +27,14 @@ describe('US-109 QA-006: eventos de captcha sin datos sensibles (AC-07)', () => 
 
 describe('US-109 QA-006: logger central redacta captcha token/secret (SEC-03)', () => {
   it('no filtra el valor de captchaToken ni de RECAPTCHA_SECRET_KEY', () => {
-    const spy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    logger.warn({ event: 'x', captchaToken: 'leak-token-value', RECAPTCHA_SECRET_KEY: 'leak-secret-value' });
-    const serialized = JSON.stringify(spy.mock.calls);
+    const captured = captureLogger();
+    captured.logger.warn({ event: 'x', captchaToken: 'leak-token-value', RECAPTCHA_SECRET_KEY: 'leak-secret-value' });
+    const serialized = captured.raw.join('');
     expect(serialized).not.toContain('leak-token-value');
     expect(serialized).not.toContain('leak-secret-value');
-    expect(serialized).toContain(REDACTED);
-    spy.mockRestore();
+    const [line] = captured.lines();
+    expect(line?.captchaToken).toBe(REDACTED);
+    expect(line?.RECAPTCHA_SECRET_KEY).toBe(REDACTED);
   });
 });
 

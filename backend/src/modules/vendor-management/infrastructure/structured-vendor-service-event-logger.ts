@@ -1,4 +1,4 @@
-// Adapter estructurado del logger — US-044 / BE-008. Reutiliza `shared/logger`.
+// Adapter estructurado del logger — US-044 / BE-008. Reutiliza `shared/infrastructure/logger`.
 import { logger } from '../../../shared/infrastructure/logger/index.js';
 import {
   buildVendorServiceCreatedPayload,

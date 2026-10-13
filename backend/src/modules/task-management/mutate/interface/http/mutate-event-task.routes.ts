@@ -11,7 +11,7 @@ import { roleMiddleware } from '../../../../../shared/interface/middlewares/role
 import { createSessionAuthMiddleware } from '../../../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../../../shared/interface/http/async-handler.js';
 import { sessionRepository, clock } from '../../../../../infrastructure/auth-composition.js';
-import { prisma } from '../../../../../shared/infrastructure/prisma/prisma.client.js';
+import { prisma } from '../../../../../infrastructure/prisma/client.js';
 import { PrismaEventTaskMutateRepository } from '../../infrastructure/prisma-event-task-mutate.repository.js';
 import { PrismaServiceCategoryReadAdapter } from '../../../create/infrastructure/adapters/prisma-service-category-read.adapter.js';
 import { UpdateEventTaskContentUseCase } from '../../application/update-event-task-content.use-case.js';

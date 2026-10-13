@@ -5,7 +5,7 @@
 //   PB-P0-001 declara `budgets.event_id` unique (Index Scan O(1)) y `budget_items.budget_id`
 //   índice (Index Scan O(k), k = items del evento). Consulta de `Event.currency` vía la relación.
 // - Decimals: se convierten a `number` en el mapper para simplificar el use case y los tests.
-import { prisma } from '../../../shared/infrastructure/prisma/prisma.client.js';
+import { prisma } from '../../../infrastructure/prisma/client.js';
 import type { BudgetReadRepository } from '../ports/budget-read.repository.js';
 import type {
   BudgetAggregateView,
