@@ -18,6 +18,7 @@ import request from 'supertest';
 import { createApp } from '../../src/app.js';
 import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 import { rnd, sessionHelpers, type Agent } from '../helpers/http.js';
+import { createActiveEvent } from '../helpers/fixtures/events.js';
 
 const prisma = getTestPrisma();
 
@@ -27,21 +28,6 @@ const { registerLogin } = sessionHelpers(app, { tag: 'us056' });
 
 let serviceCategoryId = '';
 let locationId = '';
-
-async function createActiveEvent(agent: Agent): Promise<string> {
-  const created = await agent.post('/api/v1/events').send({
-    eventTypeCode: 'wedding',
-    eventDate: '2026-12-31',
-    guestsCount: 100,
-    locationId,
-    estimatedBudget: '10000.00',
-    currencyCode: 'GTQ',
-    languageCode: 'es-LATAM',
-  });
-  const id = created.body.data.id as string;
-  await agent.post(`/api/v1/events/${id}/activate`);
-  return id;
-}
 
 const brief = { summary: 'Boda', requirements: ['catering'], questions: ['¿disponible?'] };
 
@@ -78,7 +64,7 @@ describe.skipIf(!dbUp)('US-056 QA — Cancel QuoteRequest integration', () => {
         languagesSupported: ['es-LATAM'],
       },
     });
-    const eventId = await createActiveEvent(organizer);
+    const eventId = await createActiveEvent(organizer, locationId);
     const qrRes = await organizer
       .post(`/api/v1/events/${eventId}/quote-requests`)
       .send({ vendorProfileId: vp.id, serviceCategoryId, brief });

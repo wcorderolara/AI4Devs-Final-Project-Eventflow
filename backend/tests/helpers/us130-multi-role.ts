@@ -12,6 +12,7 @@ import type { Express } from 'express';
 import type { PrismaClient } from '@prisma/client';
 import request from 'supertest';
 import { registerLogin } from './http.js';
+import { createActiveEvent } from './fixtures/events.js';
 import { Argon2idPasswordHasher } from '../../src/infrastructure/security/argon2id-password-hasher.js';
 
 const uniqTag = (label: string): string =>
@@ -101,19 +102,8 @@ export async function vendorProfileFor(
  * Crea + activa un evento owned por el organizer agent. Requiere que existan `event_types` y
  * `locations` de referencia (los tests semillan `wedding` + Guatemala en su beforeAll).
  */
-export async function activeEvent(agent: Agent, locationId: string): Promise<string> {
-  const created = await agent.post('/api/v1/events').send({
-    eventTypeCode: 'wedding',
-    eventDate: '2026-12-31',
-    guestsCount: 50,
-    locationId,
-    estimatedBudget: '1000.00',
-    currencyCode: 'GTQ',
-    languageCode: 'es-LATAM',
-  });
-  const id = created.body.data.id as string;
-  await agent.post(`/api/v1/events/${id}/activate`);
-  return id;
+export function activeEvent(agent: Agent, locationId: string): Promise<string> {
+  return createActiveEvent(agent, locationId, { guestsCount: 50, estimatedBudget: '1000.00' });
 }
 
 /**

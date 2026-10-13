@@ -21,6 +21,7 @@ import { Prisma, type Quote as PrismaQuote } from '@prisma/client';
 import { createApp } from '../../src/app.js';
 import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 import { rnd, sessionHelpers, type Agent } from '../helpers/http.js';
+import { createActiveEvent } from '../helpers/fixtures/events.js';
 
 const prisma = getTestPrisma();
 
@@ -31,21 +32,6 @@ const { registerLogin } = sessionHelpers(app, { tag: 'us057' });
 let serviceCategoryCode = '';
 let serviceCategoryId = '';
 let locationId = '';
-
-async function createActiveEvent(agent: Agent): Promise<string> {
-  const created = await agent.post('/api/v1/events').send({
-    eventTypeCode: 'wedding',
-    eventDate: '2026-12-31',
-    guestsCount: 100,
-    locationId,
-    estimatedBudget: '10000.00',
-    currencyCode: 'GTQ',
-    languageCode: 'es-LATAM',
-  });
-  const id = created.body.data.id as string;
-  await agent.post(`/api/v1/events/${id}/activate`);
-  return id;
-}
 
 const brief = { summary: 'Boda', requirements: ['catering'], questions: ['¿disponible?'] };
 
@@ -117,7 +103,7 @@ describe.skipIf(!dbUp)('US-057 QA — Compare Quotes integration', () => {
 
   it('AC-01 ≥2 quotes: orden estable is_preferred DESC, activos primero, total_price ASC', async () => {
     const { agent: organizer } = await registerLogin('organizer');
-    const eventId = await createActiveEvent(organizer);
+    const eventId = await createActiveEvent(organizer, locationId);
     const a = await createVendorAndQR(organizer, eventId);
     const q1 = await createSentQuote(a.vendorAgent, a.quoteRequestId, { totalPrice: '5000.00' });
     const b = await createVendorAndQR(organizer, eventId);
@@ -144,7 +130,7 @@ describe.skipIf(!dbUp)('US-057 QA — Compare Quotes integration', () => {
 
   it('AC-02 1 quote: items.length=1 con shape completo (vendor whitelisted)', async () => {
     const { agent: organizer } = await registerLogin('organizer');
-    const eventId = await createActiveEvent(organizer);
+    const eventId = await createActiveEvent(organizer, locationId);
     const a = await createVendorAndQR(organizer, eventId);
     await createSentQuote(a.vendorAgent, a.quoteRequestId, { totalPrice: '2500.00' });
     const res = await organizer.get(
@@ -175,7 +161,7 @@ describe.skipIf(!dbUp)('US-057 QA — Compare Quotes integration', () => {
 
   it('AC-03 0 quotes: items=[] con category + currency_code', async () => {
     const { agent: organizer } = await registerLogin('organizer');
-    const eventId = await createActiveEvent(organizer);
+    const eventId = await createActiveEvent(organizer, locationId);
     const res = await organizer.get(
       `/api/v1/events/${eventId}/quotes/compare?categoryCode=${serviceCategoryCode}`,
     );
@@ -187,7 +173,7 @@ describe.skipIf(!dbUp)('US-057 QA — Compare Quotes integration', () => {
 
   it('EC-01 categoryCode ausente ⇒ 400 INVALID_FILTERS con details categoryCode=required', async () => {
     const { agent: organizer } = await registerLogin('organizer');
-    const eventId = await createActiveEvent(organizer);
+    const eventId = await createActiveEvent(organizer, locationId);
     const res = await organizer.get(`/api/v1/events/${eventId}/quotes/compare`);
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('INVALID_FILTERS');
@@ -196,7 +182,7 @@ describe.skipIf(!dbUp)('US-057 QA — Compare Quotes integration', () => {
 
   it('EC-02 categoryCode inexistente ⇒ 400 INVALID_CATEGORY', async () => {
     const { agent: organizer } = await registerLogin('organizer');
-    const eventId = await createActiveEvent(organizer);
+    const eventId = await createActiveEvent(organizer, locationId);
     const res = await organizer.get(
       `/api/v1/events/${eventId}/quotes/compare?categoryCode=does-not-exist`,
     );
@@ -210,7 +196,7 @@ describe.skipIf(!dbUp)('US-057 QA — Compare Quotes integration', () => {
       data: { code: inactiveCode, label: 'Inactiva', isActive: false },
     });
     const { agent: organizer } = await registerLogin('organizer');
-    const eventId = await createActiveEvent(organizer);
+    const eventId = await createActiveEvent(organizer, locationId);
     const res = await organizer.get(
       `/api/v1/events/${eventId}/quotes/compare?categoryCode=${inactiveCode}`,
     );
@@ -230,7 +216,7 @@ describe.skipIf(!dbUp)('US-057 QA — Compare Quotes integration', () => {
 
   it('EC-04 quotes expired/rejected aparecen con status correspondiente', async () => {
     const { agent: organizer } = await registerLogin('organizer');
-    const eventId = await createActiveEvent(organizer);
+    const eventId = await createActiveEvent(organizer, locationId);
     const a = await createVendorAndQR(organizer, eventId);
     const q1 = await createSentQuote(a.vendorAgent, a.quoteRequestId, { totalPrice: '1000.00' });
     const b = await createVendorAndQR(organizer, eventId);
@@ -258,7 +244,7 @@ describe.skipIf(!dbUp)('US-057 QA — Compare Quotes integration', () => {
 
   it('AUTH-TS-01 organizer dueño ⇒ 200', async () => {
     const { agent: organizer } = await registerLogin('organizer');
-    const eventId = await createActiveEvent(organizer);
+    const eventId = await createActiveEvent(organizer, locationId);
     const res = await organizer.get(
       `/api/v1/events/${eventId}/quotes/compare?categoryCode=${serviceCategoryCode}`,
     );
@@ -267,7 +253,7 @@ describe.skipIf(!dbUp)('US-057 QA — Compare Quotes integration', () => {
 
   it('AUTH-TS-02 organizer ajeno ⇒ 404 EVENT_NOT_FOUND uniforme (no filtra ownership)', async () => {
     const { agent: owner } = await registerLogin('organizer');
-    const eventId = await createActiveEvent(owner);
+    const eventId = await createActiveEvent(owner, locationId);
     const { agent: otherOrganizer } = await registerLogin('organizer');
     const res = await otherOrganizer.get(
       `/api/v1/events/${eventId}/quotes/compare?categoryCode=${serviceCategoryCode}`,
@@ -278,7 +264,7 @@ describe.skipIf(!dbUp)('US-057 QA — Compare Quotes integration', () => {
 
   it('AUTH-TS-03 vendor ⇒ 403', async () => {
     const { agent: organizer } = await registerLogin('organizer');
-    const eventId = await createActiveEvent(organizer);
+    const eventId = await createActiveEvent(organizer, locationId);
     const { agent: vendorAgent } = await registerLogin('vendor');
     const res = await vendorAgent.get(
       `/api/v1/events/${eventId}/quotes/compare?categoryCode=${serviceCategoryCode}`,
@@ -288,7 +274,7 @@ describe.skipIf(!dbUp)('US-057 QA — Compare Quotes integration', () => {
 
   it('AUTH-TS-05 sin sesión ⇒ 401', async () => {
     const { agent: organizer } = await registerLogin('organizer');
-    const eventId = await createActiveEvent(organizer);
+    const eventId = await createActiveEvent(organizer, locationId);
     const anon = request.agent(app);
     const res = await anon.get(
       `/api/v1/events/${eventId}/quotes/compare?categoryCode=${serviceCategoryCode}`,
@@ -298,7 +284,7 @@ describe.skipIf(!dbUp)('US-057 QA — Compare Quotes integration', () => {
 
   it('QA-005 performance smoke: 3 quotes ⇒ latencia < 1s', async () => {
     const { agent: organizer } = await registerLogin('organizer');
-    const eventId = await createActiveEvent(organizer);
+    const eventId = await createActiveEvent(organizer, locationId);
     for (let i = 0; i < 3; i += 1) {
       const v = await createVendorAndQR(organizer, eventId);
       await createSentQuote(v.vendorAgent, v.quoteRequestId, { totalPrice: `${(i + 1) * 1000}.00` });

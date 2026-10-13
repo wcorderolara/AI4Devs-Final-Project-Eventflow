@@ -16,6 +16,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { createApp } from '../../src/app.js';
 import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 import { rnd, sessionHelpers, type Agent } from '../helpers/http.js';
+import { createActiveEvent } from '../helpers/fixtures/events.js';
 
 const prisma = getTestPrisma();
 
@@ -25,21 +26,6 @@ const { registerLogin } = sessionHelpers(app, { tag: 'us063' });
 
 let serviceCategoryId = '';
 let locationId = '';
-
-async function createActiveEvent(agent: Agent): Promise<string> {
-  const created = await agent.post('/api/v1/events').send({
-    eventTypeCode: 'wedding',
-    eventDate: '2026-12-31',
-    guestsCount: 100,
-    locationId,
-    estimatedBudget: '10000.00',
-    currencyCode: 'GTQ',
-    languageCode: 'es-LATAM',
-  });
-  const id = created.body.data.id as string;
-  await agent.post(`/api/v1/events/${id}/activate`);
-  return id;
-}
 
 async function scenarioPendingIntent(): Promise<{
   organizer: Agent;
@@ -56,7 +42,7 @@ async function scenarioPendingIntent(): Promise<{
       languagesSupported: ['es-LATAM'],
     },
   });
-  const eventId = await createActiveEvent(organizer);
+  const eventId = await createActiveEvent(organizer, locationId);
   const qr = await organizer
     .post(`/api/v1/events/${eventId}/quote-requests`)
     .send({

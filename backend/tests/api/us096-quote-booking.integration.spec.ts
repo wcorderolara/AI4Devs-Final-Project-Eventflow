@@ -4,7 +4,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createApp } from '../../src/app.js';
 import { dbUp, getTestPrisma } from '../helpers/test-db.js';
-import { rnd, sessionHelpers, type Agent } from '../helpers/http.js';
+import { rnd, sessionHelpers } from '../helpers/http.js';
+import { createActiveEvent } from '../helpers/fixtures/events.js';
 
 const prisma = getTestPrisma();
 
@@ -14,21 +15,6 @@ const { registerLogin } = sessionHelpers(app, { tag: 'us096' });
 
 let serviceCategoryId = '';
 let locationId = '';
-
-async function createActiveEvent(agent: Agent): Promise<string> {
-  const created = await agent.post('/api/v1/events').send({
-    eventTypeCode: 'wedding',
-    eventDate: '2026-12-31',
-    guestsCount: 100,
-    locationId,
-    estimatedBudget: '10000.00',
-    currencyCode: 'GTQ',
-    languageCode: 'es-LATAM',
-  });
-  const id = created.body.data.id as string;
-  await agent.post(`/api/v1/events/${id}/activate`);
-  return id;
-}
 
 /** Crea un VendorProfile (con su user vendor) directamente en BD. Devuelve el vendorProfileId. */
 async function createVendorProfile(): Promise<string> {
@@ -64,7 +50,7 @@ describe.skipIf(!dbUp)('US-096 QA-002 — Quote/Booking integration', () => {
         data: { userId: vendorUserId, businessName: 'Vendor', status: 'approved', languagesSupported: ['es-LATAM'] },
       })
     ).id;
-    const eventId = await createActiveEvent(organizer);
+    const eventId = await createActiveEvent(organizer, locationId);
 
     // AC-01: organizer crea QuoteRequest.
     const qrRes = await organizer.post(`/api/v1/events/${eventId}/quote-requests`).send({ vendorProfileId, serviceCategoryId, brief });
@@ -137,7 +123,7 @@ describe.skipIf(!dbUp)('US-096 QA-002 — Quote/Booking integration', () => {
 
   it('EC-04/NT-04: 6.ª QuoteRequest activa por event/category → 409 MAX_QUOTE_REQUESTS_EXCEEDED', async () => {
     const { agent: organizer } = await registerLogin('organizer');
-    const eventId = await createActiveEvent(organizer);
+    const eventId = await createActiveEvent(organizer, locationId);
     for (let i = 0; i < 5; i++) {
       const vp = await createVendorProfile();
       const r = await organizer.post(`/api/v1/events/${eventId}/quote-requests`).send({ vendorProfileId: vp, serviceCategoryId, brief });
@@ -151,7 +137,7 @@ describe.skipIf(!dbUp)('US-096 QA-002 — Quote/Booking integration', () => {
 
   it('EC-05/NT-05: QuoteRequest duplicada activa por event/vendor → 409 DUPLICATE_QUOTE_REQUEST_ACTIVE', async () => {
     const { agent: organizer } = await registerLogin('organizer');
-    const eventId = await createActiveEvent(organizer);
+    const eventId = await createActiveEvent(organizer, locationId);
     const vp = await createVendorProfile();
     expect((await organizer.post(`/api/v1/events/${eventId}/quote-requests`).send({ vendorProfileId: vp, serviceCategoryId, brief })).status).toBe(201);
     const dup = await organizer.post(`/api/v1/events/${eventId}/quote-requests`).send({ vendorProfileId: vp, serviceCategoryId, brief });
@@ -163,7 +149,7 @@ describe.skipIf(!dbUp)('US-096 QA-002 — Quote/Booking integration', () => {
     const { agent: organizer } = await registerLogin('organizer');
     const { agent: vendorAgent, userId } = await registerLogin('vendor');
     const vp = (await prisma.vendorProfile.create({ data: { userId, businessName: 'V', status: 'approved', languagesSupported: ['es-LATAM'] } })).id;
-    const eventId = await createActiveEvent(organizer);
+    const eventId = await createActiveEvent(organizer, locationId);
     const qr = await organizer.post(`/api/v1/events/${eventId}/quote-requests`).send({ vendorProfileId: vp, serviceCategoryId, brief });
     const quoteRes = await vendorAgent.post(`/api/v1/quote-requests/${qr.body.data.id}/quote`).send({
       totalPrice: '100.00', breakdown: [{ label: 'x', amount: '100.00' }], conditions: 'c', currencyCode: 'GTQ',
