@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslations } from 'next-intl';
+import { resolveErrorCode } from '@/shared/error-handling/errorCodeMessages';
 import { useCreateVendorService } from '../hooks/vendorServicesQueries';
 import {
   VENDOR_SERVICE_CURRENCY_CODES,
@@ -49,10 +50,6 @@ export interface CreateServiceDialogProps {
   onCreated: () => void;
 }
 
-interface ApiErrorShape {
-  code?: unknown;
-}
-
 type ServerErrorCode =
   | 'INVALID_PACKAGE_NAME'
   | 'INVALID_PRICE'
@@ -80,16 +77,6 @@ const KNOWN_CODES: readonly ServerErrorCode[] = [
   'FORBIDDEN',
   'VALIDATION_ERROR',
 ];
-
-function resolveErrorCode(err: unknown): ServerErrorCode {
-  if (typeof err === 'object' && err !== null && 'code' in err) {
-    const code = (err as ApiErrorShape).code;
-    if (typeof code === 'string' && (KNOWN_CODES as readonly string[]).includes(code)) {
-      return code as ServerErrorCode;
-    }
-  }
-  return 'UNEXPECTED';
-}
 
 export function CreateServiceDialog({
   isOpen,
@@ -163,7 +150,7 @@ export function CreateServiceDialog({
     }
   });
 
-  const serverErrorCode = create.error ? resolveErrorCode(create.error) : null;
+  const serverErrorCode = create.error ? resolveErrorCode(create.error, KNOWN_CODES) : null;
 
   const { ref: firstNameRef, ...firstNameProps } = register('package_name');
 

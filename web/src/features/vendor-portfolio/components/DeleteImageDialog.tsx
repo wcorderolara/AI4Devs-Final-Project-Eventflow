@@ -7,6 +7,7 @@
 // límite 500 alineado con el backend).
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { resolveErrorCode } from '@/shared/error-handling/errorCodeMessages';
 import { useDeletePortfolioImage } from '../hooks/useDeletePortfolioImage';
 
 const MAX_REASON = 500;
@@ -28,27 +29,14 @@ type ErrorCode =
   | 'FORBIDDEN'
   | 'UNEXPECTED';
 
-interface ApiErrorShape {
-  code?: unknown;
-}
-
-function resolveErrorCode(err: unknown): ErrorCode {
-  if (typeof err === 'object' && err !== null && 'code' in err) {
-    const code = (err as ApiErrorShape).code;
-    if (typeof code === 'string') {
-      const known: readonly ErrorCode[] = [
-        'ATTACHMENT_NOT_FOUND',
-        'INVALID_DELETION_REASON',
-        'PROFILE_HIDDEN',
-        'PROFILE_NOT_FOUND',
-        'AUTHENTICATION_REQUIRED',
-        'FORBIDDEN',
-      ];
-      if ((known as readonly string[]).includes(code)) return code as ErrorCode;
-    }
-  }
-  return 'UNEXPECTED';
-}
+const KNOWN_CODES: readonly ErrorCode[] = [
+  'ATTACHMENT_NOT_FOUND',
+  'INVALID_DELETION_REASON',
+  'PROFILE_HIDDEN',
+  'PROFILE_NOT_FOUND',
+  'AUTHENTICATION_REQUIRED',
+  'FORBIDDEN',
+];
 
 export function DeleteImageDialog(props: DeleteImageDialogProps): JSX.Element | null {
   const t = useTranslations('vendor.portfolio.delete');
@@ -117,7 +105,7 @@ export function DeleteImageDialog(props: DeleteImageDialogProps): JSX.Element | 
       props.onDeleted(props.imageId);
       props.onClose();
     } catch (err) {
-      setError(resolveErrorCode(err));
+      setError(resolveErrorCode(err, KNOWN_CODES));
     }
   }, [mutation, props, reason]);
 

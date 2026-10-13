@@ -24,7 +24,7 @@ import { useCompareQuotes } from '../hooks/quotesQueries';
 import { QuoteComparisonTable } from './QuoteComparisonTable';
 import { QuoteComparisonCards } from './QuoteComparisonCards';
 import { AIComparisonSummary, useLatestQuoteSummary } from '@/features/ai/quote-summary';
-import type { ApiError } from '@/shared/api-client';
+import { resolveErrorMessageKey } from '@/shared/error-handling/errorCodeMessages';
 
 export interface QuoteComparatorProps {
   eventId: string;
@@ -38,16 +38,6 @@ const KNOWN_ERROR_CODES = [
   'FORBIDDEN',
   'EVENT_NOT_FOUND',
 ] as const;
-type KnownErrorCode = (typeof KNOWN_ERROR_CODES)[number];
-
-function isKnownErrorCode(code: string | undefined): code is KnownErrorCode {
-  return typeof code === 'string' && (KNOWN_ERROR_CODES as readonly string[]).includes(code);
-}
-
-function errorMessage(err: ApiError | null, t: (k: string) => string): string {
-  if (err && isKnownErrorCode(err.code)) return t(`errors.${err.code}`);
-  return t('errors.UNEXPECTED');
-}
 
 export function QuoteComparator({ eventId, categoryCode }: QuoteComparatorProps): JSX.Element {
   const t = useTranslations('organizer.quote.compare');
@@ -108,7 +98,7 @@ export function QuoteComparator({ eventId, categoryCode }: QuoteComparatorProps)
         className="rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-900"
         data-testid="quote-comparator-error"
       >
-        {errorMessage(error, t)}
+        {t(resolveErrorMessageKey(error, KNOWN_ERROR_CODES))}
       </div>
     );
   }

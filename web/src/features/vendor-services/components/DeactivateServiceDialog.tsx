@@ -5,6 +5,7 @@
 // (D-EC-09 → 204 aunque el servicio ya esté inactivo).
 import { useEffect, useId, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { resolveErrorCode } from '@/shared/error-handling/errorCodeMessages';
 import { useDeactivateVendorService } from '../hooks/vendorServicesQueries';
 
 export interface DeactivateServiceDialogProps {
@@ -13,10 +14,6 @@ export interface DeactivateServiceDialogProps {
   packageName: string;
   onClose: () => void;
   onDeactivated: () => void;
-}
-
-interface ApiErrorShape {
-  code?: unknown;
 }
 
 type ErrorCode =
@@ -34,16 +31,6 @@ const KNOWN: readonly ErrorCode[] = [
   'AUTHENTICATION_REQUIRED',
   'FORBIDDEN',
 ];
-
-function resolveErrorCode(err: unknown): ErrorCode {
-  if (typeof err === 'object' && err !== null && 'code' in err) {
-    const code = (err as ApiErrorShape).code;
-    if (typeof code === 'string' && (KNOWN as readonly string[]).includes(code)) {
-      return code as ErrorCode;
-    }
-  }
-  return 'UNEXPECTED';
-}
 
 export function DeactivateServiceDialog({
   isOpen,
@@ -92,7 +79,7 @@ export function DeactivateServiceDialog({
 
   if (!isOpen) return null;
 
-  const errorCode = deactivate.error ? resolveErrorCode(deactivate.error) : null;
+  const errorCode = deactivate.error ? resolveErrorCode(deactivate.error, KNOWN) : null;
 
   return (
     <div

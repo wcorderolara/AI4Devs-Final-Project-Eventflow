@@ -16,6 +16,7 @@
 import { useCallback, useId, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { ApiError } from '@/shared/api-client';
+import { resolveErrorCode } from '@/shared/error-handling/errorCodeMessages';
 import { Button, FormField, Textarea } from '@/shared/design-system';
 import { StarRating } from './StarRating';
 import { ReviewEligibilityBanner } from './ReviewEligibilityBanner';
@@ -57,9 +58,7 @@ interface FormErrorState {
 }
 
 function toErrorState(err: ApiError): FormErrorState {
-  const code = KNOWN_ERROR_CODES.includes(err.code as CreateReviewErrorCode)
-    ? (err.code as CreateReviewErrorCode)
-    : 'UNEXPECTED';
+  const code = resolveErrorCode(err, KNOWN_ERROR_CODES);
   if (code !== 'REVIEW_NOT_ELIGIBLE') return { code };
   const raw = extractReason(err);
   const reason =

@@ -8,12 +8,20 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { ApiError } from '@/shared/api-client';
+import { resolveErrorMessageKey } from '@/shared/error-handling/errorCodeMessages';
 import { PasswordStrengthIndicator } from './PasswordStrengthIndicator';
 import { authRegisterApi } from '../api/authApi';
 import {
   resetPasswordSchema,
   type ResetPasswordFormValues,
 } from '../schemas/passwordResetSchemas';
+
+const RESET_ERROR_CODES = [
+  'TOKEN_INVALID',
+  'TOKEN_USED',
+  'VALIDATION_ERROR',
+  'RATE_LIMIT_EXCEEDED',
+] as const;
 
 /** Banner de token expirado (US-004 / FE-004): CTA "Solicitar nuevo enlace" (EC-01). */
 export function TokenExpiredBanner(): React.JSX.Element {
@@ -94,14 +102,9 @@ export function ResetPasswordForm({ token }: { token?: string }): React.JSX.Elem
           setExpired(true);
           return;
         }
-        if (
-          error instanceof ApiError &&
-          ['TOKEN_INVALID', 'TOKEN_USED', 'VALIDATION_ERROR', 'RATE_LIMIT_EXCEEDED'].includes(error.code)
-        ) {
-          setGlobalError(t(`errors.${error.code}`));
-          return;
-        }
-        setGlobalError(t('errors.UNEXPECTED'));
+        setGlobalError(
+          t(resolveErrorMessageKey(error instanceof ApiError ? error : null, RESET_ERROR_CODES)),
+        );
       },
     });
   });
