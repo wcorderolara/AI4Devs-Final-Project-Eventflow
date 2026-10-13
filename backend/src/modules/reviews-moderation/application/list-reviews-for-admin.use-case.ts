@@ -10,18 +10,18 @@
 // (`sessionAuth + roleMiddleware(['admin'])`) — cualquier consumidor no-admin nunca llega aquí.
 //
 // Errores propios:
-//   - `Us066InvalidCursorError` (reuso — mismo shape del envelope 400 INVALID_CURSOR de US-066).
+//   - `InvalidCursorError` (reuso — mismo shape del envelope 400 INVALID_CURSOR de US-066).
 //     No se agrega un error nuevo por dominio para preservar el catálogo estable.
 //
 // Sin `$transaction`: consulta pura de lectura. Se usa un `include` chain que reúne
 // author + vendor_profile + bookingIntent.event + adminAction en una única query — sin N+1.
 import { Prisma, ReviewStatus, type PrismaClient } from '@prisma/client';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
-import { Us066InvalidCursorError } from '../domain/us066.errors.js';
 import {
-  decodeVendorReviewsCursor,
-  encodeVendorReviewsCursor,
-} from './vendor-reviews-cursor.js';
+  CreatedAtIdCursorSchema,
+  decodeCursor,
+  encodeCreatedAtIdCursor,
+} from '../../../shared/pagination/cursor.js';
 import {
   toAdminReviewListItem,
   type AdminReviewListItem,
@@ -44,10 +44,7 @@ export class ListReviewsForAdminUseCase {
     const pageSize = filters.pageSize;
 
     // Cursor keyset (paridad US-066): `(created_at, id)` estable en orden DESC/DESC.
-    const cursor = filters.cursor ? decodeVendorReviewsCursor(filters.cursor) : null;
-    if (filters.cursor && !cursor) {
-      throw new Us066InvalidCursorError();
-    }
+    const cursor = filters.cursor ? decodeCursor(filters.cursor, CreatedAtIdCursorSchema) : null;
 
     // WHERE compuesto — sólo se agrega la clave si el filtro fue provisto (undefined ⇒ sin
     // condición para ese campo). Prisma normaliza el AND cuando se combinan `where.*` con
@@ -120,7 +117,7 @@ export class ListReviewsForAdminUseCase {
     let nextCursor: string | null = null;
     if (hasMore && page.length > 0) {
       const last = page[page.length - 1]!;
-      nextCursor = encodeVendorReviewsCursor({
+      nextCursor = encodeCreatedAtIdCursor({
         createdAt: last.createdAt,
         id: last.id,
       });

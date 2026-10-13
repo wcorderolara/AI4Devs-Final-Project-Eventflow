@@ -32,8 +32,10 @@ import {
   toAdminReviewListItem,
   type AdminReviewMapperInput,
 } from '../../src/modules/reviews-moderation/application/admin-review.mapper.js';
-import { Us066InvalidCursorError } from '../../src/modules/reviews-moderation/domain/us066.errors.js';
-import { encodeVendorReviewsCursor } from '../../src/modules/reviews-moderation/application/vendor-reviews-cursor.js';
+import {
+  InvalidCursorError as Us066InvalidCursorError,
+  encodeCreatedAtIdCursor as encodeVendorReviewsCursor,
+} from '../../src/shared/pagination/cursor.js';
 
 // ── DTO ────────────────────────────────────────────────────────────────────
 

@@ -4,8 +4,10 @@
 // `{items, pagination}` y AC-04 (NO llama a `adminAction.create`).
 import { describe, expect, it, vi } from 'vitest';
 import { ListAdminActionsUseCase } from '../../src/modules/admin-governance/application/list-admin-actions.use-case.js';
-import { encodeAdminActionsCursor } from '../../src/modules/admin-governance/application/admin-actions-cursor.js';
-import { Us080InvalidCursorError } from '../../src/modules/admin-governance/domain/us080.errors.js';
+import {
+  InvalidCursorError as Us080InvalidCursorError,
+  encodeCreatedAtIdCursor as encodeAdminActionsCursor,
+} from '../../src/shared/pagination/cursor.js';
 import type { AdminActionsQuery } from '../../src/modules/admin-governance/interface/admin-actions-query.dto.js';
 import type { PrismaClient } from '@prisma/client';
 

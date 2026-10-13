@@ -3,7 +3,7 @@
 // Endpoint de LECTURA paginada para el panel admin `GET /api/v1/admin/events`. Compone un
 // WHERE dinámico con filtros combinados (Decisión PO D3 — status multi, event_type_id, fechas,
 // organizer_search) + cursor keyset `(event_date DESC, id DESC)` (Decisión PO D4 · paridad
-// exacta con US-066/US-074/US-077 vía helper intra-módulo `admin-events-cursor.ts`).
+// exacta con US-066/US-074/US-077 vía `shared/pagination/cursor.ts`).
 //
 // El UseCase NO aplica filtros de visibilidad por defecto: el admin ve TODO (incluidos eventos
 // soft-deleted `deleted_at IS NOT NULL`). No hay AdminAction en list (Decisión PO D2), sólo en
@@ -19,20 +19,23 @@
 // documentada en el execution record).
 //
 // Errores:
-//   - `Us078InvalidCursorError` — cursor base64 malformado. Mapea a `400 INVALID_CURSOR`.
+//   - `InvalidCursorError` — cursor base64 malformado. Mapea a `400 INVALID_CURSOR`.
 import { Prisma, type PrismaClient } from '@prisma/client';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
+import { z } from 'zod';
 import {
-  decodeAdminEventsCursor,
-  encodeAdminEventsCursor,
-} from './admin-events-cursor.js';
+  cursorDate,
+  cursorUuid,
+  decodeCursor,
+  encodeCursor,
+  type CursorSchema,
+} from '../../../shared/pagination/cursor.js';
 import {
   toAdminEventListItem,
   type AdminEventListItem,
   type AdminEventListRow,
 } from './admin-event-list.mapper.js';
 import type { AdminEventsQuery } from '../interface/admin-events-query.dto.js';
-import { Us078InvalidCursorError } from '../domain/us078.errors.js';
 
 export interface ListEventsForAdminResult {
   items: AdminEventListItem[];
@@ -56,16 +59,28 @@ const LIST_SELECT = {
   eventType: { select: { id: true, code: true, label: true } },
 } as const;
 
+// Keyset `(event_date DESC NULLS LAST, id DESC)` — payload `{ d: ISO 8601 | null, i: UUID }`.
+export interface AdminEventsCursor {
+  /** null cuando el evento no tiene `event_date` (draft sin fecha). */
+  eventDate: Date | null;
+  id: string;
+}
+
+export const AdminEventsCursorSchema: CursorSchema<AdminEventsCursor> = z
+  .object({ d: cursorDate.nullable(), i: cursorUuid })
+  .transform(({ d, i }) => ({ eventDate: d, id: i }));
+
+export function encodeAdminEventsCursor({ eventDate, id }: AdminEventsCursor): string {
+  return encodeCursor({ d: eventDate ? eventDate.toISOString() : null, i: id });
+}
+
 export class ListEventsForAdminUseCase {
   constructor(private readonly prisma: PrismaClient = defaultPrisma) {}
 
   async execute(filters: AdminEventsQuery): Promise<ListEventsForAdminResult> {
     const pageSize = filters.pageSize;
 
-    const cursor = filters.cursor ? decodeAdminEventsCursor(filters.cursor) : null;
-    if (filters.cursor && !cursor) {
-      throw new Us078InvalidCursorError();
-    }
+    const cursor = filters.cursor ? decodeCursor(filters.cursor, AdminEventsCursorSchema) : null;
 
     const where: Prisma.EventWhereInput = {};
 

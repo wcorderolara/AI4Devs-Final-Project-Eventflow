@@ -125,10 +125,7 @@ import {
   ReviewNotEligibleError,
   ReviewTargetNotFoundError,
 } from '../../src/modules/reviews-moderation/domain/us065.errors.js';
-import {
-  VendorNotFoundForReviewsError,
-  Us066InvalidCursorError,
-} from '../../src/modules/reviews-moderation/domain/us066.errors.js';
+import { VendorNotFoundForReviewsError } from '../../src/modules/reviews-moderation/domain/us066.errors.js';
 import {
   InvalidReviewTransitionError,
   ReviewNotFoundForModerationError,
@@ -137,7 +134,7 @@ import {
   InvalidVendorTransitionError,
   VendorNotFoundForModerationError,
 } from '../../src/modules/admin-governance/domain/us047.errors.js';
-import { Us074InvalidCursorError } from '../../src/modules/admin-governance/domain/us074.errors.js';
+import { InvalidCursorError as SharedInvalidCursorError } from '../../src/shared/pagination/cursor.js';
 import {
   CategoryHasChildrenError,
   CategoryInUseError,
@@ -395,7 +392,7 @@ const CASES: Case[] = [
   ['ReviewNotEligibleError', () => new ReviewNotEligibleError('window_expired', 'm:NotEligible'),
     { status: 403, code: 'REVIEW_NOT_ELIGIBLE', message: 'm:NotEligible', details: [d('reason', 'window_expired')] }],
   ['VendorNotFoundForReviewsError', () => new VendorNotFoundForReviewsError('m:VendorNF4Reviews'), { status: 404, code: 'VENDOR_NOT_FOUND', message: 'Vendor not found' }],
-  ['Us066InvalidCursorError', () => new Us066InvalidCursorError('m:Cursor66'), { status: 400, code: 'INVALID_CURSOR', message: 'm:Cursor66' }],
+  ['InvalidCursorError (shared, US-066/074/077/078/080)', () => new SharedInvalidCursorError(), { status: 400, code: 'INVALID_CURSOR', message: 'Invalid cursor' }],
   ['ReviewNotFoundForModerationError', () => new ReviewNotFoundForModerationError('m:ReviewNF'), { status: 404, code: 'REVIEW_NOT_FOUND', message: 'Review not found' }],
   ['InvalidReviewTransitionError', () => new InvalidReviewTransitionError('hidden', 'pending', ['published', 'removed'], 'm:ReviewTransition'),
     { status: 409, code: 'INVALID_TRANSITION', message: 'm:ReviewTransition', details: [d('from', 'hidden'), d('to', 'pending'), d('allowed', 'published,removed')] }],
@@ -407,7 +404,6 @@ const CASES: Case[] = [
       status: 409, code: 'INVALID_TRANSITION', message: 'm:VendorTransition',
       details: [d('from_status', 'approved'), d('from_is_hidden', 'false'), d('to_status', 'approved'), d('to_is_hidden', 'true'), d('action', 'hide'), d('allowed', 'unhide')],
     }],
-  ['Us074InvalidCursorError', () => new Us074InvalidCursorError('m:Cursor74'), { status: 400, code: 'INVALID_CURSOR', message: 'm:Cursor74' }],
 
   // ── service-catalog / event-catalog ───────────────────────────────────────
   ['ServiceCategoryNotFoundError', () => new ServiceCategoryNotFoundError('m:SCNotFound'),

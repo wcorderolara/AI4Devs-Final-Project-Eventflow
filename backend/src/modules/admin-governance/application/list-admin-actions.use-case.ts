@@ -3,8 +3,8 @@
 // Endpoint de LECTURA paginada del log inmutable `AdminAction` para el visor admin
 // `GET /api/v1/admin/admin-actions`. Compone un WHERE dinámico con filtros combinados
 // (Decisión PO D2 — admin_id, target_type, target_id, action, rango de fechas) + cursor
-// keyset `(created_at DESC, id DESC)` (paridad ADR-ARCH-001 · helper intra-módulo
-// `admin-actions-cursor.ts`).
+// keyset `(created_at DESC, id DESC)` (helper compartido
+// `shared/pagination/cursor.ts`).
 //
 // Sin `$transaction`: consulta pura de lectura. `select` proyecta solo los campos requeridos
 // por el mapper (sin `include`) — evita over-fetch y N+1 (adminUser en la misma query).
@@ -15,20 +15,20 @@
 // aplicados (sin PII y sin valores).
 //
 // Errores:
-//   - `Us080InvalidCursorError` — cursor base64 malformado ⇒ `400 INVALID_CURSOR`.
+//   - `InvalidCursorError` — cursor base64 malformado ⇒ `400 INVALID_CURSOR`.
 import { Prisma, type PrismaClient } from '@prisma/client';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
 import {
-  decodeAdminActionsCursor,
-  encodeAdminActionsCursor,
-} from './admin-actions-cursor.js';
+  CreatedAtIdCursorSchema,
+  decodeCursor,
+  encodeCreatedAtIdCursor,
+} from '../../../shared/pagination/cursor.js';
 import {
   toAdminActionListItem,
   type AdminActionListItem,
   type AdminActionListRow,
 } from './admin-action-list.mapper.js';
 import type { AdminActionsQuery } from '../interface/admin-actions-query.dto.js';
-import { Us080InvalidCursorError } from '../domain/us080.errors.js';
 import { logger } from '../../../shared/infrastructure/logger/index.js';
 
 export interface ListAdminActionsResult {
@@ -67,10 +67,7 @@ export class ListAdminActionsUseCase {
   async execute(filters: AdminActionsQuery): Promise<ListAdminActionsResult> {
     const pageSize = filters.pageSize;
 
-    const cursor = filters.cursor ? decodeAdminActionsCursor(filters.cursor) : null;
-    if (filters.cursor && !cursor) {
-      throw new Us080InvalidCursorError();
-    }
+    const cursor = filters.cursor ? decodeCursor(filters.cursor, CreatedAtIdCursorSchema) : null;
 
     const where: Prisma.AdminActionWhereInput = {};
 
@@ -118,7 +115,7 @@ export class ListAdminActionsUseCase {
     let nextCursor: string | null = null;
     if (hasMore && page.length > 0) {
       const last = page[page.length - 1]!;
-      nextCursor = encodeAdminActionsCursor({
+      nextCursor = encodeCreatedAtIdCursor({
         createdAt: new Date(last.createdAt),
         id: last.id,
       });

@@ -25,9 +25,12 @@
 import { describe, expect, it } from 'vitest';
 import { AdminVendorsQuerySchema } from '../../src/modules/admin-governance/interface/admin-vendors-query.dto.js';
 import {
-  encodeAdminVendorsCursor,
-  decodeAdminVendorsCursor,
-} from '../../src/modules/admin-governance/application/admin-vendors-cursor.js';
+  CreatedAtIdCursorSchema,
+  encodeCreatedAtIdCursor as encodeAdminVendorsCursor,
+  tryDecodeCursor,
+} from '../../src/shared/pagination/cursor.js';
+
+const decodeAdminVendorsCursor = (t: string) => tryDecodeCursor(t, CreatedAtIdCursorSchema);
 import {
   toAdminVendorListItem,
   type AdminVendorMapperInput,

@@ -8,7 +8,7 @@
 //   - Admin: cualquier `vendor.status` + reviews de todos los `status` (`published | hidden |
 //     removed`), y la respuesta incluye el campo `status` para cada item (D3 / AC-05).
 //
-// Cursor: `{createdAt, id}` en base64url (BE-004, `vendor-reviews-cursor.ts`). El predicado
+// Cursor: `{createdAt, id}` en base64url (BE-004, `shared/pagination/cursor.ts`). El predicado
 // de página es keyset:
 //
 //   `created_at < c.created_at OR (created_at = c.created_at AND id < c.id)`
@@ -26,18 +26,16 @@ import { Prisma, type PrismaClient } from '@prisma/client';
 import { ReviewStatus } from '@prisma/client';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
 import {
-  encodeVendorReviewsCursor,
-  decodeVendorReviewsCursor,
-  type VendorReviewsCursor,
-} from './vendor-reviews-cursor.js';
+  CreatedAtIdCursorSchema,
+  decodeCursor,
+  encodeCreatedAtIdCursor,
+  type CreatedAtIdCursor,
+} from '../../../shared/pagination/cursor.js';
 import {
   toAnonymizedReview,
   type AnonymizedReviewRow,
 } from './anonymized-review.mapper.js';
-import {
-  VendorNotFoundForReviewsError,
-  Us066InvalidCursorError,
-} from '../domain/us066.errors.js';
+import { VendorNotFoundForReviewsError } from '../domain/us066.errors.js';
 import type {
   AnonymizedReview,
   ListVendorReviewsResponse,
@@ -82,12 +80,9 @@ export class GetVendorReviewsUseCase {
       throw new VendorNotFoundForReviewsError();
     }
 
-    // 2) Cursor decode. `Us066InvalidCursorError` → 400 INVALID_CURSOR (EC-03).
-    let cursor: VendorReviewsCursor | null = null;
-    if (cursorToken !== undefined) {
-      cursor = decodeVendorReviewsCursor(cursorToken);
-      if (cursor === null) throw new Us066InvalidCursorError();
-    }
+    // 2) Cursor decode. `InvalidCursorError` → 400 INVALID_CURSOR (EC-03).
+    const cursor: CreatedAtIdCursor | null =
+      cursorToken !== undefined ? decodeCursor(cursorToken, CreatedAtIdCursorSchema) : null;
 
     // 3) Predicado — filtro por vendor + admin override + keyset del cursor.
     const where: Prisma.ReviewWhereInput = {
@@ -129,7 +124,7 @@ export class GetVendorReviewsUseCase {
 
     const nextCursor =
       hasMore && pageRows.length > 0
-        ? encodeVendorReviewsCursor({
+        ? encodeCreatedAtIdCursor({
             createdAt: pageRows[pageRows.length - 1]!.createdAt,
             id: pageRows[pageRows.length - 1]!.id,
           })
