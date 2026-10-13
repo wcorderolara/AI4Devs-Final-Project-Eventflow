@@ -6,6 +6,8 @@
 //    (nunca IP/email crudo, password, token, cookie, prompt ni PII — AC-07/SEC-06).
 import { createHash } from 'node:crypto';
 import type { Request, Response } from 'express';
+import rateLimit, { type RateLimitRequestHandler } from 'express-rate-limit';
+import { config } from '../../../config/env.js';
 import { logger } from '../../infrastructure/logger/index.js';
 
 /** Metadata que express-rate-limit adjunta a `req.rateLimit` (v7). */
@@ -77,4 +79,24 @@ export function buildRateLimitHandler(
       },
     });
   };
+}
+
+export interface RateLimiterSpec extends RateLimitPolicyMeta {
+  windowMs: number;
+  max: () => number;
+  keyGenerator: (req: Request) => string;
+}
+
+/** Limiter estándar de una policy: headers `RateLimit-*` + `X-RateLimit-*` (AC-06), 429 envelope y
+ *  log seguro vía `buildRateLimitHandler`; `skip` por `RATE_LIMIT_ENABLED` (N3). */
+export function makeRateLimiter(spec: RateLimiterSpec): RateLimitRequestHandler {
+  return rateLimit({
+    windowMs: spec.windowMs,
+    max: spec.max,
+    standardHeaders: true,
+    legacyHeaders: true,
+    skip: () => !config.RATE_LIMIT_ENABLED,
+    keyGenerator: spec.keyGenerator,
+    handler: buildRateLimitHandler({ policy: spec.policy, keyType: spec.keyType }, spec.keyGenerator),
+  });
 }
