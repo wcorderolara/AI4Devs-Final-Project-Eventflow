@@ -49,7 +49,7 @@
           "docker run --rm --network eventflow -e DATABASE_URL=\"$DB\" -w /app --entrypoint sh \"$IMAGE\" -c \"npx --yes prisma@$PV migrate deploy\"",
           "echo '[cd-redeploy] restarting backend container'",
           "docker rm -f backend >/dev/null 2>&1 || true",
-          "docker run -d --name backend --restart always --network eventflow -e NODE_ENV=development -e PORT=3000 -e DATABASE_URL=\"$DB\" -e JWT_SECRET=\"$JWT\" -e SESSION_SECRET=\"$SES\" -e CORS_ORIGINS='https://main.d2jh1ql4whmeue.amplifyapp.com,https://staging.d2jh1ql4whmeue.amplifyapp.com' -e CORS_CREDENTIALS=true -e SESSION_COOKIE_SAMESITE=none -e SESSION_COOKIE_SECURE=true -e LLM_PROVIDER=mock -e CAPTCHA_PROVIDER=mock \"$IMAGE\" >/dev/null",
+          "docker run -d --name backend --restart always --network eventflow -e NODE_ENV=development -e PORT=3000 -e DATABASE_URL=\"$DB\" -e JWT_SECRET=\"$JWT\" -e SESSION_SECRET=\"$SES\" -e CORS_ORIGINS='https://main.d2jh1ql4whmeue.amplifyapp.com,https://staging.d2jh1ql4whmeue.amplifyapp.com' -e CORS_CREDENTIALS=true -e SESSION_COOKIE_SAMESITE=none -e SESSION_COOKIE_SECURE=true -e LLM_PROVIDER=mock -e CAPTCHA_PROVIDER=mock -e JOBS_ENABLED=true \"$IMAGE\" >/dev/null",
           "docker image prune -f >/dev/null 2>&1 || true",
           "sleep 5",
           "echo '[cd-redeploy] running containers:'",

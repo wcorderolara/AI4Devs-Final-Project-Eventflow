@@ -488,5 +488,64 @@
         "UNEXPECTED": "Se ha producido un error inesperado. Inténtalo de nuevo."
       }
     }
+  },
+  "dashboard": {
+    "title": "Panel del proveedor",
+    "subtitle": "Resumen de tu operación: solicitudes, reservas, reseñas y valoración.",
+    "error": "No hemos podido cargar tu resumen. Inténtalo de nuevo.",
+    "weekBanner": "{count, plural, one {# reserva} other {# reservas}} esta semana",
+    "actions": {
+      "refresh": "Actualizar",
+      "refreshing": "Actualizando…"
+    },
+    "onboarding": {
+      "title": "Todavía no tienes perfil de proveedor",
+      "body": "Completa el onboarding para empezar a recibir solicitudes de presupuesto.",
+      "cta": "Ir al onboarding"
+    },
+    "cards": {
+      "newRequests": {
+        "title": "Nuevas solicitudes",
+        "aria": "{count} solicitudes sin ver",
+        "link": "Ver solicitudes"
+      },
+      "quotes": {
+        "title": "Presupuestos por responder",
+        "breakdownTitle": "En curso",
+        "awaitingDecision": "Esperando la decisión del organizador",
+        "hint": "Solicitudes enviadas o vistas sin presupuesto enviado todavía."
+      },
+      "bookings": {
+        "title": "Reservas esta semana",
+        "breakdownTitle": "Histórico",
+        "completed": "Eventos completados",
+        "hint": "Compromisos confirmados con un evento próximo."
+      },
+      "reviews": {
+        "title": "Reseñas recibidas",
+        "breakdownTitle": "Por estado",
+        "published": "Publicadas",
+        "hidden": "Ocultas",
+        "removed": "Eliminadas",
+        "rating": "Valoración media: {rating}"
+      },
+      "notifications": {
+        "title": "Notificaciones sin leer",
+        "aria": "{count} notificaciones sin leer",
+        "link": "Ver todas"
+      },
+      "rating": {
+        "title": "Valoración media",
+        "aria": "{count} reseñas, {rating} de media",
+        "footer": "sobre 5 estrellas"
+      }
+    },
+    "quickLinks": {
+      "title": "Accesos rápidos",
+      "quotes": "Gestionar presupuestos",
+      "portfolio": "Editar portafolio",
+      "reviews": "Ver reseñas",
+      "notifications": "Ver notificaciones"
+    }
   }
 }
