@@ -64,17 +64,22 @@ Importar siempre desde el barril: `import { Button, FormField } from '@/shared/d
 ### Navegación: un solo modelo para desktop y mobile
 
 `AppSidebar` y `MobileNavigationDrawer` consumen la misma estructura `NavigationSection[]`, ya
-resuelta (label traducido + ruta activa). El adaptador entre el modelo de la aplicación
-(`shared/navigation/navItems.ts`) y este modelo presentacional es
-`shared/navigation/useNavigationSections`. **No** existe una segunda definición de navegación, y
-el design system no conoce rutas, roles ni permisos.
+resuelta (label traducido + ruta activa). La única fuente de la aplicación es
+`shared/navigation/roleNavigation.tsx`: define las secciones por rol en esta misma forma (con
+claves i18n) y `resolveNavigationSections` las traduce y marca la ruta activa. **No** existe una
+segunda definición de navegación, y el design system no conoce rutas, roles ni permisos.
+`AuthenticatedShell` compone `AppShell`, `TopBar`, `AppSidebar` y `MobileNavigationDrawer`
+directamente.
 
 ```tsx
+const navigation = getRoleNavigation(role);
+const sections = resolveNavigationSections(navigation.sections, pathname, t);
+
 <AppShell
   skipLink={<SkipLink />}
-  topBar={<Topbar onMenuOpen={open} isMenuOpen={isOpen} drawerId="app-mobile-nav" />}
-  sidebar={<Sidebar items={ORGANIZER_NAV_ITEMS} ariaLabel={t('sidebar.organizer.label')} />}
-  drawer={<MobileNav items={ORGANIZER_NAV_ITEMS} isOpen={isOpen} onClose={close} … />}
+  topBar={<TopBar menuTrigger={…} brand={<Logo size="sm" />} actions={…} />}
+  sidebar={<AppSidebar ariaLabel={t(navigation.ariaLabelKey)} sections={sections} />}
+  drawer={<MobileNavigationDrawer open={isOpen} onClose={close} sections={sections} … />}
   mainClassName="p-6"
 >
   {children}

@@ -256,9 +256,10 @@ describe('PB-P2-027 · consumidores migrados', () => {
     expect(sidebarItem).toContain('focus-ring');
     expect(sidebarItem).not.toContain('primary-50');
 
-    const navLink = read('src/shared/navigation/NavLink.tsx');
-    expect(navLink).toContain('SidebarItem');
-    expect(navLink).not.toContain('primary-50');
+    // `AuthenticatedShell` compone `AppSidebar` directamente: no hay wrapper propio del item.
+    const shell = read('src/shared/navigation/AuthenticatedShell.tsx');
+    expect(shell).toContain('AppSidebar');
+    expect(shell).not.toContain('primary-50');
 
     const appSidebar = read('src/shared/design-system/navigation/AppSidebar.tsx');
     expect(appSidebar).toContain('w-sidebar');

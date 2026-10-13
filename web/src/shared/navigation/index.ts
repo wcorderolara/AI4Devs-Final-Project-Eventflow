@@ -1,12 +1,16 @@
 export {
   type NavItem,
-  type NavGroup,
+  type NavSectionDefinition,
+  type RoleNavigation,
   ORGANIZER_NAV_ITEMS,
   VENDOR_NAV_ITEMS,
   ADMIN_NAV_ITEMS,
   ADMIN_NAV_GROUPS,
-} from './navItems';
-export { getRoleNavigation, navigationHrefsForRole, type RoleNavigation } from './roleNavigation';
+  getRoleNavigation,
+  isNavItemActive,
+  navigationHrefsForRole,
+  resolveNavigationSections,
+} from './roleNavigation';
 export { ROLE_HOME, roleHome } from './roleHome';
 export {
   PUBLIC_NAV_LINKS,
@@ -25,14 +29,4 @@ export { SidebarAccount } from './SidebarAccount';
 export { Logo } from './Logo';
 export { SkipLink } from './SkipLink';
 export { Footer } from './Footer';
-export { NotificationsBadge } from './NotificationsBadge';
-export { NavLink } from './NavLink';
-export { Sidebar } from './Sidebar';
 export { UserMenu } from './UserMenu';
-export { MobileNav } from './MobileNav';
-export { Topbar } from './Topbar';
-export {
-  isNavItemActive,
-  useNavigationSections,
-  type UseNavigationSectionsInput,
-} from './useNavigationSections';
