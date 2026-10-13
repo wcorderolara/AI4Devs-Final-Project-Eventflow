@@ -50,8 +50,3 @@ export function renderQrReceivedTemplate(
     body: interpolate(template.body, values),
   };
 }
-
-/** Locales soportados por el catálogo QR-received (expuesto para tests exhaustivos). */
-export function supportedQrReceivedLanguages(): readonly SupportedLanguage[] {
-  return Object.keys(CATALOG) as SupportedLanguage[];
-}

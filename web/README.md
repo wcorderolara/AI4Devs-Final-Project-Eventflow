@@ -437,10 +437,10 @@ src/
 ├── app/                 # App Router (mínimo en US-103; route groups en US-105)
 ├── features/            # feature-first (Doc 15 §16) — vacío
 ├── shared/
-│   ├── api-client/      design-system/  design-tokens/  hooks/  lib/  observability/
+│   ├── api-client/      design-system/  design-tokens/
 │   ├── i18n/            # next-intl config → US-104
 │   ├── providers/       # Query/Intl/Theme providers → US-106/US-107
-│   ├── auth-session/    authorization/ (UX-only, ADR-FE-003)  error-handling/
+│   ├── auth-session/    authorization/ (UX-only, ADR-FE-003)
 ├── tests/{e2e,unit,integration,msw}/
 └── messages/            # catálogos i18n → US-104
 ```

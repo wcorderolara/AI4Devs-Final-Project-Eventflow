@@ -37,8 +37,3 @@ export function resolveOutputSchemaByRef(ref: string): ResolvedOutputSchema {
   }
   return resolveOutputSchemaByFeature(feature);
 }
-
-/** `true` si existe schema para la feature. */
-export function hasOutputSchema(featureType: AiFeatureType): boolean {
-  return featureType in OUTPUT_SCHEMAS;
-}

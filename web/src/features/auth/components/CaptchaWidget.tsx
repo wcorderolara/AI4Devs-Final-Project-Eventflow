@@ -17,7 +17,7 @@ export interface CaptchaWidgetProps {
  * CaptchaWidget (US-001 / FE-003; diferido de PB-P0-006). El proveedor se resuelve por
  * configuración pública: `mock` (local/CI/demo sin proveedor real) renderiza el checkbox fake
  * que emite el token de prueba; la validez REAL siempre la decide el backend server-side
- * (SEC-03). Los proveedores reales (reCAPTCHA/hCaptcha) se integran vía config por ambiente
+ * (SEC-03). El proveedor real (reCAPTCHA) se integra vía config por ambiente
  * sin impacto en este contrato (`siteKey` público + callback `onToken`).
  */
 export function CaptchaWidget({ onToken, resetSignal = 0 }: CaptchaWidgetProps): React.JSX.Element {

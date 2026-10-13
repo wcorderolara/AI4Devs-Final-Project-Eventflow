@@ -69,8 +69,3 @@ export function renderBookingConfirmedTemplate(
   const template = CATALOG[role][language];
   return { subject: template.subject, body: template.body };
 }
-
-/** Locales soportados (expuesto para tests exhaustivos). */
-export function supportedBookingConfirmedLanguages(): readonly SupportedLanguage[] {
-  return Object.keys(CATALOG.organizer) as SupportedLanguage[];
-}

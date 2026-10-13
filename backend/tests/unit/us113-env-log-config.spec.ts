@@ -19,7 +19,6 @@ import { parseConfig } from '../../src/config/env.js';
 
 const BASE_ENV = {
   DATABASE_URL: 'postgresql://user:pw@localhost:5432/db?schema=public',
-  JWT_SECRET: 'x'.repeat(32),
   SESSION_SECRET: 'x'.repeat(32),
   LLM_PROVIDER: 'mock',
   CORS_ORIGINS: 'http://localhost:3000',

@@ -17,7 +17,6 @@ export {
   outputSchemaRef,
   resolveOutputSchemaByFeature,
   resolveOutputSchemaByRef,
-  hasOutputSchema,
   type ResolvedOutputSchema,
 } from './output-schema-registry.js';
 export {

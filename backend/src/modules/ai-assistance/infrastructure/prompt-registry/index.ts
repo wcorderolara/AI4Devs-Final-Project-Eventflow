@@ -24,8 +24,8 @@ export {
   type PromptRegistryErrorMeta,
 } from './prompt-registry-errors.js';
 
-export { computeTemplateHash, isTemplateHashValid } from './prompt-hash.js';
-export { MVP_ACTIVE_SAFETY, hasAllSafetyConstraints, SAFETY_INSTRUCTION_BLOCK } from './safety-constraints.js';
+export { computeTemplateHash } from './prompt-hash.js';
+export { MVP_ACTIVE_SAFETY, SAFETY_INSTRUCTION_BLOCK } from './safety-constraints.js';
 export {
   MVP_ACTIVE_FEATURE_ALLOWLIST,
   FUTURE_FEATURE_TYPES,

@@ -67,12 +67,3 @@ adminServiceCategoryRouter.delete(
   ),
   asyncHandler(controller.softDelete),
 );
-
-// Composition root exportado también para tests IT (permite inyectar prisma stub).
-export const adminServiceCategoryComposition = {
-  createUC,
-  updateUC,
-  softDeleteUC,
-  listUC,
-  controller,
-} as const;

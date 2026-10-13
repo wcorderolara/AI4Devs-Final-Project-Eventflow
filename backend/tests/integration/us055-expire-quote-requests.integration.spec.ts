@@ -22,7 +22,7 @@ import { PrismaClient } from '@prisma/client';
 import { ExpireQuoteRequestsUs055UseCase } from '../../src/modules/quote-flow/application/expire-quote-requests.us055.use-case.js';
 import { ExpireQuotesUs053UseCase } from '../../src/modules/quote-flow/application/expire-quotes.us053.use-case.js';
 import { QuoteEventNotificationService } from '../../src/modules/quote-flow/services/quote-event-notification.service.js';
-import { FrozenClock } from '../../src/infrastructure/time/frozen-clock.js';
+import { FrozenClock } from '../helpers/frozen-clock.js';
 import type { DomainEventLogger } from '../../src/shared/observability/domain-event-logger.js';
 import type { QuoteNotificationSenderPort } from '../../src/shared/application/quote-notification-sender.port.js';
 

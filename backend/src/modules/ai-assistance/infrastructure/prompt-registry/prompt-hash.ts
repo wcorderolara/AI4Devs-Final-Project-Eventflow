@@ -32,8 +32,3 @@ export function computeTemplateHash(template: PromptTemplate): string {
   const digest = createHash('sha256').update(canonicalContent(template), 'utf8').digest('hex');
   return `sha256:${digest}`;
 }
-
-/** Compara el hash declarado contra el recalculado. `true` si coinciden (sin drift). */
-export function isTemplateHashValid(template: PromptTemplate): boolean {
-  return computeTemplateHash(template) === template.templateHash;
-}

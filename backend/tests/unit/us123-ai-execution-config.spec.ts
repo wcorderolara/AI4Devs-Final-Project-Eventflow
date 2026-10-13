@@ -11,7 +11,6 @@ import { execConfig } from '../helpers/ai-execution-fixtures.js';
 
 const BASE_ENV = {
   DATABASE_URL: 'postgresql://user:password@localhost:5432/eventflow_test?schema=public',
-  JWT_SECRET: 'test_jwt_secret_min_32_characters_long_xx',
   SESSION_SECRET: 'test_session_secret_min_32_characters_long_xx',
   CORS_ORIGINS: 'http://localhost:3000',
   CAPTCHA_PROVIDER: 'mock',

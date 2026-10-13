@@ -1,5 +1,4 @@
-// PB-P2-031 — Overlays del design system (Modal, ConfirmationDialog, DropdownMenu, Popover,
-// Tooltip).
+// PB-P2-031 — Overlays del design system (Modal, ConfirmationDialog, DropdownMenu).
 //
 // Fuente normativa: docs/ux-ui/EventFlow-Component-Foundations.md §30 y §37 (focus trap, retorno
 // de foco, `Escape`, nombre accesible). Los overlays reutilizan la primitiva accesible ya
@@ -15,8 +14,6 @@ import {
   DropdownMenu,
   IconButton,
   Modal,
-  Popover,
-  Tooltip,
 } from '@/shared/design-system';
 
 vi.mock('next/navigation', () => ({
@@ -359,136 +356,5 @@ describe('PB-P2-031 · DropdownMenu', () => {
     render(<DropdownMenu iconOnly trigger={<MoreVertical />} items={[]} />);
     expect(error).toHaveBeenCalledWith(expect.stringContaining('DropdownMenu'));
     error.mockRestore();
-  });
-});
-
-describe('PB-P2-031 · Popover', () => {
-  beforeEach(cleanup);
-
-  it('abre, admite contenido interactivo y cierra con `Escape` devolviendo el foco', async () => {
-    const user = userEvent.setup();
-    render(
-      <Popover trigger="Notificaciones" title="Notificaciones">
-        {({ close }) => (
-          <Button onClick={close} data-testid="popover-action">
-            Marcar todo como leído
-          </Button>
-        )}
-      </Popover>,
-    );
-    const trigger = screen.getByRole('button', { name: 'Notificaciones' });
-    await user.click(trigger);
-
-    const action = await screen.findByTestId('popover-action');
-    expect(action).toBeInTheDocument();
-
-    await user.keyboard('{Escape}');
-    await waitFor(() => expect(screen.queryByTestId('popover-action')).not.toBeInTheDocument());
-    expect(trigger).toHaveFocus();
-  });
-
-  it('cierra al pulsar fuera', async () => {
-    const user = userEvent.setup();
-    render(
-      <>
-        <Popover trigger="Detalle">
-          <p data-testid="popover-body">Contenido</p>
-        </Popover>
-        <button type="button">Fuera</button>
-      </>,
-    );
-    await user.click(screen.getByRole('button', { name: 'Detalle' }));
-    expect(await screen.findByTestId('popover-body')).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: 'Fuera' }));
-    await waitFor(() => expect(screen.queryByTestId('popover-body')).not.toBeInTheDocument());
-  });
-
-  it('un trigger icon-only exige nombre accesible', () => {
-    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
-    render(
-      <Popover iconOnly trigger={<MoreVertical />}>
-        <p>Contenido</p>
-      </Popover>,
-    );
-    expect(error).toHaveBeenCalledWith(expect.stringContaining('Popover'));
-    error.mockRestore();
-  });
-});
-
-describe('PB-P2-031 · Tooltip', () => {
-  beforeEach(cleanup);
-
-  it('aparece en hover y desaparece al salir', async () => {
-    const user = userEvent.setup();
-    render(
-      <Tooltip content="Margen antes de impuestos" delayMs={0}>
-        <Button>Margen</Button>
-      </Tooltip>,
-    );
-    const trigger = screen.getByRole('button', { name: 'Margen' });
-    expect(screen.queryByRole('tooltip')).toBeNull();
-
-    await user.hover(trigger);
-    expect(await screen.findByRole('tooltip')).toHaveTextContent('Margen antes de impuestos');
-
-    await user.unhover(trigger);
-    await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull());
-  });
-
-  it('aparece también con el foco de teclado y se asocia por `aria-describedby`', async () => {
-    const user = userEvent.setup();
-    render(
-      <Tooltip content="Margen antes de impuestos">
-        <Button>Margen</Button>
-      </Tooltip>,
-    );
-    await user.tab();
-    const trigger = screen.getByRole('button', { name: 'Margen' });
-    expect(trigger).toHaveFocus();
-
-    const tooltip = await screen.findByRole('tooltip');
-    expect(trigger).toHaveAttribute('aria-describedby', tooltip.id);
-    // Es descripción, no nombre: el control conserva su propia etiqueta.
-    expect(trigger).toHaveAccessibleName('Margen');
-    expect(trigger).toHaveAccessibleDescription('Margen antes de impuestos');
-  });
-
-  it('`Escape` lo descarta sin cerrar nada más', async () => {
-    const user = userEvent.setup();
-    render(
-      <Tooltip content="Información complementaria">
-        <Button>Ayuda</Button>
-      </Tooltip>,
-    );
-    await user.tab();
-    await screen.findByRole('tooltip');
-    await user.keyboard('{Escape}');
-    await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull());
-  });
-
-  it('nunca sustituye al nombre accesible de un control icon-only', async () => {
-    const user = userEvent.setup();
-    render(
-      <Tooltip content="Eliminar definitivamente" delayMs={0}>
-        <IconButton icon={<Trash2 />} aria-label="Eliminar tarea" />
-      </Tooltip>,
-    );
-    const trigger = screen.getByRole('button', { name: 'Eliminar tarea' });
-    await user.hover(trigger);
-    await screen.findByRole('tooltip');
-    // El nombre lo sigue aportando `aria-label`; el tooltip sólo describe.
-    expect(trigger).toHaveAccessibleName('Eliminar tarea');
-  });
-
-  it('el contenido es complementario: no aloja controles', () => {
-    render(
-      <Tooltip content="Sólo texto" delayMs={0}>
-        <Button>Trigger</Button>
-      </Tooltip>,
-    );
-    // La API acepta `ReactNode`, pero el contenedor es un `<span>` sin eventos de puntero:
-    // cualquier control dentro sería inalcanzable, de ahí `pointer-events-none`.
-    expect(screen.queryByRole('tooltip')).toBeNull();
   });
 });

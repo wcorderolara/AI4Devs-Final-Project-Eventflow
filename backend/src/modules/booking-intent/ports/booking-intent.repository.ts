@@ -94,18 +94,3 @@ export interface BookingIntentRepository {
     args: { id: string },
   ): Promise<void>;
 }
-
-/** Contexto de un Quote leído directamente (sin importar quote-flow): para crear BookingIntent. */
-export interface AcceptedQuoteContext {
-  quoteId: string;
-  quoteRequestId: string;
-  eventId: string;
-  serviceCategoryId: string;
-  vendorProfileId: string;
-  status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired';
-  validUntil: Date | null;
-}
-
-export interface QuoteContextReader {
-  findQuoteContext(quoteId: string): Promise<AcceptedQuoteContext | null>;
-}

@@ -16,19 +16,3 @@
 
 export * from './primitives';
 export * from './semantic';
-export * from './components';
-
-import { primitives } from './primitives';
-import { semantic } from './semantic';
-import { componentAliases } from './components';
-
-/** Árbol completo de tokens en sus tres capas. */
-export const tokens = {
-  primitives,
-  semantic,
-  components: componentAliases,
-} as const;
-
-export type Tokens = typeof tokens;
-
-export default tokens;

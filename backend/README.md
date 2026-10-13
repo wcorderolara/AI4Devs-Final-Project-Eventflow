@@ -50,7 +50,7 @@ contiene secretos** (se inyectan por entorno en runtime).
 | `npm run docker:run` | `docker run --rm -p 3000:3000 -e PORT=3000 eventflow-backend:local` |
 
 Variables de entorno esperadas en runtime (Doc 21 §10.5 — nunca en la imagen):
-`PORT` (default `3000`), `DATABASE_URL`, `JWT_SECRET`, `SESSION_SECRET`, `CORS_ORIGINS`,
+`PORT` (default `3000`), `DATABASE_URL`, `SESSION_SECRET`, `CORS_ORIGINS`,
 `CAPTCHA_PROVIDER`, `LLM_PROVIDER`, y las de sesión/AI según entorno.
 
 - **Entrypoint**: `CMD ["node", "dist/server.js"]`. El server valida config (fail-fast), hace
@@ -338,14 +338,12 @@ creación de usuario, reset token o emisión de cookie (SEC-05).
 
 | Variable | Default | Propósito |
 |---|---|---|
-| `CAPTCHA_PROVIDER` | — (requerido) | `mock` \| `recaptcha` \| `hcaptcha`. `mock` **sólo** Local/CI. |
-| `CAPTCHA_SECRET` | — | Legacy genérico (US-091); los providers reales usan las vars de abajo. |
+| `CAPTCHA_PROVIDER` | — (requerido) | `mock` \| `recaptcha`. `mock` **sólo** Local/CI. |
 | `RECAPTCHA_SECRET_KEY` | — | Secret backend reCAPTCHA (requerido si `CAPTCHA_PROVIDER=recaptcha`). |
-| `HCAPTCHA_SECRET_KEY` | — | Secret backend hCaptcha (requerido si `CAPTCHA_PROVIDER=hcaptcha`). |
 | `CAPTCHA_SCORE_THRESHOLD` | `0.5` | Umbral score reCAPTCHA v3 (0..1). |
 | `CAPTCHA_VERIFY_TIMEOUT_MS` | `3000` | Timeout de verificación con el proveedor real. |
 
-Site keys frontend son **públicas** (`NEXT_PUBLIC_RECAPTCHA_SITE_KEY` / `NEXT_PUBLIC_HCAPTCHA_SITE_KEY`);
+Site keys frontend son **públicas** (`NEXT_PUBLIC_RECAPTCHA_SITE_KEY`);
 los secret keys **nunca** salen del backend/Secrets Manager (SEC-02, ADR-SEC-005).
 
 ### Comportamiento por entorno + fail-fast (AC-04, EC-06)
@@ -370,7 +368,7 @@ los secret keys **nunca** salen del backend/Secrets Manager (SEC-02, ADR-SEC-005
 
 - **Alcance** — Algunos documentos base mencionan captcha sólo en `register`/`login`; ADR-SEC-004
   y US-091 incluyen también `password reset request`. US-109 aplica los **tres** endpoints.
-- **Provider naming** — Contrato MVP `mock|recaptcha|hcaptcha`. Turnstile u otros equivalentes sólo
+- **Provider naming** — Contrato MVP `mock|recaptcha` (hCaptcha retirado por YAGNI). Turnstile u otros equivalentes sólo
   con decisión técnica documentada (Tech Lead), sin cambiar ACs ni alcance.
 
 Fuente formal: `management/user-stories/decision-resolutions/US-109-decision-resolution.md`.

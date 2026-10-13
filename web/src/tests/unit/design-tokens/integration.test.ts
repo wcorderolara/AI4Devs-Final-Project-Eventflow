@@ -193,7 +193,7 @@ describe('PB-P2-027 · restricciones de alcance MVP', () => {
 
   it('NO introduce temas por rol (UI-DEC-009)', () => {
     expect(globalsCssCode).not.toMatch(/\[data-role|\.role-(organizer|vendor|admin)/);
-    const tokenSource = ['primitives', 'semantic', 'components']
+    const tokenSource = ['primitives', 'semantic']
       .map((f) => read(`src/shared/design-tokens/${f}.ts`))
       .join('\n');
     expect(tokenSource).not.toMatch(/organizerTheme|vendorTheme|adminTheme|theme\.role/);

@@ -10,7 +10,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ExpireQuoteRequestsUs055UseCase } from '../../src/modules/quote-flow/application/expire-quote-requests.us055.use-case.js';
 import { ExpireQuoteRequestsJob } from '../../src/jobs/expire-quote-requests.job.js';
-import { FrozenClock } from '../../src/infrastructure/time/frozen-clock.js';
+import { FrozenClock } from '../helpers/frozen-clock.js';
 import type { DomainEventLogger } from '../../src/shared/observability/domain-event-logger.js';
 import type { ClockPort } from '../../src/shared/domain/clock.port.js';
 

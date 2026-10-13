@@ -10,7 +10,6 @@ const base = {
   PORT: '3000',
   NODE_ENV: 'development',
   DATABASE_URL: 'postgresql://user:password@localhost:5432/eventflow_test?schema=public',
-  JWT_SECRET: 'test_jwt_secret_min_32_characters_long_xx',
   SESSION_SECRET: 'test_session_secret_min_32_characters_long_xx',
   LLM_PROVIDER: 'mock',
   CORS_ORIGINS: 'http://localhost:3000',
@@ -36,12 +35,6 @@ describe('US-109 QA-001: captcha config fail-fast (AC-04)', () => {
   it('VR-05: recaptcha sin RECAPTCHA_SECRET_KEY → ZodError', () => {
     expect(() =>
       parseConfig({ ...base, NODE_ENV: 'production', SESSION_COOKIE_SECURE: 'true', CAPTCHA_PROVIDER: 'recaptcha' }),
-    ).toThrow(ZodError);
-  });
-
-  it('VR-05: hcaptcha sin HCAPTCHA_SECRET_KEY → ZodError', () => {
-    expect(() =>
-      parseConfig({ ...base, NODE_ENV: 'production', SESSION_COOKIE_SECURE: 'true', CAPTCHA_PROVIDER: 'hcaptcha' }),
     ).toThrow(ZodError);
   });
 
@@ -71,8 +64,6 @@ describe('US-109 QA-001: CaptchaProviderFactory (AC-04)', () => {
     expect(factory.resolve().provider).toBe('mock');
     config.CAPTCHA_PROVIDER = 'recaptcha';
     expect(factory.resolve().provider).toBe('recaptcha');
-    config.CAPTCHA_PROVIDER = 'hcaptcha';
-    expect(factory.resolve().provider).toBe('hcaptcha');
   });
 });
 

@@ -12,5 +12,3 @@ export {
   type DropdownMenuProps,
   type DropdownMenuSeparatorItem,
 } from './DropdownMenu';
-export { Popover, type PopoverAlign, type PopoverProps, type PopoverSide } from './Popover';
-export { Tooltip, type TooltipPlacement, type TooltipProps } from './Tooltip';

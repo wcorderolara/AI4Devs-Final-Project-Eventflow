@@ -24,6 +24,3 @@ const adminOnly = roleMiddleware(['admin']);
 export const adminMetricsRouter = Router();
 adminMetricsRouter.use(sessionAuth, adminOnly);
 adminMetricsRouter.get('/', asyncHandler(controller.get));
-
-/** Sólo para tests que necesitan resetear estado entre casos (QA-002). */
-export const __adminMetricsCacheForTests = metricsCache;

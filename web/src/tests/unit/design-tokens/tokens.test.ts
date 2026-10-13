@@ -13,7 +13,6 @@ import {
   borderColor,
   breakpoint,
   color,
-  componentAliases,
   elevation,
   feedback,
   focusRing,
@@ -26,7 +25,6 @@ import {
   radii,
   surface,
   text,
-  tokens,
   zIndex,
 } from '@/shared/design-tokens';
 
@@ -293,18 +291,5 @@ describe('PB-P2-027 · tipografía y arquitectura de capas', () => {
     expect(fontSize.caption).toBe('0.75rem');
     const remValues = Object.values(fontSize).map((v) => Number.parseFloat(v));
     expect(Math.min(...remValues)).toBe(0.75);
-  });
-
-  it('expone las tres capas y los alias de componente referencian semánticos', () => {
-    expect(Object.keys(tokens)).toEqual(['primitives', 'semantic', 'components']);
-    expect(componentAliases.button.primary.background).toBe(actionPrimary.background);
-    expect(componentAliases.input.border).toBe(borderColor.default);
-    expect(componentAliases.card.radius).toBe(radii.card);
-    // El ítem activo pasó a relleno violeta con texto blanco (look & feel del screen Stitch
-    // del layout principal), en lugar del chip violeta claro con texto `violet.700`.
-    expect(componentAliases.sidebarItem.activeBackground).toBe('#7B4EE8');
-    expect(componentAliases.sidebarItem.activeForeground).toBe('#FFFFFF');
-    expect(componentAliases.aiRecommendation.background).toBe(ai.surface);
-    expect(componentAliases.aiRecommendation.border).toBe(ai.border);
   });
 });

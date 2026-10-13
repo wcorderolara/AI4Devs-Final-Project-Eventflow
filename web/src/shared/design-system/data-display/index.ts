@@ -45,16 +45,6 @@ export {
 export { Pagination, type PaginationPageSize, type PaginationProps } from './Pagination';
 export { Tabs, type TabItem, type TabsProps } from './Tabs';
 export {
-  Accordion,
-  AccordionItem,
-  AccordionPanel,
-  AccordionTrigger,
-  type AccordionItemProps,
-  type AccordionProps,
-  type AccordionTriggerProps,
-  type AccordionType,
-} from './Accordion';
-export {
   DescriptionList,
   DescriptionListItem,
   type DescriptionListColumns,

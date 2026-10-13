@@ -35,8 +35,7 @@ La US-138 nombra los secretos de forma abstracta (Doc 21 §14.2). El **contrato 
 | `DATABASE_URL` | `DATABASE_URL` | `DATABASE_URL` | **Sí** | RDS (US-137). SecureString. |
 | `SESSION_SECRET` | `SESSION_SECRET` (min 32) | `SESSION_SECRET` | **Sí** | Firma la cookie de sesión HTTP-only (ADR-SEC-002). |
 | `COOKIE_SECRET` | *(no existe var separada)* | — | — | La firma de la cookie usa `SESSION_SECRET`; no hay `COOKIE_SECRET` independiente. |
-| — | `JWT_SECRET` (min 32) | `JWT_SECRET` | **Sí** | Secreto real adicional no listado en la US; requerido al arrancar. |
-| `CAPTCHA_SECRET_KEY` | `RECAPTCHA_SECRET_KEY` / `HCAPTCHA_SECRET_KEY` | *(no en QA/Demo)* | Condicional | Requerido sólo si `CAPTCHA_PROVIDER=recaptcha\|hcaptcha`. En QA/Demo `CAPTCHA_PROVIDER=mock`. |
+| `CAPTCHA_SECRET_KEY` | `RECAPTCHA_SECRET_KEY` | *(no en QA/Demo)* | Condicional | Requerido sólo si `CAPTCHA_PROVIDER=recaptcha`. En QA/Demo `CAPTCHA_PROVIDER=mock`. |
 | `OPENAI_API_KEY` | `OPENAI_API_KEY` | *(no en QA/Demo)* | Condicional | Requerido sólo si `LLM_PROVIDER=openai`. En QA/Demo `LLM_PROVIDER=mock`. |
 
 > Los secretos **condicionales** no se aprovisionan en SSM para QA/Demo porque el entorno usa
@@ -102,13 +101,13 @@ Rotación **manual** (el MVP no usa rotación automática). Para rotar un secret
    ```
 
 **Impacto por secreto:** rotar `SESSION_SECRET` invalida las sesiones activas (los usuarios deben
-volver a iniciar sesión) — comportamiento esperado. Rotar `JWT_SECRET` invalida los JWT emitidos.
+volver a iniciar sesión) — comportamiento esperado.
 Rotar `DATABASE_URL` requiere que la nueva password ya esté activa en RDS antes del redeploy.
 
 ## 5. Fail-fast y ausencia de secretos en logs (AC-04, EC-01)
 
 - **Fail-fast (EC-01):** `backend/src/config/env.ts` valida con Zod al importar el módulo; si falta o
-  es inválido un secreto requerido (`DATABASE_URL` URL, `JWT_SECRET`/`SESSION_SECRET` ≥32 chars), el
+  es inválido un secreto requerido (`DATABASE_URL` URL, `SESSION_SECRET` ≥32 chars), el
   proceso **no arranca** y emite un `ZodError` con el nombre de la var **sin exponer el valor**.
   Verificado por `backend/tests/unit/config-env.spec.ts`.
 - **Sin secretos en logs (SEC-03):** el logger Pino redacta campos sensibles (US-108/US-113) y el

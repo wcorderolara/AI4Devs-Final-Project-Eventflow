@@ -3,7 +3,6 @@
 // JSON-only, user content boundary, minimización, HITL y prohibiciones (decisiones autónomas,
 // claims legales/pagos, disponibilidad inventada, currency conversion no soportada).
 import type { PromptSafetyConstraints } from './prompt-template.js';
-import { REQUIRED_SAFETY_CONSTRAINTS } from './prompt-template.js';
 
 /** Safety constraints obligatorias para prompts `active` (todas en true). */
 export const MVP_ACTIVE_SAFETY: PromptSafetyConstraints = {
@@ -16,11 +15,6 @@ export const MVP_ACTIVE_SAFETY: PromptSafetyConstraints = {
   noFabricatedVendorAvailability: true,
   noUnsupportedCurrencyConversion: true,
 };
-
-/** `true` si el objeto tiene todas las safety constraints requeridas en true. */
-export function hasAllSafetyConstraints(constraints: PromptSafetyConstraints): boolean {
-  return REQUIRED_SAFETY_CONSTRAINTS.every((key) => constraints[key] === true);
-}
 
 /**
  * Bloque de texto de safety/HITL reutilizable en `systemInstructions` (AC-06). Mantiene una única

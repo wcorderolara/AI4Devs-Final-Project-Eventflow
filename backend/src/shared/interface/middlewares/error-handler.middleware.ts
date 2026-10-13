@@ -238,8 +238,6 @@ import { BusinessRuleViolationError } from '../../domain/errors/business-rule-vi
 import { RateLimitError } from '../../domain/errors/rate-limit.error.js';
 import { BadRequestError } from '../../domain/errors/bad-request.error.js';
 import { SeedResetInProgressError, SeedResetFailedError } from '../../domain/errors/seed-demo.errors.js';
-import { AITimeoutError } from '../../domain/errors/ai-timeout.error.js';
-import { AIProviderError } from '../../domain/errors/ai-provider.error.js';
 import { PrismaPersistenceError } from '../../domain/errors/prisma-persistence.error.js';
 import { InfrastructureError } from '../../domain/errors/infrastructure.error.js';
 import {
@@ -1019,17 +1017,11 @@ function mapError(err: unknown): MappedError {
   if (err instanceof BadRequestError) {
     return { status: 400, code: ErrorCodes.BAD_REQUEST, message: err.message };
   }
-  if (err instanceof AITimeoutError) {
-    return { status: 504, code: ErrorCodes.AI_PROVIDER_TIMEOUT, message: 'AI provider timeout' };
-  }
-  if (err instanceof AIProviderError) {
-    return { status: 502, code: ErrorCodes.AI_PROVIDER_ERROR, message: 'AI provider error' };
-  }
   if (err instanceof PrismaPersistenceError) {
     return { status: 500, code: ErrorCodes.PERSISTENCE_ERROR, message: 'Internal server error' };
   }
   if (err instanceof InfrastructureError) {
-    // ExternalIntegrationError u otra infra no específica → 502 genérico.
+    // Otra infra no específica → 502 genérico.
     return { status: 502, code: ErrorCodes.AI_PROVIDER_ERROR, message: 'External service error' };
   }
   if (err instanceof AppError) {

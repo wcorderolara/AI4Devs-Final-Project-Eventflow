@@ -23,5 +23,3 @@ const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, c
 
 export const publicServiceCategoryRouter = Router();
 publicServiceCategoryRouter.get('/', sessionAuth, asyncHandler(controller.list));
-
-export const publicServiceCategoryComposition = { listUC, controller } as const;
