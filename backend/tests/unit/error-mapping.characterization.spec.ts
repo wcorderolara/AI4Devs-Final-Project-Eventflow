@@ -302,7 +302,9 @@ const CASES: Case[] = [
   ['CaptchaInvalidError (fallback)', () => new CaptchaInvalidError('m:CaptchaInv'), { status: 400, code: 'CAPTCHA_INVALID', message: 'm:CaptchaInv' }],
   ['AiInvalidOutputSchemaError (fallback)', () => new AiInvalidOutputSchemaError('m:Schema'), { status: 400, code: 'AI_INVALID_OUTPUT_SCHEMA', message: 'm:Schema' }],
   ['AiOutputParseError (fallback)', () => new AiOutputParseError('m:Parse'), { status: 400, code: 'AI_OUTPUT_PARSE_ERROR', message: 'm:Parse' }],
-  ['AiFallbackFailedError (fallback)', () => new AiFallbackFailedError('m:Fallback'), { status: 400, code: 'AI_FALLBACK_FAILED', message: 'm:Fallback' }],
+  // PR-5: cambio consciente 400 → 503. Con las capas US-123/US-124 conectadas, el error es alcanzable
+  // (primario real + AI_USE_MOCK_FALLBACK) y representa indisponibilidad del provider, no input inválido.
+  ['AiFallbackFailedError', () => new AiFallbackFailedError('m:Fallback'), { status: 503, code: 'AI_FALLBACK_FAILED', message: 'm:Fallback' }],
   ['AiConfigInvalidError (fallback)', () => new AiConfigInvalidError('m:Config'), { status: 400, code: 'AI_CONFIG_INVALID', message: 'm:Config' }],
   ['PromptNotFoundError (fallback)', () => new PromptNotFoundError('m:Prompt'), { status: 400, code: 'PROMPT_NOT_FOUND', message: 'm:Prompt' }],
   ['AIRecommendationValidationError (fallback)', () => new AIRecommendationValidationError('m:AIRecVal'),

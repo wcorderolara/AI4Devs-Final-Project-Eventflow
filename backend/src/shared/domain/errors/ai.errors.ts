@@ -84,7 +84,8 @@ export class AiProviderTimeoutError extends AppError {
 // US-123 (PB-P0-011 / BE-004): errores controlados de la capa de ejecución AI (timeout/fallback).
 /** El MockAIProvider usado como fallback también falló (EC-05); sin loop, sin Anthropic. */
 export class AiFallbackFailedError extends AppError {
-  readonly code = ErrorCodes.AI_FALLBACK_FAILED;
+  readonly code = ErrorCodes.AI_FALLBACK_FAILED; // 503: falla del lado del provider (PR-5, alcanzable en producción)
+  override readonly httpStatus = 503;
   constructor(message = 'AI fallback provider failed', readonly meta?: AiExecutionErrorMeta) { super(message); }
 }
 /** Configuración AI inválida/insegura detectada en bootstrap (AC-07 / EC-04). */
