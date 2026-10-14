@@ -13,6 +13,7 @@
 //
 // Sin configuración `DEMO_SMOKE_*` la suite hace `test.skip` limpio (dev local / PR normal): no
 // produce falso verde ni falso rojo. Se ejecuta con secretos en `smoke.yml` post-deploy.
+import { randomUUID } from 'node:crypto';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { resolveDemoSmokeConfig } from './demo-smoke-config';
 
@@ -20,9 +21,11 @@ const resolution = resolveDemoSmokeConfig(process.env);
 const config = resolution.config;
 
 // Identificador de correlación de la corrida (OBS-001): permite cruzar el smoke con los logs del
-// backend en CloudWatch. Estable por corrida; sin secretos ni PII.
+// backend en CloudWatch. Estable por corrida; sin secretos ni PII. Debe ser UUID v4: el backend
+// rechaza cualquier otro `X-Correlation-Id` con 400 INVALID_CORRELATION_ID (US-114). El `runId` de
+// CI se registra junto al correlationId para enlazar ambos.
 const runId = process.env.GITHUB_RUN_ID ?? process.env.CI_RUN_ID ?? 'local';
-const CORRELATION_ID = `e2e-demo-smoke-${runId}`;
+const CORRELATION_ID = randomUUID();
 
 test.describe.serial('US-146 · smoke de flujos críticos contra la Demo URL', () => {
   // Se salta limpiamente si no hay configuración (globalSetup ya avisó por consola).
@@ -43,13 +46,13 @@ test.describe.serial('US-146 · smoke de flujos críticos contra la Demo URL', (
     });
     page = await context.newPage();
     // eslint-disable-next-line no-console
-    console.log(`[demo-smoke] Inicio de corrida · correlationId=${CORRELATION_ID}`);
+    console.log(`[demo-smoke] Inicio de corrida · runId=${runId} · correlationId=${CORRELATION_ID}`);
   });
 
   test.afterAll(async () => {
     await context?.close();
     // eslint-disable-next-line no-console
-    console.log(`[demo-smoke] Fin de corrida · correlationId=${CORRELATION_ID}`);
+    console.log(`[demo-smoke] Fin de corrida · runId=${runId} · correlationId=${CORRELATION_ID}`);
   });
 
   // TS-01 (AC-02 · SEC-01): login con usuario sembrado usando el flujo real (cookies HTTP-only).
