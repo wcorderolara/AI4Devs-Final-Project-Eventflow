@@ -28,7 +28,10 @@ const vendorCardContract = z
     slug: z.string(),
     businessName: z.string(),
     locationCode: z.string().nullable(),
+    // Aditivos: nombres legibles para la UI (nunca datos de contacto).
+    locationDisplay: z.string().nullable(),
     categories: z.array(z.string()),
+    categoryLabels: z.array(z.object({ code: z.string(), name: z.string() }).strict()),
     ratingAvg: z.number().nullable(),
     reviewsCount: z.number().int().nonnegative(),
     priceRange: z

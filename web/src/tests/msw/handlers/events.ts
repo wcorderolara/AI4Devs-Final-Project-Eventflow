@@ -32,8 +32,8 @@ export const eventTypesFixture = [
 ] as const;
 
 export const locationsFixture = [
-  { id: 'a0000000-0000-4000-8000-000000000001', country: 'GT', region: 'Guatemala', city: 'Ciudad de Guatemala' },
-  { id: 'a0000000-0000-4000-8000-000000000002', country: 'MX', region: 'CDMX', city: 'Ciudad de México' },
+  { id: 'a0000000-0000-4000-8000-000000000001', code: 'GT-GUA', country: 'GT', region: 'Guatemala', city: 'Ciudad de Guatemala' },
+  { id: 'a0000000-0000-4000-8000-000000000002', code: 'MX-CDMX', country: 'MX', region: 'CDMX', city: 'Ciudad de México' },
 ] as const;
 
 export const eventsHandlers = [

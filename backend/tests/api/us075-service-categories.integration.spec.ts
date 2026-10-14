@@ -56,13 +56,13 @@ describe.skipIf(!dbUp)('US-075 QA — service-categories admin CRUD + public', (
 
   // ── AUTH-TS-01..04 ───────────────────────────────────────────────────────
 
-  it('AUTH sin sesión ⇒ 401 en admin y en público', async () => {
+  it('AUTH sin sesión ⇒ 401 en admin; el catálogo público responde 200 (decisión PO 2026-10-14)', async () => {
     const anon = request.agent(app);
     const a = await anon.get('/api/v1/admin/service-categories');
     expect(a.status).toBe(401);
     expect(a.body?.error?.code).toBe('AUTHENTICATION_REQUIRED');
     const p = await anon.get('/api/v1/service-categories');
-    expect(p.status).toBe(401);
+    expect(p.status).toBe(200);
   });
 
   it('AUTH organizer/vendor en admin endpoint ⇒ 403 FORBIDDEN', async () => {

@@ -70,8 +70,10 @@ export class PrismaVendorSearchRepository implements VendorSearchRepository {
 
     if (input.filters.categoryId !== null) {
       params.push(input.filters.categoryId);
+      // Una categoría padre incluye a sus subcategorías: filtrar por "Música" también encuentra
+      // a los proveedores de Marimba o Mariachi (el filtro de la UI agrupa hijas bajo su padre).
       where.push(
-        `EXISTS (SELECT 1 FROM "vendor_profile_categories" vpc WHERE vpc."vendor_profile_id" = vp."id" AND vpc."service_category_id" = $${params.length}::uuid)`,
+        `EXISTS (SELECT 1 FROM "vendor_profile_categories" vpc WHERE vpc."vendor_profile_id" = vp."id" AND vpc."service_category_id" IN (SELECT sc."id" FROM "service_categories" sc WHERE sc."id" = $${params.length}::uuid OR sc."parent_id" = $${params.length}::uuid))`,
       );
     }
 

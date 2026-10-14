@@ -446,7 +446,9 @@
       "currency": "Moeda",
       "currencyAny": "Qualquer",
       "submit": "Aplicar",
-      "reset": "Limpar"
+      "reset": "Limpar",
+      "categoryAny": "Todas",
+      "locationAny": "Todas"
     },
     "card": {
       "rating": "Avaliação",

@@ -117,7 +117,7 @@ describe('US-009 catálogos', () => {
   it('ListActiveLocationsUseCase devuelve el catálogo del repo', async () => {
     const repo: LocationRepository = {
       existsActive: () => Promise.resolve(true),
-      listActive: () => Promise.resolve([{ id: 'loc-1', country: 'GT', region: null, city: 'Guatemala' }]),
+      listActive: () => Promise.resolve([{ id: 'loc-1', code: 'GT-GUA', country: 'GT', region: null, city: 'Guatemala' }]),
     };
     const uc = new ListActiveLocationsUseCase(repo);
     await expect(uc.execute()).resolves.toHaveLength(1);

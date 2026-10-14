@@ -62,6 +62,8 @@ export interface EventTypeOptionView {
 
 export interface LocationOptionView {
   id: string;
+  /** Aditivo: código estable (`GT-SAC`) que usa el filtro `locationCode` del directorio. */
+  code: string | null;
   country: string;
   region: string | null;
   city: string | null;

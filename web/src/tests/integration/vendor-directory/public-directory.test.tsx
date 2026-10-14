@@ -6,6 +6,7 @@
 // enlaces, y que un filtro inválido se distinga de una caída del backend.
 import { render, screen, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NextIntlClientProvider } from 'next-intl';
 import { describe, expect, it, vi } from 'vitest';
 import { PublicVendorDirectory, publicVendorDirectoryApi } from '@/features/vendor-public';
@@ -62,9 +63,11 @@ function respondWith(items: unknown[], page: Record<string, unknown> = {}) {
 async function renderDirectory(searchParams = {}) {
   const ui = await PublicVendorDirectory({ searchParams });
   return render(
-    <NextIntlClientProvider locale="es-LATAM" messages={{ vendor: esLatamVendor }} timeZone="UTC">
-      {ui}
-    </NextIntlClientProvider>,
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <NextIntlClientProvider locale="es-LATAM" messages={{ vendor: esLatamVendor }} timeZone="UTC">
+        {ui}
+      </NextIntlClientProvider>
+    </QueryClientProvider>,
   );
 }
 

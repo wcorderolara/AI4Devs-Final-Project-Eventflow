@@ -51,7 +51,7 @@ function StarRow({ value }: { value: number }) {
                 : 'text-neutral-300'
           }
         >
-          {cell === 'full' ? '★' : cell === 'half' ? '⯪' : '☆'}
+          {cell === 'empty' ? '☆' : '★'}
         </span>
       ))}
     </span>

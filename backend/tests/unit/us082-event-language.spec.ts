@@ -115,7 +115,7 @@ class FakeLocationRepo implements LocationRepository {
   existsActive(_id: string): Promise<boolean> {
     return Promise.resolve(true);
   }
-  listActive(): Promise<{ id: string; country: string; region: string | null; city: string | null }[]> {
+  listActive(): Promise<{ id: string; code: string | null; country: string; region: string | null; city: string | null }[]> {
     return Promise.resolve([]);
   }
 }

@@ -117,8 +117,8 @@ class FakeLocationRepo implements LocationRepository {
   existsActive(id: string): Promise<boolean> {
     return Promise.resolve(this.existing.has(id));
   }
-  listActive(): Promise<{ id: string; country: string; region: string | null; city: string | null }[]> {
-    return Promise.resolve([...this.existing].map((id) => ({ id, country: 'GT', region: null, city: null })));
+  listActive(): Promise<{ id: string; code: string | null; country: string; region: string | null; city: string | null }[]> {
+    return Promise.resolve([...this.existing].map((id) => ({ id, code: null, country: 'GT', region: null, city: null })));
   }
 }
 class FakeAudit implements EventAuditLogger {
