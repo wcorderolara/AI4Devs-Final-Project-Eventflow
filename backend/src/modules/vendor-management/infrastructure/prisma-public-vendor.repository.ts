@@ -66,13 +66,17 @@ export class PrismaPublicVendorRepository implements PublicVendorRepository {
         status: 'active',
         deletedAt: null,
       },
-      select: { id: true, workLabel: true, createdAt: true },
+      select: { id: true, workLabel: true, createdAt: true, attribution: true },
       orderBy: [{ workLabel: 'asc' }, { createdAt: 'asc' }, { fileName: 'asc' }],
     });
 
     const portfolio: PublicVendorPortfolioAttachmentRecord[] = attachments
       .filter((a) => a.workLabel !== null)
-      .map((a) => ({ workLabel: a.workLabel as string, url: publicPortfolioImagePath(a.id) }));
+      .map((a) => ({
+        workLabel: a.workLabel as string,
+        url: publicPortfolioImagePath(a.id),
+        attribution: a.attribution,
+      }));
 
     return {
       // US-066 (PB-P1-039): expone `id` para consumo del listado paginado desde el cliente.

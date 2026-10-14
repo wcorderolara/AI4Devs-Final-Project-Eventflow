@@ -28,6 +28,8 @@ export interface PublicVendorPortfolioAttachmentRecord {
   workLabel: string;
   /** URL pública servible (`/api/v1/public/portfolio/:id`), nunca la clave de almacenamiento. */
   url: string;
+  /** Crédito declarado de la imagen (`attachments.attribution`); `null` si es propia. */
+  attribution: unknown;
 }
 
 export interface PublicVendorReviewRecord {

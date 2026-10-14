@@ -1,6 +1,7 @@
 import { Images } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { PublicVendorPortfolioGroupDTO } from '../api/vendorPublicApi.types';
+import { PortfolioWorkGallery } from './PortfolioWorkGallery';
 
 interface Props {
   groups: PublicVendorPortfolioGroupDTO[];
@@ -39,36 +40,30 @@ export function PortfolioGallery({ groups, vendorName }: Props) {
 
       {groups.length === 0 ? <p className="font-body text-body-md text-muted">{t('empty')}</p> : null}
 
-      {groups.length > 0 && hasServableImages
-        ? groups.map((group) => {
-            const images = group.thumbnails.filter(isServableUrl);
+      {groups.length > 0 && hasServableImages ? (
+        <>
+          {groups.map((group) => {
+            const label = humanizeWorkLabel(group.workLabel);
+            const images = (group.images ?? group.thumbnails.map((url) => ({ url, credit: null }))).filter(
+              (image) => isServableUrl(image.url),
+            );
             if (images.length === 0) return null;
             return (
               <div key={group.workLabel} className="flex flex-col gap-3">
-                <h3 className="font-heading text-body-lg font-semibold text-primary">
-                  {humanizeWorkLabel(group.workLabel)}
-                </h3>
-                {/* Composición editorial: la primera foto destaca (2×2) y el resto la acompaña. */}
-                <ul className="grid auto-rows-[9rem] grid-cols-2 gap-2 sm:auto-rows-[11rem] sm:grid-cols-4">
-                  {images.map((url, idx) => (
-                    <li
-                      key={`${group.workLabel}-${idx}`}
-                      className={`overflow-hidden bg-surface-subtle ${idx === 0 ? 'col-span-2 row-span-2' : ''}`}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={url}
-                        alt={t('imageAlt', { vendor: vendorName, work: humanizeWorkLabel(group.workLabel), index: idx + 1 })}
-                        loading={idx === 0 ? 'eager' : 'lazy'}
-                        className="h-full w-full object-cover"
-                      />
-                    </li>
-                  ))}
-                </ul>
+                <h3 className="font-heading text-body-lg font-semibold text-primary">{label}</h3>
+                <PortfolioWorkGallery
+                  workLabel={label}
+                  images={images}
+                  alts={images.map((_, idx) => t('imageAlt', { vendor: vendorName, work: label, index: idx + 1 }))}
+                />
               </div>
             );
-          })
-        : null}
+          })}
+          {groups.some((g) => g.images?.some((image) => image.credit)) ? (
+            <p className="font-ui text-caption text-muted">{t('creditNote')}</p>
+          ) : null}
+        </>
+      ) : null}
 
       {groups.length > 0 && !hasServableImages ? (
         <>

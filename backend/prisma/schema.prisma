@@ -484,6 +484,9 @@ model Attachment {
   workLabel      String?          @map("work_label")
   // US-102: soporte para chk_attachments_size_bytes_nonneg (Doc 18 §19.1; >= 0). NULL permitido.
   sizeBytes      Int?             @map("size_bytes")
+  /// Crédito de la imagen cuando no es propia del proveedor (p. ej. fotos de licencia libre del
+  /// seed demo): `{ title, author, license, licenseUrl, source }`. `null` en subidas propias.
+  attribution    Json?
   // US-043 (PB-P1-026): actor que subió el binario. Referencia lógica a `users(id)`; sin FK
   // formal para preservar el patrón polimórfico (Doc 18 §19) y no bloquear soft-deletes.
   // NULL permitido para retro-compat con seeds anteriores.

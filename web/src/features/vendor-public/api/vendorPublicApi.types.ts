@@ -20,9 +20,25 @@ export interface PublicVendorPackageDTO {
   serviceCategoryCode: string;
 }
 
+/** Crédito de una foto de licencia libre (autor, licencia y fuente). */
+export interface PublicVendorImageCreditDTO {
+  title: string | null;
+  author: string | null;
+  license: string;
+  licenseUrl: string | null;
+  source: string | null;
+}
+
+export interface PublicVendorPortfolioImageDTO {
+  url: string;
+  credit: PublicVendorImageCreditDTO | null;
+}
+
 export interface PublicVendorPortfolioGroupDTO {
   workLabel: string;
   thumbnails: string[];
+  /** Aditivo (backend): cada imagen con su crédito. Opcional mientras convive con backends previos. */
+  images?: PublicVendorPortfolioImageDTO[];
 }
 
 export interface PublicVendorReviewDTO {
