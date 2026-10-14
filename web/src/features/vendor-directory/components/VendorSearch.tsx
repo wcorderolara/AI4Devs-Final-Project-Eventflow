@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useVendorDirectorySearch } from '../hooks/vendorDirectoryQueries';
 import type { VendorCurrencyCode } from '../api/vendorDirectoryApi.types';
+import { Button } from '@/shared/design-system';
 import { VendorCard } from './VendorCard';
 import { VendorFilters, type VendorFiltersValue } from './VendorFilters';
 
@@ -68,10 +69,12 @@ export function VendorSearch(): JSX.Element {
   const showEmpty = !search.isLoading && !search.isError && items.length === 0;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-content flex-col gap-6">
       <header>
-        <h1 className="text-xl font-semibold text-neutral-900">{t('title')}</h1>
-        <p className="text-sm text-neutral-500">{t('subtitle')}</p>
+        <h1 className="font-display text-[2.25rem] font-medium leading-tight text-primary sm:text-[2.75rem]">
+          {t('title')}
+        </h1>
+        <p className="mt-2 max-w-[60ch] font-body text-body-md text-secondary">{t('subtitle')}</p>
       </header>
 
       <VendorFilters
@@ -82,7 +85,7 @@ export function VendorSearch(): JSX.Element {
       />
 
       {search.isLoading ? (
-        <div role="status" aria-live="polite" className="p-6 text-neutral-500">
+        <div role="status" aria-live="polite" className="py-6 font-ui text-body-sm text-muted">
           {t('loading')}
         </div>
       ) : null}
@@ -90,48 +93,46 @@ export function VendorSearch(): JSX.Element {
       {search.isError ? (
         <div
           role="alert"
-          className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+          className="border border-feedback-error bg-feedback-error p-4 font-ui text-body-sm text-feedback-error"
         >
           {t('error')}
         </div>
       ) : null}
 
       {showEmpty ? (
-        <div className="flex flex-col items-start gap-2 rounded border border-neutral-200 bg-white p-6">
-          <p>{t('empty.body')}</p>
-          <button
-            type="button"
-            onClick={handleReset}
-            className="rounded bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-800"
-          >
+        <div className="flex flex-col items-start gap-4 border border-dashed border-default bg-surface px-6 py-10">
+          <p className="font-display text-[1.5rem] font-medium text-primary">{t('empty.body')}</p>
+          <Button type="button" variant="secondary" onClick={handleReset}>
             {t('empty.cta')}
-          </button>
+          </Button>
         </div>
       ) : null}
 
       {items.length > 0 ? (
         <ul
           aria-label={t('grid.ariaLabel')}
-          className="grid list-none gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          className="grid list-none gap-5 sm:grid-cols-2 xl:grid-cols-3"
         >
           {items.map((vendor) => (
             <li key={vendor.id}>
-              <VendorCard vendor={vendor} />
+              {/* `h2`: el `h1` es el título del directorio. Enlaza al perfil público. */}
+              <VendorCard vendor={vendor} linkToProfile headingLevel={2} />
             </li>
           ))}
         </ul>
       ) : null}
 
       {search.hasNextPage ? (
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          className="self-start"
           onClick={() => void search.fetchNextPage()}
           disabled={search.isFetchingNextPage}
           aria-busy={search.isFetchingNextPage}
-          className="self-start rounded border border-neutral-300 px-3 py-1.5 text-sm font-medium hover:bg-neutral-50 disabled:opacity-60"
         >
           {search.isFetchingNextPage ? t('loadMore.loading') : t('loadMore.label')}
-        </button>
+        </Button>
       ) : null}
     </div>
   );

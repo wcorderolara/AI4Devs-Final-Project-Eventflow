@@ -169,7 +169,9 @@ describe('toVendorCardResponse', () => {
     slug: 'quetzal',
     businessName: 'Banquetes El Quetzal',
     locationCode: 'GT-GUA',
+    locationDisplay: 'Ciudad de Guatemala, Guatemala, Guatemala',
     categoryCodes: ['catering'],
+    categoryLabels: [{ code: 'catering', label: 'Banquetes y catering' }],
     ratingAvg: 4.6,
     reviewsCount: 12,
     priceMin: '150.00',
@@ -183,6 +185,14 @@ describe('toVendorCardResponse', () => {
     expect(card.priceRange).toEqual({ min: '150.00', max: '450.00', currency: 'GTQ' });
     expect(card.thumbnailUrl).toBeNull();
     expect(card.ratingAvg).toBe(4.6);
+  });
+
+  it('expone la ubicación legible y el nombre de cada categoría (aditivo)', () => {
+    const card = toVendorCardResponse(baseRow);
+    expect(card.locationCode).toBe('GT-GUA');
+    expect(card.locationDisplay).toBe('Ciudad de Guatemala, Guatemala, Guatemala');
+    expect(card.categories).toEqual(['catering']);
+    expect(card.categoryLabels).toEqual([{ code: 'catering', name: 'Banquetes y catering' }]);
   });
 
   it('deja priceRange en null cuando no hay currency', () => {
@@ -215,7 +225,9 @@ function makeRow(overrides: Partial<VendorSearchRow>, i = 0): VendorSearchRow {
     slug: `vendor-${i}`,
     businessName: `Vendor ${i}`,
     locationCode: 'GT-GUA',
+    locationDisplay: 'Ciudad de Guatemala, Guatemala, Guatemala',
     categoryCodes: ['catering'],
+    categoryLabels: [{ code: 'catering', label: 'Banquetes y catering' }],
     ratingAvg: null,
     reviewsCount: 0,
     priceMin: null,

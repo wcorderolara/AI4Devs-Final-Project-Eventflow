@@ -16,7 +16,11 @@ export interface VendorCardResponse {
   slug: string | null;
   businessName: string;
   locationCode: string | null;
+  /** Aditivo: ubicación legible para la UI ("Antigua Guatemala, Sacatepéquez, Guatemala"). */
+  locationDisplay: string | null;
   categories: string[];
+  /** Aditivo: categorías con su nombre de catálogo, en el mismo orden que `categories`. */
+  categoryLabels: Array<{ code: string; name: string }>;
   ratingAvg: number | null;
   reviewsCount: number;
   priceRange: VendorPriceRange | null;
@@ -44,7 +48,9 @@ export function toVendorCardResponse(row: VendorSearchRow): VendorCardResponse {
     slug: row.slug,
     businessName: row.businessName,
     locationCode: row.locationCode,
+    locationDisplay: row.locationDisplay,
     categories: row.categoryCodes,
+    categoryLabels: row.categoryLabels.map((c) => ({ code: c.code, name: c.label })),
     ratingAvg: row.ratingAvg,
     reviewsCount: row.reviewsCount,
     priceRange,

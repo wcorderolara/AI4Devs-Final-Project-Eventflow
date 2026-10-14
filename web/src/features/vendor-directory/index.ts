@@ -2,6 +2,7 @@
 export { VendorSearch } from './components/VendorSearch';
 export { VendorFilters } from './components/VendorFilters';
 export { VendorCard } from './components/VendorCard';
+export { CategoryStamp, categoryVisual } from './components/categoryVisuals';
 export { vendorsApi } from './api/vendorDirectoryApi';
 export type { VendorFiltersValue } from './components/VendorFilters';
 export {

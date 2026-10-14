@@ -29,7 +29,11 @@ export interface VendorSearchRow {
   slug: string | null;
   businessName: string;
   locationCode: string | null;
+  /** "Ciudad, Región, País" legible; `null` sin ubicación. */
+  locationDisplay: string | null;
   categoryCodes: string[];
+  /** Mismo orden que `categoryCodes`, con la etiqueta del catálogo. */
+  categoryLabels: Array<{ code: string; label: string }>;
   ratingAvg: number | null;
   reviewsCount: number;
   priceMin: string | null;

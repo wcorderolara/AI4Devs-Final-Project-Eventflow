@@ -25,11 +25,23 @@ interface RawVendorRow {
 interface RawLocationRow {
   id: string;
   code: string | null;
+  city: string | null;
+  region: string | null;
+  country: string | null;
+}
+
+/** "Ciudad, Región, País" con las partes presentes, igual que el perfil público (US-046). */
+function locationDisplay(loc: RawLocationRow): string | null {
+  const bits = [loc.city, loc.region, loc.country].filter(
+    (b): b is string => typeof b === 'string' && b.trim().length > 0,
+  );
+  return bits.length === 0 ? null : bits.join(', ');
 }
 
 interface RawCategoryRow {
   vendor_profile_id: string;
   code: string;
+  label: string;
 }
 
 interface RawPriceAggRow {
@@ -146,11 +158,11 @@ export class PrismaVendorSearchRepository implements VendorSearchRepository {
       locationIds.length === 0
         ? Promise.resolve([] as RawLocationRow[])
         : this.prisma.$queryRawUnsafe<RawLocationRow[]>(
-            `SELECT "id", "code" FROM "locations" WHERE "id" = ANY($1::uuid[])`,
+            `SELECT "id", "code", "city", "region", "country" FROM "locations" WHERE "id" = ANY($1::uuid[])`,
             locationIds,
           ),
       this.prisma.$queryRawUnsafe<RawCategoryRow[]>(
-        `SELECT vpc."vendor_profile_id" AS vendor_profile_id, sc."code" AS code
+        `SELECT vpc."vendor_profile_id" AS vendor_profile_id, sc."code" AS code, sc."label" AS label
          FROM "vendor_profile_categories" vpc
          JOIN "service_categories" sc ON sc."id" = vpc."service_category_id"
          WHERE vpc."vendor_profile_id" = ANY($1::uuid[])
@@ -174,20 +186,26 @@ export class PrismaVendorSearchRepository implements VendorSearchRepository {
           ),
     ]);
 
-    const locationCodeById = new Map<string, string | null>(
-      locations.map((l) => [l.id, l.code ?? null]),
-    );
+    const locationById = new Map(locations.map((l) => [l.id, l] as const));
     const categoriesById = groupBy(categories, (r) => r.vendor_profile_id, (r) => r.code);
+    const categoryLabelsById = groupBy(
+      categories,
+      (r) => r.vendor_profile_id,
+      (r) => ({ code: r.code, label: r.label }),
+    );
     const priceById = new Map(priceAggs.map((p) => [p.vendor_profile_id, p] as const));
 
     return rows.map((row) => {
       const priceRow = priceById.get(row.id);
+      const location = row.location_id ? locationById.get(row.location_id) : undefined;
       return {
         id: row.id,
         slug: row.slug,
         businessName: row.business_name,
-        locationCode: row.location_id ? locationCodeById.get(row.location_id) ?? null : null,
+        locationCode: location?.code ?? null,
+        locationDisplay: location ? locationDisplay(location) : null,
         categoryCodes: categoriesById.get(row.id) ?? [],
+        categoryLabels: categoryLabelsById.get(row.id) ?? [],
         ratingAvg: row.rating_avg === null ? null : Number(row.rating_avg),
         reviewsCount: Number(row.reviews_count),
         priceMin: priceRow?.price_min ?? null,

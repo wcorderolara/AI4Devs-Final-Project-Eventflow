@@ -62,9 +62,9 @@ export function VendorReviewsSection({
   const headingId = 'vendor-reviews-heading';
 
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-4">
+    <section aria-labelledby={headingId} className="flex flex-col gap-4 border-t border-subtle pt-10">
       <div className="flex flex-col gap-2">
-        <h2 id={headingId} className="text-xl font-semibold text-neutral-900">
+        <h2 id={headingId} className="font-display text-[2rem] font-medium leading-tight text-primary">
           {t('title')}
         </h2>
         <AverageRating
@@ -101,7 +101,7 @@ export function VendorReviewsSection({
       )}
 
       {items.length > 0 && (
-        <ul aria-label={t('listAria')} className="flex flex-col gap-3">
+        <ul aria-label={t('listAria')} className="flex flex-col border-t border-subtle">
           {items.map((review) => (
             <li key={review.id}>
               <ReviewListItem review={review} showStatus={showStatusBadges} />
@@ -113,7 +113,7 @@ export function VendorReviewsSection({
       {query.hasNextPage && (
         <button
           type="button"
-          className="self-center rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-800 shadow-sm hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="focus-ring self-start rounded-button border border-action-secondary bg-action-secondary px-4 py-2 font-ui text-body-sm font-semibold text-primary hover:bg-action-secondary-hover disabled:cursor-not-allowed disabled:opacity-60"
           onClick={() => void query.fetchNextPage()}
           disabled={query.isFetchingNextPage}
           aria-busy={query.isFetchingNextPage}

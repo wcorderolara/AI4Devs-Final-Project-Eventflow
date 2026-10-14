@@ -66,10 +66,12 @@ export async function PublicVendorDirectory({
   const hasNext = result.status === 'ok' && result.data.page.hasNext && nextCursor !== null;
 
   return (
-    <div className="mx-auto w-full max-w-marketing px-page-mobile py-10 sm:px-page-tablet">
-      <header className="mb-6">
-        <h1 className="font-heading text-h1 font-semibold text-primary">{t('title')}</h1>
-        <p className="mt-2 font-body text-body-md text-secondary">{t('subtitle')}</p>
+    <div className="mx-auto w-full max-w-marketing px-page-mobile py-12 sm:px-page-tablet sm:py-16">
+      <header className="mb-8">
+        <h1 className="font-display text-[2.75rem] font-medium leading-[1.05] text-primary sm:text-[3.5rem]">
+          {t('title')}
+        </h1>
+        <p className="mt-3 max-w-[60ch] font-body text-body-lg text-secondary">{t('subtitle')}</p>
       </header>
 
       <PublicVendorDirectoryFilters value={filters} />
@@ -83,8 +85,8 @@ export async function PublicVendorDirectory({
         {result.status === 'error' ? <Alert variant="error">{t('error')}</Alert> : null}
 
         {result.status === 'ok' && items.length === 0 ? (
-          <div className="rounded-card border border-subtle bg-surface-subtle p-6">
-            <p className="font-body text-body-md text-secondary">{t('empty.body')}</p>
+          <div className="border border-dashed border-default bg-surface px-6 py-10">
+            <p className="font-display text-[1.5rem] font-medium text-primary">{t('empty.body')}</p>
             <Link
               href="/vendors"
               className="focus-ring mt-3 inline-flex font-ui text-body-sm font-semibold text-link hover:text-link-hover"
@@ -97,7 +99,7 @@ export async function PublicVendorDirectory({
         {items.length > 0 ? (
           <ul
             aria-label={t('grid.ariaLabel')}
-            className="grid list-none gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            className="grid list-none gap-5 sm:grid-cols-2 lg:grid-cols-3"
           >
             {items.map((vendor) => (
               <li key={vendor.id}>

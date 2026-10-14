@@ -5,6 +5,7 @@
 // (URL state) para deep linking (AC-01/D3).
 import { useTranslations } from 'next-intl';
 import { useId, type FormEvent } from 'react';
+import { Button } from '@/shared/design-system';
 import type { VendorCurrencyCode } from '../api/vendorDirectoryApi.types';
 import { VENDOR_CURRENCY_CODES } from '../api/vendorDirectoryApi.types';
 
@@ -47,11 +48,11 @@ export function VendorFilters(props: VendorFiltersProps): JSX.Element {
     <form
       onSubmit={handleSubmit}
       aria-label={t('formLabel')}
-      className="flex flex-col gap-3 rounded-md border border-neutral-200 bg-white p-4"
+      className="flex flex-col gap-4 border-y border-subtle py-5 lg:flex-row lg:items-end"
     >
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid flex-1 grid-cols-2 gap-x-3 gap-y-4 lg:grid-cols-[1.4fr_1.2fr_1fr_1fr_1fr]">
         <div className="flex flex-col">
-          <label htmlFor={ids.category} className="text-sm font-medium text-neutral-700">
+          <label htmlFor={ids.category} className="font-ui text-body-sm font-medium text-secondary">
             {t('category')}
           </label>
           <input
@@ -62,11 +63,11 @@ export function VendorFilters(props: VendorFiltersProps): JSX.Element {
             onChange={(e) => update('categoryCode', e.target.value)}
             placeholder={t('categoryPlaceholder')}
             autoComplete="off"
-            className="mt-1 rounded border border-neutral-300 px-2 py-1"
+            className="focus-ring mt-1.5 h-10 rounded-input border border-default bg-surface px-3 font-ui text-body-sm text-primary placeholder:text-muted"
           />
         </div>
         <div className="flex flex-col">
-          <label htmlFor={ids.location} className="text-sm font-medium text-neutral-700">
+          <label htmlFor={ids.location} className="font-ui text-body-sm font-medium text-secondary">
             {t('location')}
           </label>
           <input
@@ -77,11 +78,11 @@ export function VendorFilters(props: VendorFiltersProps): JSX.Element {
             onChange={(e) => update('locationCode', e.target.value)}
             placeholder={t('locationPlaceholder')}
             autoComplete="off"
-            className="mt-1 rounded border border-neutral-300 px-2 py-1"
+            className="focus-ring mt-1.5 h-10 rounded-input border border-default bg-surface px-3 font-ui text-body-sm text-primary placeholder:text-muted"
           />
         </div>
         <div className="flex flex-col">
-          <label htmlFor={ids.priceMin} className="text-sm font-medium text-neutral-700">
+          <label htmlFor={ids.priceMin} className="font-ui text-body-sm font-medium text-secondary">
             {t('priceMin')}
           </label>
           <input
@@ -93,11 +94,11 @@ export function VendorFilters(props: VendorFiltersProps): JSX.Element {
             inputMode="decimal"
             value={props.value.priceMin}
             onChange={(e) => update('priceMin', e.target.value)}
-            className="mt-1 rounded border border-neutral-300 px-2 py-1"
+            className="focus-ring mt-1.5 h-10 rounded-input border border-default bg-surface px-3 font-ui text-body-sm text-primary placeholder:text-muted"
           />
         </div>
         <div className="flex flex-col">
-          <label htmlFor={ids.priceMax} className="text-sm font-medium text-neutral-700">
+          <label htmlFor={ids.priceMax} className="font-ui text-body-sm font-medium text-secondary">
             {t('priceMax')}
           </label>
           <input
@@ -109,11 +110,11 @@ export function VendorFilters(props: VendorFiltersProps): JSX.Element {
             inputMode="decimal"
             value={props.value.priceMax}
             onChange={(e) => update('priceMax', e.target.value)}
-            className="mt-1 rounded border border-neutral-300 px-2 py-1"
+            className="focus-ring mt-1.5 h-10 rounded-input border border-default bg-surface px-3 font-ui text-body-sm text-primary placeholder:text-muted"
           />
         </div>
-        <div className="flex flex-col">
-          <label htmlFor={ids.currency} className="text-sm font-medium text-neutral-700">
+        <div className="col-span-2 flex flex-col lg:col-span-1">
+          <label htmlFor={ids.currency} className="font-ui text-body-sm font-medium text-secondary">
             {t('currency')}
           </label>
           <select
@@ -121,7 +122,7 @@ export function VendorFilters(props: VendorFiltersProps): JSX.Element {
             name="currency"
             value={props.value.currency}
             onChange={(e) => update('currency', e.target.value as VendorFiltersValue['currency'])}
-            className="mt-1 rounded border border-neutral-300 px-2 py-1"
+            className="focus-ring mt-1.5 h-10 rounded-input border border-default bg-surface px-3 font-ui text-body-sm text-primary placeholder:text-muted"
           >
             <option value="">{t('currencyAny')}</option>
             {VENDOR_CURRENCY_CODES.map((code) => (
@@ -134,19 +135,12 @@ export function VendorFilters(props: VendorFiltersProps): JSX.Element {
       </div>
 
       <div className="flex gap-2">
-        <button
-          type="submit"
-          className="rounded bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-800"
-        >
+        <Button type="submit" variant="primary">
           {props.submitLabel ?? t('submit')}
-        </button>
-        <button
-          type="button"
-          onClick={props.onReset}
-          className="rounded border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50"
-        >
+        </Button>
+        <Button type="button" variant="ghost" onClick={props.onReset}>
           {t('reset')}
-        </button>
+        </Button>
       </div>
     </form>
   );

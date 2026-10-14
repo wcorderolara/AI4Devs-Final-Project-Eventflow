@@ -237,11 +237,17 @@ describe('PB-P2-027 · consumidores migrados', () => {
     ...listFiles('src/shared', ['.tsx']),
   ];
 
-  it('no quedan clases `brand-*` inexistentes en código de producción', () => {
-    const offenders = productionSources.filter((f) =>
-      /\b(bg|text|border|ring)-brand-/.test(read(f)),
+  it('las clases `brand-*` de producción usan tonos que existen en la escala de marca', () => {
+    // `brand` es la escala bugambilia expuesta en Tailwind (UI-DEC-002 rev. 2). Un tono que no
+    // existe (`brand-450`) no genera CSS y deja el elemento sin color: eso es lo que se vigila.
+    const brand = (tailwindConfig.theme?.extend?.colors as Record<string, Record<string, string>>).brand;
+    expect(brand).toBeDefined();
+    const offenders = productionSources.flatMap((f) =>
+      Array.from(read(f).matchAll(/\b(?:bg|text|border|ring)-brand-(\d{2,3})\b/g))
+        .filter((m) => !(m[1]! in brand!))
+        .map((m) => `${f}: ${m[0]}`),
     );
-    expect(offenders, `clases brand-* en ${offenders.join(', ')}`).toEqual([]);
+    expect(offenders).toEqual([]);
   });
 
   it('no queda ningún anillo de foco `purple-400` (falla WCAG 1.4.11 · 2.64:1)', () => {

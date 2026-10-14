@@ -24,7 +24,7 @@ const MAX_STARS = 5;
 function StarsInline({ rating }: { rating: number }) {
   const filled = Math.max(0, Math.min(MAX_STARS, Math.round(rating)));
   return (
-    <span aria-hidden="true" className="text-amber-500">
+    <span aria-hidden="true" className="text-cempasuchil-500">
       {'★'.repeat(filled)}
       <span className="text-neutral-300">{'☆'.repeat(MAX_STARS - filled)}</span>
     </span>
@@ -45,7 +45,7 @@ export function ReviewListItem({ review, showStatus = false }: ReviewListItemPro
   return (
     <article
       aria-labelledby={titleId}
-      className="flex flex-col gap-2 rounded-md border border-neutral-200 bg-white p-4 shadow-sm"
+      className="flex flex-col gap-2 border-b border-subtle py-5"
     >
       <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <span

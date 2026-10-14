@@ -454,7 +454,9 @@
       "categories": "Categories",
       "noCategories": "No categories",
       "priceRange": "Price range",
-      "ratingAria": "{avg} stars, {count} reviews"
+      "ratingAria": "{avg} out of 5 stars, {count} reviews",
+      "reviews": "{count, plural, one {# review} other {# reviews}}",
+      "priceFrom": "From <price></price>"
     },
     "invalidFilters": "One of the filters is not valid. Review them or clear them to start over.",
     "metadata": {

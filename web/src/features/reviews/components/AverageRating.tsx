@@ -45,9 +45,9 @@ function StarRow({ value }: { value: number }) {
           key={index}
           className={
             cell === 'full'
-              ? 'text-amber-500'
+              ? 'text-cempasuchil-500'
               : cell === 'half'
-                ? 'text-amber-400'
+                ? 'text-cempasuchil-400'
                 : 'text-neutral-300'
           }
         >

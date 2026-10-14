@@ -10,7 +10,9 @@
   "portfolio": {
     "title": "Portfólio",
     "empty": "Este fornecedor ainda não publicou trabalhos.",
-    "imageAlt": "{vendor} — {work}, imagem {index}"
+    "imageAlt": "{vendor} — {work}, imagem {index}",
+    "photos": "{count, plural, one {# foto} other {# fotos}}",
+    "imagesUnavailable": "As fotos destes trabalhos ainda não podem ser vistas no perfil público."
   },
   "packages": {
     "title": "Pacotes",
@@ -25,5 +27,6 @@
     "title": "Fornecedor não encontrado",
     "body": "O fornecedor que você procura não existe ou já não está disponível.",
     "cta": "Voltar ao diretório"
-  }
+  },
+  "backToDirectory": "Diretório de fornecedores"
 }

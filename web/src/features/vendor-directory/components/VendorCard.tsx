@@ -1,95 +1,121 @@
 'use client';
 
-// Card del directorio (US-045 / FE-002, A11Y). Cada card usa `aria-labelledby` apuntando al
-// nombre comercial; el rating se anuncia con `<abbr>`/aria-label para lectores de pantalla.
+import { MapPin, Star } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useId } from 'react';
+import { Money } from '@/shared/i18n';
 import type { VendorCardDTO } from '../api/vendorDirectoryApi.types';
+import { CategoryStamp } from './categoryVisuals';
 
 export interface VendorCardProps {
   vendor: VendorCardDTO;
   /**
-   * Hace la card entera clicable hacia el perfil público (`/vendors/:slug`).
-   *
-   * El `<a>` real sigue siendo sólo el título ("stretched link"): su `::after` se estira sobre
-   * toda la card para ampliar el área de clic, pero el nombre accesible del enlace se mantiene
-   * como el nombre del negocio en vez de concatenar rating y categorías.
-   * Si el vendor no tiene `slug` (perfil legacy) no se renderiza enlace: evita `/vendors/null`.
+   * Enlaza la card al perfil público (`/vendors/{slug}`). Sólo cuando el proveedor tiene slug:
+   * los perfiles legacy previos a US-040 no tienen página pública.
    */
   linkToProfile?: boolean;
-  /**
-   * Nivel del encabezado del nombre comercial. Debe encajar en la jerarquía de la página que
-   * monta la rejilla: si el `h1` es el título del directorio y no hay `h2` intermedio, las cards
-   * son `h2` — saltar de `h1` a `h3` rompe el recorrido por encabezados (WCAG 1.3.1).
-   * Por defecto `3`, que es lo que ya usaba el directorio autenticado.
-   */
   headingLevel?: 2 | 3 | 4;
 }
 
+/** "Ciudad, Región, País" → "Ciudad, País": la región casi siempre repite información. */
+function shortPlace(display: string | null | undefined): string | null {
+  if (!display) return null;
+  const parts = display.split(',').map((p) => p.trim()).filter(Boolean);
+  if (parts.length <= 2) return parts.join(', ');
+  return `${parts[0]}, ${parts[parts.length - 1]}`;
+}
+
+/**
+ * Tarjeta de presentación del proveedor: sello de su categoría, nombre en display, ciudad
+ * legible y las tres cosas que un organizador mira para decidir si abrir el perfil —qué ofrece,
+ * qué dicen de él y desde cuánto cobra—. Nunca muestra códigos internos (`GT-GUA`, `catering`).
+ */
 export function VendorCard({
   vendor,
   linkToProfile = false,
   headingLevel = 3,
-}: VendorCardProps): JSX.Element {
+}: VendorCardProps): React.JSX.Element {
   const t = useTranslations('vendor.directory.card');
   const titleId = useId();
   const Heading = `h${headingLevel}` as 'h2' | 'h3' | 'h4';
   const profileHref =
     linkToProfile && vendor.slug ? `/vendors/${encodeURIComponent(vendor.slug)}` : null;
+
+  const categories =
+    vendor.categoryLabels && vendor.categoryLabels.length > 0
+      ? vendor.categoryLabels
+      : vendor.categories.map((code) => ({ code, name: code }));
+  const place = shortPlace(vendor.locationDisplay) ?? vendor.locationCode;
+  const minPrice = vendor.priceRange ? Number(vendor.priceRange.min) : Number.NaN;
+
   return (
     <article
       aria-labelledby={titleId}
-      className={`relative flex flex-col gap-2 rounded-md border border-neutral-200 bg-white p-4 shadow-sm${
-        profileHref ? ' transition-shadow hover:border-neutral-300 hover:shadow-md' : ''
+      className={`relative flex h-full flex-col border border-subtle bg-surface p-6${
+        profileHref
+          ? ' transition-[border-color,box-shadow] duration-fast ease-standard hover:border-strong hover:shadow-surface-raised motion-reduce:transition-none'
+          : ''
       }`}
     >
-      <header>
-        <Heading id={titleId} className="text-base font-semibold text-neutral-900">
-          {profileHref ? (
-            <Link
-              href={profileHref}
-              className="focus-ring rounded after:absolute after:inset-0 after:rounded-md after:content-[''] hover:underline"
-            >
-              {vendor.businessName}
-            </Link>
-          ) : (
-            vendor.businessName
-          )}
-        </Heading>
-        {vendor.locationCode !== null ? (
-          <p className="text-sm text-neutral-500">{vendor.locationCode}</p>
-        ) : null}
-      </header>
+      <CategoryStamp code={categories[0]?.code} />
 
-      <dl className="grid grid-cols-2 gap-2 text-sm">
-        <div>
-          <dt className="text-neutral-500">{t('rating')}</dt>
-          <dd>
-            {vendor.ratingAvg === null ? (
-              <span className="text-neutral-500">{t('noRating')}</span>
-            ) : (
-              <span
-                aria-label={t('ratingAria', { avg: vendor.ratingAvg, count: vendor.reviewsCount })}
-              >
-                {`${vendor.ratingAvg.toFixed(2)} ★ (${vendor.reviewsCount})`}
-              </span>
-            )}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-neutral-500">{t('categories')}</dt>
-          <dd>{vendor.categories.join(', ') || t('noCategories')}</dd>
-        </div>
-        {vendor.priceRange !== null ? (
-          <div className="col-span-2">
-            <dt className="text-neutral-500">{t('priceRange')}</dt>
-            <dd>
-              {`${vendor.priceRange.min} – ${vendor.priceRange.max} ${vendor.priceRange.currency}`}
-            </dd>
-          </div>
+      <Heading
+        id={titleId}
+        className="mt-5 font-display text-[1.5rem] font-medium leading-tight text-primary"
+      >
+        {profileHref ? (
+          <Link
+            href={profileHref}
+            className="focus-ring after:absolute after:inset-0 after:content-[''] hover:text-link"
+          >
+            {vendor.businessName}
+          </Link>
+        ) : (
+          vendor.businessName
+        )}
+      </Heading>
+
+      {place ? (
+        <p className="mt-2 flex items-center gap-1.5 font-ui text-body-sm text-secondary">
+          <MapPin aria-hidden="true" className="h-icon-sm w-icon-sm shrink-0 text-muted" />
+          {place}
+        </p>
+      ) : null}
+
+      <p className="mb-5 mt-4 font-ui text-body-sm text-primary">
+        {categories.length > 0 ? categories.map((c) => c.name).join(', ') : t('noCategories')}
+      </p>
+
+      <div className="mt-auto flex flex-wrap items-end justify-between gap-3 border-t border-subtle pt-4">
+        {vendor.ratingAvg === null ? (
+          <p className="font-ui text-body-sm text-muted">{t('noRating')}</p>
+        ) : (
+          <p className="flex items-center gap-1.5 font-ui text-body-sm text-primary">
+            <span className="sr-only">
+              {t('ratingAria', { avg: vendor.ratingAvg.toFixed(1), count: vendor.reviewsCount })}
+            </span>
+            <Star aria-hidden="true" className="h-icon-sm w-icon-sm fill-current text-cempasuchil-500" />
+            <span aria-hidden="true" className="font-semibold tabular-nums">
+              {vendor.ratingAvg.toFixed(1)}
+            </span>
+            <span aria-hidden="true" className="text-secondary">
+              {t('reviews', { count: vendor.reviewsCount })}
+            </span>
+          </p>
+        )}
+        {vendor.priceRange && Number.isFinite(minPrice) ? (
+          <p className="font-ui text-body-sm text-secondary">
+            {t.rich('priceFrom', {
+              price: () => (
+                <span className="font-semibold text-primary">
+                  <Money amount={minPrice} currency={vendor.priceRange!.currency as never} />
+                </span>
+              ),
+            })}
+          </p>
         ) : null}
-      </dl>
+      </div>
     </article>
   );
 }

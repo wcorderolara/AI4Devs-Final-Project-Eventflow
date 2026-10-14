@@ -23,7 +23,11 @@ export interface VendorCardDTO {
   slug: string | null;
   businessName: string;
   locationCode: string | null;
+  /** Aditivo (backend): "Ciudad, Región, País" legible. Opcional mientras convive con backends previos. */
+  locationDisplay?: string | null;
   categories: string[];
+  /** Aditivo (backend): categorías con su nombre de catálogo, en el orden de `categories`. */
+  categoryLabels?: Array<{ code: string; name: string }>;
   ratingAvg: number | null;
   reviewsCount: number;
   priceRange: VendorPriceRangeDTO | null;
