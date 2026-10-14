@@ -72,7 +72,7 @@ export function PortfolioWorkGallery({ workLabel, images, alts }: Props): React.
       </ul>
 
       <Dialog open={openIndex !== null} onClose={() => setOpenIndex(null)} className="relative z-modal">
-        <div className="fixed inset-0 bg-neutral-950/95" aria-hidden="true" />
+        <div className="fixed inset-0 bg-neutral-950/75" aria-hidden="true" />
         <div className="fixed inset-0 flex flex-col">
           <DialogPanel className="flex h-full flex-col text-inverse">
             <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
