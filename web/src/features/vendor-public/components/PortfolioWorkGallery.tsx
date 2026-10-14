@@ -48,7 +48,11 @@ export function PortfolioWorkGallery({ workLabel, images, alts }: Props): React.
     <>
       <ul className="grid auto-rows-[9rem] grid-cols-2 gap-2 sm:auto-rows-[11rem] sm:grid-cols-4">
         {images.map((image, idx) => (
-          <li key={image.url} className={idx === 0 ? 'col-span-2 row-span-2' : undefined}>
+          <li
+            key={image.url}
+            // Con 3 fotos, las dos pequeñas se apilan junto a la destacada y completan el bloque.
+            className={idx === 0 ? 'col-span-2 row-span-2' : total === 3 ? 'sm:col-span-2' : undefined}
+          >
             <button
               type="button"
               onClick={() => setOpenIndex(idx)}
