@@ -4,6 +4,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { MockAIProvider } from '../../src/modules/ai-assistance/infrastructure/providers/mock/mock-ai-provider.js';
 import { SeedDemoDataUseCase, relativeSeedDate } from '../../src/modules/seed-demo/application/seed-demo-data.use-case.js';
+import { seedEmail } from '../../src/modules/seed-demo/domain/seed-key.js';
 import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
 const prisma = getTestPrisma();
@@ -26,7 +27,9 @@ describe.skipIf(!dbUp)('US-087 — Mix de estados de evento en el seed', () => {
   }, 60_000);
 
   it('AC-01: distribución mínima por estado (draft≥2, active≥4, completed≥2, cancelled≥1) y total 10–15', async () => {
-    const seed = { isSeed: true };
+    // Matriz de estados de los organizadores demo; el historial de reseñas (otros organizadores,
+    // eventos ya realizados) no cuenta para el mix.
+    const seed = { isSeed: true, user: { email: { in: Array.from({ length: 6 }, (_, i) => seedEmail('organizer', i)) } } };
     const [draft, active, completed, cancelled, total] = await Promise.all([
       prisma.event.count({ where: { ...seed, status: 'draft' } }),
       prisma.event.count({ where: { ...seed, status: 'active' } }),
