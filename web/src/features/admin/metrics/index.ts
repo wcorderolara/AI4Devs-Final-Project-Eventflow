@@ -2,7 +2,6 @@
 export { adminMetricsApi } from './api/adminMetricsApi';
 export type {
   AdminMetricsDTO,
-  AdminMetricsEnvelope,
   AdminMetricsUsers,
   AdminMetricsVendors,
   AdminMetricsEvents,

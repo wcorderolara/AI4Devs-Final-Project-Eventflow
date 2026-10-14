@@ -6,7 +6,7 @@
 # (SecureString). NO imprime la contrasena ni la DATABASE_URL (SEC-03).
 #
 # Postura de red (decision usuario 2026-07-24): publicly-accessible con SG restringido a ADMIN_CIDR
-# (IP del operador) para migraciones + (opcional) BACKEND_SG para App Runner. Endurecimiento futuro:
+# (IP del operador) para migraciones + (opcional) BACKEND_SG del backend EC2. Endurecimiento futuro:
 # RDS privada + VPC connector (SEC-04 estricto).
 #
 # Prerrequisitos (fail-fast): aws CLI + credenciales, AWS_REGION.
@@ -18,7 +18,7 @@
 #   MASTER_USER      (default: eventflow_admin)
 #   DB_PASSWORD      (REQUERIDO; no se imprime. Generar con: openssl rand -hex 24)
 #   ADMIN_CIDR       (default: <IP publica detectada>/32) - fuente permitida en el SG
-#   BACKEND_SG       (opcional) - SG del backend (App Runner) a permitir tambien
+#   BACKEND_SG       (opcional) - SG del backend (EC2) a permitir tambien
 #   DEMO_DB          (default: eventflow_demo)
 #   QA_DB            (default: eventflow_qa)
 #
@@ -69,7 +69,7 @@ aws ec2 authorize-security-group-ingress --region "$AWS_REGION" --group-id "$SG_
   --protocol tcp --port 5432 --cidr "$ADMIN_CIDR" 2>/dev/null \
   && echo "[provision-rds] Ingress 5432 desde $ADMIN_CIDR agregado." \
   || echo "[provision-rds] Ingress desde $ADMIN_CIDR ya existia."
-# Ingress desde el SG del backend (App Runner) si se provee.
+# Ingress desde el SG del backend (EC2) si se provee.
 if [ -n "${BACKEND_SG:-}" ]; then
   aws ec2 authorize-security-group-ingress --region "$AWS_REGION" --group-id "$SG_ID" \
     --protocol tcp --port 5432 --source-group "$BACKEND_SG" 2>/dev/null \
@@ -120,4 +120,4 @@ echo "[provision-rds] OK. Proximos pasos (fuera de este script):"
 echo "  1. Crear la 2a base: psql \$DEMO_URL -c 'CREATE DATABASE ${QA_DB}'  (via docker postgres:16)"
 echo "  2. Migraciones: DATABASE_URL=<ssm> npx prisma migrate deploy  (por cada ambiente)"
 echo "  3. Recuperar URL sin imprimir: aws ssm get-parameter --name /eventflow/demo/DATABASE_URL --with-decryption"
-echo "  4. Actualizar NEXT_PUBLIC_API_BASE_URL / desbloquear US-136 (App Runner fase 2 con BACKEND_SG)."
+echo "  4. Actualizar NEXT_PUBLIC_API_BASE_URL / desbloquear US-136 (backend EC2 con BACKEND_SG)."

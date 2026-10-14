@@ -1,14 +1,12 @@
-// Rutas Reviews (organizer) — `POST /api/v1/organizer/reviews` (US-065 / BE-004).
+// Rutas Reviews (requireRole('organizer')) — `POST /api/v1/organizer/reviews` (US-065 / BE-004).
 // Doc 16 §M07. Auth: `sessionAuth` + `roleMiddleware(['organizer'])` — vendor/admin ⇒ 403
 // (SEC-01, AUTH-TS-04/AUTH-TS-05); sin sesión ⇒ 401 (AUTH-TS-06). Uniformidad 404 (SEC-04)
 // se aplica dentro del `CreateReviewUseCase`.
 import { Router } from 'express';
 import { z } from 'zod';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
-import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { clock, requireSession, requireRole } from '../../../infrastructure/auth-composition.js';
 import { StructuredDomainEventLogger } from '../../../infrastructure/observability/structured-domain-event-logger.js';
 import { PrismaQuoteNotificationSenderAdapter } from '../../../infrastructure/notifications/prisma-quote-notification-sender.adapter.js';
 import { prisma } from '../../../infrastructure/prisma/client.js';
@@ -25,15 +23,12 @@ const reviewEvents = new QuoteEventNotificationService(notifications, logger);
 const createReviewUseCase = new CreateReviewUseCase(reviewEvents, clock, logger, prisma);
 const controller = new OrganizerReviewController(createReviewUseCase);
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const organizer = roleMiddleware(['organizer']);
-
 export const organizerReviewRouter = Router();
 
 organizerReviewRouter.post(
   '/',
-  sessionAuth,
-  organizer,
+  requireSession,
+  requireRole('organizer'),
   validateRequestMiddleware(z.object({ body: CreateReviewRequestSchema })),
   asyncHandler(controller.create),
 );

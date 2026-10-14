@@ -12,14 +12,14 @@
 // (AC-06 · VR-04). Esto es una excepción explícita al patrón general del repo
 // documentada en ADR-API-004 (DOC-002).
 import type { Request, Response } from 'express';
-import type { Logger } from 'pino';
+import type { AppLogger } from '../../../../shared/infrastructure/logger/index.js';
 import type { GetHealthUseCase } from '../../application/use-cases/get-health.use-case.js';
 import type { GetReadinessUseCase } from '../../application/use-cases/get-readiness.use-case.js';
 
 export interface HealthControllerDeps {
   health: GetHealthUseCase;
   readiness: GetReadinessUseCase;
-  logger: Pick<Logger, 'warn' | 'error'>;
+  logger: Pick<AppLogger, 'warn' | 'error'>;
 }
 
 export class HealthController {

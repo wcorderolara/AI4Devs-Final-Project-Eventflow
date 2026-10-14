@@ -9,26 +9,14 @@
 //     cache headers y equivalencia de payload con el directorio autenticado.
 import { beforeAll, describe, expect, it } from 'vitest';
 import request from 'supertest';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { createApp } from '../../src/app.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { CAPTCHA, uniqEmail } from '../helpers/http.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const app = createApp();
-const CAPTCHA = '__test__';
-const uniq = (p: string): string =>
-  `pubdir_${p}_${Date.now()}_${Math.floor(Math.random() * 1e6)}@eventflow.test`;
 
 const PATH = '/api/v1/public/vendors';
 
@@ -60,7 +48,7 @@ const pageContract = z
   .strict();
 
 async function vendorAgent(): Promise<ReturnType<typeof request.agent>> {
-  const email = uniq('vendor');
+  const email = uniqEmail('pubdir_vendor');
   const agent = request.agent(app);
   await agent.post('/api/v1/auth/register').send({
     acceptedTerms: true,
@@ -416,7 +404,7 @@ describe.skipIf(!dbUp)('directorio público (con BD)', () => {
   });
 
   it('el visitante anónimo ve lo mismo que un organizer autenticado', async () => {
-    const email = uniq('organizer');
+    const email = uniqEmail('pubdir_organizer');
     const agent = request.agent(app);
     await agent.post('/api/v1/auth/register').send({
       acceptedTerms: true,

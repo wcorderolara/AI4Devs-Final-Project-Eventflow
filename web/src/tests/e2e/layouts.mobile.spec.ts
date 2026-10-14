@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-// AC-07/AC-09: en mobile la sidebar está oculta; la hamburguesa abre el drawer <MobileNav>.
+// AC-07/AC-09: en mobile la sidebar está oculta; la hamburguesa abre el drawer (`MobileNavigationDrawer`).
 test.use({ viewport: { width: 375, height: 700 } });
 
 test('mobile: hamburguesa abre el drawer con los items', async ({ page, context }) => {

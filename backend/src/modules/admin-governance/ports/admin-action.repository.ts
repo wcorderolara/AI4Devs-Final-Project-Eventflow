@@ -17,5 +17,5 @@ export interface AdminActionCreateInput {
 
 export interface AdminActionRepository {
   /** Inserta un AdminAction en la transacción activa. Debe usarse dentro de `prisma.$transaction`. */
-  create(tx: PrismaTx, input: AdminActionCreateInput): Promise<{ id: string; createdAt: Date }>;
+  create(tx: PrismaTx, input: AdminActionCreateInput): Promise<{ id: string }>;
 }

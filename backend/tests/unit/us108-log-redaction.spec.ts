@@ -1,8 +1,8 @@
 // US-108 / QA-004 — Tests de redacción de cookies, session IDs y secrets en logs (AC-07, SEC-07).
-// Verifica el helper `redact()` y que el `logger` central scrubbea antes de emitir a consola.
-import { describe, it, expect, vi } from 'vitest';
-import { redact, isSensitiveKey, REDACTED } from '../../src/shared/infrastructure/logger/redact.js';
-import { logger } from '../../src/shared/infrastructure/logger/index.js';
+// Verifica el redactor central (`redactSecrets`) y que el `logger` lo aplica antes de emitir a stdout.
+import { describe, it, expect } from 'vitest';
+import { redactSecrets as redact, isSensitiveKey, REDACTED } from '../../src/shared/infrastructure/logger/redactors.js';
+import { captureLogger } from '../helpers/log-capture.js';
 
 describe('US-108 QA-004: isSensitiveKey', () => {
   it('marca cookie/set-cookie/authorization/sid/jti como sensibles', () => {
@@ -70,14 +70,24 @@ describe('US-108 QA-004: redact()', () => {
 });
 
 describe('US-108 QA-004: logger central scrubbea antes de emitir', () => {
-  it('logger.info no emite el valor de una cookie/secret a consola', () => {
-    const spy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+  it('logger.info no emite el valor de una cookie/secret a stdout', () => {
+    const { logger, raw, lines } = captureLogger();
     logger.info({ event: 'x', correlationId: 'c1', cookie: 'eventflow_session=leak', SESSION_SECRET: 'leak-secret' });
-    const serialized = JSON.stringify(spy.mock.calls);
+    const serialized = raw.join('');
     expect(serialized).not.toContain('eventflow_session=leak');
     expect(serialized).not.toContain('leak-secret');
-    expect(serialized).toContain(REDACTED);
-    expect(serialized).toContain('c1'); // metadatos seguros preservados
-    spy.mockRestore();
+    const [line] = lines();
+    expect(line?.cookie).toBe(REDACTED);
+    expect(line?.SESSION_SECRET).toBe(REDACTED);
+    expect(line?.correlationId).toBe('c1'); // metadatos seguros preservados
+  });
+
+  it('también redacta con la forma `logger.warn(event, campos)` y en headers anidados', () => {
+    const { logger, raw, lines } = captureLogger();
+    logger.warn('auth.x', { sid: 'opaque-sid', jti: 'jti-1', req: { headers: { authorization: 'Bearer leak' } } });
+    expect(raw.join('')).not.toMatch(/opaque-sid|jti-1|Bearer leak/);
+    const [line] = lines();
+    expect(line?.event).toBe('auth.x');
+    expect(line?.sid).toBe(REDACTED);
   });
 });

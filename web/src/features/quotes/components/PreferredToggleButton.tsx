@@ -14,6 +14,7 @@
 import { useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { ApiError } from '@/shared/api-client';
+import { resolveErrorMessageKey } from '@/shared/error-handling/errorCodeMessages';
 import { usePreferQuote } from '../hooks/quotesQueries';
 import type { PreferQuoteView } from '../api/quotesApi.types';
 
@@ -44,11 +45,6 @@ const KNOWN_ERROR_CODES = [
   'FORBIDDEN',
   'VALIDATION_ERROR',
 ] as const;
-type KnownErrorCode = (typeof KNOWN_ERROR_CODES)[number];
-
-function isKnownErrorCode(code: string | undefined): code is KnownErrorCode {
-  return typeof code === 'string' && (KNOWN_ERROR_CODES as readonly string[]).includes(code);
-}
 
 export function PreferredToggleButton(props: PreferredToggleButtonProps): JSX.Element {
   const { quoteId, vendorName, isPreferred, selectable, eventId, categoryCode, onError, onSuccess, preferFn } = props;
@@ -66,9 +62,7 @@ export function PreferredToggleButton(props: PreferredToggleButtonProps): JSX.El
         : await mutation.mutateAsync({ quoteId, isPreferred: next });
       onSuccess?.(view);
     } catch (err) {
-      const code = err instanceof ApiError ? err.code : undefined;
-      const key = isKnownErrorCode(code) ? code : 'UNEXPECTED';
-      onError?.(t(`errors.${key}`));
+      onError?.(t(resolveErrorMessageKey(err instanceof ApiError ? err : null, KNOWN_ERROR_CODES)));
     }
   }, [selectable, isPending, isPreferred, quoteId, mutation, preferFn, onSuccess, onError, t]);
 

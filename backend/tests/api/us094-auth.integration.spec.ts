@@ -4,26 +4,14 @@
 // acepta '__test__'. El token de reset se captura espiando el notifier (no viaja en la respuesta).
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import request from 'supertest';
-import { PrismaClient } from '@prisma/client';
 import { createApp } from '../../src/app.js';
 import { LoggingPasswordResetNotifier } from '../../src/infrastructure/notifications/logging-password-reset-notifier.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { CAPTCHA, uniqEmail } from '../helpers/http.js';
 
-const prisma = new PrismaClient();
-
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const app = createApp();
-const CAPTCHA = '__test__';
-const uniq = (): string => `us094_${Date.now()}_${Math.floor(Math.random() * 1e6)}@eventflow.test`;
 
 describe.skipIf(!dbUp)('US-094 QA-002 — AUTH/profile integration', () => {
   beforeAll(async () => {
@@ -34,7 +22,7 @@ describe.skipIf(!dbUp)('US-094 QA-002 — AUTH/profile integration', () => {
   });
 
   it('AC-01: register organizer → 201 con AuthUserResponse (sin passwordHash) y meta.correlationId', async () => {
-    const email = uniq();
+    const email = uniqEmail('us094');
     const res = await request(app)
       .post('/api/v1/auth/register')
       .send({ acceptedTerms: true, email, password: 'Secret1234', name: 'Org', role: 'organizer', captchaToken: CAPTCHA });
@@ -47,13 +35,13 @@ describe.skipIf(!dbUp)('US-094 QA-002 — AUTH/profile integration', () => {
   it('AC-01: register vendor → 201', async () => {
     const res = await request(app)
       .post('/api/v1/auth/register')
-      .send({ acceptedTerms: true, email: uniq(), password: 'Secret1234', businessName: 'Ven Catering', role: 'vendor', captchaToken: CAPTCHA });
+      .send({ acceptedTerms: true, email: uniqEmail('us094'), password: 'Secret1234', businessName: 'Ven Catering', role: 'vendor', captchaToken: CAPTCHA });
     expect(res.status).toBe(201);
     expect(res.body.data.role).toBe('vendor');
   });
 
   it('EC-02/NT-02: email duplicado → 409 EMAIL_TAKEN', async () => {
-    const email = uniq();
+    const email = uniqEmail('us094');
     const body = { email, password: 'Secret1234', name: 'Dup', role: 'organizer', acceptedTerms: true, captchaToken: CAPTCHA };
     await request(app).post('/api/v1/auth/register').send(body);
     const res = await request(app).post('/api/v1/auth/register').send(body);
@@ -62,7 +50,7 @@ describe.skipIf(!dbUp)('US-094 QA-002 — AUTH/profile integration', () => {
   });
 
   it('AC-02: login → 200, Set-Cookie HttpOnly y sin token en el JSON', async () => {
-    const email = uniq();
+    const email = uniqEmail('us094');
     await request(app)
       .post('/api/v1/auth/register')
       .send({ acceptedTerms: true, email, password: 'Secret1234', name: 'Lu', role: 'organizer', captchaToken: CAPTCHA });
@@ -82,7 +70,7 @@ describe.skipIf(!dbUp)('US-094 QA-002 — AUTH/profile integration', () => {
   });
 
   it('AC-03/AC-05: /users/me con sesión → 200; logout → 204; luego /users/me → 401', async () => {
-    const email = uniq();
+    const email = uniqEmail('us094');
     const agent = request.agent(app);
     await agent.post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', name: 'Me', role: 'organizer', captchaToken: CAPTCHA });
     await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
@@ -99,7 +87,7 @@ describe.skipIf(!dbUp)('US-094 QA-002 — AUTH/profile integration', () => {
   });
 
   it('AC-04/NT-11: PATCH /users/me actualiza name/phone/preferredLanguage; email/role intactos', async () => {
-    const email = uniq();
+    const email = uniqEmail('us094');
     const agent = request.agent(app);
     await agent.post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', name: 'Pa', role: 'organizer', captchaToken: CAPTCHA });
     await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
@@ -114,7 +102,7 @@ describe.skipIf(!dbUp)('US-094 QA-002 — AUTH/profile integration', () => {
   });
 
   it('AC-04: PATCH /users/me/preferred-language actualiza idioma', async () => {
-    const email = uniq();
+    const email = uniqEmail('us094');
     const agent = request.agent(app);
     await agent.post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', businessName: 'Lang Foods', role: 'vendor', captchaToken: CAPTCHA });
     await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
@@ -124,7 +112,7 @@ describe.skipIf(!dbUp)('US-094 QA-002 — AUTH/profile integration', () => {
   });
 
   it('change-password: 204 y la nueva contraseña permite login', async () => {
-    const email = uniq();
+    const email = uniqEmail('us094');
     const agent = request.agent(app);
     await agent.post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', name: 'CP', role: 'organizer', captchaToken: CAPTCHA });
     await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
@@ -135,7 +123,7 @@ describe.skipIf(!dbUp)('US-094 QA-002 — AUTH/profile integration', () => {
   });
 
   it('AC-06/AC-07: reset-request → 202 genérico; reset con token → 204; reuso → rechazado', async () => {
-    const email = uniq();
+    const email = uniqEmail('us094');
     await request(app).post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', name: 'Re', role: 'organizer', captchaToken: CAPTCHA });
 
     const deliverSpy = vi.spyOn(LoggingPasswordResetNotifier.prototype, 'deliver');

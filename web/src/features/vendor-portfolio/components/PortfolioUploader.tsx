@@ -16,6 +16,7 @@
 import { useCallback, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
+import { resolveErrorCode } from '@/shared/error-handling/errorCodeMessages';
 import { Button, FileUpload, FormField, Input } from '@/shared/design-system';
 import type { FileRejection } from '@/shared/design-system';
 import { useUploadPortfolioImage } from '../hooks/useUploadPortfolioImage';
@@ -44,33 +45,18 @@ type ErrorCode =
   | 'INVALID_IMAGE'
   | 'UNEXPECTED';
 
-interface ApiErrorShape {
-  code?: unknown;
-}
-
-function resolveErrorCode(err: unknown): ErrorCode {
-  if (typeof err === 'object' && err !== null && 'code' in err) {
-    const code = (err as ApiErrorShape).code;
-    if (typeof code === 'string') {
-      const known: readonly ErrorCode[] = [
-        'INVALID_MIME',
-        'INVALID_WORK_LABEL',
-        'FILE_TOO_LARGE',
-        'IMAGE_LIMIT_REACHED',
-        'WORK_LABEL_LIMIT_REACHED',
-        'PROFILE_HIDDEN',
-        'PROFILE_NOT_FOUND',
-        'AUTHENTICATION_REQUIRED',
-        'FORBIDDEN',
-        'INVALID_IMAGE',
-      ];
-      if ((known as readonly string[]).includes(code)) {
-        return code as ErrorCode;
-      }
-    }
-  }
-  return 'UNEXPECTED';
-}
+const KNOWN_CODES: readonly ErrorCode[] = [
+  'INVALID_MIME',
+  'INVALID_WORK_LABEL',
+  'FILE_TOO_LARGE',
+  'IMAGE_LIMIT_REACHED',
+  'WORK_LABEL_LIMIT_REACHED',
+  'PROFILE_HIDDEN',
+  'PROFILE_NOT_FOUND',
+  'AUTHENTICATION_REQUIRED',
+  'FORBIDDEN',
+  'INVALID_IMAGE',
+];
 
 export function PortfolioUploader(props: PortfolioUploaderProps): JSX.Element {
   const t = useTranslations('vendor.portfolio');
@@ -112,7 +98,7 @@ export function PortfolioUploader(props: PortfolioUploaderProps): JSX.Element {
         props.onUploaded?.(view);
         setSelectedFile(null);
       } catch (err) {
-        setError(resolveErrorCode(err));
+        setError(resolveErrorCode(err, KNOWN_CODES));
       }
     },
     [mutation, selectedFile, workLabel, props],

@@ -4,6 +4,7 @@ import { AppError } from './app.error.js';
 
 export class MethodNotAllowedError extends AppError {
   readonly code = 'METHOD_NOT_ALLOWED';
+  override readonly httpStatus = 405;
 
   constructor(message = 'Method not allowed.') {
     super(message);

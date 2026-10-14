@@ -10,31 +10,15 @@
 //
 // Patrón `describe.skipIf(!dbUp)` — se salta cuando no hay DB local (CI corre
 // con Postgres).
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import app from '../../src/app.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { pickCatalogRefs } from '../helpers/fixtures/catalog.js';
+import { sessionCookie } from '../helpers/http.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
-
-async function pickCatalogRefs(): Promise<{ eventTypeId: string; locationId: string } | null> {
-  const [eventType, location] = await Promise.all([
-    prisma.eventType.findFirst({ where: { isActive: true, deletedAt: null } }),
-    prisma.location.findFirst({ where: { deletedAt: null } }),
-  ]);
-  if (!eventType || !location) return null;
-  return { eventTypeId: eventType.id, locationId: location.id };
-}
+const prisma = getTestPrisma();
 
 interface VendorFixture {
   userId: string;
@@ -124,14 +108,6 @@ async function cleanupFixture(fx: VendorFixture): Promise<void> {
   await prisma.user.deleteMany({ where: { id: fx.userId } });
 }
 
-function signCookie(sid: string): string {
-  const cookieSecret = process.env.SESSION_SECRET ?? '';
-  const cookieName = process.env.SESSION_COOKIE_NAME ?? 'eventflow_session';
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- inline signer (test-only)
-  const signature = require('cookie-signature') as { sign: (value: string, secret: string) => string };
-  return `${cookieName}=s%3A${encodeURIComponent(signature.sign(sid, cookieSecret))}`;
-}
-
 const QUOTE_REJECTED_ID = '11111111-1111-4111-8111-111111111111';
 const QUOTE_EXPIRED_ID = '22222222-2222-4222-8222-222222222222';
 
@@ -140,7 +116,7 @@ describe.skipIf(!dbUp)('US-073 integration — vendor link generation (AC-02, AC
   const fixtures: VendorFixture[] = [];
 
   beforeAll(async () => {
-    refs = await pickCatalogRefs();
+    refs = await pickCatalogRefs(prisma);
   }, 60_000);
 
   afterAll(async () => {
@@ -170,7 +146,7 @@ describe.skipIf(!dbUp)('US-073 integration — vendor link generation (AC-02, AC
     );
     const res = await request(app)
       .get('/api/v1/notifications')
-      .set('Cookie', signCookie(fx.sessionCookie));
+      .set('Cookie', sessionCookie(fx.sessionCookie));
     expect(res.status).toBe(200);
     const items: Array<{ id: string; type: string; link: string | null }> = res.body.data.items;
     const rejected = items.find((it) => it.type === 'quote_rejected');
@@ -193,7 +169,7 @@ describe.skipIf(!dbUp)('US-073 integration — vendor link generation (AC-02, AC
     );
     const res = await request(app)
       .get('/api/v1/notifications')
-      .set('Cookie', signCookie(fx.sessionCookie));
+      .set('Cookie', sessionCookie(fx.sessionCookie));
     expect(res.status).toBe(200);
     const items: Array<{ id: string; type: string; link: string | null }> = res.body.data.items;
     expect(items[0]?.link).toBe(null);
@@ -214,7 +190,7 @@ describe.skipIf(!dbUp)('US-073 integration — vendor link generation (AC-02, AC
     vendorA.notificationIds.push(notifIdA);
     const res = await request(app)
       .get('/api/v1/notifications')
-      .set('Cookie', signCookie(vendorB.sessionCookie));
+      .set('Cookie', sessionCookie(vendorB.sessionCookie));
     expect(res.status).toBe(200);
     const items: Array<{ id: string }> = res.body.data.items;
     expect(items.find((it) => it.id === notifIdA)).toBeUndefined();

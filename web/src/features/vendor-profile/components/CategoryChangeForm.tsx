@@ -5,9 +5,10 @@
 // CTA con `aria-describedby` cuando el límite está alcanzado, modal de confirmación previo al
 // submit cuando el vendor está `approved` y hay diff (D2 → re-pending automático), y banner
 // `RependingNotice` reutilizado del editor de US-041 cuando `repending=true`.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { ApiError } from '@/shared/api-client';
+import { ConfirmationDialog } from '@/shared/design-system';
 import { useServiceCategories } from '../hooks/useVendorProfileQueries';
 import { useChangeVendorCategories } from '../hooks/useVendorProfileMutations';
 import type {
@@ -262,89 +263,18 @@ function ConfirmMajorDialog({
   submitting,
   onCancel,
   onConfirm,
-}: ConfirmMajorDialogProps): React.JSX.Element | null {
+}: ConfirmMajorDialogProps): React.JSX.Element {
   const t = useTranslations('vendor.categories.change.confirm');
-  const cancelRef = useRef<HTMLButtonElement | null>(null);
-  const dialogRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    cancelRef.current?.focus();
-  }, [isOpen]);
-
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLDivElement>) => {
-      if (event.key === 'Escape' && !submitting) {
-        event.stopPropagation();
-        onCancel();
-        return;
-      }
-      if (event.key === 'Tab') {
-        const focusables = dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled])');
-        if (!focusables || focusables.length === 0) return;
-        const first = focusables[0]!;
-        const last = focusables[focusables.length - 1]!;
-        if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault();
-          first.focus();
-        } else if (event.shiftKey && document.activeElement === first) {
-          event.preventDefault();
-          last.focus();
-        }
-      }
-    },
-    [onCancel, submitting],
-  );
-
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <button
-        type="button"
-        aria-label="close overlay"
-        onClick={submitting ? undefined : onCancel}
-        className="absolute inset-0 h-full w-full cursor-default bg-transparent"
-        tabIndex={-1}
-      />
-      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- role="dialog" es interactivo por naturaleza (WAI-ARIA); necesita capturar Tab/ESC. */}
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="confirm-category-title"
-        aria-describedby="confirm-category-desc"
-        tabIndex={-1}
-        onKeyDown={handleKeyDown}
-        className="relative w-full max-w-md rounded-lg bg-white p-6 shadow-lg"
-      >
-        <h2 id="confirm-category-title" className="text-lg font-semibold">
-          {t('title')}
-        </h2>
-        <p id="confirm-category-desc" className="mt-2 text-sm text-neutral-700">
-          {t('description')}
-        </p>
-        <div className="mt-5 flex justify-end gap-2">
-          <button
-            ref={cancelRef}
-            type="button"
-            onClick={onCancel}
-            disabled={submitting}
-            className="rounded border border-neutral-300 px-4 py-2 text-sm disabled:opacity-50"
-          >
-            {t('cancel')}
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={submitting}
-            aria-busy={submitting}
-            className="rounded bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-          >
-            {t('confirm')}
-          </button>
-        </div>
-      </div>
-    </div>
+    <ConfirmationDialog
+      open={isOpen}
+      onClose={onCancel}
+      title={t('title')}
+      description={t('description')}
+      confirmLabel={t('confirm')}
+      cancelLabel={t('cancel')}
+      isLoading={submitting}
+      onConfirm={onConfirm}
+    />
   );
 }

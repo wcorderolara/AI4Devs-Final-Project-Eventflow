@@ -4,12 +4,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
 import { composeProtectedRoute } from '../../../shared/interface/http/compose-route.js';
 import { aiGenerationRateLimit } from '../../../shared/interface/http/ai-rate-limit.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { requireRole, requireSession } from '../../../infrastructure/auth-composition.js';
 import {
   PrismaEventAccessReader,
   PrismaEventLanguageReader,
@@ -35,7 +33,9 @@ import { RegenerateAiRecommendationBodySchema } from '../dto/regenerate.request.
 import { StructuredDomainEventLogger } from '../../../infrastructure/observability/structured-domain-event-logger.js';
 import { PrismaAIRecommendationRepository } from '../infrastructure/prisma-ai-recommendation.repository.js';
 import { PrismaAIRecommendationHitlRepository } from '../infrastructure/prisma-ai-recommendation-hitl.repository.js';
-import { createLlmProvider } from '../infrastructure/llm-provider.factory.js';
+import { RegistryPromptVersionIdResolver } from '../infrastructure/prompt-version-id.resolver.js';
+import { createAIExecutionService } from '../infrastructure/ai-execution.factory.js';
+import { ValidatedAIExecutionService } from '../application/ai-validation/validated-ai-execution.service.js';
 import { AiGenerationService } from '../application/ai-generation.service.js';
 import { GenerateAiRecommendationUseCase } from '../application/generate-ai-recommendation.use-case.js';
 import {
@@ -66,9 +66,18 @@ import { AIAssistanceController, AIRecommendationsController } from './ai.contro
 const repo = new PrismaAIRecommendationRepository();
 const hitlRepo = new PrismaAIRecommendationHitlRepository();
 const logger = new StructuredDomainEventLogger();
-const generationService = new AiGenerationService(createLlmProvider());
+// PR-5: generación = US-123 (timeout + fallback a mock) + US-124 (validación strict + 1 retry).
+const execution = createAIExecutionService();
+const generationService = new AiGenerationService({
+  execution,
+  validated: new ValidatedAIExecutionService(),
+  fallbackEligible: execution.isFallbackEligible(),
+});
+// US-122: id real de `AIPromptVersion` (sync memoizado del registry US-121 en el primer uso).
+const promptVersions = new RegistryPromptVersionIdResolver(repo);
 const generateUseCase = new GenerateAiRecommendationUseCase(
   repo,
+  promptVersions,
   generationService,
   new PrismaEventAccessReader(),
   new PrismaVendorProfileReader(),
@@ -138,6 +147,7 @@ const regenerateUseCase = new RegenerateAIRecommendationUseCase(
   new OutputSchemaResolver(),
   regenerateConfig,
   logger,
+  promptVersions,
 );
 const recommendations = new AIRecommendationsController({
   get: new GetAIRecommendationUseCase(repo),
@@ -146,10 +156,6 @@ const recommendations = new AIRecommendationsController({
   regenerate: regenerateUseCase,
 });
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const organizer = roleMiddleware(['organizer']);
-const vendor = roleMiddleware(['vendor']);
-const owner = roleMiddleware(['organizer', 'vendor']);
 const v = validateRequestMiddleware;
 
 export const aiAssistanceRouter = Router();
@@ -168,8 +174,8 @@ for (const [path, handler] of [
   aiAssistanceRouter.post(
     `/events/:eventId/ai/${path}`,
     ...composeProtectedRoute({
-      auth: sessionAuth,
-      role: organizer,
+      auth: requireSession,
+      role: requireRole('organizer'),
       rateLimit: aiGenerationRateLimit,
       validation: v(eventBody),
       handler: asyncHandler(handler),
@@ -181,8 +187,8 @@ for (const [path, handler] of [
 aiAssistanceRouter.post(
   '/quote-requests/:quoteRequestId/ai/comparison-summary',
   ...composeProtectedRoute({
-    auth: sessionAuth,
-    role: organizer,
+    auth: requireSession,
+    role: requireRole('organizer'),
     rateLimit: aiGenerationRateLimit,
     validation: v(z.object({ params: QuoteRequestIdParamSchema, body: AiBaseRequestSchema })),
     handler: asyncHandler(assistance.comparisonSummary),
@@ -195,8 +201,8 @@ aiAssistanceRouter.post(
 aiAssistanceRouter.post(
   '/events/:eventId/ai/task-priority',
   ...composeProtectedRoute({
-    auth: sessionAuth,
-    role: organizer,
+    auth: requireSession,
+    role: requireRole('organizer'),
     rateLimit: aiGenerationRateLimit,
     validation: v(z.object({ params: EventIdParamSchema, body: AiBaseRequestSchema })),
     handler: asyncHandler(assistance.taskPriority),
@@ -209,8 +215,8 @@ aiAssistanceRouter.post(
 aiAssistanceRouter.post(
   '/events/:eventId/ai/quote-summary',
   ...composeProtectedRoute({
-    auth: sessionAuth,
-    role: organizer,
+    auth: requireSession,
+    role: requireRole('organizer'),
     rateLimit: aiGenerationRateLimit,
     validation: v(z.object({ params: EventIdParamSchema, body: QuoteSummaryBodySchema })),
     handler: asyncHandler(assistance.quoteSummary),
@@ -224,8 +230,8 @@ aiAssistanceRouter.post(
 aiAssistanceRouter.get(
   '/events/:eventId/ai/quote-summary',
   ...composeProtectedRoute({
-    auth: sessionAuth,
-    role: organizer,
+    auth: requireSession,
+    role: requireRole('organizer'),
     validation: v(
       z.object({ params: EventIdParamSchema, query: LatestQuoteSummaryQuerySchema }),
     ),
@@ -237,20 +243,20 @@ aiAssistanceRouter.get(
 aiAssistanceRouter.post(
   '/vendors/me/ai/bio',
   ...composeProtectedRoute({
-    auth: sessionAuth,
-    role: vendor,
+    auth: requireSession,
+    role: requireRole('vendor'),
     rateLimit: aiGenerationRateLimit,
     validation: v(z.object({ body: AiBaseRequestSchema })),
     handler: asyncHandler(assistance.vendorBio),
   }),
 );
 
-// ── AIRecommendation actions (owner) ───────────────────────────────────────
+// ── AIRecommendation actions (requireRole('organizer', 'vendor')) ───────────────────────────────────────
 aiAssistanceRouter.get(
   '/ai-recommendations/:aiRecommendationId',
   ...composeProtectedRoute({
-    auth: sessionAuth,
-    role: owner,
+    auth: requireSession,
+    role: requireRole('organizer', 'vendor'),
     validation: v(z.object({ params: AiRecommendationIdParamSchema })),
     handler: asyncHandler(recommendations.get),
   }),
@@ -258,8 +264,8 @@ aiAssistanceRouter.get(
 aiAssistanceRouter.post(
   '/ai-recommendations/:aiRecommendationId/apply',
   ...composeProtectedRoute({
-    auth: sessionAuth,
-    role: owner,
+    auth: requireSession,
+    role: requireRole('organizer', 'vendor'),
     validation: v(z.object({ params: AiRecommendationIdParamSchema, body: ApplyAiRecommendationSchema })),
     handler: asyncHandler(recommendations.apply),
   }),
@@ -267,22 +273,22 @@ aiAssistanceRouter.post(
 aiAssistanceRouter.post(
   '/ai-recommendations/:aiRecommendationId/discard',
   ...composeProtectedRoute({
-    auth: sessionAuth,
-    role: owner,
+    auth: requireSession,
+    role: requireRole('organizer', 'vendor'),
     validation: v(z.object({ params: AiRecommendationIdParamSchema })),
     handler: asyncHandler(recommendations.discard),
   }),
 );
 // US-026 (PB-P2-003 / BE-007): POST /ai-recommendations/:id/regenerate — cross-cutting.
-// Acepta organizer OR vendor (owner) porque la ownership real se resuelve dentro del use case
+// Acepta organizer OR vendor (requireRole('organizer', 'vendor')) porque la ownership real se resuelve dentro del use case
 // vía `AIRecommendationOwnerResolver` según el `AiFeatureType` del parent (D7 / SEC-01). El
 // rate limit shared (US-110 · aiGenerationRateLimit) es AC-07; el cap por linaje (AC-02) lo
 // aplica el use case y mapea a `429 REGENERATION_LIMIT` en el error handler.
 aiAssistanceRouter.post(
   '/ai-recommendations/:aiRecommendationId/regenerate',
   ...composeProtectedRoute({
-    auth: sessionAuth,
-    role: owner,
+    auth: requireSession,
+    role: requireRole('organizer', 'vendor'),
     rateLimit: aiGenerationRateLimit,
     validation: v(
       z.object({

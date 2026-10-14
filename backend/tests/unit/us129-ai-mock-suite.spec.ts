@@ -6,7 +6,7 @@
 //   - `us119-mock-ai-provider.spec.ts` (contrato/metadata/determinismo/lookup
 //     — 6 describes actualmente `.skip` esperando PB-P1-013..015 · fuera de
 //     scope US-129 · execution record D-01).
-//   - `us119-mock-no-network.guard.spec.ts` (guard estático AC-06 · SEC-001).
+//   - `architecture-guards.spec.ts` (guard estático US-119 AC-06 · SEC-001).
 //   - `us123-ai-timeout.service.spec.ts` + `us123-fallback.service.spec.ts`
 //     (composición timeout + fallback — capa AIExecutionService).
 //   - `us122-persist-ai-recommendation.service.spec.ts` (contrato de
@@ -231,7 +231,7 @@ describe('US-129 · QA-004 · determinismo y tiempo total', () => {
 
 // ---------------------------------------------------------------------------
 // SEC-001 · AC-01 · SEC-03 — sin PII en fixtures ni logs.
-// El guard estático `us119-mock-no-network.guard.spec.ts` ya cubre que el
+// El guard estático US-119 de `architecture-guards.spec.ts` ya cubre que el
 // mock no importa SDKs/HTTP/secrets a nivel de código. Aquí verificamos el
 // runtime: los outputs de las 10 features no contienen emails, teléfonos ni
 // palabras que huelan a secret (`sk-XXX`, `api_key`).

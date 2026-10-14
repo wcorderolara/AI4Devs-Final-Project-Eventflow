@@ -5,6 +5,7 @@ import { AppError } from './app.error.js';
 
 export class AlreadyAuthenticatedError extends AppError {
   readonly code = 'ALREADY_AUTHENTICATED';
+  override readonly httpStatus = 409;
 
   constructor(message = 'There is already an active session.') {
     super(message);

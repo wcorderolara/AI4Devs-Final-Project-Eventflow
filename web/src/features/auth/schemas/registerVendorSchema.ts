@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PASSWORD_MIN_LENGTH } from './registerOrganizerSchema';
+import { PASSWORD_MIN_LENGTH } from '@/shared/validation/passwordPolicy';
 
 /**
  * Schema del form de registro de proveedor (US-002 / FE-002). Copia disciplinada de la variant

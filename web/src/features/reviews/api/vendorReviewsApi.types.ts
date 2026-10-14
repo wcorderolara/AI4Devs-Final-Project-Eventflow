@@ -37,11 +37,6 @@ export interface ListVendorReviewsDTO {
   pagination: PaginationDTO;
 }
 
-export interface ListVendorReviewsEnvelope {
-  data: ListVendorReviewsDTO;
-  correlationId: string;
-}
-
 export interface ListVendorReviewsQuery {
   cursor?: string;
   pageSize?: number;

@@ -1,31 +1,17 @@
 // US-097 / QA-003 — Security/negative tests AI. §12; NT-01..12; EC-02/03/07/08.
 import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
-import { PrismaClient } from '@prisma/client';
 import { createApp } from '../../src/app.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { sessionHelpers, type Agent, type TestRole } from '../helpers/http.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([prisma.$queryRawUnsafe('SELECT 1'), new Promise((_, rej) => setTimeout(() => rej(new Error('t')), 4000))]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const app = createApp();
-const CAPTCHA = '__test__';
 const UUID = '11111111-1111-4111-8111-111111111111';
-const rnd = (): string => `${Date.now()}_${Math.floor(Math.random() * 1e9)}`;
-type Agent = ReturnType<typeof request.agent>;
 
-async function registerLogin(role: 'organizer' | 'vendor'): Promise<Agent> {
-  const email = `us097sec_${role}_${rnd()}@eventflow.test`;
-  const agent = request.agent(app);
-  await agent.post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', ...(role === 'vendor' ? { businessName: 'Vendor Demo SA' } : { name: role }), role, captchaToken: CAPTCHA });
-  await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
-  return agent;
-}
+const session = sessionHelpers(app, { tag: 'us097sec' });
+const registerLogin = async (role: TestRole): Promise<Agent> => (await session.registerLogin(role)).agent;
 
 describe('QA-003 (sin BD): anonymous, sin ruta de prompt genérico', () => {
   it('NT-01: anonymous → 401', async () => {
@@ -90,14 +76,18 @@ describe.skipIf(!dbUp)('QA-003 (con BD): role, ownership, provider errors', () =
     expect(res.body.error.code).toBe('AI_PROVIDER_TIMEOUT');
   });
 
-  it('NT-09/EC-08: provider output inválido → 422 AI_INVALID_OUTPUT, no persiste', async () => {
+  it('NT-09/EC-08: provider output inválido → 422 AI_INVALID_OUTPUT, no persiste output (sólo failure record)', async () => {
     const organizer = await registerLogin('organizer');
     const eventId = await activeEvent(organizer);
-    const before = await prisma.aIRecommendation.count();
     const res = await organizer.post(`/api/v1/events/${eventId}/ai/event-plan`).send({ input: { __simulate: 'invalid' } });
     expect(res.status).toBe(422);
     expect(res.body.error.code).toBe('AI_INVALID_OUTPUT');
-    expect(await prisma.aIRecommendation.count()).toBe(before);
+    // PR-5 / US-122 AC-08: nunca un `pending` con output inválido; sólo un record `failed` sin payload.
+    const recs = await prisma.aIRecommendation.findMany({ where: { eventId } });
+    expect(recs.filter((r) => r.status !== 'failed')).toHaveLength(0);
+    expect(recs).toHaveLength(1);
+    expect(recs[0]!.outputPayload).toEqual({ errorCode: 'AI_INVALID_OUTPUT' });
+    expect(recs[0]!.inputPayload).toEqual({});
   });
 
   it('NT-07/EC-06: idioma no soportado → 422 UNSUPPORTED_LANGUAGE', async () => {

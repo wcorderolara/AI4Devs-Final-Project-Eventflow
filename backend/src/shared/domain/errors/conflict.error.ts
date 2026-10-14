@@ -5,6 +5,7 @@ import { ErrorCodes } from './error-codes.js';
 
 export class ConflictError extends AppError {
   readonly code = ErrorCodes.CONFLICT;
+  override readonly httpStatus = 409;
 
   constructor(message = 'Conflict') {
     super(message);

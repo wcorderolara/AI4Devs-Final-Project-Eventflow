@@ -1,5 +1,5 @@
 // US-035 (PB-P1-020 / FE-001) — Cliente HTTP para `GET /events/:eventId/budget`.
-import { httpGet } from '@/shared/api-client';
+import { httpGetData } from '@/shared/api-client';
 
 export interface BudgetItemDto {
   id: string;
@@ -39,17 +39,9 @@ export interface GetBudgetResponseDto {
   last_updated_at?: string | null;
 }
 
-interface Envelope<T> {
-  data: T;
-  meta: { correlationId: string; timestamp: string };
-}
-
 export const budgetApi = {
   async get(eventId: string): Promise<GetBudgetResponseDto> {
-    const dto = await httpGet<Envelope<GetBudgetResponseDto>>(`/events/${eventId}/budget`, {
-      timeoutMs: 30_000,
-    });
-    return dto.data;
+    return httpGetData<GetBudgetResponseDto>(`/events/${eventId}/budget`, { timeoutMs: 30_000 });
   },
 };
 

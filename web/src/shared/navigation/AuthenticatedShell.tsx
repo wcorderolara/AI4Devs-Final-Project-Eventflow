@@ -2,16 +2,24 @@
 
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSession } from '@/shared/auth-session';
 import type { Role } from '@/shared/authorization';
-import { AppShell, Badge } from '@/shared/design-system';
-import { MobileNav } from './MobileNav';
-import { getRoleNavigation } from './roleNavigation';
+import {
+  AppShell,
+  AppSidebar,
+  Badge,
+  MobileNavigationDrawer,
+  MobileNavigationTrigger,
+  NotificationButton,
+  TopBar,
+} from '@/shared/design-system';
+import { LanguageSelector } from '@/shared/i18n';
+import { Logo } from './Logo';
+import { getRoleNavigation, resolveNavigationSections } from './roleNavigation';
 import { SidebarAccount } from './SidebarAccount';
-import { Sidebar } from './Sidebar';
 import { SkipLink } from './SkipLink';
-import { Topbar } from './Topbar';
+import { UserMenu } from './UserMenu';
 
 /** `id` del panel del drawer. Sólo se monta un shell autenticado a la vez, así que es estable. */
 const DRAWER_ID = 'app-mobile-nav';
@@ -41,6 +49,9 @@ const DRAWER_ID = 'app-mobile-nav';
  *
  * Nada de esto es autorización: el backend valida cada request y el middleware protege el
  * routing aunque la URL se escriba a mano (ADR-FE-003).
+ *
+ * Es la única capa entre la aplicación y `design-system/navigation`: aquí se inyectan sesión,
+ * i18n y ruta activa; la presentación (sidebar, drawer, top bar) la aporta el design system.
  */
 export interface AuthenticatedShellProps {
   /**
@@ -70,6 +81,11 @@ export function AuthenticatedShell({
 
   const role: Role | null = sessionRole ?? (isLoading || isError ? initialRole : null);
   const navigation = getRoleNavigation(role);
+  // Desktop y drawer consumen exactamente las mismas secciones (UI-DEC-008).
+  const sections = useMemo(
+    () => (navigation ? resolveNavigationSections(navigation.sections, pathname, t) : []),
+    [navigation, pathname, t],
+  );
 
   const ariaLabel = navigation ? t(navigation.ariaLabelKey) : undefined;
 
@@ -77,19 +93,36 @@ export function AuthenticatedShell({
     <AppShell
       skipLink={<SkipLink />}
       topBar={
-        <Topbar
-          // Sin navegación no hay nada que abrir: el trigger del drawer no se monta.
-          onMenuOpen={navigation ? () => setMenuOpen(true) : undefined}
-          isMenuOpen={menuOpen}
-          drawerId={DRAWER_ID}
+        <TopBar
+          menuTrigger={
+            // Sin navegación no hay nada que abrir: el trigger del drawer no se monta.
+            navigation ? (
+              <MobileNavigationTrigger
+                label={t('topbar.menuOpen')}
+                isOpen={menuOpen}
+                onOpen={() => setMenuOpen(true)}
+                controls={DRAWER_ID}
+              />
+            ) : undefined
+          }
+          brand={<Logo size="sm" />}
+          actions={
+            <>
+              {/* US-107: sin destino ni contador real. US-073 (D-07): el `NotificationsBell` de
+                  US-071 sigue sin montarse aquí — su outside-click compite con el `Menu` de
+                  Headless UI del `UserMenu` y rompe el E2E de logout. */}
+              <NotificationButton label={t('notifications.label')} />
+              <LanguageSelector />
+              <UserMenu />
+            </>
+          }
         />
       }
       sidebar={
         navigation && ariaLabel ? (
-          <Sidebar
-            items={navigation.items ? [...navigation.items] : undefined}
-            groups={navigation.groups ? [...navigation.groups] : undefined}
+          <AppSidebar
             ariaLabel={ariaLabel}
+            sections={sections}
             header={<Badge variant="role">{t(navigation.workspaceKey)}</Badge>}
             footer={<SidebarAccount />}
           />
@@ -97,14 +130,15 @@ export function AuthenticatedShell({
       }
       drawer={
         navigation && ariaLabel ? (
-          <MobileNav
-            items={navigation.items ? [...navigation.items] : undefined}
-            groups={navigation.groups ? [...navigation.groups] : undefined}
-            isOpen={menuOpen}
+          <MobileNavigationDrawer
+            open={menuOpen}
             onClose={() => setMenuOpen(false)}
             ariaLabel={ariaLabel}
-            panelId={DRAWER_ID}
+            title={t('mobile.title')}
+            closeLabel={t('mobile.close')}
+            sections={sections}
             footer={<SidebarAccount />}
+            panelId={DRAWER_ID}
           />
         ) : undefined
       }

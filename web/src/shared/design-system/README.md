@@ -40,8 +40,7 @@ autoridad** y no se propagan.
 shared/design-system/
 ├── actions/     Button · ActionLink · IconButton · TextLink
 ├── forms/       FormField · Input · PasswordInput · Textarea · SearchInput · Select ·
-│                MultiSelect · Checkbox · RadioGroup · DateInput · CurrencyInput · FileUpload
-│                (+ FieldAction, fieldStyles, currencyParsing)
+│                Checkbox · DateInput · FileUpload (+ FieldAction, fieldStyles)
 ├── navigation/  AppShell · AppSidebar · SidebarSection · SidebarItem · TopBar ·
 │                MobileNavigationTrigger · MobileNavigationDrawer · UserMenu ·
 │                LanguageSelector · NotificationButton · NotificationBadge · Breadcrumb ·
@@ -51,8 +50,8 @@ shared/design-system/
 ├── data-display/
 │                Card (+ Header/Title/Description/Content/Footer) · MetricCard ·
 │                Table (+ Head/Body/Row/HeaderCell/Cell/StatusRow) · ResponsiveTable ·
-│                Pagination · Tabs · Accordion · DescriptionList · CurrencyDisplay
-├── overlays/    Modal · ConfirmationDialog · DropdownMenu · Popover · Tooltip
+│                Pagination · Tabs · DescriptionList · CurrencyDisplay
+├── overlays/    Modal · ConfirmationDialog · DropdownMenu
 ├── ai/          AILabel · AIRecommendationCard · AIRecommendationActions ·
 │                AIRecommendationLoading
 ├── marketing/   MarketingHero · MarketingSection · MarketingFeatureCard ·
@@ -65,17 +64,22 @@ Importar siempre desde el barril: `import { Button, FormField } from '@/shared/d
 ### Navegación: un solo modelo para desktop y mobile
 
 `AppSidebar` y `MobileNavigationDrawer` consumen la misma estructura `NavigationSection[]`, ya
-resuelta (label traducido + ruta activa). El adaptador entre el modelo de la aplicación
-(`shared/navigation/navItems.ts`) y este modelo presentacional es
-`shared/navigation/useNavigationSections`. **No** existe una segunda definición de navegación, y
-el design system no conoce rutas, roles ni permisos.
+resuelta (label traducido + ruta activa). La única fuente de la aplicación es
+`shared/navigation/roleNavigation.tsx`: define las secciones por rol en esta misma forma (con
+claves i18n) y `resolveNavigationSections` las traduce y marca la ruta activa. **No** existe una
+segunda definición de navegación, y el design system no conoce rutas, roles ni permisos.
+`AuthenticatedShell` compone `AppShell`, `TopBar`, `AppSidebar` y `MobileNavigationDrawer`
+directamente.
 
 ```tsx
+const navigation = getRoleNavigation(role);
+const sections = resolveNavigationSections(navigation.sections, pathname, t);
+
 <AppShell
   skipLink={<SkipLink />}
-  topBar={<Topbar onMenuOpen={open} isMenuOpen={isOpen} drawerId="app-mobile-nav" />}
-  sidebar={<Sidebar items={ORGANIZER_NAV_ITEMS} ariaLabel={t('sidebar.organizer.label')} />}
-  drawer={<MobileNav items={ORGANIZER_NAV_ITEMS} isOpen={isOpen} onClose={close} … />}
+  topBar={<TopBar menuTrigger={…} brand={<Logo size="sm" />} actions={…} />}
+  sidebar={<AppSidebar ariaLabel={t(navigation.ariaLabelKey)} sections={sections} />}
+  drawer={<MobileNavigationDrawer open={isOpen} onClose={close} sections={sections} … />}
   mainClassName="p-6"
 >
   {children}
@@ -250,38 +254,7 @@ overlay.
 </FormField>
 ```
 
-### MultiSelect
-
-El componente es genérico: **las opciones son datos del feature**.
-
-```tsx
-const EVENT_STATUS_OPTIONS = [
-  { value: 'draft', label: t('events.status.draft') }, // Borrador
-  { value: 'active', label: t('events.status.active') }, // Activo
-  { value: 'completed', label: t('events.status.completed') }, // Completado
-  { value: 'cancelled', label: t('events.status.cancelled') }, // Cancelado
-];
-
-<FormField label={t('events.filters.statuses')}>
-  {(field) => (
-    <MultiSelect
-      {...field}
-      options={EVENT_STATUS_OPTIONS}
-      value={statuses}
-      onChange={setStatuses}
-      placeholder={t('events.filters.allStatuses')}
-      summaryLabel={(count) => t('events.filters.selectedCount', { count })}
-      removeOptionLabel={(label) => t('events.filters.removeStatus', { label })}
-      clearAllLabel={t('events.filters.clearAll')}
-    />
-  )}
-</FormField>;
-```
-
-Teclado: `↓`/`Enter` abre · `↑`/`↓`/`Home`/`End` navegan · `Enter`/`Espacio` alternan ·
-`Esc` cierra y devuelve el foco al trigger · clic fuera cierra.
-
-### Checkbox y RadioGroup
+### Checkbox
 
 ```tsx
 <Checkbox
@@ -290,22 +263,10 @@ Teclado: `↓`/`Enter` abre · `↑`/`↓`/`Home`/`End` navegan · `Enter`/`Espa
   checked={accepted}
   onChange={(event) => setAccepted(event.target.checked)}
   error={showError ? t('terms.required') : undefined}
-/>
+/>;
 
-{/* Estado mixto de un grupo padre */}
-<Checkbox label={t('filters.allStatuses')} indeterminate={someSelected} />
-
-<RadioGroup
-  name="event-status"
-  legend={t('events.statusLegend')}
-  value={status}
-  onChange={setStatus}
-  helperText={t('events.statusHelp')}
-  options={[
-    { value: 'draft', label: t('events.status.draft') },
-    { value: 'active', label: t('events.status.active') },
-  ]}
-/>
+// Estado mixto de un grupo padre
+<Checkbox label={t('filters.allStatuses')} indeterminate={someSelected} />;
 ```
 
 ### DateInput
@@ -318,28 +279,6 @@ Teclado: `↓`/`Enter` abre · `↑`/`↓`/`Home`/`End` navegan · `Enter`/`Espa
 
 Para un rango, se usan dos `DateInput` y **un solo** mensaje de error cruzado asociado a ambos
 por `aria-describedby` (patrón implementado en `ReviewFiltersPanel`).
-
-### CurrencyInput
-
-```tsx
-{
-  /* La moneda del evento es inmutable (BR-EVENT-007): el código ISO es un prefijo, no un selector. */
-}
-<FormField label={t('budget.plannedLabel')} helperText={t('budget.noConversionHelp')}>
-  {(field) => (
-    <CurrencyInput
-      {...field}
-      currencyCode={event.currencyCode} /* GTQ, USD, … */
-      locale={activeLocale}
-      value={amountPlanned}
-      onValueChange={setAmountPlanned} /* siempre numérico: nunca la cadena formateada */
-    />
-  )}
-</FormField>;
-```
-
-Acepta `1.234,56` y `1,234.56`; formatea al perder el foco. **Nunca convierte** moneda
-(BR-BUDGET-007).
 
 ### FileUpload
 
@@ -598,7 +537,7 @@ lista y son **mutuamente excluyentes por CSS**, de modo que sólo un juego de ac
 `sortDirection` + `onSort`): la primitiva pinta `aria-sort`, nunca ordena datos. No hay data grid
 (sin pinning, sin selección masiva, sin edición ni virtualización).
 
-### Pagination · Tabs · Accordion · DescriptionList
+### Pagination · Tabs · DescriptionList
 
 ```tsx
 <Pagination
@@ -614,13 +553,6 @@ lista y son **mutuamente excluyentes por CSS**, de modo que sólo un juego de ac
   {(active) => (active === 'general' ? <GeneralPanel /> : <GuestsPanel />)}
 </Tabs>
 
-<Accordion type="single" defaultValue={['vendors']}>
-  <AccordionItem value="vendors">
-    <AccordionTrigger>{t('faq.vendors')}</AccordionTrigger>
-    <AccordionPanel>{t('faq.vendorsBody')}</AccordionPanel>
-  </AccordionItem>
-</Accordion>
-
 <DescriptionList columns={2}>
   <DescriptionListItem term={t('event.organizer')}>{event.organizerName}</DescriptionListItem>
   <DescriptionListItem term={t('event.venue')} emptyText="—" />
@@ -629,8 +561,7 @@ lista y son **mutuamente excluyentes por CSS**, de modo que sólo un juego de ac
 
 `Pagination` no posee datos ni conoce la URL, y con `totalPages = 0` no anuncia ningún rango
 (nada de `1–0 de 0`). `Tabs` implementa el patrón APG con activación automática y roving
-tabindex; el tab activo se marca con peso y barra, no sólo con color. `Accordion` desmonta el
-panel cerrado en lugar de animar la altura.
+tabindex; el tab activo se marca con peso y barra, no sólo con color.
 
 ### CurrencyDisplay
 
@@ -671,11 +602,13 @@ Headless UI ya instalado. `closeOnEscape` y `closeOnOverlayClick` son decisiones
 `ConfirmationDialog` es `role="alertdialog"`, enfoca **Cancelar** (la opción segura) y durante una
 confirmación asíncrona no admite cierre ni segundo envío.
 
-### DropdownMenu · Popover · Tooltip
+### DropdownMenu
 
 ```tsx
 <DropdownMenu
-  iconOnly trigger={<MoreVertical />} triggerAriaLabel={t('events.rowActions', { name })}
+  iconOnly
+  trigger={<MoreVertical />}
+  triggerAriaLabel={t('events.rowActions', { name })}
   items={[
     { key: 'edit', label: t('actions.edit'), onSelect: edit },
     { kind: 'link', key: 'detail', label: t('actions.detail'), href: `/organizer/events/${id}` },
@@ -683,19 +616,10 @@ confirmación asíncrona no admite cierre ni segundo envío.
     { key: 'delete', label: t('actions.delete'), onSelect: remove, destructive: true },
   ]}
 />
-
-<Popover trigger={<Bell />} iconOnly triggerAriaLabel={t('notifications.aria')} title={t('notifications.title')}>
-  {({ close }) => <NotificationsList onNavigate={close} />}
-</Popover>
-
-<Tooltip content={t('budget.marginHint')}>
-  <IconButton icon={<Info />} aria-label={t('budget.marginAria')} />   {/* el nombre NO lo da el tooltip */}
-</Tooltip>
 ```
 
 El menú no conoce acciones de dominio: `items` llega del feature, que decide cuáles existen según
-permisos. Una acción es `<button>`; una navegación, `Link` de Next. El `Popover` admite foco e
-interacción (a diferencia del `Tooltip`) pero **no** sustituye a `Modal` en flujos críticos.
+permisos. Una acción es `<button>`; una navegación, `Link` de Next.
 
 ### AIRecommendationCard · AILabel · AIRecommendationActions
 
@@ -785,21 +709,21 @@ que los monta, y deben limitarse a lo que el MVP hace hoy (ver
 
 ## 5. Accesibilidad (contrato)
 
-| Requisito           | Cómo se cumple                                                                           |
-| ------------------- | ---------------------------------------------------------------------------------------- |
-| Foco visible        | `.focus-ring` / `.focus-ring-within` (`focus-visible`, offset blanco)                    |
-| Nombre accesible    | Label visible vía `FormField`; `aria-label` obligatorio en `IconButton`/`FieldAction`    |
-| Error asociado      | `aria-describedby` + `aria-invalid` generados por `FormField`                            |
-| Estado ≠ sólo color | Los errores llevan icono + texto                                                         |
-| Touch target        | `IconButton` ≥ 44 px; `Button` `sm`/`md` amplían con `.hit-area`                         |
-| Teclado             | Controles nativos donde existen; `MultiSelect` implementa el patrón listbox de ARIA APG  |
-| Anuncios            | `role="alert"` en errores; `role="status"` en `FileUpload`; `aria-live` en `MultiSelect` |
-| Reduced motion      | Transiciones con tokens de motion; el spinner usa `motion-reduce:animate-none`           |
-| Landmarks           | `AppShell` monta un único `<main>`; `AppSidebar` y el drawer, `<nav>` con nombre         |
-| Ruta activa         | `aria-current="page"` + peso tipográfico + barra de acento (no sólo color)               |
-| Focus trap          | Drawer y menús vía Headless UI: `Escape`, clic fuera y retorno de foco al trigger        |
-| Regiones vivas      | Opt-in (`live`): sin anuncios redundantes en el render inicial                           |
-| Reflow              | `AppShell` usa `overflow-x-clip`: el shell nunca provoca scroll horizontal de página     |
+| Requisito           | Cómo se cumple                                                                        |
+| ------------------- | ------------------------------------------------------------------------------------- |
+| Foco visible        | `.focus-ring` / `.focus-ring-within` (`focus-visible`, offset blanco)                 |
+| Nombre accesible    | Label visible vía `FormField`; `aria-label` obligatorio en `IconButton`/`FieldAction` |
+| Error asociado      | `aria-describedby` + `aria-invalid` generados por `FormField`                         |
+| Estado ≠ sólo color | Los errores llevan icono + texto                                                      |
+| Touch target        | `IconButton` ≥ 44 px; `Button` `sm`/`md` amplían con `.hit-area`                      |
+| Teclado             | Controles nativos donde existen; `Tabs` implementa el patrón de ARIA APG              |
+| Anuncios            | `role="alert"` en errores; `role="status"` en `FileUpload`                            |
+| Reduced motion      | Transiciones con tokens de motion; el spinner usa `motion-reduce:animate-none`        |
+| Landmarks           | `AppShell` monta un único `<main>`; `AppSidebar` y el drawer, `<nav>` con nombre      |
+| Ruta activa         | `aria-current="page"` + peso tipográfico + barra de acento (no sólo color)            |
+| Focus trap          | Drawer y menús vía Headless UI: `Escape`, clic fuera y retorno de foco al trigger     |
+| Regiones vivas      | Opt-in (`live`): sin anuncios redundantes en el render inicial                        |
+| Reflow              | `AppShell` usa `overflow-x-clip`: el shell nunca provoca scroll horizontal de página  |
 
 ## 6. Qué **no** está aquí
 

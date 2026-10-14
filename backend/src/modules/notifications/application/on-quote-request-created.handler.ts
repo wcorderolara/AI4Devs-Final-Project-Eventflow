@@ -4,13 +4,15 @@
 // Invocado in-tx desde `CreateQuoteRequestUseCase` (US-049 refactor de BE-005). Los
 // guards defensivos (vendor no-approved / user deactivated / user_id null) NO abortan
 // la transacción: se registran como `warn` estructurado y el handler retorna.
-// Cualquier fallo del INSERT o del `existsQuoteRequestReceivedForQR` propaga a la
+// Cualquier fallo del INSERT o del `exists` (idempotencia) propaga a la
 // tx → rollback (AC-06).
 import type { Prisma } from '@prisma/client';
 import type { SupportedLanguage } from '../../../shared/constants/languages.js';
 import { SUPPORTED_LANGUAGES } from '../../../shared/constants/languages.js';
-import type { NotificationQrReceivedRepository } from '../ports/notification-qr-received.repository.js';
-import type { SimulatedQrReceivedEmailPort } from '../ports/simulated-qr-received-email.port.js';
+import type {
+  NotificationQrReceivedRepository,
+  SimulatedQrReceivedEmailPort,
+} from '../ports/notification-channels.port.js';
 import { renderQrReceivedTemplate } from '../i18n/qr-received-templates.js';
 
 /** Lookup del idioma del vendor. Estructuralmente compatible con `OrganizerLanguageLookup`. */
@@ -102,7 +104,7 @@ export class OnQuoteRequestCreatedHandler {
     }
 
     // Idempotencia (AC-02). El chequeo corre dentro de la misma tx.
-    const alreadyEmitted = await notificationRepo.existsQuoteRequestReceivedForQR(
+    const alreadyEmitted = await notificationRepo.exists(
       vendorUser.id,
       quoteRequest.id,
       { tx },

@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { EVENT_TYPE_CODES } from '../domain/event-type-codes.js';
 import { EVENT_STATUSES } from '../domain/event-lifecycle.js';
 import { eventDateSchema } from './create-event.request.js';
+import { paginationQueryShape } from '../../../shared/validation/pagination.js';
 
 export const EVENT_SORT_OPTIONS = ['eventDate:asc', 'eventDate:desc', 'createdAt:asc', 'createdAt:desc'] as const;
 export type EventSortOption = (typeof EVENT_SORT_OPTIONS)[number];
@@ -15,8 +16,7 @@ export const ListEventsQuerySchema = z
     eventTypeCode: z.enum(EVENT_TYPE_CODES).optional(),
     eventDateFrom: eventDateSchema.optional(),
     eventDateTo: eventDateSchema.optional(),
-    page: z.coerce.number().int().positive().max(10000).optional().default(1),
-    pageSize: z.coerce.number().int().positive().max(100).optional().default(20),
+    ...paginationQueryShape,
     sort: z.enum(EVENT_SORT_OPTIONS).optional().default('eventDate:asc'),
   })
   .strict();

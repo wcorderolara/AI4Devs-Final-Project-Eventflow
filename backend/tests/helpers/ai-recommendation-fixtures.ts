@@ -21,9 +21,6 @@ export class FakeAIRecommendationRepository implements AIRecommendationRepositor
   upserted: AIPromptVersionSyncRow[] = [];
   promptVersions = new Set<string>(['pv-valid']);
 
-  async createPending(_data: CreateAiRecommendationData): Promise<AiRecommendationView> {
-    throw new Error('not used in US-122 tests');
-  }
   async findById(): Promise<AiRecommendationView | null> {
     return null;
   }
@@ -63,9 +60,10 @@ export class FakeAIRecommendationRepository implements AIRecommendationRepositor
     return this.promptVersions.has(promptVersionId);
   }
 
-  async upsertPromptVersion(row: AIPromptVersionSyncRow): Promise<void> {
+  async upsertPromptVersion(row: AIPromptVersionSyncRow): Promise<string> {
     this.upserted.push(row);
     this.promptVersions.add(row.id);
+    return row.id;
   }
 
   // US-059 (PB-P2-001 / BE-002): fake trivial — retorna null (los tests que lo requieran usan
@@ -82,6 +80,7 @@ export class FakeAIRecommendationRepository implements AIRecommendationRepositor
   }
   async createRegeneration(
     input: CreateAiRecommendationData & {
+      promptVersionId: string;
       parentRecommendationId: string;
       rootRecommendationId: string;
       regenerationFeedback: string | null;
@@ -156,3 +155,6 @@ export function validPersistInput(
     ...overrides,
   };
 }
+
+/** PR-5: resolver fake de `AIPromptVersion.id` (siempre el id válido del fake repo). */
+export const fakePromptVersions = { resolve: async (): Promise<string> => 'pv-valid' };

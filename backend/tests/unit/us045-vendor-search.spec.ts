@@ -11,13 +11,14 @@ import {
   SEARCH_VENDORS_LIMIT_MAX,
 } from '../../src/modules/vendor-management/interface/dto/search-vendors.query.js';
 import {
-  decodeVendorSearchCursor,
-  encodeVendorSearchCursor,
-} from '../../src/modules/vendor-management/application/vendor-search-cursor.js';
-import {
   toVendorCardResponse,
 } from '../../src/modules/vendor-management/interface/dto/search-vendors.response.js';
-import { SearchVendorsUseCase } from '../../src/modules/vendor-management/application/search-vendors.use-case.js';
+import {
+  SearchVendorsUseCase,
+  VendorSearchCursorSchema,
+  encodeVendorSearchCursor,
+} from '../../src/modules/vendor-management/application/search-vendors.use-case.js';
+import { tryDecodeCursor } from '../../src/shared/pagination/cursor.js';
 import {
   InvalidCursorError,
   InvalidFiltersError,
@@ -26,6 +27,8 @@ import type {
   VendorSearchRepository,
   VendorSearchRow,
 } from '../../src/modules/vendor-management/ports/vendor-search.repository.js';
+
+const decodeVendorSearchCursor = (t: string) => tryDecodeCursor(t, VendorSearchCursorSchema);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Cursor

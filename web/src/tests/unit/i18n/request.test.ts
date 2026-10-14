@@ -11,13 +11,13 @@ describe('i18n/request', () => {
     });
   });
 
-  it('loadMessages(es-LATAM) devuelve el catálogo base completo', () => {
-    const messages = loadMessages('es-LATAM') as Record<string, Record<string, string>>;
+  it('loadMessages(es-LATAM) devuelve el catálogo base completo', async () => {
+    const messages = (await loadMessages('es-LATAM')) as Record<string, Record<string, string>>;
     expect(messages.common?.welcome).toBe('Bienvenido a EventFlow');
   });
 
-  it('loadMessages(pt) mergea sobre es-LATAM con traducciones pt', () => {
-    const messages = loadMessages('pt') as Record<string, Record<string, string>>;
+  it('loadMessages(pt) mergea sobre es-LATAM con traducciones pt', async () => {
+    const messages = (await loadMessages('pt')) as Record<string, Record<string, string>>;
     expect(messages.common?.welcome).toBe('Bem-vindo ao EventFlow');
     // Clave presente en ambos: usa la de pt.
     expect(messages.navigation?.login).toBe('Entrar');

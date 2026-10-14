@@ -7,9 +7,4 @@ export type {
   GetVendorReviewsInput,
   GetVendorReviewsCurrentUser,
 } from './get-vendor-reviews.use-case.js';
-export {
-  encodeVendorReviewsCursor,
-  decodeVendorReviewsCursor,
-  type VendorReviewsCursor,
-} from './vendor-reviews-cursor.js';
 export { toAnonymizedReview, type AnonymizedReviewRow } from './anonymized-review.mapper.js';

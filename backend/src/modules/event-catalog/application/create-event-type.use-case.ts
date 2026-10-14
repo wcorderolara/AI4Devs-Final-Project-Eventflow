@@ -17,13 +17,16 @@
 // proyectan `label` directo. Idéntico criterio para `description` desde
 // `description_i18n['es-LATAM']`. Sin esta denormalización, esos consumers necesitarían
 // resolver locale — cambio de scope no autorizado.
-import { Prisma, type PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
+import { recordAdminAction } from '../../../infrastructure/persistence/record-admin-action.js';
 import {
-  DuplicateEventTypeCodeError,
-  InvalidNameI18nError,
-} from '../domain/us076.errors.js';
+  assertNameI18nHasEsLatam,
+  catalogI18nColumns,
+  type CatalogAdminCtx,
+} from '../../../shared/application/catalog-admin.js';
+import { DuplicateEventTypeCodeError } from '../domain/us076.errors.js';
 import type { CreateEventTypeBody as CreateBodyFromDto } from '../interface/event-type.dto.js';
 import { toEventTypeView, type EventTypeView } from './event-type.view.js';
 
@@ -36,9 +39,7 @@ export type CreateEventTypeBody = Omit<CreateBodyFromDto, 'sort_order'> & {
   sort_order?: number;
 };
 
-export interface CreateEventTypeCtx {
-  correlationId?: string;
-}
+export type CreateEventTypeCtx = CatalogAdminCtx;
 
 export class CreateEventTypeUseCase {
   constructor(
@@ -63,17 +64,10 @@ export class CreateEventTypeUseCase {
       if (dup) throw new DuplicateEventTypeCodeError();
 
       // 2) INSERT EventType — `label` y `description` denormalizados desde i18n['es-LATAM'].
-      const esLatamName = (body.name_i18n as Record<string, string>)['es-LATAM']!;
-      const esLatamDesc = (body.description_i18n as Record<string, string> | undefined)?.['es-LATAM'];
       const created = await tx.eventType.create({
         data: {
           code: body.code,
-          label: esLatamName,
-          description: esLatamDesc ?? null,
-          nameI18n: body.name_i18n as Prisma.InputJsonObject,
-          descriptionI18n: body.description_i18n
-            ? (body.description_i18n as Prisma.InputJsonObject)
-            : undefined,
+          ...catalogI18nColumns(body),
           sortOrder: body.sort_order ?? 0,
           isActive: true,
         },
@@ -81,24 +75,21 @@ export class CreateEventTypeUseCase {
 
       // 3) INSERT AdminAction append-only (Decisión PO D6; BR-ADMIN-011). `metadata`
       // guarda snapshot mínimo — sin FKs cross-domain a `event_types.admin_action_id`.
-      const adminAction = await tx.adminAction.create({
-        data: {
-          adminUserId: currentUserId,
-          action: 'create',
-          targetEntity: 'event_type',
-          targetId: created.id,
-          metadata: {
-            correlationId: ctx.correlationId ?? null,
-            reason: body.reason ?? null,
-            snapshot: {
-              code: created.code,
-              sort_order: created.sortOrder,
-              name_i18n: body.name_i18n,
-              description_i18n: body.description_i18n ?? null,
-            },
-          } as Prisma.InputJsonObject,
+      const adminAction = await recordAdminAction(tx, {
+        adminUserId: currentUserId,
+        action: 'create',
+        targetEntity: 'event_type',
+        targetId: created.id,
+        correlationId: ctx.correlationId,
+        metadata: {
+          reason: body.reason ?? null,
+          snapshot: {
+            code: created.code,
+            sort_order: created.sortOrder,
+            name_i18n: body.name_i18n,
+            description_i18n: body.description_i18n ?? null,
+          },
         },
-        select: { id: true },
       });
 
       this.logger.emit('event_type.created', {
@@ -115,11 +106,3 @@ export class CreateEventTypeUseCase {
   }
 }
 
-/** Invariante D3/VR-03 — separado para reuso en `Update`. */
-export function assertNameI18nHasEsLatam(nameI18n: Record<string, unknown> | undefined): void {
-  if (!nameI18n || typeof nameI18n !== 'object') throw new InvalidNameI18nError();
-  const val = (nameI18n as Record<string, unknown>)['es-LATAM'];
-  if (typeof val !== 'string' || val.trim().length === 0) {
-    throw new InvalidNameI18nError();
-  }
-}

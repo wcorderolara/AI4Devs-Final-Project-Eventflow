@@ -50,3 +50,28 @@ export const execInput: AIExecutionInput = {
   languageCode: 'es-LATAM',
   correlationId: 'corr-123',
 };
+
+import { AIExecutionService } from '../../src/modules/ai-assistance/application/ai-execution/ai-execution.service.js';
+import { ValidatedAIExecutionService } from '../../src/modules/ai-assistance/application/ai-validation/validated-ai-execution.service.js';
+import { AiGenerationService } from '../../src/modules/ai-assistance/application/ai-generation.service.js';
+import { MockAIProvider } from '../../src/modules/ai-assistance/infrastructure/providers/mock/mock-ai-provider.js';
+
+/**
+ * PR-5: `AiGenerationService` con el wiring de producción (US-123 + US-124) sobre un provider dado.
+ * Default: primario `mock` sin fallback (igual que `LLM_PROVIDER=mock`).
+ */
+export function makeAiGenerationService(
+  primaryProvider: LLMProvider = new MockAIProvider(),
+  overrides: Partial<AIExecutionConfig> = {},
+): AiGenerationService {
+  const execution = new AIExecutionService({
+    primaryProvider,
+    mockProvider: new MockAIProvider(),
+    config: execConfig({ llmProvider: 'mock', ...overrides }),
+  });
+  return new AiGenerationService({
+    execution,
+    validated: new ValidatedAIExecutionService(),
+    fallbackEligible: execution.isFallbackEligible(),
+  });
+}

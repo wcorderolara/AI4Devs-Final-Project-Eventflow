@@ -12,17 +12,13 @@
 // `roleMiddleware` (no es admin-only).
 import { Router } from 'express';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { requireSession } from '../../../infrastructure/auth-composition.js';
 import { prisma } from '../../../infrastructure/prisma/client.js';
 import { ListEventTypesUseCase } from '../application/list-event-types.use-case.js';
 import { PublicEventTypeController } from './public-event-type.controller.js';
 
 const listUC = new ListEventTypesUseCase(prisma);
 const controller = new PublicEventTypeController(listUC);
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
 
 export const publicEventTypeRouter = Router();
-publicEventTypeRouter.get('/', sessionAuth, asyncHandler(controller.list));
-
-export const publicEventTypeComposition = { listUC, controller } as const;
+publicEventTypeRouter.get('/', requireSession, asyncHandler(controller.list));

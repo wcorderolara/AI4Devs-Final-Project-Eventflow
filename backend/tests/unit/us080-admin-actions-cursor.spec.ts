@@ -2,9 +2,12 @@
 // Cubre encode round-trip + rechazo de payloads corruptos (EC-02 → 400 INVALID_CURSOR).
 import { describe, expect, it } from 'vitest';
 import {
-  encodeAdminActionsCursor,
-  decodeAdminActionsCursor,
-} from '../../src/modules/admin-governance/application/admin-actions-cursor.js';
+  CreatedAtIdCursorSchema,
+  encodeCreatedAtIdCursor as encodeAdminActionsCursor,
+  tryDecodeCursor,
+} from '../../src/shared/pagination/cursor.js';
+
+const decodeAdminActionsCursor = (t: string) => tryDecodeCursor(t, CreatedAtIdCursorSchema);
 
 const UUID = 'aa000001-0000-0000-0000-000000000001';
 const DATE = new Date('2026-07-20T15:30:00.000Z');

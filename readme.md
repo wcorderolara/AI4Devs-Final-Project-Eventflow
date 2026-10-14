@@ -145,7 +145,6 @@ Edita `backend/.env` y ajusta como mínimo:
 ```env
 DATABASE_URL="postgresql://AdminEF:<TU_PASSWORD_SEGURA>@localhost:5433/eventflow?schema=public"
 SESSION_SECRET="dev_session_secret_min_32_chars_change_me_please_ok"
-JWT_SECRET="dev_jwt_secret_min_32_chars_change_me_please_ok_1234"
 LLM_PROVIDER=mock            # sin costo de red, determinista
 CAPTCHA_PROVIDER=mock        # token válido: '__test__'
 SEED_DEMO_ENABLED=true

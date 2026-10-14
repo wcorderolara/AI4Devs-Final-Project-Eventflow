@@ -20,7 +20,8 @@ describe('getRoleNavigation', () => {
   it('organizer → sección plana con sus destinos aprobados', () => {
     const nav = getRoleNavigation('organizer');
     expect(nav?.role).toBe('organizer');
-    expect(nav?.groups).toBeUndefined();
+    expect(nav?.sections).toHaveLength(1);
+    expect(nav?.sections[0]?.titleKey).toBeUndefined();
     expect(navigationHrefsForRole('organizer')).toEqual([
       '/organizer',
       '/organizer/events',
@@ -44,15 +45,16 @@ describe('getRoleNavigation', () => {
 
   it('admin → secciones agrupadas, todas con al menos un destino visible', () => {
     const nav = getRoleNavigation('admin');
-    expect(nav?.items).toBeUndefined();
-    expect(nav?.groups?.length).toBeGreaterThan(0);
-    expect(nav?.groups?.every((group) => group.items.length > 0)).toBe(true);
+    expect(nav?.sections.length).toBeGreaterThan(1);
+    expect(nav?.sections.every((section) => section.titleKey && section.items.length > 0)).toBe(
+      true,
+    );
     expect(navigationHrefsForRole('admin')).toEqual(ADMIN_NAV_ITEMS.map((item) => item.href));
   });
 
   it.each(ROLES)('cada destino visible para %s declara ese rol en allowedRoles', (role) => {
     const nav = getRoleNavigation(role);
-    const items = nav?.groups ? nav.groups.flatMap((g) => g.items) : (nav?.items ?? []);
+    const items = nav?.sections.flatMap((section) => section.items) ?? [];
     expect(items.length).toBeGreaterThan(0);
     expect(items.every((item) => item.allowedRoles.includes(role))).toBe(true);
   });

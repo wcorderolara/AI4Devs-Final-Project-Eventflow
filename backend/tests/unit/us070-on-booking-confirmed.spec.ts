@@ -28,15 +28,13 @@ import type { NotificationLinkQuoteRequestReader } from '../../src/modules/notif
 import type { NotificationLinkBookingIntentReader } from '../../src/modules/notifications/ports/notification-link-booking-intent-reader.js';
 import type { NotificationRow } from '../../src/modules/notifications/ports/list-notifications.repository.js';
 import type {
-  BookingConfirmedRepositoryOptions,
   CreateBookingConfirmedNotificationInput,
   NotificationBookingConfirmedRepository,
-} from '../../src/modules/notifications/ports/notification-booking-confirmed.repository.js';
-import type {
+  NotificationRepositoryOptions,
   SimulatedBookingConfirmedEmailInput,
   SimulatedBookingConfirmedEmailPort,
-} from '../../src/modules/notifications/ports/simulated-booking-confirmed-email.port.js';
-import { BOOKING_CONFIRMED_EMAIL_LOG_ALLOWED_KEYS } from '../../src/modules/notifications/infrastructure/logging-simulated-booking-confirmed-email.adapter.js';
+} from '../../src/modules/notifications/ports/notification-channels.port.js';
+import { BOOKING_CONFIRMED_EMAIL_LOG_ALLOWED_KEYS } from '../../src/modules/notifications/infrastructure/notification-channels.js';
 import { renderBookingConfirmedTemplate } from '../../src/modules/notifications/i18n/booking-confirmed-templates.js';
 import type { SupportedLanguage } from '../../src/shared/constants/languages.js';
 
@@ -48,17 +46,17 @@ class FakeBookingConfirmedRepo implements NotificationBookingConfirmedRepository
     this.existsMap.set(`${userId}::${bookingIntentId}`, true);
   }
 
-  existsBookingConfirmedForRecipient(
+  exists(
     recipientUserId: string,
     bookingIntentId: string,
-    _opts?: BookingConfirmedRepositoryOptions,
+    _opts?: NotificationRepositoryOptions,
   ): Promise<boolean> {
     return Promise.resolve(this.existsMap.get(`${recipientUserId}::${bookingIntentId}`) ?? false);
   }
 
   create(
     input: CreateBookingConfirmedNotificationInput,
-    _opts?: BookingConfirmedRepositoryOptions,
+    _opts?: NotificationRepositoryOptions,
   ): Promise<void> {
     this.created.push(input);
     this.existsMap.set(`${input.recipientUserId}::${input.bookingIntentId}`, true);

@@ -110,7 +110,7 @@ Consola Amplify → **Environment variables** (por rama/ambiente):
 | --- | --- | --- | --- | --- |
 | `NEXT_PUBLIC_API_BASE_URL` | `https://<app-runner-demo>/api/v1` | `https://<app-runner-qa>/api/v1` | **Sí** (VR-04) | URL del backend App Runner por ambiente. **Depende de PB-P2-022** — usar placeholder hasta que exista. |
 | `NEXT_PUBLIC_APP_ENV` | `demo` | `qa` | **Sí** | Ambiente lógico. |
-| `NEXT_PUBLIC_CAPTCHA_PROVIDER` | `recaptcha`/`hcaptcha` (o `mock` en QA) | `mock` | No | Si ≠ `mock`, el site key pasa a requerido. |
+| `NEXT_PUBLIC_CAPTCHA_PROVIDER` | `recaptcha` (o `mock` en QA/Demo) | `mock` | No | Si ≠ `mock`, el site key pasa a requerido. |
 | `NEXT_PUBLIC_CAPTCHA_SITE_KEY` | site key real | (vacío si `mock`) | Condicional | Requerida sólo si el provider ≠ `mock` (VR-03). |
 | `NEXT_PUBLIC_SITE_URL` | URL pública Demo | URL pública QA | No | Base para robots.txt/sitemap (US-105). |
 

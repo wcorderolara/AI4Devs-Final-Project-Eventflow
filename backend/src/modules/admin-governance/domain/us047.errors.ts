@@ -16,7 +16,7 @@
 //   Otros pares (EC-01 `approved→approve` doble, EC-02 `pending|rejected → hide`, etc.)
 //   disparan este error sin crear AdminAction (BR-ADMIN-011 se preserva: sólo hay AdminAction
 //   cuando hubo mutación efectiva).
-import { AppError } from '../../../shared/domain/errors/app.error.js';
+import { AppError, type ErrorDetail, type HttpErrorMapping } from '../../../shared/domain/errors/app.error.js';
 import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
 
 /**
@@ -26,8 +26,13 @@ import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
  */
 export class VendorNotFoundForModerationError extends AppError {
   readonly code = ErrorCodes.VENDOR_NOT_FOUND;
+  override readonly httpStatus = 404;
   constructor(message = 'Vendor not found') {
     super(message);
+  }
+
+  override toHttp(): HttpErrorMapping {
+    return { ...super.toHttp(), message: 'Vendor not found' };
   }
 }
 
@@ -38,6 +43,7 @@ export class VendorNotFoundForModerationError extends AppError {
  */
 export class InvalidVendorTransitionError extends AppError {
   readonly code = ErrorCodes.INVALID_TRANSITION;
+  override readonly httpStatus = 409;
   constructor(
     public readonly fromStatus: string,
     public readonly fromIsHidden: boolean,
@@ -48,5 +54,16 @@ export class InvalidVendorTransitionError extends AppError {
     message = 'Invalid vendor moderation transition',
   ) {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [
+      { field: 'from_status', message: this.fromStatus },
+      { field: 'from_is_hidden', message: String(this.fromIsHidden) },
+      { field: 'to_status', message: this.toStatus },
+      { field: 'to_is_hidden', message: String(this.toIsHidden) },
+      { field: 'action', message: this.action },
+      { field: 'allowed', message: this.allowed.join(',') },
+    ];
   }
 }

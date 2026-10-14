@@ -1,30 +1,14 @@
 // US-097 / QA-002 — Integration/API tests AI (Supertest + Prisma + MockAIProvider). AC-01..AC-12.
 import { describe, it, expect, beforeAll } from 'vitest';
-import request from 'supertest';
-import { PrismaClient } from '@prisma/client';
 import { createApp } from '../../src/app.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { rnd, sessionHelpers, type Agent } from '../helpers/http.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([prisma.$queryRawUnsafe('SELECT 1'), new Promise((_, rej) => setTimeout(() => rej(new Error('t')), 4000))]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const app = createApp();
-const CAPTCHA = '__test__';
-const rnd = (): string => `${Date.now()}_${Math.floor(Math.random() * 1e9)}`;
-type Agent = ReturnType<typeof request.agent>;
 
-async function registerLogin(role: 'organizer' | 'vendor'): Promise<{ agent: Agent; userId: string }> {
-  const email = `us097_${role}_${rnd()}@eventflow.test`;
-  const agent = request.agent(app);
-  const reg = await agent.post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', ...(role === 'vendor' ? { businessName: 'Vendor Demo SA' } : { name: role }), role, captchaToken: CAPTCHA });
-  await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
-  return { agent, userId: reg.body.data.id as string };
-}
+const { registerLogin } = sessionHelpers(app, { tag: 'us097' });
 
 let locationId = '';
 let serviceCategoryId = '';

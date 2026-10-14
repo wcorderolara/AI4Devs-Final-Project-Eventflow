@@ -2,7 +2,7 @@
 //   POST /api/v1/events/:eventId/ai/quote-summary (US-022 / FE-003) — genera el resumen.
 //   GET  /api/v1/events/:eventId/ai/quote-summary?category_code= (US-059 / BE-004) — surface del último.
 // Ambos endpoints devuelven el mismo shape para que la UI use un tipo único.
-import { httpGet, httpPost } from '@/shared/api-client';
+import { httpGetData, httpPostData } from '@/shared/api-client';
 
 export interface QuoteSummaryItem {
   quote_id: string;
@@ -29,11 +29,6 @@ export interface GenerateQuoteSummaryInput {
   preferMock?: boolean;
 }
 
-interface QuoteSummaryEnvelope {
-  data: GenerateQuoteSummaryResponse;
-  meta: { correlationId: string; timestamp: string };
-}
-
 export interface LatestQuoteSummaryInput {
   eventId: string;
   categoryCode: string;
@@ -45,15 +40,14 @@ export const aiQuoteSummaryApi = {
    * para tolerar el cap 60s del provider AI (US-123) + margen de red.
    */
   async generate(input: GenerateQuoteSummaryInput): Promise<GenerateQuoteSummaryResponse> {
-    const envelope = await httpPost<
-      QuoteSummaryEnvelope,
+    return httpPostData<
+      GenerateQuoteSummaryResponse,
       { category_code: string; preferMock?: boolean }
     >(`/events/${input.eventId}/ai/quote-summary`, {
       body: { category_code: input.categoryCode, preferMock: input.preferMock },
       isAI: true,
       timeoutMs: 65_000,
     });
-    return envelope.data;
   },
 
   /**
@@ -62,9 +56,8 @@ export const aiQuoteSummaryApi = {
    * "empty state + CTA" en la UI (AC-02).
    */
   async getLatest(input: LatestQuoteSummaryInput): Promise<GenerateQuoteSummaryResponse> {
-    const envelope = await httpGet<QuoteSummaryEnvelope>(
+    return httpGetData<GenerateQuoteSummaryResponse>(
       `/events/${input.eventId}/ai/quote-summary?category_code=${encodeURIComponent(input.categoryCode)}`,
     );
-    return envelope.data;
   },
 };

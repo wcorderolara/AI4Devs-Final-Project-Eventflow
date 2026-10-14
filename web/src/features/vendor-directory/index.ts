@@ -10,5 +10,4 @@ export {
   type VendorCurrencyCode,
   type VendorSearchQuery,
   type VendorSearchDataDTO,
-  type VendorSearchEnvelope,
 } from './api/vendorDirectoryApi.types';

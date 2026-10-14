@@ -24,13 +24,11 @@ import type { NotificationRow } from '../../src/modules/notifications/ports/list
 import type {
   CreateQrReceivedNotificationInput,
   NotificationQrReceivedRepository,
-  QrReceivedRepositoryOptions,
-} from '../../src/modules/notifications/ports/notification-qr-received.repository.js';
-import type {
+  NotificationRepositoryOptions,
   SimulatedQrReceivedEmailInput,
   SimulatedQrReceivedEmailPort,
-} from '../../src/modules/notifications/ports/simulated-qr-received-email.port.js';
-import { QR_RECEIVED_EMAIL_LOG_ALLOWED_KEYS } from '../../src/modules/notifications/infrastructure/logging-simulated-qr-received-email.adapter.js';
+} from '../../src/modules/notifications/ports/notification-channels.port.js';
+import { QR_RECEIVED_EMAIL_LOG_ALLOWED_KEYS } from '../../src/modules/notifications/infrastructure/notification-channels.js';
 import { renderQrReceivedTemplate } from '../../src/modules/notifications/i18n/qr-received-templates.js';
 import type { SupportedLanguage } from '../../src/shared/constants/languages.js';
 
@@ -40,16 +38,16 @@ class FakeQrRepo implements NotificationQrReceivedRepository {
   seedExists(vendorUserId: string, qrId: string): void {
     this.existsMap.set(`${vendorUserId}::${qrId}`, true);
   }
-  existsQuoteRequestReceivedForQR(
+  exists(
     vendorUserId: string,
     quoteRequestId: string,
-    _opts?: QrReceivedRepositoryOptions,
+    _opts?: NotificationRepositoryOptions,
   ): Promise<boolean> {
     return Promise.resolve(this.existsMap.get(`${vendorUserId}::${quoteRequestId}`) ?? false);
   }
   create(
     input: CreateQrReceivedNotificationInput,
-    _opts?: QrReceivedRepositoryOptions,
+    _opts?: NotificationRepositoryOptions,
   ): Promise<void> {
     this.created.push(input);
     this.existsMap.set(`${input.vendorUserId}::${input.quoteRequestId}`, true);

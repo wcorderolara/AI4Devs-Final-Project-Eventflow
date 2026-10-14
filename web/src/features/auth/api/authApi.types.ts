@@ -53,9 +53,3 @@ export interface AuthUserDTO {
   createdAt: string;
   updatedAt: string;
 }
-
-/** Envelope de éxito estándar (Doc 16 §13). */
-export interface AuthUserEnvelopeDTO {
-  data: AuthUserDTO;
-  meta: { correlationId: string; timestamp?: string };
-}

@@ -11,10 +11,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { clock, requireSession, requireRole } from '../../../infrastructure/auth-composition.js';
 import {
   PrismaEventAccessReader,
   PrismaVendorProfileReader,
@@ -43,8 +41,12 @@ import { QuoteEventNotificationService } from '../../quote-flow/services/quote-e
 import { PrismaQuoteNotificationSenderAdapter } from '../../../infrastructure/notifications/prisma-quote-notification-sender.adapter.js';
 // US-070 (PB-P2-007 / BE-005): handler `booking_confirmed` bilateral in-tx.
 import { OnBookingConfirmedHandler } from '../../notifications/application/on-booking-confirmed.handler.js';
-import { PrismaNotificationBookingConfirmedRepository } from '../../notifications/infrastructure/prisma-notification-booking-confirmed.repository.js';
-import { LoggingSimulatedBookingConfirmedEmailAdapter } from '../../notifications/infrastructure/logging-simulated-booking-confirmed-email.adapter.js';
+import { PrismaNotificationRepository } from '../../notifications/infrastructure/prisma-notification.repository.js';
+import { LoggingSimulatedEmailAdapter } from '../../notifications/infrastructure/logging-simulated-email.adapter.js';
+import {
+  BOOKING_CONFIRMED_EMAIL,
+  BOOKING_CONFIRMED_NOTIFICATION,
+} from '../../notifications/infrastructure/notification-channels.js';
 import { PrismaOrganizerLanguageLookup } from '../../event-planning/infrastructure/prisma-organizer-language.lookup.js';
 import { logger as sharedLogger } from '../../../shared/infrastructure/logger/index.js';
 import { BookingIntentsController } from './booking-intent.controller.js';
@@ -72,9 +74,9 @@ const transactionRunner = {
 // `PrismaOrganizerLanguageLookup` structurally como `RecipientLanguagePreferenceReader`
 // (mismo shape) para ambos recipients.
 const onBookingConfirmedHandler = new OnBookingConfirmedHandler({
-  notificationRepo: new PrismaNotificationBookingConfirmedRepository(prisma),
+  notificationRepo: new PrismaNotificationRepository(BOOKING_CONFIRMED_NOTIFICATION, prisma),
   languageLookup: new PrismaOrganizerLanguageLookup(prisma),
-  emailAdapter: new LoggingSimulatedBookingConfirmedEmailAdapter(sharedLogger),
+  emailAdapter: new LoggingSimulatedEmailAdapter(BOOKING_CONFIRMED_EMAIL, sharedLogger),
   logger: sharedLogger,
 });
 
@@ -102,31 +104,26 @@ const controller = new BookingIntentsController({
   }),
 });
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const organizer = roleMiddleware(['organizer']);
-const vendor = roleMiddleware(['vendor']);
-const organizerOrVendor = roleMiddleware(['organizer', 'vendor']);
-
 export const bookingIntentRouter = Router();
 
 bookingIntentRouter.post(
   '/',
-  sessionAuth,
-  organizer,
+  requireSession,
+  requireRole('organizer'),
   validateRequestMiddleware(z.object({ body: CreateBookingIntentRequestSchema })),
   asyncHandler(controller.create),
 );
 bookingIntentRouter.get(
   '/:bookingIntentId',
-  sessionAuth,
-  organizerOrVendor,
+  requireSession,
+  requireRole('organizer', 'vendor'),
   validateRequestMiddleware(z.object({ params: BookingIntentIdParamSchema })),
   asyncHandler(controller.get),
 );
 bookingIntentRouter.post(
   '/:bookingIntentId/confirm',
-  sessionAuth,
-  vendor,
+  requireSession,
+  requireRole('vendor'),
   // US-063 (BE-005 / D1): el body ahora es obligatorio con `{ disclaimer_accepted: true }` para
   // paridad de enforcement server-side con US-060 (create). Bypass en el body ⇒
   // `400 VALIDATION_ERROR` (Zod) o `400 DISCLAIMER_REQUIRED` (use case) según el fallo real.
@@ -137,8 +134,8 @@ bookingIntentRouter.post(
 );
 bookingIntentRouter.post(
   '/:bookingIntentId/cancel',
-  sessionAuth,
-  organizerOrVendor,
+  requireSession,
+  requireRole('organizer', 'vendor'),
   validateRequestMiddleware(z.object({ params: BookingIntentIdParamSchema, body: CancelBookingIntentRequestSchema })),
   asyncHandler(controller.cancel),
 );

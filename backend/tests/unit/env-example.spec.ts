@@ -35,7 +35,7 @@ describe('.env.example (US-089)', () => {
   });
 
   it('SEC-02: las variables sensibles no contienen valores reales (solo placeholders/vacíos)', () => {
-    const sensitiveKeys = ['JWT_SECRET', 'CAPTCHA_SECRET', 'OPENAI_API_KEY', 'DATABASE_URL'];
+    const sensitiveKeys = ['SESSION_SECRET', 'RECAPTCHA_SECRET_KEY', 'OPENAI_API_KEY', 'DATABASE_URL'];
     const placeholderMarkers = /(your_|placeholder|example|localhost|user:password|changeme|xxx|<.+>)/i;
     for (const key of sensitiveKeys) {
       const value = parsed[key] ?? '';

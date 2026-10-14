@@ -11,7 +11,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { errorHandlerMiddleware } from '../../src/shared/interface/middlewares/error-handler.middleware.js';
 import { requestLoggerMiddleware } from '../../src/shared/interface/middlewares/request-logger.middleware.js';
-import { logger } from '../../src/shared/logger.js';
+import { logger } from '../../src/shared/infrastructure/logger/index.js';
 import { UnauthorizedError } from '../../src/shared/domain/errors/unauthorized.error.js';
 import { ValidationError } from '../../src/shared/domain/errors/validation.error.js';
 import { createMockRequest, createMockResponse, asResponse } from '../helpers/express-mocks.js';

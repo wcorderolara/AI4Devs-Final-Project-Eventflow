@@ -22,63 +22,19 @@
 // `type='review.published'` valida que el fan-out compartido sigue operando bilateralmente.
 import { beforeAll, describe, expect, it } from 'vitest';
 import request from 'supertest';
-import { PrismaClient } from '@prisma/client';
 import { createApp } from '../../src/app.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { rnd, sessionHelpers, type Agent } from '../helpers/http.js';
+import { createActiveEvent } from '../helpers/fixtures/events.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const app = createApp();
-const CAPTCHA = '__test__';
-const rnd = (): string => `${Date.now()}_${Math.floor(Math.random() * 1e9)}`;
-
-type Agent = ReturnType<typeof request.agent>;
 
 let serviceCategoryId = '';
 let locationId = '';
 
-async function registerLogin(
-  role: 'organizer' | 'vendor',
-): Promise<{ agent: Agent; userId: string }> {
-  const email = `us065_${role}_${rnd()}@eventflow.test`;
-  const agent = request.agent(app);
-  const reg = await agent.post('/api/v1/auth/register').send({
-    acceptedTerms: true,
-    email,
-    password: 'Secret1234',
-    ...(role === 'vendor' ? { businessName: 'Vendor Demo SA' } : { name: role }),
-    role,
-    captchaToken: CAPTCHA,
-  });
-  await agent
-    .post('/api/v1/auth/login')
-    .send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
-  return { agent, userId: reg.body.data.id as string };
-}
-
-async function createActiveEvent(agent: Agent): Promise<string> {
-  const created = await agent.post('/api/v1/events').send({
-    eventTypeCode: 'wedding',
-    eventDate: '2026-12-31',
-    guestsCount: 100,
-    locationId,
-    estimatedBudget: '10000.00',
-    currencyCode: 'GTQ',
-    languageCode: 'es-LATAM',
-  });
-  const id = created.body.data.id as string;
-  await agent.post(`/api/v1/events/${id}/activate`);
-  return id;
-}
+const { registerLogin } = sessionHelpers(app, { tag: 'us065' });
 
 interface Scenario {
   organizer: Agent;
@@ -111,7 +67,7 @@ async function scenarioCompletedEventWithConfirmedBooking(opts: {
       languagesSupported: ['es-LATAM'],
     },
   });
-  const eventId = await createActiveEvent(organizer);
+  const eventId = await createActiveEvent(organizer, locationId);
   const qr = await organizer
     .post(`/api/v1/events/${eventId}/quote-requests`)
     .send({
@@ -261,7 +217,7 @@ describe.skipIf(!dbUp)('US-065 QA — CreateReview integration', () => {
         languagesSupported: ['es-LATAM'],
       },
     });
-    const eventId = await createActiveEvent(organizer);
+    const eventId = await createActiveEvent(organizer, locationId);
     await prisma.event.update({
       where: { id: eventId },
       data: {

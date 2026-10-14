@@ -3,29 +3,17 @@
 // Cubre AC-01, EC-01, EC-02, EC-03, AC-02 (bloqueo escritura), AUTH-TS-01..03, NT-01..05.
 import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
-import { PrismaClient } from '@prisma/client';
 import { createApp } from '../../src/app.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { CAPTCHA, uniqEmail } from '../helpers/http.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const app = createApp();
-const CAPTCHA = '__test__';
-const uniqEmail = (p: string): string =>
-  `us016_${p}_${Date.now()}_${Math.floor(Math.random() * 1e6)}@eventflow.test`;
 const SOME_UUID = '11111111-1111-4111-8111-111111111111';
 
 async function organizerAgent(): Promise<{ agent: ReturnType<typeof request.agent>; userId: string }> {
-  const email = uniqEmail('org');
+  const email = uniqEmail('us016_org');
   const agent = request.agent(app);
   await agent
     .post('/api/v1/auth/register')
@@ -38,7 +26,7 @@ async function organizerAgent(): Promise<{ agent: ReturnType<typeof request.agen
 }
 
 async function vendorAgent(): Promise<ReturnType<typeof request.agent>> {
-  const email = uniqEmail('vendor');
+  const email = uniqEmail('us016_vendor');
   const agent = request.agent(app);
   await agent.post('/api/v1/auth/register').send({
     acceptedTerms: true,
@@ -57,7 +45,7 @@ async function vendorAgent(): Promise<ReturnType<typeof request.agent>> {
 async function adminAgent(): Promise<ReturnType<typeof request.agent>> {
   // No hay endpoint público para crear admins; se crea directamente en la BD y se abre sesión
   // vía repositorio de sesiones (mismo mecanismo que las suites SEED).
-  const email = uniqEmail('admin');
+  const email = uniqEmail('us016_admin');
   const password = 'Secret1234';
   await prisma.user.create({
     data: {
@@ -71,7 +59,7 @@ async function adminAgent(): Promise<ReturnType<typeof request.agent>> {
   // Sobrescribe el hash con uno real usando el use case de identidad: re-usamos el flujo login
   // creando el usuario con el hash proveniente de un register organizer temporal.
   // Truco: registramos un organizer con el mismo password, tomamos su hash y lo aplicamos al admin.
-  const helperEmail = uniqEmail('adminhelp');
+  const helperEmail = uniqEmail('us016_adminhelp');
   await request(app).post('/api/v1/auth/register').send({
     acceptedTerms: true,
     email: helperEmail,

@@ -339,6 +339,8 @@ function makeUseCase(opts: {
     outputSchemas,
     { maxRegenerationsPerLineage: opts.maxRegenerations ?? 5 },
     logger,
+    // PR-5: promptVersionId real resuelto por el registry (fake determinístico).
+    { resolve: vi.fn(async () => 'pv-real') },
   );
   return { useCase, findByIdWithLineage, countLineageChildren, createRegeneration, generation, ownerResolver, logger };
 }
@@ -379,6 +381,7 @@ describe('US-026 QA-001 — RegenerateAIRecommendationUseCase branches', () => {
     expect(res.regenerationFeedback).toBe('Menos formal');
     expect(createRegeneration).toHaveBeenCalledOnce();
     expect(createRegeneration.mock.calls[0]?.[0]).toMatchObject({
+      promptVersionId: 'pv-real',
       parentRecommendationId: 'parent-1',
       rootRecommendationId: 'parent-1',
       regenerationFeedback: 'Menos formal',
@@ -404,6 +407,7 @@ describe('US-026 QA-001 — RegenerateAIRecommendationUseCase branches', () => {
       'event_plan',
       expect.any(Object),
       'pt',
+      undefined,
       undefined,
     );
   });

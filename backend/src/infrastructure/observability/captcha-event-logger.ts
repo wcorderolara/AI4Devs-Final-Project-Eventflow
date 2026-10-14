@@ -2,8 +2,8 @@
 // Emite eventos estructurados de verificación con metadatos SEGUROS: correlationId, endpoint,
 // provider, outcome, expectedAction, env. NUNCA incluye `captchaToken`, secret, raw provider
 // response, password, cookie ni email (el logger central además aplica redacción).
-import { logger } from '../../shared/infrastructure/logger/index.js';
 import type { CaptchaProviderName, CaptchaOutcome } from '../../shared/security/captcha/captcha-verifier.port.js';
+import { createEventLogger } from './event-logger.js';
 
 export type CaptchaEventName =
   | 'captcha.verify.succeeded'
@@ -21,11 +21,6 @@ export interface CaptchaEventData {
 }
 
 /** Registra un evento de captcha. `succeeded` a `info`; el resto a `warn`. */
-export function logCaptchaEvent(event: CaptchaEventName, data: CaptchaEventData = {}): void {
-  const payload = { event, ...data };
-  if (event === 'captcha.verify.succeeded') {
-    logger.info(payload);
-  } else {
-    logger.warn(payload);
-  }
-}
+export const logCaptchaEvent = createEventLogger<CaptchaEventName, CaptchaEventData>({
+  level: (event) => (event === 'captcha.verify.succeeded' ? 'info' : 'warn'),
+});

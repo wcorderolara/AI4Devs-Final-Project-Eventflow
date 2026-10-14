@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PASSWORD_MIN_LENGTH } from '@/shared/validation/passwordPolicy';
 
 /**
  * Schema del form de registro de organizador (US-001 / FE-002). Copia disciplinada del DTO
@@ -6,8 +7,6 @@ import { z } from 'zod';
  * §6.2: sin paquete compartido en MVP; el backend sigue siendo el source of truth.
  * Los mensajes son CLAVES i18n del namespace `auth.register` (Doc 15 §26).
  */
-export const PASSWORD_MIN_LENGTH = 10;
-
 export const registerOrganizerSchema = z
   .object({
     name: z.string().trim().min(2, 'validation.nameLength').max(120, 'validation.nameLength'),

@@ -2,16 +2,12 @@
 //
 // Umbral del gate (US-131 / OPS-001): 0 violaciones `critical`. Aquí se endurece a **0
 // violaciones de cualquier severidad** para el catálogo propio, igual que en PB-P2-028/029.
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Calendar, MoreVertical, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import {
-  Accordion,
-  AccordionItem,
-  AccordionPanel,
-  AccordionTrigger,
   Button,
   Card,
   CardDescription,
@@ -26,7 +22,6 @@ import {
   MetricCard,
   Modal,
   Pagination,
-  Popover,
   ResponsiveSummaryRow,
   ResponsiveTable,
   StatusBadge,
@@ -38,7 +33,6 @@ import {
   TableRow,
   TableStatusRow,
   Tabs,
-  Tooltip,
 } from '@/shared/design-system';
 import { auditA11y, formatViolations } from './helpers/axe';
 
@@ -182,17 +176,6 @@ function DataDisplayCatalog(): React.JSX.Element {
           </DescriptionList>
         )}
       </Tabs>
-
-      <Accordion defaultValue={['vendors']}>
-        <AccordionItem value="vendors">
-          <AccordionTrigger headingLevel={2}>Requisitos de proveedores</AccordionTrigger>
-          <AccordionPanel>Documentación y seguros vigentes.</AccordionPanel>
-        </AccordionItem>
-        <AccordionItem value="catering">
-          <AccordionTrigger headingLevel={2}>Restricciones de catering</AccordionTrigger>
-          <AccordionPanel>Opciones vegetarianas y sin gluten.</AccordionPanel>
-        </AccordionItem>
-      </Accordion>
     </main>
   );
 }
@@ -229,12 +212,6 @@ function OverlayCatalog(): React.JSX.Element {
         triggerAriaLabel="Más acciones"
         items={[{ key: 'archive', label: 'Archivar', onSelect: () => undefined }]}
       />
-      <Popover trigger="Notificaciones" title="Notificaciones">
-        <p>Sin novedades.</p>
-      </Popover>
-      <Tooltip content="Margen antes de impuestos" delayMs={0}>
-        <Button>Margen</Button>
-      </Tooltip>
 
       <Modal
         open={modal}
@@ -303,16 +280,6 @@ describe('PB-P2-031 · axe · Overlays', () => {
     render(<OverlayCatalog />);
     await user.click(screen.getByRole('button', { name: 'Opciones' }));
     await screen.findByRole('menu');
-    const { critical, otherViolations } = await auditA11y(document.body, PORTAL_AUDIT);
-    expect(critical, formatViolations(critical)).toEqual([]);
-    expect(otherViolations, formatViolations(otherViolations)).toEqual([]);
-  });
-
-  it('el tooltip visible no tiene violaciones', async () => {
-    const user = userEvent.setup();
-    render(<OverlayCatalog />);
-    await user.hover(screen.getByRole('button', { name: 'Margen' }));
-    await waitFor(() => expect(screen.getByRole('tooltip')).toBeInTheDocument());
     const { critical, otherViolations } = await auditA11y(document.body, PORTAL_AUDIT);
     expect(critical, formatViolations(critical)).toEqual([]);
     expect(otherViolations, formatViolations(otherViolations)).toEqual([]);

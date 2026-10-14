@@ -58,11 +58,6 @@ export interface AdminEventModel {
   budgetSummary?: AdminEventBudgetSummaryModel | null;
 }
 
-export interface AdminEventEnvelopeDTO {
-  data: AdminEventModel;
-  meta: { correlationId: string; timestamp?: string };
-}
-
 // ── US-078 · list contract ──────────────────────────────────────────────────
 
 /**
@@ -116,9 +111,4 @@ export interface AdminEventsListPagination {
 export interface AdminEventsListDTO {
   items: AdminEventListItemModel[];
   pagination: AdminEventsListPagination;
-}
-
-export interface AdminEventsListEnvelope {
-  data: AdminEventsListDTO;
-  meta?: { correlationId: string; timestamp?: string };
 }

@@ -6,7 +6,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { GenerateAiRecommendationUseCase } from '../../src/modules/ai-assistance/application/generate-ai-recommendation.use-case.js';
 import type { AiGenerationService } from '../../src/modules/ai-assistance/application/ai-generation.service.js';
-import type { AIRecommendationRepository } from '../../src/modules/ai-assistance/ports/ai-recommendation.repository.js';
+import { FakeAIRecommendationRepository, fakePromptVersions } from '../helpers/ai-recommendation-fixtures.js';
 import type {
   EventAccessReader,
   EventLanguageReader,
@@ -17,11 +17,12 @@ import type { DomainEventLogger } from '../../src/shared/observability/domain-ev
 import type { SupportedLanguage } from '../../src/shared/constants/languages.js';
 
 const stubGenerationOutcome = {
+  // PR-5: el output debe cumplir el schema del feature (PersistAIRecommendationService re-valida).
   output: {
-    theme: 'Boda tropical',
-    stages: [
-      { name: 'ceremonia', description: 'Descripción X' },
-      { name: 'recepción', description: 'Descripción Y' },
+    summary: 'Boda tropical',
+    phases: [
+      { name: 'ceremonia', tasks: ['Descripción X'] },
+      { name: 'recepción', tasks: ['Descripción Y'] },
     ],
   },
   aiMeta: {
@@ -32,15 +33,15 @@ const stubGenerationOutcome = {
     languageCode: 'pt' as SupportedLanguage,
   },
   sanitizedInput: { guests: 100 },
+  execMeta: { featureType: 'event_plan', provider: 'mock' as const, originalProvider: 'mock' as const, fallbackUsed: false, timeoutMs: 60000, latencyMs: 42, status: 'success' as const },
+  schemaValid: true,
 };
 
 function makeUseCase(overrides: {
   eventLanguage?: EventLanguageReader | null;
   generateMock?: ReturnType<typeof vi.fn>;
 } = {}) {
-  const repo: AIRecommendationRepository = {
-    createPending: vi.fn().mockResolvedValue({ id: 'rec-1' }),
-  } as unknown as AIRecommendationRepository;
+  const repo = new FakeAIRecommendationRepository();
 
   const events: EventAccessReader = {
     getOwnerId: vi.fn().mockResolvedValue('u-1'),
@@ -64,6 +65,7 @@ function makeUseCase(overrides: {
 
   const uc = new GenerateAiRecommendationUseCase(
     repo,
+    fakePromptVersions,
     generation,
     events,
     vendors,
@@ -92,7 +94,7 @@ describe('US-082 QA-004 — AI binding (event.languageCode → provider locale)'
 
     expect(eventLanguage.getLanguage).toHaveBeenCalledWith('evt-1');
     // el argumento 3 de generate() es el languageCode.
-    expect(generation.generate).toHaveBeenCalledWith('event_plan', { guests: 100 }, 'pt', undefined);
+    expect(generation.generate).toHaveBeenCalledWith('event_plan', { guests: 100 }, 'pt', undefined, undefined);
   });
 
   it('compatibilidad legacy: sin reader inyectado, se preserva el languageCode del comando', async () => {
@@ -107,7 +109,7 @@ describe('US-082 QA-004 — AI binding (event.languageCode → provider locale)'
       languageCode: 'es-LATAM',
     });
 
-    expect(generation.generate).toHaveBeenCalledWith('event_plan', { guests: 100 }, 'es-LATAM', undefined);
+    expect(generation.generate).toHaveBeenCalledWith('event_plan', { guests: 100 }, 'es-LATAM', undefined, undefined);
   });
 
   it('reader devuelve null (evento no encontrado): fallback al languageCode del comando', async () => {
@@ -125,6 +127,6 @@ describe('US-082 QA-004 — AI binding (event.languageCode → provider locale)'
       languageCode: 'en',
     });
 
-    expect(generation.generate).toHaveBeenCalledWith('event_plan', { guests: 100 }, 'en', undefined);
+    expect(generation.generate).toHaveBeenCalledWith('event_plan', { guests: 100 }, 'en', undefined, undefined);
   });
 });

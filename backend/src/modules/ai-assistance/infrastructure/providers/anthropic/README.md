@@ -23,7 +23,7 @@ para demostrar la **sustituibilidad** del puerto (cumple el contrato como `OpenA
   (PB-P0-011). No hay failover OpenAI → Anthropic.
 
 Guardrails verificados por tests: `tests/unit/us120-anthropic-provider.spec.ts` (contract + failure +
-selector + safe logs) y `tests/unit/us120-anthropic-no-sdk.guard.spec.ts` (no SDK/secret/red/dependency).
+selector + safe logs) y US-120 en `tests/unit/architecture-guards.spec.ts` (no SDK/secret/red/dependency).
 
 ## Selector (AC-04)
 

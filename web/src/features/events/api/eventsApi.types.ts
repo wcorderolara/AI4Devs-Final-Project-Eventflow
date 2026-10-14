@@ -55,17 +55,6 @@ export interface PaginationMeta {
   totalPages: number;
 }
 
-export interface EventEnvelopeDTO {
-  data: EventModel;
-  meta: { correlationId: string; timestamp?: string };
-}
-
-export interface EventListEnvelopeDTO {
-  data: EventModel[];
-  pagination: PaginationMeta;
-  meta: { correlationId: string; timestamp?: string };
-}
-
 export interface EventListResult {
   items: EventModel[];
   pagination: PaginationMeta;
@@ -111,10 +100,6 @@ export interface EventTypeOption {
   code: EventTypeCode;
   label: string;
 }
-export interface EventTypesEnvelopeDTO {
-  data: EventTypeOption[];
-  meta: { correlationId: string; timestamp?: string };
-}
 
 /** Catálogo `GET /locations`. */
 export interface LocationOption {
@@ -122,8 +107,4 @@ export interface LocationOption {
   country: string;
   region: string | null;
   city: string | null;
-}
-export interface LocationsEnvelopeDTO {
-  data: LocationOption[];
-  meta: { correlationId: string; timestamp?: string };
 }

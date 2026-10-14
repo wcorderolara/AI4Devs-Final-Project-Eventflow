@@ -12,11 +12,14 @@
 // con un `details.invalid` que enumera *todos* los fallos a la vez (D3 strict).
 import type { SupportedCurrency } from '../../../shared/constants/currencies.js';
 import { InvalidFiltersError, InvalidCursorError } from './vendor-search.errors.js';
+import { z } from 'zod';
 import {
-  decodeVendorSearchCursor,
-  encodeVendorSearchCursor,
-  type VendorSearchCursor,
-} from './vendor-search-cursor.js';
+  cursorDate,
+  cursorUuid,
+  encodeCursor,
+  tryDecodeCursor,
+  type CursorSchema,
+} from '../../../shared/pagination/cursor.js';
 import type {
   VendorSearchRepository,
   VendorSearchRow,
@@ -47,6 +50,22 @@ export interface ServiceCategorySlugResolver {
 
 export interface LocationSlugResolver {
   findIdByCode(code: string): Promise<string | null>;
+}
+
+// Keyset `(rating_avg DESC NULLS LAST, created_at DESC, id DESC)` — payload `{ r, c, i }`.
+// `rating_avg` participa del `ORDER BY`, por eso viaja en el cursor (NULL sin reviews).
+export interface VendorSearchCursor {
+  ratingAvg: number | null;
+  createdAt: Date;
+  id: string;
+}
+
+export const VendorSearchCursorSchema: CursorSchema<VendorSearchCursor> = z
+  .object({ r: z.number().finite().min(0).max(5).nullable(), c: cursorDate, i: cursorUuid })
+  .transform(({ r, c, i }) => ({ ratingAvg: r, createdAt: c, id: i }));
+
+export function encodeVendorSearchCursor({ ratingAvg, createdAt, id }: VendorSearchCursor): string {
+  return encodeCursor({ r: ratingAvg, c: createdAt.toISOString(), i: id });
 }
 
 export class SearchVendorsUseCase {
@@ -81,7 +100,7 @@ export class SearchVendorsUseCase {
 
     let cursor: VendorSearchCursor | null = null;
     if (query.cursor !== undefined) {
-      cursor = decodeVendorSearchCursor(query.cursor);
+      cursor = tryDecodeCursor(query.cursor, VendorSearchCursorSchema);
       if (cursor === null) throw new InvalidCursorError();
     }
 

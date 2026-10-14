@@ -61,7 +61,17 @@ US-121 en la tabla `AIPromptVersion`. El service valida `existsPromptVersion(pro
 de insertar; ausencia/inexistencia → `AIPromptVersionNotFoundError`. Así cada `AIRecommendation`
 referencia una versión de prompt real y reproducible para auditoría.
 
-## Uso (por use cases IA futuros)
+## Uso en producción (PR-5)
+
+`GenerateAiRecommendationUseCase` persiste vía `PersistAIRecommendationService.persist()` (siempre
+`pending`, HITL) con el `promptVersionId` real que entrega `RegistryPromptVersionIdResolver`
+(`infrastructure/prompt-version-id.resolver.ts`: sync memoizado del registry en el primer uso; sin
+prompt activo para el idioma → placeholder de US-097). Ante `AiInvalidOutputError`,
+`AiProviderTimeoutError`, `AiProviderUnavailableError` o `AiFallbackFailedError` registra un failure
+record `failed` (best-effort) y relanza el error. La regeneración (US-026) usa el mismo resolver en
+`createRegeneration`. `findLatestByEventTypeAndCategory` (US-059) ignora records `failed`.
+
+## Uso (referencia)
 
 ```ts
 const repo = new PrismaAIRecommendationRepository();

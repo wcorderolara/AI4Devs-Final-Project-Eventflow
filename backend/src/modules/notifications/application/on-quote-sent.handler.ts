@@ -4,12 +4,14 @@
 // Invocado in-tx desde `RespondQuoteRequestUs052UseCase` (US-052 refactor de BE-005).
 // Guards defensivos (D6: quote no-`sent` / owner deactivated / owner_id null) NO abortan
 // la transacción: se registran como `warn` estructurado y el handler retorna. Cualquier
-// fallo del INSERT o del `existsQuoteReceivedForQuote` propaga a la tx → rollback (AC-06).
+// fallo del INSERT o del `exists` (idempotencia) propaga a la tx → rollback (AC-06).
 import type { Prisma } from '@prisma/client';
 import type { SupportedLanguage } from '../../../shared/constants/languages.js';
 import { SUPPORTED_LANGUAGES } from '../../../shared/constants/languages.js';
-import type { NotificationQuoteReceivedRepository } from '../ports/notification-quote-received.repository.js';
-import type { SimulatedQuoteReceivedEmailPort } from '../ports/simulated-quote-received-email.port.js';
+import type {
+  NotificationQuoteReceivedRepository,
+  SimulatedQuoteReceivedEmailPort,
+} from '../ports/notification-channels.port.js';
 import { renderQuoteReceivedTemplate } from '../i18n/quote-received-templates.js';
 
 /**
@@ -112,7 +114,7 @@ export class OnQuoteSentHandler {
     }
 
     // Idempotencia (AC-02). Chequeo dentro de la misma tx por `payload->>'quoteId'`.
-    const alreadyEmitted = await notificationRepo.existsQuoteReceivedForQuote(
+    const alreadyEmitted = await notificationRepo.exists(
       organizerUser.id,
       quote.id,
       { tx },

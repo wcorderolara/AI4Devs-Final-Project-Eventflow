@@ -5,6 +5,7 @@ import { ErrorCodes } from './error-codes.js';
 
 export class CurrencyImmutableError extends AppError {
   readonly code = ErrorCodes.CURRENCY_IMMUTABLE;
+  override readonly httpStatus = 409;
 
   constructor(message = 'Currency cannot be changed after event creation') {
     super(message);

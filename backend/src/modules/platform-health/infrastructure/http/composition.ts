@@ -4,7 +4,7 @@
 // expone `platformHealthRouter` listo para montar en `app.ts`. Se separa del router
 // para preservar el patrón DI (tests instancian `buildPlatformHealthRouter` con doubles).
 import { prisma } from '../../../../infrastructure/prisma/client.js';
-import { logger } from '../../../../shared/logger.js';
+import { logger } from '../../../../shared/infrastructure/logger/index.js';
 import { GetHealthUseCase } from '../../application/use-cases/get-health.use-case.js';
 import { GetReadinessUseCase } from '../../application/use-cases/get-readiness.use-case.js';
 import { AiProviderProbe } from '../probes/ai-provider.probe.js';

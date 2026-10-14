@@ -11,14 +11,19 @@
 import { Prisma, type PrismaClient } from '@prisma/client';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
+import { recordAdminAction } from '../../../infrastructure/persistence/record-admin-action.js';
+import {
+  assertNameI18nHasEsLatam,
+  catalogI18nPatch,
+  isReactivation,
+  patchedFields,
+  type CatalogAdminCtx,
+} from '../../../shared/application/catalog-admin.js';
 import { EventTypeNotFoundError } from '../domain/us076.errors.js';
 import type { UpdateEventTypeBody } from '../interface/event-type.dto.js';
-import { assertNameI18nHasEsLatam } from './create-event-type.use-case.js';
 import { toEventTypeView, type EventTypeView } from './event-type.view.js';
 
-export interface UpdateEventTypeCtx {
-  correlationId?: string;
-}
+export type UpdateEventTypeCtx = CatalogAdminCtx;
 
 export class UpdateEventTypeUseCase {
   constructor(
@@ -44,48 +49,34 @@ export class UpdateEventTypeUseCase {
       if (!existing) throw new EventTypeNotFoundError();
 
       // 2) Detección reactivate (Decisión PO D6).
-      const wasActive = existing.isActive;
-      const willBeActive = body.is_active ?? wasActive;
-      const isReactivating = !wasActive && willBeActive;
+      const isReactivating = isReactivation(existing.isActive, body.is_active);
 
       // 3) Sync denormalizado de `label` / `description`.
-      const patch: Prisma.EventTypeUpdateInput = {};
-      if (body.name_i18n !== undefined) {
-        const esLatam = (body.name_i18n as Record<string, string>)['es-LATAM']!;
-        patch.nameI18n = body.name_i18n as Prisma.InputJsonObject;
-        patch.label = esLatam;
-      }
-      if (body.description_i18n !== undefined) {
-        patch.descriptionI18n = body.description_i18n as Prisma.InputJsonObject;
-        patch.description = (body.description_i18n as Record<string, string>)['es-LATAM'] ?? null;
-      }
+      const patch: Prisma.EventTypeUpdateInput = catalogI18nPatch(body);
       if (body.sort_order !== undefined) patch.sortOrder = body.sort_order;
       if (body.is_active !== undefined) patch.isActive = body.is_active;
 
       const updated = await tx.eventType.update({ where: { id }, data: patch });
 
       // 4) AdminAction append-only (`reactivate` cuando aplique).
-      const adminAction = await tx.adminAction.create({
-        data: {
-          adminUserId: currentUserId,
-          action: isReactivating ? 'reactivate' : 'update',
-          targetEntity: 'event_type',
-          targetId: id,
-          metadata: {
-            correlationId: ctx.correlationId ?? null,
-            reason: body.reason ?? null,
-            from: {
-              sort_order: existing.sortOrder,
-              is_active: existing.isActive,
-            },
-            to: {
-              sort_order: updated.sortOrder,
-              is_active: updated.isActive,
-            },
-            patched_fields: Object.keys(body).filter((k) => k !== 'reason'),
-          } as Prisma.InputJsonObject,
+      const adminAction = await recordAdminAction(tx, {
+        adminUserId: currentUserId,
+        action: isReactivating ? 'reactivate' : 'update',
+        targetEntity: 'event_type',
+        targetId: id,
+        correlationId: ctx.correlationId,
+        metadata: {
+          reason: body.reason ?? null,
+          from: {
+            sort_order: existing.sortOrder,
+            is_active: existing.isActive,
+          },
+          to: {
+            sort_order: updated.sortOrder,
+            is_active: updated.isActive,
+          },
+          patched_fields: patchedFields(body),
         },
-        select: { id: true },
       });
 
       this.logger.emit(isReactivating ? 'event_type.reactivated' : 'event_type.updated', {

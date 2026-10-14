@@ -1,7 +1,7 @@
 // Errores de dominio del endpoint `PATCH /api/v1/quote-requests/:quoteRequestId/cancel` (US-056).
 // Mapean 1:1 a los códigos estables del contrato (§7 Tech Spec) y son consumidos por el
 // `errorHandlerMiddleware` para serializar el envelope anidado con `details` cuando aplica.
-import { AppError } from '../../../shared/domain/errors/app.error.js';
+import { AppError, type ErrorDetail, type HttpErrorMapping } from '../../../shared/domain/errors/app.error.js';
 import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
 
 /**
@@ -10,8 +10,13 @@ import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
  */
 export class QrNotFoundError extends AppError {
   readonly code = ErrorCodes.QR_NOT_FOUND;
+  override readonly httpStatus = 404;
   constructor(message = 'Quote request not found') {
     super(message);
+  }
+
+  override toHttp(): HttpErrorMapping {
+    return { ...super.toHttp(), message: 'Quote request not found', masked: true };
   }
 }
 
@@ -21,11 +26,16 @@ export class QrNotFoundError extends AppError {
  */
 export class QrNotCancellableError extends AppError {
   readonly code = ErrorCodes.QR_NOT_CANCELLABLE;
+  override readonly httpStatus = 409;
   constructor(
     public readonly currentStatus: string,
     message = 'Quote request cannot be cancelled in its current state',
   ) {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'current_status', message: this.currentStatus }];
   }
 }
 
@@ -35,11 +45,16 @@ export class QrNotCancellableError extends AppError {
  */
 export class QrHasConfirmedBookingError extends AppError {
   readonly code = ErrorCodes.QR_HAS_CONFIRMED_BOOKING;
+  override readonly httpStatus = 409;
   constructor(
     public readonly bookingIntentId: string,
     message = 'Quote request has a confirmed booking intent',
   ) {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'booking_intent_id', message: this.bookingIntentId }];
   }
 }
 
@@ -49,7 +64,12 @@ export class QrHasConfirmedBookingError extends AppError {
  */
 export class InvalidCancellationReasonError extends AppError {
   readonly code = ErrorCodes.INVALID_CANCELLATION_REASON;
+  override readonly httpStatus = 400;
   constructor(message = 'reason exceeds maximum length of 500 characters') {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'reason', message: 'too_long' }];
   }
 }

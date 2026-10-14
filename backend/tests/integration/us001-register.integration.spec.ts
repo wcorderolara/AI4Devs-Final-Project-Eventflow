@@ -3,7 +3,6 @@
 // (preferred_language) y AC-03 (unicidad case-insensitive vía constraint funcional LOWER(email)).
 // Patrón del repo: skip limpio si no hay BD alcanzable (`describe.skipIf(!dbUp)`).
 import { describe, it, expect, beforeAll } from 'vitest';
-import { PrismaClient } from '@prisma/client';
 import { PrismaUserRepository } from '../../src/infrastructure/persistence/prisma-user.repository.js';
 import { PrismaSessionRepository } from '../../src/infrastructure/persistence/prisma-session.repository.js';
 import { Argon2idPasswordHasher } from '../../src/infrastructure/security/argon2id-password-hasher.js';
@@ -11,19 +10,9 @@ import { SystemClock } from '../../src/infrastructure/time/system-clock.js';
 import { RegisterUserUseCase } from '../../src/modules/identity-access/application/register-user.use-case.js';
 import { EmailTakenError } from '../../src/shared/domain/errors/email-taken.error.js';
 import type { AuthEventName, AuthEventLogger, WelcomeEmailNotifier } from '../../src/shared/auth/ports.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
-const prisma = new PrismaClient();
-
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 class CapturingEvents implements AuthEventLogger {
   emitted: AuthEventName[] = [];

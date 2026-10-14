@@ -16,6 +16,7 @@
 // El path param `:id` (UUID validado por Zod) se valida en `moderateReviewParamsSchema` para
 // mantener alineado el envelope `INVALID_UUID` del error handler global (VR-01, EC-04).
 import { z } from 'zod';
+import { uuidParamsSchema } from '../../../shared/validation/uuid-params.js';
 
 export const MODERATE_REVIEW_REASON_MIN = 10;
 export const MODERATE_REVIEW_REASON_MAX = 500;
@@ -29,8 +30,6 @@ export const ModerateReviewBodySchema = z
 
 export type ModerateReviewBody = z.infer<typeof ModerateReviewBodySchema>;
 
-export const ModerateReviewParamsSchema = z.object({
-  id: z.string().uuid(),
-});
+export const ModerateReviewParamsSchema = uuidParamsSchema('id').strip();
 
 export type ModerateReviewParams = z.infer<typeof ModerateReviewParamsSchema>;

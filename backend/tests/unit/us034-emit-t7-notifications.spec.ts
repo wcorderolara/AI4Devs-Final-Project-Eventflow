@@ -28,7 +28,7 @@ import type { ClockPort } from '../../src/shared/domain/clock.port.js';
 import type {
   CreateT7NotificationInput,
   NotificationT7Repository,
-} from '../../src/modules/notifications/ports/notification-t7.repository.js';
+} from '../../src/modules/notifications/ports/notification-channels.port.js';
 import type {
   FindT7CandidatesInput,
   T7CandidateRow,
@@ -37,10 +37,10 @@ import type {
 import type { T7LanguagePreferenceReader } from '../../src/shared/application/t7-language-preference-reader.port.js';
 import type { SupportedLanguage } from '../../src/shared/constants/languages.js';
 import {
-  LoggingSimulatedT7EmailAdapter,
-  T7_EMAIL_LOG_ALLOWED_KEYS,
-  type T7EmailLogger,
-} from '../../src/modules/notifications/infrastructure/logging-simulated-t7-email.adapter.js';
+  LoggingSimulatedEmailAdapter,
+  type SimulatedEmailLogger,
+} from '../../src/modules/notifications/infrastructure/logging-simulated-email.adapter.js';
+import { T7_EMAIL, T7_EMAIL_LOG_ALLOWED_KEYS } from '../../src/modules/notifications/infrastructure/notification-channels.js';
 import { renderT7Template } from '../../src/modules/notifications/i18n/t7-templates.js';
 
 class FixedClock implements ClockPort {
@@ -81,7 +81,7 @@ class FakeNotificationRepo implements NotificationT7Repository {
     this.existsKeys.add(`${userId}::${taskId}`);
   }
 
-  existsTaskDueSoonForTask(userId: string, taskId: string): Promise<boolean> {
+  exists(userId: string, taskId: string): Promise<boolean> {
     return Promise.resolve(this.existsKeys.has(`${userId}::${taskId}`));
   }
 
@@ -113,9 +113,9 @@ interface CapturedLog {
   payload: Record<string, unknown>;
 }
 
-function makeLogger(): { logger: EmitT7Logger & T7EmailLogger; captured: CapturedLog[] } {
+function makeLogger(): { logger: EmitT7Logger & SimulatedEmailLogger; captured: CapturedLog[] } {
   const captured: CapturedLog[] = [];
-  const logger: EmitT7Logger & T7EmailLogger = {
+  const logger: EmitT7Logger & SimulatedEmailLogger = {
     info: (p) => captured.push({ level: 'info', payload: p }),
     error: (p) => captured.push({ level: 'error', payload: p }),
   };
@@ -138,7 +138,7 @@ function build(overrides?: { batchSize?: number }) {
   const notificationRepo = new FakeNotificationRepo();
   const languageLookup = new FakeLanguageLookup();
   const { logger, captured } = makeLogger();
-  const emailAdapter = new LoggingSimulatedT7EmailAdapter(logger);
+  const emailAdapter = new LoggingSimulatedEmailAdapter(T7_EMAIL, logger);
   const useCase = new EmitT7NotificationsUseCase({
     clock,
     taskRepo,
@@ -292,7 +292,7 @@ describe('US-034 — EmitT7NotificationsUseCase (unit, sin BD)', () => {
 describe('US-034 — SEC-T-01 (no-PII en log estructurado)', () => {
   it('logEmail emite EXACTAMENTE las claves permitidas — sin email/displayName/taskTitle', () => {
     const { logger, captured } = makeLogger();
-    const adapter = new LoggingSimulatedT7EmailAdapter(logger);
+    const adapter = new LoggingSimulatedEmailAdapter(T7_EMAIL, logger);
 
     adapter.logEmail({
       toUserId: 'u1',

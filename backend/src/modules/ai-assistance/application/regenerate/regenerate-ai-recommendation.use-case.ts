@@ -18,13 +18,15 @@
 //      del provider, unsupported language) ⇒ payload fallback determinista (baseOutput por
 //      feature) + `localeFallback=true`. El fallback SÍ persiste (cuenta para el límite del
 //      linaje, D9/AC-08).
-//   8. Persist child via `createRegeneration` con snapshot completo del linaje.
+//   8. Persist child via `createRegeneration` con snapshot completo del linaje y el
+//      `promptVersionId` real resuelto por `PromptVersionIdResolver` (US-122).
 //   9. Log `ai.regenerate.generated` (o `.fallback` si degradó).
 //
 // La operación NO abre transacción explícita: el conteo + INSERT son idempotentes (una request
 // crea a lo sumo un child; el conteo se re-verifica al servir la siguiente request). Bajo
 // concurrencia extrema podrían crearse 5+1 hijos raras veces — trade-off aceptado en MVP.
 import type { AIRecommendationRepository } from '../../ports/ai-recommendation.repository.js';
+import type { PromptVersionIdResolver } from '../../ports/prompt-version-id.resolver.js';
 import type { AiGenerationService } from '../ai-generation.service.js';
 import type { AiFeatureType } from '../../domain/ai-features.js';
 import type { AiRecommendationView } from '../../domain/ai-recommendation.js';
@@ -64,6 +66,7 @@ export class RegenerateAIRecommendationUseCase {
     private readonly outputSchemas: OutputSchemaResolver,
     private readonly config: AIRegenerateConfig,
     private readonly logger: DomainEventLogger,
+    private readonly promptVersions: PromptVersionIdResolver,
   ) {}
 
   async execute(cmd: RegenerateInput): Promise<RegenerateOutput> {
@@ -132,6 +135,7 @@ export class RegenerateAIRecommendationUseCase {
         regenInput,
         locale,
         cmd.preferMock,
+        cmd.correlationId,
       );
       outputPayload = outcome.output;
       aiMeta = outcome.aiMeta;
@@ -180,6 +184,7 @@ export class RegenerateAIRecommendationUseCase {
     const view = await this.repo.createRegeneration({
       requestedByUserId: cmd.currentUserId,
       type: feature,
+      promptVersionId: await this.promptVersions.resolve(feature, locale),
       eventId: parent.eventId,
       vendorProfileId: parent.vendorProfileId,
       quoteRequestId: parent.quoteRequestId,

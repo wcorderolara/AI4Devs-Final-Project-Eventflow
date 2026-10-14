@@ -488,5 +488,64 @@
         "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
       }
     }
+  },
+  "dashboard": {
+    "title": "Painel do fornecedor",
+    "subtitle": "Resumo da sua operação: solicitações, reservas, avaliações e nota.",
+    "error": "Não foi possível carregar seu resumo. Tente novamente.",
+    "weekBanner": "{count, plural, one {# reserva} other {# reservas}} esta semana",
+    "actions": {
+      "refresh": "Atualizar",
+      "refreshing": "Atualizando…"
+    },
+    "onboarding": {
+      "title": "Você ainda não tem perfil de fornecedor",
+      "body": "Conclua o onboarding para começar a receber solicitações de cotação.",
+      "cta": "Ir para o onboarding"
+    },
+    "cards": {
+      "newRequests": {
+        "title": "Novas solicitações",
+        "aria": "{count} solicitações não vistas",
+        "link": "Ver solicitações"
+      },
+      "quotes": {
+        "title": "Cotações a responder",
+        "breakdownTitle": "Em andamento",
+        "awaitingDecision": "Aguardando decisão do organizador",
+        "hint": "Solicitações enviadas ou vistas sem cotação enviada ainda."
+      },
+      "bookings": {
+        "title": "Reservas nesta semana",
+        "breakdownTitle": "Histórico",
+        "completed": "Eventos concluídos",
+        "hint": "Compromissos confirmados com evento próximo."
+      },
+      "reviews": {
+        "title": "Avaliações recebidas",
+        "breakdownTitle": "Por status",
+        "published": "Publicadas",
+        "hidden": "Ocultas",
+        "removed": "Removidas",
+        "rating": "Nota média: {rating}"
+      },
+      "notifications": {
+        "title": "Notificações não lidas",
+        "aria": "{count} notificações não lidas",
+        "link": "Ver todas"
+      },
+      "rating": {
+        "title": "Nota média",
+        "aria": "{count} avaliações, média {rating}",
+        "footer": "de 5 estrelas"
+      }
+    },
+    "quickLinks": {
+      "title": "Acessos rápidos",
+      "quotes": "Gerenciar cotações",
+      "portfolio": "Editar portfólio",
+      "reviews": "Ver avaliações",
+      "notifications": "Ver notificações"
+    }
   }
 }

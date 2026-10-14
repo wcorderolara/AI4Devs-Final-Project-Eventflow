@@ -14,6 +14,7 @@ import { useRespondVendorQr } from '../hooks/vendorQrQueries';
 import { BreakdownEditor } from './BreakdownEditor';
 import { ValidUntilPicker } from './ValidUntilPicker';
 import { ApiError } from '@/shared/api-client';
+import { isKnownErrorCode } from '@/shared/error-handling/errorCodeMessages';
 
 const DECIMAL_2 = /^\d+(\.\d{1,2})?$/;
 
@@ -30,10 +31,6 @@ const KNOWN_ERROR_CODES = [
   'FORBIDDEN',
 ] as const;
 type KnownErrorCode = (typeof KNOWN_ERROR_CODES)[number];
-
-function isKnownErrorCode(code: string | undefined): code is KnownErrorCode {
-  return typeof code === 'string' && (KNOWN_ERROR_CODES as readonly string[]).includes(code);
-}
 
 const formSchema = z
   .object({
@@ -156,7 +153,9 @@ export function QuoteResponseForm({
           role="alert"
           className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800"
         >
-          {isKnownErrorCode(serverErrorCode) ? tError(serverErrorCode) : tError('UNEXPECTED')}
+          {isKnownErrorCode(serverErrorCode, KNOWN_ERROR_CODES)
+            ? tError(serverErrorCode)
+            : tError('UNEXPECTED')}
         </div>
       )}
 

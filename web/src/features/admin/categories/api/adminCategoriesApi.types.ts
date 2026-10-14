@@ -28,11 +28,6 @@ export interface AdminCategoriesListDTO {
   flat: AdminCategoryNode[];
 }
 
-export interface AdminCategoriesListEnvelope {
-  data: AdminCategoriesListDTO;
-  meta: { correlationId: string; timestamp?: string };
-}
-
 // ── Bodies ─────────────────────────────────────────────────────────────────
 
 export interface CreateCategoryBodyDTO {
@@ -55,9 +50,4 @@ export interface UpdateCategoryBodyDTO {
 
 export interface DeleteCategoryBodyDTO {
   reason: string;
-}
-
-export interface AdminCategoryEnvelope {
-  data: AdminCategoryNode;
-  meta: { correlationId: string; timestamp?: string };
 }

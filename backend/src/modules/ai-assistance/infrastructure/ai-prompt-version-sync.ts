@@ -22,6 +22,21 @@ export function promptVersionSyncRows(): AIPromptVersionSyncRow[] {
 }
 
 /**
+ * Persiste (upsert idempotente) todas las versiones de prompt exportadas por US-121 y devuelve el id
+ * REAL en BD por stableId (`promptKey@version`). Reejecutable sin duplicar.
+ */
+export async function syncPromptVersionIdsFromRegistry(
+  repo: AIRecommendationRepository,
+  options?: RepositoryWriteOptions,
+): Promise<Map<string, string>> {
+  const ids = new Map<string, string>();
+  for (const row of promptVersionSyncRows()) {
+    ids.set(`${row.promptKey}@${row.version}`, await repo.upsertPromptVersion(row, options));
+  }
+  return ids;
+}
+
+/**
  * Persiste (upsert idempotente) todas las versiones de prompt exportadas por US-121. Devuelve la
  * cantidad sincronizada. Reejecutable sin duplicar (unicidad por `promptKey`+`version`).
  */
@@ -29,9 +44,5 @@ export async function syncPromptVersionsFromRegistry(
   repo: AIRecommendationRepository,
   options?: RepositoryWriteOptions,
 ): Promise<number> {
-  const rows = promptVersionSyncRows();
-  for (const row of rows) {
-    await repo.upsertPromptVersion(row, options);
-  }
-  return rows.length;
+  return (await syncPromptVersionIdsFromRegistry(repo, options)).size;
 }

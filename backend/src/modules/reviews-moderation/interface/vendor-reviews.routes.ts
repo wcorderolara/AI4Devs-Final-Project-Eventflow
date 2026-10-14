@@ -17,8 +17,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { createOptionalSessionAuthMiddleware } from '../../../shared/interface/http/optional-session-auth.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { optionalSession } from '../../../infrastructure/auth-composition.js';
 import { prisma } from '../../../infrastructure/prisma/client.js';
 import { GetVendorReviewsUseCase } from '../application/get-vendor-reviews.use-case.js';
 import { VendorReviewsController } from './vendor-reviews.controller.js';
@@ -32,16 +31,11 @@ import {
 const useCase = new GetVendorReviewsUseCase(prisma);
 const controller = new VendorReviewsController(useCase);
 
-const optionalSessionAuth = createOptionalSessionAuthMiddleware({
-  sessions: sessionRepository,
-  clock,
-});
-
 export const vendorReviewsRouter = Router({ mergeParams: true });
 
 vendorReviewsRouter.get(
   '/:id/reviews',
-  optionalSessionAuth,
+  optionalSession,
   validateRequestMiddleware(
     z.object({
       params: VendorIdParamSchema,

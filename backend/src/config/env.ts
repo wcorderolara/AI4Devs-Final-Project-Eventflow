@@ -3,14 +3,7 @@
 // con mensaje descriptivo (EC-01, EC-02). La validación se ejecuta antes de montar rutas o
 // conectar Prisma (ver `server.ts`). Categorías per Doc 14 §27.
 import { z } from 'zod';
-
-// Boolean robusto desde string de entorno (US-094). `z.coerce.boolean()` es un footgun: convierte
-// CUALQUIER string no vacío a `true` (Boolean('false') === true). Este parser interpreta el texto.
-const booleanFromEnv = z.preprocess((v) => {
-  if (typeof v === 'boolean') return v;
-  if (typeof v === 'string') return ['true', '1', 'yes', 'on'].includes(v.trim().toLowerCase());
-  return v;
-}, z.boolean());
+import { booleanFromEnv, loggingConfigFields } from './logging-config.js';
 
 // `SameSite` case-insensitive desde entorno (US-108 / BE-001). Normaliza a minúsculas para el
 // enum. `Lax`/`LAX`/`lax` → 'lax'. ADR-SEC-002 / ADR-SEC-006.
@@ -22,14 +15,10 @@ const sameSiteFromEnv = z.preprocess((v) => {
 export const configSchema = z.object({
   // APP
   PORT: z.coerce.number().int().positive().default(3000),
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  NODE_ENV: loggingConfigFields.NODE_ENV,
 
   // DATABASE
   DATABASE_URL: z.string().url(),
-
-  // AUTH
-  JWT_SECRET: z.string().min(32),
-  JWT_EXPIRES_IN: z.string().default('7d'),
 
   // SESSION (US-094 / PB-P0-004; US-108 / PB-P0-006 — ADR-SEC-002 cookie HTTP-only firmada)
   // VR-01: secreto de firma requerido, mínimo 32 bytes (fail-fast en boot).
@@ -99,14 +88,10 @@ export const configSchema = z.object({
   // Prohibido combinar `true` con wildcard `*` (EC-04). Default `true` (comportamiento US-091).
   CORS_CREDENTIALS: booleanFromEnv.default(true),
   // CAPTCHA (US-091; US-109 / PB-P0-006 — ADR-SEC-004). Provider por entorno + secretos backend.
-  CAPTCHA_PROVIDER: z.enum(['mock', 'recaptcha', 'hcaptcha']),
-  // Legacy genérico (US-091). Conservado por compatibilidad; los providers reales usan las vars
-  // provider-específicas de abajo. No requerido.
-  CAPTCHA_SECRET: z.string().optional(),
-  // Secretos backend por proveedor real (US-109 / VR-05). Requeridos según `CAPTCHA_PROVIDER`
+  CAPTCHA_PROVIDER: z.enum(['mock', 'recaptcha']),
+  // Secret backend del proveedor real (US-109 / VR-05). Requerido según `CAPTCHA_PROVIDER`
   // (validado en `superRefine`). NUNCA `NEXT_PUBLIC_*` — sólo backend/Secrets Manager (SEC-02).
   RECAPTCHA_SECRET_KEY: z.string().optional(),
-  HCAPTCHA_SECRET_KEY: z.string().optional(),
   // Umbral de score reCAPTCHA v3 (US-109 / VR-08). Rango 0..1; default técnico 0.5.
   CAPTCHA_SCORE_THRESHOLD: z.coerce.number().min(0).max(1).default(0.5),
   // Timeout corto de verificación con el proveedor real (US-109 / EC-05). Default 3000 ms.
@@ -114,7 +99,6 @@ export const configSchema = z.object({
   HELMET_ENABLED: z.coerce.boolean().default(true),
   RATE_LIMIT_MAX: z.coerce.number().default(100),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
-  AUTH_RATE_LIMIT_MAX: z.coerce.number().default(5), // legacy US-091 (authRateLimit genérico)
   // RATE LIMITING estricto por endpoint (US-110 / PB-P0-007 — ADR-SEC-004). VR-01: enteros positivos
   // (fail-fast en boot ante 0/negativos/no numéricos). Defaults MVP = contrato de QA/Demo.
   AUTH_LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
@@ -138,8 +122,7 @@ export const configSchema = z.object({
   FILE_SIZE_LIMIT: z.coerce.number().default(5242880),
 
   // FILE STORAGE (US-043 / PB-P1-026): abstracción `FileStoragePort` con adapter local por MVP.
-  // `local` escribe en `FILE_STORAGE_PATH`. Adapters `s3`/`gcs` quedan como futuro (ADR pendiente).
-  FILE_STORAGE_DRIVER: z.enum(['local']).default('local'),
+  // El adapter local escribe en `FILE_STORAGE_PATH`. Adapters `s3`/`gcs` quedan como futuro (ADR pendiente).
   FILE_STORAGE_PATH: z.string().min(1).default('./storage/uploads'),
 
   // LOGGING
@@ -147,29 +130,25 @@ export const configSchema = z.object({
   // (`trace..silent`). Backward-compat: los valores previos (`debug/info/warn/
   // error`) siguen siendo válidos. Default constante `info` (D-03 en execution
   // record — cambiar a env-derivado silenciaría logs en el env de test).
-  LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal', 'silent']).default('info'),
+  LOG_LEVEL: loggingConfigFields.LOG_LEVEL,
   // US-113 (PB-P2-010 / BE-001 / VR-02): pretty-print sólo en desarrollo. El
   // `superRefine` (abajo) hace fail-fast si `LOG_PRETTY=true` en producción.
-  LOG_PRETTY: booleanFromEnv.default(false),
+  LOG_PRETTY: loggingConfigFields.LOG_PRETTY,
   // US-113 (PB-P2-010 / BE-001 / VR-03, SEC-02): permite emitir PII (email,
   // phone, …) sin redactar SÓLO en development. El `superRefine` hace fail-fast
   // si `true` fuera de development.
-  LOG_INCLUDE_PII: booleanFromEnv.default(false),
-  // US-113 (PB-P2-010 / BE-001 / VR-04): versión del servicio inyectada en cada
-  // log line. Se resuelve desde env; el helper `resolveServiceVersion()` cae a
-  // `package.json.version` si la env var no está seteada.
+  LOG_INCLUDE_PII: loggingConfigFields.LOG_INCLUDE_PII,
+  // US-113 (PB-P2-010 / BE-001 / VR-04): alias de `APP_VERSION` para la versión de logs y
+  // `/health`. Precedencia en `shared/config/app-version.ts`.
   SERVICE_VERSION: z.string().min(1).optional(),
 
   // SEED
-  SEED_ENABLED: z.coerce.boolean().default(false),
   // US-086 (PB-P0-014): flag operativo del reset surgical Demo (Doc 14 §15.2 SEED, THR-012). Por
   // defecto `false`; sólo `true` en dev/qa/demo. Gate de registro de la ruta `/admin/seed/*`
-  // (con flag off la ruta NO se monta → 404 natural). Coexiste con `SEED_ENABLED` (gate genérico
-  // del arranque del seed) y con el gate del CLI `EnvironmentGuard`. `booleanFromEnv` interpreta
+  // (con flag off la ruta NO se monta → 404 natural). Coexiste con el gate del CLI
+  // `EnvironmentGuard`. `booleanFromEnv` interpreta
   // 'true'/'1'/'yes'/'on'; nunca convierte 'false' a `true`.
   SEED_DEMO_ENABLED: booleanFromEnv.default(false),
-  // US-086 (PB-P0-014): tamaño de lote de los deletes surgicales del reset (`$transaction` chunked).
-  SEED_BATCH_SIZE: z.coerce.number().int().positive().default(1000),
 
   // JOBS — US-015 / PB-P1-009 (ADR-BE-004 Simple Scheduled Jobs).
   // `JOBS_ENABLED` gobierna el registro de schedulers intra-proceso: sólo la réplica con `true`
@@ -305,19 +284,12 @@ const validatedConfigSchema = configSchema.superRefine((cfg, ctx) => {
       message: 'CAPTCHA_PROVIDER=mock no está permitido en entornos no-locales (NODE_ENV=production).',
     });
   }
-  // VR-05: cada proveedor real exige su secret key backend.
+  // VR-05: el proveedor real exige su secret key backend.
   if (cfg.CAPTCHA_PROVIDER === 'recaptcha' && !cfg.RECAPTCHA_SECRET_KEY) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['RECAPTCHA_SECRET_KEY'],
       message: 'CAPTCHA_PROVIDER=recaptcha requiere RECAPTCHA_SECRET_KEY.',
-    });
-  }
-  if (cfg.CAPTCHA_PROVIDER === 'hcaptcha' && !cfg.HCAPTCHA_SECRET_KEY) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['HCAPTCHA_SECRET_KEY'],
-      message: 'CAPTCHA_PROVIDER=hcaptcha requiere HCAPTCHA_SECRET_KEY.',
     });
   }
 

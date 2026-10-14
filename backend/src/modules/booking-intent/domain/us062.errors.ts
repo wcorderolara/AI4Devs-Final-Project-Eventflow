@@ -4,7 +4,7 @@
 //
 // El error `BookingIntentNotFoundError` es compartido con US-061 y vive en `us061.errors.ts`
 // (mismo código estable `BOOKING_INTENT_NOT_FOUND` uniforme para 404 bilateral).
-import { AppError } from '../../../shared/domain/errors/app.error.js';
+import { AppError, type ErrorDetail } from '../../../shared/domain/errors/app.error.js';
 import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
 
 /**
@@ -15,11 +15,16 @@ import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
  */
 export class BookingIntentNotCancellableError extends AppError {
   readonly code = ErrorCodes.BOOKING_INTENT_NOT_CANCELLABLE;
+  override readonly httpStatus = 409;
   constructor(
     public readonly currentStatus: string,
     message = 'Booking intent cannot be cancelled in its current state',
   ) {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'current_status', message: this.currentStatus }];
   }
 }
 
@@ -30,7 +35,12 @@ export class BookingIntentNotCancellableError extends AppError {
  */
 export class InvalidCancellationReasonError extends AppError {
   readonly code = ErrorCodes.INVALID_CANCELLATION_REASON;
+  override readonly httpStatus = 400;
   constructor(message = 'Cancellation reason must not exceed 500 characters') {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'reason', message: 'too_long' }];
   }
 }

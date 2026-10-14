@@ -4,10 +4,12 @@ import { ErrorCodes } from './error-codes.js';
 
 export class MissingInputError extends AppError {
   readonly code = ErrorCodes.MISSING_INPUT; // 400
+  override readonly httpStatus = 400;
   constructor(message = 'Required feature input is missing') { super(message); }
 }
 export class UnsupportedLanguageError extends AppError {
   readonly code = ErrorCodes.UNSUPPORTED_LANGUAGE; // 422
+  override readonly httpStatus = 422;
   constructor(message = 'Unsupported language') { super(message); }
 }
 // US-124 (PB-P0-011): metadata SEGURA de validación de output adjunta a errores. NUNCA raw output,
@@ -23,6 +25,7 @@ export interface AiOutputValidationErrorMeta {
 
 export class AiInvalidOutputError extends AppError {
   readonly code = ErrorCodes.AI_INVALID_OUTPUT; // 422
+  override readonly httpStatus = 422;
   // US-124: acepta metadata de validación opcional (backward-compatible con US-097).
   constructor(message = 'AI provider returned invalid output', readonly meta?: AiOutputValidationErrorMeta) { super(message); }
 }
@@ -30,6 +33,7 @@ export class AiInvalidOutputError extends AppError {
 // US-019 (PB-P1-013 / EC-01, VR-03): budget_estimated <= 0 al invocar sugerencia IA → 400.
 export class AiInvalidBudgetError extends AppError {
   readonly code = ErrorCodes.INVALID_BUDGET;
+  override readonly httpStatus = 400;
   constructor(message = 'budget_estimated must be > 0') { super(message); }
 }
 
@@ -44,13 +48,9 @@ export class AiOutputParseError extends AppError {
   readonly code = ErrorCodes.AI_OUTPUT_PARSE_ERROR; // 422
   constructor(message = 'AI output could not be parsed', readonly meta?: AiOutputValidationErrorMeta) { super(message); }
 }
-/** Se intentó reintentar más de una vez (VR-04); guard defensivo. */
-export class AiRetryLimitExceededError extends AppError {
-  readonly code = ErrorCodes.AI_RETRY_LIMIT_EXCEEDED; // 422
-  constructor(message = 'AI output retry limit exceeded', readonly meta?: AiOutputValidationErrorMeta) { super(message); }
-}
 export class InvalidStateTransitionError extends AppError {
   readonly code = ErrorCodes.INVALID_STATE_TRANSITION; // 422
+  override readonly httpStatus = 422;
   constructor(message = 'Invalid state transition') { super(message); }
 }
 // US-123 (PB-P0-011): metadata SEGURA de ejecución AI adjunta a errores controlados de la capa de
@@ -70,24 +70,22 @@ export interface AiExecutionErrorMeta {
 
 export class AiProviderUnavailableError extends AppError {
   readonly code = ErrorCodes.AI_PROVIDER_UNAVAILABLE; // 503
+  override readonly httpStatus = 503;
   // US-123: acepta metadata de ejecución opcional (backward-compatible con US-097).
   constructor(message = 'AI provider is unavailable', readonly meta?: AiExecutionErrorMeta) { super(message); }
 }
 export class AiProviderTimeoutError extends AppError {
-  readonly code = ErrorCodes.AI_PROVIDER_TIMEOUT; // 503 (US-097; distinto del AITimeoutError→504 de US-093)
+  readonly code = ErrorCodes.AI_PROVIDER_TIMEOUT; // 503 (US-097)
+  override readonly httpStatus = 503;
   // US-123: acepta metadata de ejecución opcional (backward-compatible con US-097).
   constructor(message = 'AI provider timed out', readonly meta?: AiExecutionErrorMeta) { super(message); }
 }
 
 // US-123 (PB-P0-011 / BE-004): errores controlados de la capa de ejecución AI (timeout/fallback).
-/** Fallback deshabilitado por config/environment (AC-03 / VR-04). */
-export class AiFallbackNotAllowedError extends AppError {
-  readonly code = ErrorCodes.AI_FALLBACK_NOT_ALLOWED;
-  constructor(message = 'AI fallback is not allowed in this configuration', readonly meta?: AiExecutionErrorMeta) { super(message); }
-}
 /** El MockAIProvider usado como fallback también falló (EC-05); sin loop, sin Anthropic. */
 export class AiFallbackFailedError extends AppError {
-  readonly code = ErrorCodes.AI_FALLBACK_FAILED;
+  readonly code = ErrorCodes.AI_FALLBACK_FAILED; // 503: falla del lado del provider (PR-5, alcanzable en producción)
+  override readonly httpStatus = 503;
   constructor(message = 'AI fallback provider failed', readonly meta?: AiExecutionErrorMeta) { super(message); }
 }
 /** Configuración AI inválida/insegura detectada en bootstrap (AC-07 / EC-04). */
@@ -107,5 +105,6 @@ export interface AiProviderErrorMeta {
 }
 export class AIProviderNotConfiguredError extends AppError {
   readonly code = ErrorCodes.AI_PROVIDER_NOT_CONFIGURED; // 503
+  override readonly httpStatus = 503;
   constructor(message = 'AI provider is not configured', readonly meta?: AiProviderErrorMeta) { super(message); }
 }

@@ -1,7 +1,7 @@
 // Errores de dominio del endpoint `POST /api/v1/booking-intents` (US-060 / BE-003).
 // Mapean 1:1 a los códigos estables del contrato (§7 Tech Spec) y son consumidos por el
 // `errorHandlerMiddleware` para serializar el envelope anidado con `details`.
-import { AppError } from '../../../shared/domain/errors/app.error.js';
+import { AppError, type ErrorDetail, type HttpErrorMapping } from '../../../shared/domain/errors/app.error.js';
 import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
 
 /**
@@ -12,8 +12,13 @@ import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
  */
 export class QuoteNotFoundForBookingError extends AppError {
   readonly code = ErrorCodes.QUOTE_NOT_FOUND;
+  override readonly httpStatus = 404;
   constructor(message = 'Quote not found') {
     super(message);
+  }
+
+  override toHttp(): HttpErrorMapping {
+    return { ...super.toHttp(), message: 'Quote not found', masked: true };
   }
 }
 
@@ -25,8 +30,13 @@ export class QuoteNotFoundForBookingError extends AppError {
  */
 export class DisclaimerRequiredError extends AppError {
   readonly code = ErrorCodes.DISCLAIMER_REQUIRED;
+  override readonly httpStatus = 400;
   constructor(message = 'Booking intent requires explicit disclaimer acceptance') {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'disclaimer_accepted', message: 'required' }];
   }
 }
 
@@ -38,11 +48,16 @@ export class DisclaimerRequiredError extends AppError {
  */
 export class QuoteNotAcceptableError extends AppError {
   readonly code = ErrorCodes.QUOTE_NOT_ACCEPTABLE;
+  override readonly httpStatus = 409;
   constructor(
     public readonly currentStatus: string,
     message = 'Quote is not acceptable in its current state',
   ) {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'current_status', message: this.currentStatus }];
   }
 }
 
@@ -55,10 +70,15 @@ export class QuoteNotAcceptableError extends AppError {
  */
 export class BookingIntentAlreadyExistsError extends AppError {
   readonly code = ErrorCodes.BOOKING_INTENT_ALREADY_EXISTS;
+  override readonly httpStatus = 409;
   constructor(
     public readonly bookingIntentId: string,
     message = 'A booking intent is already active for this quote',
   ) {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'booking_intent_id', message: this.bookingIntentId }];
   }
 }

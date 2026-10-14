@@ -49,8 +49,3 @@ export interface AdminActionsListDTO {
   items: AdminActionListItemModel[];
   pagination: AdminActionsListPagination;
 }
-
-export interface AdminActionsListEnvelope {
-  data: AdminActionsListDTO;
-  meta?: { correlationId: string; timestamp?: string };
-}

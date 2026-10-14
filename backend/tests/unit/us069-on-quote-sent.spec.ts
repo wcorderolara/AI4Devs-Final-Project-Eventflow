@@ -25,13 +25,11 @@ import type { NotificationRow } from '../../src/modules/notifications/ports/list
 import type {
   CreateQuoteReceivedNotificationInput,
   NotificationQuoteReceivedRepository,
-  QuoteReceivedRepositoryOptions,
-} from '../../src/modules/notifications/ports/notification-quote-received.repository.js';
-import type {
+  NotificationRepositoryOptions,
   SimulatedQuoteReceivedEmailInput,
   SimulatedQuoteReceivedEmailPort,
-} from '../../src/modules/notifications/ports/simulated-quote-received-email.port.js';
-import { QUOTE_RECEIVED_EMAIL_LOG_ALLOWED_KEYS } from '../../src/modules/notifications/infrastructure/logging-simulated-quote-received-email.adapter.js';
+} from '../../src/modules/notifications/ports/notification-channels.port.js';
+import { QUOTE_RECEIVED_EMAIL_LOG_ALLOWED_KEYS } from '../../src/modules/notifications/infrastructure/notification-channels.js';
 import { renderQuoteReceivedTemplate } from '../../src/modules/notifications/i18n/quote-received-templates.js';
 import type { SupportedLanguage } from '../../src/shared/constants/languages.js';
 
@@ -43,17 +41,17 @@ class FakeQuoteRepo implements NotificationQuoteReceivedRepository {
     this.existsMap.set(`${organizerUserId}::${quoteId}`, true);
   }
 
-  existsQuoteReceivedForQuote(
+  exists(
     organizerUserId: string,
     quoteId: string,
-    _opts?: QuoteReceivedRepositoryOptions,
+    _opts?: NotificationRepositoryOptions,
   ): Promise<boolean> {
     return Promise.resolve(this.existsMap.get(`${organizerUserId}::${quoteId}`) ?? false);
   }
 
   create(
     input: CreateQuoteReceivedNotificationInput,
-    _opts?: QuoteReceivedRepositoryOptions,
+    _opts?: NotificationRepositoryOptions,
   ): Promise<void> {
     this.created.push(input);
     this.existsMap.set(`${input.organizerUserId}::${input.quoteId}`, true);

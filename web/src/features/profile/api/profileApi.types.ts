@@ -16,11 +16,6 @@ export interface UserProfile {
   updatedAt: string;
 }
 
-export interface UserProfileEnvelopeDTO {
-  data: UserProfile;
-  meta: { correlationId: string; timestamp?: string };
-}
-
 /** Cuerpo de `PATCH /users/me` (whitelist: `name`, `phone`, `preferredLanguage`). */
 export interface UpdateProfileRequestDTO {
   name?: string;

@@ -1,10 +1,8 @@
 // API client — admin categories (US-075 / FE-005). Paridad EXACTA con el contrato
 // backend (Tech Spec §7). Todas las mutaciones devuelven la categoría actualizada.
-import { httpDelete, httpGet, httpPatch, httpPost } from '@/shared/api-client';
+import { httpDeleteData, httpGetData, httpPatchData, httpPostData } from '@/shared/api-client';
 import type {
   AdminCategoriesListDTO,
-  AdminCategoriesListEnvelope,
-  AdminCategoryEnvelope,
   AdminCategoryNode,
   CreateCategoryBodyDTO,
   DeleteCategoryBodyDTO,
@@ -14,34 +12,29 @@ import type {
 export const adminCategoriesApi = {
   /** GET /admin/service-categories → tree + flat incluyendo `is_active=false`. */
   async list(): Promise<AdminCategoriesListDTO> {
-    const envelope = await httpGet<AdminCategoriesListEnvelope>('/admin/service-categories');
-    return envelope.data;
+    return httpGetData<AdminCategoriesListDTO>('/admin/service-categories');
   },
 
   /** POST /admin/service-categories → 201 con categoría creada. */
   async create(body: CreateCategoryBodyDTO): Promise<AdminCategoryNode> {
-    const envelope = await httpPost<AdminCategoryEnvelope, CreateCategoryBodyDTO>(
-      '/admin/service-categories',
-      { body },
-    );
-    return envelope.data;
+    return httpPostData<AdminCategoryNode, CreateCategoryBodyDTO>('/admin/service-categories', {
+      body,
+    });
   },
 
   /** PATCH /admin/service-categories/:id → 200 con categoría actualizada. */
   async update(id: string, body: UpdateCategoryBodyDTO): Promise<AdminCategoryNode> {
-    const envelope = await httpPatch<AdminCategoryEnvelope, UpdateCategoryBodyDTO>(
+    return httpPatchData<AdminCategoryNode, UpdateCategoryBodyDTO>(
       `/admin/service-categories/${encodeURIComponent(id)}`,
       { body },
     );
-    return envelope.data;
   },
 
   /** DELETE /admin/service-categories/:id — soft delete con `reason` requerido. */
   async softDelete(id: string, body: DeleteCategoryBodyDTO): Promise<AdminCategoryNode> {
-    const envelope = await httpDelete<AdminCategoryEnvelope>(
+    return httpDeleteData<AdminCategoryNode>(
       `/admin/service-categories/${encodeURIComponent(id)}`,
       { body },
     );
-    return envelope.data;
   },
 };

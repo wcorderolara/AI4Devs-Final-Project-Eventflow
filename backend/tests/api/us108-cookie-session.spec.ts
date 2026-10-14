@@ -4,25 +4,13 @@
 // manipulada/ausente en ruta protegida → 401 AUTHENTICATION_REQUIRED sin filtrar la causa.
 import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
-import { PrismaClient } from '@prisma/client';
 import { createApp } from '../../src/app.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { CAPTCHA, uniqEmail } from '../helpers/http.js';
 
-const prisma = new PrismaClient();
-
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const app = createApp();
-const CAPTCHA = '__test__';
-const uniq = (): string => `us108_${Date.now()}_${Math.floor(Math.random() * 1e6)}@eventflow.test`;
 
 /** 30 días en segundos, tal como Express serializa `maxAge` (ms) a `Max-Age` en el header. */
 const THIRTY_DAYS_SECONDS = 30 * 24 * 60 * 60;
@@ -35,7 +23,7 @@ describe.skipIf(!dbUp)('US-108 QA-002 — Set-Cookie de sesión (DB)', () => {
   });
 
   it('AC-01: login emite cookie HttpOnly, Path=/, SameSite=Lax, Max-Age 30 días y sin token en JSON', async () => {
-    const email = uniq();
+    const email = uniqEmail('us108');
     await request(app)
       .post('/api/v1/auth/register')
       .send({ acceptedTerms: true, email, password: 'Secret1234', name: 'Cookie', role: 'organizer', captchaToken: CAPTCHA });
@@ -55,7 +43,7 @@ describe.skipIf(!dbUp)('US-108 QA-002 — Set-Cookie de sesión (DB)', () => {
   });
 
   it('AC-05: logout limpia la cookie (Max-Age=0/expira) y /users/me posterior → 401', async () => {
-    const email = uniq();
+    const email = uniqEmail('us108');
     const agent = request.agent(app);
     await agent
       .post('/api/v1/auth/register')

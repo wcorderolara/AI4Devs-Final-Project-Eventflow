@@ -7,11 +7,9 @@
 // Composición canónica US-111: `sessionAuth → roleMiddleware(['organizer']) → asyncHandler`.
 // Vendor/admin → 403 antes del handler. Ownership + no-revelación 404 los aplica el use case.
 import { Router } from 'express';
-import { roleMiddleware } from '../../../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../../../shared/interface/http/async-handler.js';
-import { sessionRepository, clock } from '../../../../../infrastructure/auth-composition.js';
-import { prisma } from '../../../../../shared/infrastructure/prisma/prisma.client.js';
+import { requireSession, requireRole } from '../../../../../infrastructure/auth-composition.js';
+import { prisma } from '../../../../../infrastructure/prisma/client.js';
 import { PrismaEventTaskMutateRepository } from '../../infrastructure/prisma-event-task-mutate.repository.js';
 import { PrismaServiceCategoryReadAdapter } from '../../../create/infrastructure/adapters/prisma-service-category-read.adapter.js';
 import { UpdateEventTaskContentUseCase } from '../../application/update-event-task-content.use-case.js';
@@ -31,29 +29,26 @@ const controller = new MutateEventTaskController(
   softDeleteUseCase,
 );
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const organizerOnly = roleMiddleware(['organizer']);
-
 export const eventTasksMutateRouter = Router();
 
 // /status debe registrarse ANTES para que Express matchee la ruta más específica primero.
 eventTasksMutateRouter.patch(
   '/events/:eventId/tasks/:taskId/status',
-  sessionAuth,
-  organizerOnly,
+  requireSession,
+  requireRole('organizer'),
   asyncHandler(controller.patchStatus),
 );
 
 eventTasksMutateRouter.patch(
   '/events/:eventId/tasks/:taskId',
-  sessionAuth,
-  organizerOnly,
+  requireSession,
+  requireRole('organizer'),
   asyncHandler(controller.patchContent),
 );
 
 eventTasksMutateRouter.delete(
   '/events/:eventId/tasks/:taskId',
-  sessionAuth,
-  organizerOnly,
+  requireSession,
+  requireRole('organizer'),
   asyncHandler(controller.delete),
 );

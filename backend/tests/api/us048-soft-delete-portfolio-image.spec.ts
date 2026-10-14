@@ -7,20 +7,8 @@
 // - DB-gated (skipIf): matriz AUTH + idempotencia + log corren en CI con Postgres efímero.
 import { describe, expect, it } from 'vitest';
 import request from 'supertest';
-import { PrismaClient } from '@prisma/client';
 import { createApp } from '../../src/app.js';
-
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+import { dbUp } from '../helpers/test-db.js';
 
 const app = createApp();
 const VALID_IMAGE_ID = '11111111-1111-1111-1111-111111111111';

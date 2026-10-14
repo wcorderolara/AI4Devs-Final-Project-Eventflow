@@ -9,9 +9,9 @@
 // `RESOURCE_NOT_FOUND` (404 uniforme), `REVIEW_NOT_ELIGIBLE` (403 con
 // `details[0].message` ∈ {`no_booking`, `event_not_completed`, `window_expired`,
 // `already_reviewed`}), `RATE_LIMIT_EXCEEDED` (429). Otros ⇒ `UNEXPECTED`.
-import { httpPost } from '@/shared/api-client';
+import { httpPostData } from '@/shared/api-client';
 import type {
-  CreateReviewEnvelope,
+  CreateReviewDTO,
   CreateReviewInput,
   CreateReviewRequestBody,
   CreateReviewView,
@@ -26,10 +26,9 @@ export const organizerReviewsApi = {
       rating: input.rating,
       ...(input.comment !== undefined ? { comment: input.comment } : {}),
     };
-    const envelope = await httpPost<CreateReviewEnvelope, CreateReviewRequestBody>(
-      `/organizer/reviews`,
-      { body },
-    );
-    return toCreateReviewView(envelope.data);
+    const dto = await httpPostData<CreateReviewDTO, CreateReviewRequestBody>(`/organizer/reviews`, {
+      body,
+    });
+    return toCreateReviewView(dto);
   },
 };

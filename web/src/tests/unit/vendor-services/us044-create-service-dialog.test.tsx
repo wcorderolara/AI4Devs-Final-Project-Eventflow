@@ -105,7 +105,7 @@ describe('US-044 QA-005 — CreateServiceDialog', () => {
   });
 
   it('A11Y: sin violaciones axe', async () => {
-    const { container } = render(
+    render(
       wrap(
         <CreateServiceDialog
           isOpen
@@ -115,7 +115,7 @@ describe('US-044 QA-005 — CreateServiceDialog', () => {
         />,
       ),
     );
-    const results = await axe(container);
+    const results = await axe(document.body);
     expect(results).toHaveNoViolations();
   });
 });

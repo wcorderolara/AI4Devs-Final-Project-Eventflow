@@ -7,7 +7,7 @@
 //
 // Orden estable `due_date ASC NULLS LAST, updated_at DESC` para hacer determinista el snapshot
 // que alimenta la signature (BE-001) y facilitar el debugging del cache.
-import { prisma } from '../../../shared/infrastructure/prisma/prisma.client.js';
+import { prisma } from '../../../infrastructure/prisma/client.js';
 import type {
   EligibleTasksReader,
   EligibleTaskRow,

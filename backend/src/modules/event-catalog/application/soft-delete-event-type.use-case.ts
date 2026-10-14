@@ -12,18 +12,18 @@
 //
 // `reason` obligatorio [10..500] chars — validado en el controller (produce
 // `REASON_REQUIRED` o `INVALID_REASON_LENGTH`), NO en el UseCase. Aquí solo se persiste.
-import { Prisma, type PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
+import { recordAdminAction } from '../../../infrastructure/persistence/record-admin-action.js';
+import type { CatalogAdminCtx } from '../../../shared/application/catalog-admin.js';
 import {
   EventTypeInUseError,
   EventTypeNotFoundError,
 } from '../domain/us076.errors.js';
 import { toEventTypeView, type EventTypeView } from './event-type.view.js';
 
-export interface SoftDeleteEventTypeCtx {
-  correlationId?: string;
-}
+export type SoftDeleteEventTypeCtx = CatalogAdminCtx;
 
 export class SoftDeleteEventTypeUseCase {
   constructor(
@@ -52,23 +52,20 @@ export class SoftDeleteEventTypeUseCase {
         data: { isActive: false },
       });
 
-      const adminAction = await tx.adminAction.create({
-        data: {
-          adminUserId: currentUserId,
-          action: 'soft_delete',
-          targetEntity: 'event_type',
-          targetId: id,
-          metadata: {
-            correlationId: ctx.correlationId ?? null,
-            reason,
-            snapshot: {
-              code: existing.code,
-              sort_order: existing.sortOrder,
-              was_active: existing.isActive,
-            },
-          } as Prisma.InputJsonObject,
+      const adminAction = await recordAdminAction(tx, {
+        adminUserId: currentUserId,
+        action: 'soft_delete',
+        targetEntity: 'event_type',
+        targetId: id,
+        correlationId: ctx.correlationId,
+        metadata: {
+          reason,
+          snapshot: {
+            code: existing.code,
+            sort_order: existing.sortOrder,
+            was_active: existing.isActive,
+          },
         },
-        select: { id: true },
       });
 
       this.logger.emit('event_type.soft_deleted', {

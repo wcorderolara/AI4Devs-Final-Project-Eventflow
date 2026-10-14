@@ -1,11 +1,11 @@
-// Cliente HTTP de siteverify (US-109 / BE-004, BE-005). Común a reCAPTCHA y hCaptcha.
+// Cliente HTTP de siteverify (US-109 / BE-004, BE-005). Usado por reCAPTCHA.
 // POST application/x-www-form-urlencoded con timeout corto (AbortController). `fetchFn` es
 // inyectable para tests (por default el `fetch` global de Node >=22) → CI sin red externa.
 // NUNCA loguea el token, el secret ni la respuesta cruda (SEC-03).
 
 export type FetchLike = typeof fetch;
 
-/** Forma parcial de la respuesta JSON de siteverify (reCAPTCHA v3 / hCaptcha). */
+/** Forma parcial de la respuesta JSON de siteverify (reCAPTCHA v3). */
 export interface SiteverifyResponse {
   success: boolean;
   score?: number;

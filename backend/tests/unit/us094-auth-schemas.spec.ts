@@ -13,7 +13,6 @@ import {
   ChangePasswordSchema,
 } from '../../src/modules/user-profile/dto/index.js';
 import { Sha256ResetTokenGenerator } from '../../src/infrastructure/security/sha256-reset-token.generator.js';
-import { BcryptPasswordHasher } from '../../src/infrastructure/security/bcrypt-password-hasher.js';
 
 describe('passwordSchema (VR-02, Doc 19 §11.2 — política MVP alineada en US-001)', () => {
   it('acepta una contraseña conforme a política', () => {
@@ -124,15 +123,5 @@ describe('Sha256ResetTokenGenerator (AC-06/AC-07, EC-06)', () => {
   });
   it('tokens distintos generan hashes distintos', () => {
     expect(gen.generate().hash).not.toBe(gen.generate().hash);
-  });
-});
-
-describe('BcryptPasswordHasher (SEC-05)', () => {
-  const hasher = new BcryptPasswordHasher(4); // coste bajo para test rápido
-  it('hash/verify roundtrip', async () => {
-    const hash = await hasher.hash('Secret1234');
-    expect(hash).not.toContain('Secret1234');
-    expect(await hasher.verify('Secret1234', hash)).toBe(true);
-    expect(await hasher.verify('wrong', hash)).toBe(false);
   });
 });

@@ -1,8 +1,8 @@
-import { httpPost } from '@/shared/api-client';
-import { mapAuthUserEnvelopeToRegisteredUser } from '../mappers/registeredUserMapper';
+import { httpPost, httpPostData } from '@/shared/api-client';
+import { mapAuthUserToRegisteredUser } from '../mappers/registeredUserMapper';
 import type { RegisteredUser } from '../types';
 import type {
-  AuthUserEnvelopeDTO,
+  AuthUserDTO,
   ForgotPasswordRequestDTO,
   LoginRequestDTO,
   RegisterOrganizerRequestDTO,
@@ -18,25 +18,25 @@ import type {
  */
 export const authRegisterApi = {
   async registerOrganizer(input: Omit<RegisterOrganizerRequestDTO, 'role'>): Promise<RegisteredUser> {
-    const dto = await httpPost<AuthUserEnvelopeDTO, RegisterOrganizerRequestDTO>('/auth/register', {
+    const dto = await httpPostData<AuthUserDTO, RegisterOrganizerRequestDTO>('/auth/register', {
       body: { ...input, role: 'organizer' },
     });
-    return mapAuthUserEnvelopeToRegisteredUser(dto);
+    return mapAuthUserToRegisteredUser(dto);
   },
 
   async registerVendor(input: Omit<RegisterVendorRequestDTO, 'role'>): Promise<RegisteredUser> {
-    const dto = await httpPost<AuthUserEnvelopeDTO, RegisterVendorRequestDTO>('/auth/register', {
+    const dto = await httpPostData<AuthUserDTO, RegisterVendorRequestDTO>('/auth/register', {
       body: { ...input, role: 'vendor' },
     });
-    return mapAuthUserEnvelopeToRegisteredUser(dto);
+    return mapAuthUserToRegisteredUser(dto);
   },
 
   /** US-003 / FE-004: login con captcha condicional; la cookie de sesión viaja en Set-Cookie. */
   async login(input: LoginRequestDTO): Promise<RegisteredUser> {
     const body: LoginRequestDTO = { email: input.email, password: input.password };
     if (input.captchaToken) body.captchaToken = input.captchaToken;
-    const dto = await httpPost<AuthUserEnvelopeDTO, LoginRequestDTO>('/auth/login', { body });
-    return mapAuthUserEnvelopeToRegisteredUser(dto);
+    const dto = await httpPostData<AuthUserDTO, LoginRequestDTO>('/auth/login', { body });
+    return mapAuthUserToRegisteredUser(dto);
   },
 
   /** US-004 / FE-003: siempre 202 genérico — anti-enumeración; el resultado no revela nada. */
@@ -55,11 +55,11 @@ export const authRegisterApi = {
    * con la sesión emitida. Errores: 410 OAUTH_CONTINUATION_INVALID (continuación ausente/expirada).
    */
   async completeGoogleSignup(role: 'organizer' | 'vendor'): Promise<RegisteredUser> {
-    const dto = await httpPost<AuthUserEnvelopeDTO, { role: 'organizer' | 'vendor' }>(
+    const dto = await httpPostData<AuthUserDTO, { role: 'organizer' | 'vendor' }>(
       '/auth/google/complete-signup',
       { body: { role } },
     );
-    return mapAuthUserEnvelopeToRegisteredUser(dto);
+    return mapAuthUserToRegisteredUser(dto);
   },
 
   /**
@@ -67,9 +67,9 @@ export const authRegisterApi = {
    * existente (AC-03). Solo procede con confirmación explícita; el backend responde 200 con sesión.
    */
   async confirmGoogleLink(): Promise<RegisteredUser> {
-    const dto = await httpPost<AuthUserEnvelopeDTO, { confirm: true }>('/auth/google/confirm-link', {
+    const dto = await httpPostData<AuthUserDTO, { confirm: true }>('/auth/google/confirm-link', {
       body: { confirm: true },
     });
-    return mapAuthUserEnvelopeToRegisteredUser(dto);
+    return mapAuthUserToRegisteredUser(dto);
   },
 };

@@ -58,12 +58,13 @@ describe('US-027 QA-005 — A11Y de EmptyChecklistState + Pagination', () => {
   });
 });
 
+// `CreateTaskDialog` se monta en un portal (`Modal` del design system): axe sobre `document.body`.
 describe('US-028 QA-005 — A11Y de CreateTaskDialog', () => {
   it('sin violaciones axe', async () => {
-    const { container } = render(
+    render(
       wrap(<CreateTaskDialog eventId="ev-1" isOpen onClose={vi.fn()} />),
     );
-    const results = await axe(container);
+    const results = await axe(document.body);
     expect(results).toHaveNoViolations();
   });
 });

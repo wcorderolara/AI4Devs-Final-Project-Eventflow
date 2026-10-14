@@ -14,7 +14,7 @@
 //     cubierto por `redactHeaders` y por el `formatters.log` del logger que
 //     aplica `redactSecrets` a todo el payload (AC-03/04).
 import type { RequestHandler } from 'express';
-import { logger } from '../../logger.js';
+import { logger } from '../../infrastructure/logger/index.js';
 import { redactHeaders } from '../../infrastructure/logger/redactors.js';
 import { HEALTH_PATHS } from '../../constants/health-paths.js';
 

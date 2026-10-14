@@ -9,18 +9,11 @@
 //   - `*.failed`        → `error`  (falla real de un job/batch — US-053).
 //   - resto             → `info`   (eventos de dominio y auditoría).
 import type { DomainEventLogger } from '../../shared/observability/domain-event-logger.js';
-import { logger } from '../../shared/infrastructure/logger/index.js';
+import { createEventLogger } from './event-logger.js';
 
 export class StructuredDomainEventLogger implements DomainEventLogger {
-  emit: DomainEventLogger['emit'] = (event, data) => {
-    if (event.endsWith('.limit_reached')) {
-      logger.warn({ event, ...data });
-      return;
-    }
-    if (event.endsWith('.failed')) {
-      logger.error({ event, ...data });
-      return;
-    }
-    logger.info({ event, ...data });
-  };
+  emit: DomainEventLogger['emit'] = createEventLogger({
+    level: (event) =>
+      event.endsWith('.limit_reached') ? 'warn' : event.endsWith('.failed') ? 'error' : 'info',
+  });
 }

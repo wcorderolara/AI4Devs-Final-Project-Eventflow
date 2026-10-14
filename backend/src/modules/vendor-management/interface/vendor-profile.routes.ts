@@ -7,10 +7,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { clock, requireSession, requireRole } from '../../../infrastructure/auth-composition.js';
 import { CreateVendorProfileUseCase } from '../application/create-vendor-profile.use-case.js';
 import { UpdateVendorProfileUseCase } from '../application/update-vendor-profile.use-case.js';
 import { SoftDeleteVendorProfileUseCase } from '../application/soft-delete-vendor-profile.use-case.js';
@@ -54,45 +52,42 @@ const controller = new VendorProfileController(
   repository,
 );
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const vendorOnly = roleMiddleware(['vendor']);
-
 export const vendorProfileRouter = Router();
 
 vendorProfileRouter.get(
   '/me',
-  sessionAuth,
-  vendorOnly,
+  requireSession,
+  requireRole('vendor'),
   asyncHandler(controller.getMine),
 );
 
 vendorProfileRouter.post(
   '/me',
-  sessionAuth,
-  vendorOnly,
+  requireSession,
+  requireRole('vendor'),
   validateRequestMiddleware(z.object({ body: CreateVendorProfileRequestSchema })),
   asyncHandler(controller.create),
 );
 
 vendorProfileRouter.patch(
   '/me',
-  sessionAuth,
-  vendorOnly,
+  requireSession,
+  requireRole('vendor'),
   validateRequestMiddleware(z.object({ body: UpdateVendorProfileRequestSchema })),
   asyncHandler(controller.update),
 );
 
 vendorProfileRouter.delete(
   '/me',
-  sessionAuth,
-  vendorOnly,
+  requireSession,
+  requireRole('vendor'),
   asyncHandler(controller.softDelete),
 );
 
 vendorProfileRouter.post(
   '/me/categories',
-  sessionAuth,
-  vendorOnly,
+  requireSession,
+  requireRole('vendor'),
   validateRequestMiddleware(z.object({ body: ChangeVendorCategoriesRequestSchema })),
   asyncHandler(controller.changeCategories),
 );

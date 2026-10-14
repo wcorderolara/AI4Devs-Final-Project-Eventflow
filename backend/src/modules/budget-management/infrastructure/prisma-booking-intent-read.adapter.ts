@@ -4,7 +4,7 @@
 // directamente sin acoplar código del módulo `booking-intent`.
 // Índices utilizados: `booking_intents_event_id_idx`, `booking_intents_service_category_id_idx`
 // (schema.prisma:616-617). Sin Seq Scan. `take: 1` — solo importa la existencia.
-import { prisma } from '../../../shared/infrastructure/prisma/prisma.client.js';
+import { prisma } from '../../../infrastructure/prisma/client.js';
 import type { BookingIntentReadPort } from '../ports/booking-intent-read.port.js';
 
 export class PrismaBookingIntentReadAdapter implements BookingIntentReadPort {

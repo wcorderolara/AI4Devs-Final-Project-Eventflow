@@ -28,5 +28,7 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    // Habilita los hooks test-only (`?throw=1`) en el build E2E; Amplify no define esta variable.
+    env: { NEXT_PUBLIC_E2E_HOOKS: '1' },
   },
 });

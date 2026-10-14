@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { PrismaClient } from '@prisma/client';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
 /**
  * Tests de integración US-101 (QA-002..QA-005) contra PostgreSQL real (Docker local / CI service).
@@ -7,19 +7,7 @@ import { PrismaClient } from '@prisma/client';
  * (p. ej. jobs CI estructurales con DATABASE_URL dummy), la suite hace **skip** de forma limpia.
  */
 
-const prisma = new PrismaClient();
-
-// Sonda de conectividad (rápida) para decidir skip sin colgar CI.
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 type PgIndexRow = { indexname: string; indexdef: string };
 

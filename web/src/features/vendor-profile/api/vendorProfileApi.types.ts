@@ -27,11 +27,6 @@ export interface VendorProfileDTO {
   last_category_change_at?: string | null;
 }
 
-export interface VendorProfileEnvelopeDTO {
-  data: VendorProfileDTO;
-  meta: { correlationId: string; timestamp?: string };
-}
-
 export interface CreateVendorProfileRequestDTO {
   business_name: string;
   bio: string;
@@ -73,11 +68,6 @@ export interface ServiceCategoriesTreeFlatDTO {
   flat: ServiceCategoryPublicNode[];
 }
 
-export interface ServiceCategoriesEnvelopeDTO {
-  data: ServiceCategoriesTreeFlatDTO;
-  meta: { correlationId: string; timestamp?: string };
-}
-
 // ── US-041 ─────────────────────────────────────────────────────────────────
 export interface UpdateVendorProfileRequestDTO {
   business_name?: string;
@@ -89,11 +79,6 @@ export interface UpdateVendorProfileRequestDTO {
 export interface UpdateVendorProfileResultDTO {
   profile: VendorProfileDTO;
   repending: boolean;
-}
-
-export interface UpdateVendorProfileEnvelopeDTO {
-  data: UpdateVendorProfileResultDTO;
-  meta: { correlationId: string; timestamp?: string };
 }
 
 // ── US-042 ─────────────────────────────────────────────────────────────────
@@ -109,9 +94,4 @@ export interface ChangeVendorCategoriesResultDTO {
   requires_admin_review: boolean;
   status: VendorProfileStatus;
   last_category_change_at: string | null;
-}
-
-export interface ChangeVendorCategoriesEnvelopeDTO {
-  data: ChangeVendorCategoriesResultDTO;
-  meta: { correlationId: string; timestamp?: string };
 }

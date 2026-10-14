@@ -22,11 +22,6 @@ export interface ModeratedReviewDTO {
   adminActionId: string;
 }
 
-export interface ModeratedReviewEnvelope {
-  data: ModeratedReviewDTO;
-  correlationId: string;
-}
-
 /** Códigos de error consumidos por el UI del panel admin moderate. */
 export type ModerateReviewErrorCode =
   | 'VALIDATION_ERROR'
@@ -95,11 +90,6 @@ export interface AdminReviewsPagination {
 export interface AdminReviewsListDTO {
   items: AdminReviewListItem[];
   pagination: AdminReviewsPagination;
-}
-
-export interface AdminReviewsListEnvelope {
-  data: AdminReviewsListDTO;
-  correlationId: string;
 }
 
 /** Códigos de error consumidos por el UI del panel admin listing. */

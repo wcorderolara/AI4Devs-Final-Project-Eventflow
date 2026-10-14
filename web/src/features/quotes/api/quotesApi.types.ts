@@ -1,5 +1,6 @@
 // Tipos DTO — quotes (US-049 / PB-P1-030 / FE-003). Espejo del contrato §9 API del Tech Spec.
 // El envelope backend (US-093) es `{ data, correlationId }` — el cliente lo desanida.
+import type { Envelope } from '@/shared/api-client';
 
 export type QuoteRequestSource = 'manual' | 'ai_generated';
 
@@ -33,11 +34,6 @@ export interface CreateQuoteRequestDTO {
     location_id: string | null;
     guests_count: number | null;
   };
-}
-
-export interface CreateQuoteRequestEnvelope {
-  data: CreateQuoteRequestDTO;
-  correlationId: string;
 }
 
 export interface CreateQuoteRequestView {
@@ -77,11 +73,6 @@ export interface ActiveQrCountDTO {
   statuses_counted: string[];
 }
 
-export interface ActiveQrCountEnvelope {
-  data: ActiveQrCountDTO;
-  correlationId: string;
-}
-
 export interface ActiveQrCountView {
   activeCount: number;
   limit: number;
@@ -119,11 +110,6 @@ export interface RejectQuoteDTO {
   rejectionReason: string | null;
 }
 
-export interface RejectQuoteEnvelope {
-  data: RejectQuoteDTO;
-  correlationId: string;
-}
-
 export interface RejectQuoteView {
   id: string;
   status: 'rejected';
@@ -159,11 +145,6 @@ export interface CancelQrDTO {
   cancelledAt: string;
   cancelledBy: string;
   cancellationReason: string | null;
-}
-
-export interface CancelQrEnvelope {
-  data: CancelQrDTO;
-  correlationId: string;
 }
 
 export interface CancelQrView {
@@ -226,11 +207,6 @@ export interface CompareQuotesDTO {
   items: CompareQuoteItemDTO[];
 }
 
-export interface CompareQuotesEnvelope {
-  data: CompareQuotesDTO;
-  correlationId: string;
-}
-
 export interface CompareQuoteVendorView {
   profileId: string;
   businessName: string;
@@ -281,11 +257,6 @@ export interface PreferQuoteDTO {
   status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired';
   isPreferred: boolean;
   quoteRequestId: string;
-}
-
-export interface PreferQuoteEnvelope {
-  data: PreferQuoteDTO;
-  correlationId: string;
 }
 
 export interface PreferQuoteView {
@@ -397,10 +368,8 @@ export interface EventQuoteRequestDTO {
   updatedAt: string;
 }
 
-export interface ListEventQuoteRequestsEnvelope {
-  data: EventQuoteRequestDTO[];
+export interface ListEventQuoteRequestsEnvelope extends Envelope<EventQuoteRequestDTO[]> {
   pagination: { page: number; pageSize: number; total: number; totalPages: number };
-  meta?: { correlationId: string; timestamp?: string };
 }
 
 export interface ListEventQuoteRequestsView {

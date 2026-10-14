@@ -3,167 +3,46 @@ import { cookies, headers } from 'next/headers';
 import { getRequestConfig } from 'next-intl/server';
 import { defaultLocale, isSupportedLocale, type Locale } from './config';
 
-// Catálogos transversales (Doc 15 §31.3). Import estático (catálogos pequeños): robusto y
-// testeable en Vitest y Next sin depender del context dinámico de webpack (Deviation D2).
-import enAdmin from '../../messages/en/admin.json';
-import enAi from '../../messages/en/ai.json';
-import enAuth from '../../messages/en/auth.json';
-import enBudget from '../../messages/en/budget.json';
-import enCommon from '../../messages/en/common.json';
-import enErrors from '../../messages/en/errors.json';
-import enEvents from '../../messages/en/events.json';
-import enNavigation from '../../messages/en/navigation.json';
-import enProfile from '../../messages/en/profile.json';
-import enTasks from '../../messages/en/tasks.json';
-import enValidation from '../../messages/en/validation.json';
-import enVendor from '../../messages/en/vendor.json';
-import enPublicVendor from '../../messages/en/public-vendor.json';
-import enQuotes from '../../messages/en/quotes.json';
-import enOrganizer from '../../messages/en/organizer.json';
-import enBooking from '../../messages/en/booking.json';
-import esEsAdmin from '../../messages/es-ES/admin.json';
-import esEsAi from '../../messages/es-ES/ai.json';
-import esEsAuth from '../../messages/es-ES/auth.json';
-import esEsBudget from '../../messages/es-ES/budget.json';
-import esEsCommon from '../../messages/es-ES/common.json';
-import esEsErrors from '../../messages/es-ES/errors.json';
-import esEsEvents from '../../messages/es-ES/events.json';
-import esEsNavigation from '../../messages/es-ES/navigation.json';
-import esEsProfile from '../../messages/es-ES/profile.json';
-import esEsTasks from '../../messages/es-ES/tasks.json';
-import esEsValidation from '../../messages/es-ES/validation.json';
-import esEsVendor from '../../messages/es-ES/vendor.json';
-import esEsPublicVendor from '../../messages/es-ES/public-vendor.json';
-import esEsQuotes from '../../messages/es-ES/quotes.json';
-import esEsOrganizer from '../../messages/es-ES/organizer.json';
-import esEsBooking from '../../messages/es-ES/booking.json';
-import esLatamAdmin from '../../messages/es-LATAM/admin.json';
-import esLatamAi from '../../messages/es-LATAM/ai.json';
-import esLatamAuth from '../../messages/es-LATAM/auth.json';
-import esLatamBudget from '../../messages/es-LATAM/budget.json';
-import esLatamCommon from '../../messages/es-LATAM/common.json';
-import esLatamErrors from '../../messages/es-LATAM/errors.json';
-import esLatamEvents from '../../messages/es-LATAM/events.json';
-import esLatamNavigation from '../../messages/es-LATAM/navigation.json';
-import esLatamProfile from '../../messages/es-LATAM/profile.json';
-import esLatamTasks from '../../messages/es-LATAM/tasks.json';
-import esLatamValidation from '../../messages/es-LATAM/validation.json';
-import esLatamVendor from '../../messages/es-LATAM/vendor.json';
-import esLatamPublicVendor from '../../messages/es-LATAM/public-vendor.json';
-import esLatamQuotes from '../../messages/es-LATAM/quotes.json';
-import esLatamOrganizer from '../../messages/es-LATAM/organizer.json';
-import esLatamBooking from '../../messages/es-LATAM/booking.json';
-import ptAdmin from '../../messages/pt/admin.json';
-import ptAi from '../../messages/pt/ai.json';
-import ptAuth from '../../messages/pt/auth.json';
-import ptBudget from '../../messages/pt/budget.json';
-import ptCommon from '../../messages/pt/common.json';
-import ptErrors from '../../messages/pt/errors.json';
-import ptEvents from '../../messages/pt/events.json';
-import ptNavigation from '../../messages/pt/navigation.json';
-import ptProfile from '../../messages/pt/profile.json';
-import ptTasks from '../../messages/pt/tasks.json';
-import ptValidation from '../../messages/pt/validation.json';
-import ptVendor from '../../messages/pt/vendor.json';
-import ptPublicVendor from '../../messages/pt/public-vendor.json';
-import ptQuotes from '../../messages/pt/quotes.json';
-import ptOrganizer from '../../messages/pt/organizer.json';
-import ptBooking from '../../messages/pt/booking.json';
-// US-071 (PB-P2-004): catálogo del surface organizer de notificaciones.
-import enNotifications from '../../messages/en/notifications.json';
-import esEsNotifications from '../../messages/es-ES/notifications.json';
-import esLatamNotifications from '../../messages/es-LATAM/notifications.json';
-import ptNotifications from '../../messages/pt/notifications.json';
-
 export type Messages = Record<string, unknown>;
 
-// La feature `tasks/list` (US-027..US-033) consume el namespace raíz `checklist`, no
-// `tasks.checklist`; sin esta entrada todas sus etiquetas caían al `getMessageFallback` y la
-// pantalla del checklist mostraba rutas de clave crudas (`checklist.title`). Los tests unitarios
-// construían el namespace a mano, así que el gap sólo se veía en la app. Se expone el subárbol
-// bajo ambas rutas en vez de reescribir ~15 `useTranslations` y sus tests.
-const REGISTRY: Record<Locale, Messages> = {
-  'es-LATAM': {
-    common: esLatamCommon,
-    navigation: esLatamNavigation,
-    errors: esLatamErrors,
-    validation: esLatamValidation,
-    auth: esLatamAuth,
-    profile: esLatamProfile,
-    events: esLatamEvents,
-    admin: esLatamAdmin,
-    ai: esLatamAi,
-    tasks: esLatamTasks,
-    checklist: esLatamTasks.checklist,
-    budget: esLatamBudget,
-    vendor: esLatamVendor,
-    publicVendor: esLatamPublicVendor,
-    quotes: esLatamQuotes,
-    organizer: esLatamOrganizer,
-    booking: esLatamBooking,
-    notifications: esLatamNotifications,
-  },
-  'es-ES': {
-    common: esEsCommon,
-    navigation: esEsNavigation,
-    errors: esEsErrors,
-    validation: esEsValidation,
-    auth: esEsAuth,
-    profile: esEsProfile,
-    events: esEsEvents,
-    admin: esEsAdmin,
-    ai: esEsAi,
-    tasks: esEsTasks,
-    checklist: esEsTasks.checklist,
-    budget: esEsBudget,
-    vendor: esEsVendor,
-    publicVendor: esEsPublicVendor,
-    quotes: esEsQuotes,
-    organizer: esEsOrganizer,
-    booking: esEsBooking,
-    notifications: esEsNotifications,
-  },
-  pt: {
-    common: ptCommon,
-    navigation: ptNavigation,
-    errors: ptErrors,
-    validation: ptValidation,
-    auth: ptAuth,
-    profile: ptProfile,
-    events: ptEvents,
-    admin: ptAdmin,
-    ai: ptAi,
-    tasks: ptTasks,
-    checklist: ptTasks.checklist,
-    budget: ptBudget,
-    vendor: ptVendor,
-    publicVendor: ptPublicVendor,
-    quotes: ptQuotes,
-    organizer: ptOrganizer,
-    booking: ptBooking,
-    notifications: ptNotifications,
-  },
-  en: {
-    common: enCommon,
-    navigation: enNavigation,
-    errors: enErrors,
-    validation: enValidation,
-    auth: enAuth,
-    profile: enProfile,
-    events: enEvents,
-    admin: enAdmin,
-    ai: enAi,
-    tasks: enTasks,
-    checklist: enTasks.checklist,
-    budget: enBudget,
-    vendor: enVendor,
-    publicVendor: enPublicVendor,
-    quotes: enQuotes,
-    organizer: enOrganizer,
-    booking: enBooking,
-    notifications: enNotifications,
-  },
-};
+// Catálogos transversales (Doc 15 §31.3): namespace → archivo `src/messages/<locale>/<archivo>.json`.
+// Se cargan con `import()` por locale × namespace; Next y Vitest resuelven el mismo path relativo.
+const NAMESPACE_FILES = {
+  common: 'common',
+  navigation: 'navigation',
+  errors: 'errors',
+  validation: 'validation',
+  auth: 'auth',
+  profile: 'profile',
+  events: 'events',
+  admin: 'admin',
+  ai: 'ai',
+  tasks: 'tasks',
+  budget: 'budget',
+  vendor: 'vendor',
+  publicVendor: 'public-vendor',
+  quotes: 'quotes',
+  organizer: 'organizer',
+  booking: 'booking',
+  // US-071 (PB-P2-004): catálogo del surface organizer de notificaciones.
+  notifications: 'notifications',
+} as const;
+
+async function loadCatalog(locale: Locale): Promise<Messages> {
+  const entries = await Promise.all(
+    Object.entries(NAMESPACE_FILES).map(async ([namespace, file]) => {
+      const mod = (await import(`../../messages/${locale}/${file}.json`)) as { default: Messages };
+      return [namespace, mod.default] as const;
+    }),
+  );
+  const catalog: Messages = Object.fromEntries(entries);
+  // La feature `tasks/list` (US-027..US-033) consume el namespace raíz `checklist`, no
+  // `tasks.checklist`; sin esta entrada todas sus etiquetas caían al `getMessageFallback` y la
+  // pantalla del checklist mostraba rutas de clave crudas (`checklist.title`). Se expone el
+  // subárbol bajo ambas rutas en vez de reescribir ~15 `useTranslations` y sus tests.
+  catalog.checklist = (catalog.tasks as Messages).checklist;
+  return catalog;
+}
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -184,9 +63,10 @@ export function deepMerge(base: Messages, override: Messages): Messages {
  * Mensajes del locale mergeados sobre la base `es-LATAM`: cualquier clave faltante en el locale
  * activo cae automáticamente a la traducción `es-LATAM` (fallback en producción sin `[ES-LATAM]`).
  */
-export function loadMessages(locale: Locale): Messages {
-  if (locale === defaultLocale) return REGISTRY[defaultLocale];
-  return deepMerge(REGISTRY[defaultLocale], REGISTRY[locale]);
+export async function loadMessages(locale: Locale): Promise<Messages> {
+  const base = await loadCatalog(defaultLocale);
+  if (locale === defaultLocale) return base;
+  return deepMerge(base, await loadCatalog(locale));
 }
 
 /**
@@ -221,7 +101,7 @@ export default getRequestConfig(async () => {
     locale,
     // `loadMessages` opera sobre `Record<string, unknown>` para el merge; el shape es compatible
     // con `AbstractIntlMessages` (valores string / objetos anidados) — cast en el borde.
-    messages: loadMessages(locale) as unknown as AbstractIntlMessages,
+    messages: (await loadMessages(locale)) as unknown as AbstractIntlMessages,
     getMessageFallback: createMessageFallback(locale, process.env.NODE_ENV !== 'production'),
   };
 });

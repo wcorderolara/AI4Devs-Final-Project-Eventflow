@@ -20,18 +20,23 @@
 import { Prisma, type PrismaClient } from '@prisma/client';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
+import { recordAdminAction } from '../../../infrastructure/persistence/record-admin-action.js';
+import {
+  assertNameI18nHasEsLatam,
+  catalogI18nPatch,
+  isReactivation,
+  patchedFields,
+  type CatalogAdminCtx,
+} from '../../../shared/application/catalog-admin.js';
 import {
   InvalidHierarchyDepthError,
   InvalidParentIdError,
   ServiceCategoryNotFoundError,
 } from '../domain/us075.errors.js';
 import type { UpdateServiceCategoryBody } from '../interface/service-category.dto.js';
-import { assertNameI18nHasEsLatam } from './create-service-category.use-case.js';
 import { toServiceCategoryView, type ServiceCategoryView } from './service-category.view.js';
 
-export interface UpdateServiceCategoryCtx {
-  correlationId?: string;
-}
+export type UpdateServiceCategoryCtx = CatalogAdminCtx;
 
 export class UpdateServiceCategoryUseCase {
   constructor(
@@ -78,21 +83,10 @@ export class UpdateServiceCategoryUseCase {
       }
 
       // 3) Detección reactivate (Decisión PO D7).
-      const wasActive = existing.isActive;
-      const willBeActive = body.is_active ?? wasActive;
-      const isReactivating = !wasActive && willBeActive;
+      const isReactivating = isReactivation(existing.isActive, body.is_active);
 
       // 4) Sync denormalizado de `label` / `description`.
-      const patch: Prisma.ServiceCategoryUpdateInput = {};
-      if (body.name_i18n !== undefined) {
-        const esLatam = (body.name_i18n as Record<string, string>)['es-LATAM']!;
-        patch.nameI18n = body.name_i18n as Prisma.InputJsonObject;
-        patch.label = esLatam;
-      }
-      if (body.description_i18n !== undefined) {
-        patch.descriptionI18n = body.description_i18n as Prisma.InputJsonObject;
-        patch.description = (body.description_i18n as Record<string, string>)['es-LATAM'] ?? null;
-      }
+      const patch: Prisma.ServiceCategoryUpdateInput = catalogI18nPatch(body);
       if (body.parent_id !== undefined) {
         patch.parent = body.parent_id
           ? { connect: { id: body.parent_id } }
@@ -105,31 +99,28 @@ export class UpdateServiceCategoryUseCase {
       const updated = await tx.serviceCategory.update({ where: { id }, data: patch });
 
       // 5) AdminAction append-only (`reactivate` cuando aplique).
-      const adminAction = await tx.adminAction.create({
-        data: {
-          adminUserId: currentUserId,
-          action: isReactivating ? 'reactivate' : 'update',
-          targetEntity: 'service_category',
-          targetId: id,
-          metadata: {
-            correlationId: ctx.correlationId ?? null,
-            reason: body.reason ?? null,
-            from: {
-              parent_id: existing.parentId,
-              sort_order: existing.sortOrder,
-              is_active: existing.isActive,
-              depth_level: existing.depthLevel,
-            },
-            to: {
-              parent_id: updated.parentId,
-              sort_order: updated.sortOrder,
-              is_active: updated.isActive,
-              depth_level: updated.depthLevel,
-            },
-            patched_fields: Object.keys(body).filter((k) => k !== 'reason'),
-          } as Prisma.InputJsonObject,
+      const adminAction = await recordAdminAction(tx, {
+        adminUserId: currentUserId,
+        action: isReactivating ? 'reactivate' : 'update',
+        targetEntity: 'service_category',
+        targetId: id,
+        correlationId: ctx.correlationId,
+        metadata: {
+          reason: body.reason ?? null,
+          from: {
+            parent_id: existing.parentId,
+            sort_order: existing.sortOrder,
+            is_active: existing.isActive,
+            depth_level: existing.depthLevel,
+          },
+          to: {
+            parent_id: updated.parentId,
+            sort_order: updated.sortOrder,
+            is_active: updated.isActive,
+            depth_level: updated.depthLevel,
+          },
+          patched_fields: patchedFields(body),
         },
-        select: { id: true },
       });
 
       this.logger.emit(isReactivating ? 'service_category.reactivated' : 'service_category.updated', {

@@ -49,20 +49,11 @@ module.exports = {
       },
     },
     {
-      // Excepción documentada: el error handler global necesita conocer los DomainError de
-      // todos los módulos para mapear a HTTP status. Imports de tipo (error classes) sin
-      // acoplar comportamiento runtime. ADR-ARCH-001 admite esta excepción explícita.
-      files: ['src/shared/interface/middlewares/error-handler.middleware.ts'],
-      rules: {
-        'boundaries/element-types': 'off',
-      },
-    },
-    {
       // Excepción documentada (US-037 EMERGENT-025-001): el composition root del HITL
       // (`ai.routes.ts`) instancia strategies cross-module (`ApplyStrategy` de US-025 registra
       // strategies definidas en `modules/budget-management`, etc.). Es un composition root de
       // wire, no lógica de negocio cross-module. ADR-ARCH-001 admite esta excepción explícita
-      // consistente con el patrón del error-handler. La strategy en sí implementa el contrato
+      // consistente con los demás composition roots. La strategy en sí implementa el contrato
       // `ApplyStrategy<T>` del `shared` mediante los ports de su propio módulo.
       //
       // Excepción documentada (US-039 PB-P1-023): el handler `UpdateCommittedFromBookingIntent`

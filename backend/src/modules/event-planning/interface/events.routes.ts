@@ -6,10 +6,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { requireSession, requireRole } from '../../../infrastructure/auth-composition.js';
 import {
   CreateEventRequestSchema,
   UpdateEventRequestSchema,
@@ -48,13 +46,10 @@ const controller = new EventsController({
   softDelete: new SoftDeleteEventUseCase(eventRepo, audit),
 });
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const organizerOnly = roleMiddleware(['organizer']);
-
 export const eventPlanningRouter = Router();
 
 // Guards comunes a todas las rutas: sesión válida + rol organizer.
-eventPlanningRouter.use(sessionAuth, organizerOnly);
+eventPlanningRouter.use(requireSession, requireRole('organizer'));
 
 eventPlanningRouter.post(
   '/',

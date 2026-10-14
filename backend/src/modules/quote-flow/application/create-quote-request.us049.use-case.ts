@@ -119,7 +119,7 @@ export class CreateQuoteRequestUs049UseCase {
       });
 
       // US-068 (BE-005): delegar la emisión al `OnQuoteRequestCreatedHandler` in-tx.
-      // El handler aplica idempotencia (existsQuoteRequestReceivedForQR), resolución
+      // El handler aplica idempotencia (`exists` por quoteRequestId), resolución
       // de idioma (fallback ladder D5), guards defensivos (vendor no-approved /
       // user deactivated / user_id null → warn + skip sin abortar la tx) y crea
       // las 2 filas `Notification(type='quote_request_received', channel=in_app|email_simulated)`

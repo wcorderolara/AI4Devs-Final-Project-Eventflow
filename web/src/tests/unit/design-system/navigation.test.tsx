@@ -4,7 +4,6 @@
 // MobileNavigationDrawer, TopBar, UserMenu, LanguageSelector, Breadcrumb, FilterBar) y §37
 // (matriz WCAG 2.1 AA: aria-current, focus visible, focus trap, retorno de foco, touch target).
 import { Calendar, LayoutDashboard, Store } from 'lucide-react';
-import { NextIntlClientProvider } from 'next-intl';
 import { useState } from 'react';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -25,10 +24,13 @@ import {
   UserMenu,
   type NavigationSection,
 } from '@/shared/design-system';
-import { MobileNav, Sidebar, ORGANIZER_NAV_ITEMS } from '@/shared/navigation';
+import {
+  ORGANIZER_NAV_ITEMS,
+  getRoleNavigation,
+  resolveNavigationSections,
+} from '@/shared/navigation';
 
-const pathname = vi.hoisted(() => ({ value: '/organizer/events' }));
-vi.mock('next/navigation', () => ({ usePathname: () => pathname.value }));
+vi.mock('next/navigation', () => ({ usePathname: () => '/organizer/events' }));
 
 const LONG_LABEL = 'Gestión de recursos, proveedores y asignaciones del evento corporativo anual';
 
@@ -325,20 +327,14 @@ describe('PB-P2-029 · MobileNavigationDrawer', () => {
 describe('PB-P2-029 · desktop y mobile comparten el modelo de navegación', () => {
   beforeEach(cleanup);
 
-  const messages = {
-    navigation: {
-      mobile: { title: 'EventFlow', close: 'Cerrar' },
-      sidebar: {
-        organizer: {
-          dashboard: 'Dashboard',
-          events: 'Eventos',
-          vendors: 'Proveedores',
-          notifications: 'Notificaciones',
-          profile: 'Perfil',
-        },
-      },
-    },
+  const labels: Record<string, string> = {
+    'sidebar.organizer.dashboard': 'Dashboard',
+    'sidebar.organizer.events': 'Eventos',
+    'sidebar.organizer.vendors': 'Proveedores',
+    'sidebar.organizer.notifications': 'Notificaciones',
+    'sidebar.organizer.profile': 'Perfil',
   };
+  const t = (key: string): string => labels[key] ?? key;
 
   function hrefsOf(root: HTMLElement): string[] {
     return within(root)
@@ -346,14 +342,16 @@ describe('PB-P2-029 · desktop y mobile comparten el modelo de navegación', () 
       .map((link) => link.getAttribute('href') ?? '');
   }
 
-  it('`Sidebar` y `MobileNav` derivan los mismos destinos del mismo `NavItem[]`', async () => {
+  it('`AppSidebar` y `MobileNavigationDrawer` derivan los mismos destinos de `roleNavigation`', async () => {
     const user = userEvent.setup();
-    pathname.value = '/organizer/events';
+    const sections = resolveNavigationSections(
+      getRoleNavigation('organizer')!.sections,
+      '/organizer/events',
+      t,
+    );
 
     const { unmount } = render(
-      <NextIntlClientProvider locale="es-LATAM" messages={messages}>
-        <Sidebar items={ORGANIZER_NAV_ITEMS} ariaLabel="Navegación de organizador" />
-      </NextIntlClientProvider>,
+      <AppSidebar ariaLabel="Navegación de organizador" sections={sections} />,
     );
     const desktop = hrefsOf(screen.getByRole('navigation', { name: 'Navegación de organizador' }));
     unmount();
@@ -361,17 +359,19 @@ describe('PB-P2-029 · desktop y mobile comparten el modelo de navegación', () 
     function Mobile(): React.JSX.Element {
       const [open, setOpen] = useState(false);
       return (
-        <NextIntlClientProvider locale="es-LATAM" messages={messages}>
+        <>
           <button type="button" onClick={() => setOpen(true)}>
             abrir
           </button>
-          <MobileNav
-            items={ORGANIZER_NAV_ITEMS}
-            isOpen={open}
+          <MobileNavigationDrawer
+            open={open}
             onClose={() => setOpen(false)}
             ariaLabel="Navegación de organizador"
+            title="EventFlow"
+            closeLabel="Cerrar"
+            sections={sections}
           />
-        </NextIntlClientProvider>
+        </>
       );
     }
     render(<Mobile />);

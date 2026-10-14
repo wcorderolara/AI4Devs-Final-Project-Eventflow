@@ -1,6 +1,6 @@
 // US-044 QA-005 — A11Y del `DeactivateServiceDialog`.
-// Verifica: role="dialog" + aria-modal, foco inicial en Cancelar (D2 defensivo), ESC cierra,
-// ausencia de violaciones axe.
+// Verifica: role="alertdialog" + aria-modal (confirmación destructiva del design system), foco
+// inicial en Cancelar (D2 defensivo), ESC cierra, ausencia de violaciones axe.
 import { fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -29,7 +29,7 @@ function wrap(node: React.ReactNode): React.ReactElement {
 }
 
 describe('US-044 QA-005 — DeactivateServiceDialog', () => {
-  it('role=dialog + aria-modal + aria-labelledby con nombre del paquete', () => {
+  it('role=alertdialog + aria-modal + aria-labelledby con nombre del paquete', () => {
     render(
       wrap(
         <DeactivateServiceDialog
@@ -41,7 +41,7 @@ describe('US-044 QA-005 — DeactivateServiceDialog', () => {
         />,
       ),
     );
-    const dialog = screen.getByRole('dialog');
+    const dialog = screen.getByRole('alertdialog');
     expect(dialog).toHaveAttribute('aria-modal', 'true');
     const labelledBy = dialog.getAttribute('aria-labelledby');
     expect(labelledBy).toBeTruthy();
@@ -98,11 +98,11 @@ describe('US-044 QA-005 — DeactivateServiceDialog', () => {
         />,
       ),
     );
-    expect(queryByRole('dialog')).toBeNull();
+    expect(queryByRole('alertdialog')).toBeNull();
   });
 
   it('A11Y: sin violaciones axe', async () => {
-    const { container } = render(
+    render(
       wrap(
         <DeactivateServiceDialog
           isOpen
@@ -113,7 +113,7 @@ describe('US-044 QA-005 — DeactivateServiceDialog', () => {
         />,
       ),
     );
-    const results = await axe(container);
+    const results = await axe(document.body);
     expect(results).toHaveNoViolations();
   });
 });

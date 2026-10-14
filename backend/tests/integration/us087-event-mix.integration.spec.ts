@@ -1,22 +1,12 @@
 // US-087 QA-002/003 + SEED-001 — Integration: mix de estados de evento en el seed.
 // AC-01 distribución, AC-02 auto_completed + cercano a auto-completar, AC-03 multi-currency/locale,
 // AC-04 organizador ancla + referencias válidas, AC-05 idempotencia, EC-02 coexistencia is_seed=false.
-import { PrismaClient } from '@prisma/client';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { MockAIProvider } from '../../src/modules/ai-assistance/infrastructure/providers/mock/mock-ai-provider.js';
 import { SeedDemoDataUseCase, relativeSeedDate } from '../../src/modules/seed-demo/application/seed-demo-data.use-case.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const TABLES = [
   'ai_recommendations', 'ai_prompt_versions', 'reviews', 'booking_intents', 'quotes',

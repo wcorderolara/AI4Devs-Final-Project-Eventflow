@@ -13,22 +13,13 @@
 //   * IT-09 401 sin sesión (SEC-T-02) — AC-03.
 //   * IT-10 Zod inválido: `?channel=slack` → 400 VR-03; `notificationId` malformado → 400 VR-02.
 //   * IT-PERF: mark-all sobre 100 notifs seed → P95 < 1.5 s (AC-08).
-import { PrismaClient } from '@prisma/client';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import app from '../../src/app.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { sessionCookie } from '../helpers/http.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 async function seedUserWithSession(
   tag: string,
@@ -72,20 +63,6 @@ async function seedNotification(
   return row.id;
 }
 
-function signCookie(sid: string): string {
-  const cookieSecret = process.env.SESSION_SECRET ?? '';
-  const cookieName = process.env.SESSION_COOKIE_NAME ?? 'eventflow_session';
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- inline signer (test-only)
-  const signature = require('cookie-signature') as {
-    sign: (value: string, secret: string) => string;
-  };
-  // `cookie-parser` sólo mueve la cookie a `req.signedCookies` cuando el valor
-  // comienza con `s:` (patrón que Express agrega automáticamente en `res.cookie`
-  // cuando `signed:true`). Sin el prefijo, la cookie queda en `req.cookies` y
-  // `sessionAuth` devuelve 401. Formato canónico: `s:<sid>.<hmacBase64>`.
-  return `${cookieName}=${encodeURIComponent(`s:${signature.sign(sid, cookieSecret)}`)}`;
-}
-
 async function cleanup(userIds: string[]): Promise<void> {
   await prisma.notification.deleteMany({ where: { userId: { in: userIds } } });
   await prisma.session.deleteMany({ where: { userId: { in: userIds } } });
@@ -111,7 +88,7 @@ describe.skipIf(!dbUp)('US-072 integration — mark-as-read endpoints', () => {
 
     const res = await request(app)
       .patch(`/api/v1/notifications/${notifId}/read`)
-      .set('Cookie', signCookie(owner.sessionCookie));
+      .set('Cookie', sessionCookie(owner.sessionCookie));
     expect(res.status).toBe(204);
     expect(res.body).toEqual({});
 
@@ -130,7 +107,7 @@ describe.skipIf(!dbUp)('US-072 integration — mark-as-read endpoints', () => {
 
     const res = await request(app)
       .patch(`/api/v1/notifications/${notifId}/read`)
-      .set('Cookie', signCookie(owner.sessionCookie));
+      .set('Cookie', sessionCookie(owner.sessionCookie));
     expect(res.status).toBe(204);
 
     const after = await prisma.notification.findUnique({ where: { id: notifId } });
@@ -146,7 +123,7 @@ describe.skipIf(!dbUp)('US-072 integration — mark-as-read endpoints', () => {
 
     const res = await request(app)
       .patch(`/api/v1/notifications/${notifId}/read`)
-      .set('Cookie', signCookie(owner.sessionCookie));
+      .set('Cookie', sessionCookie(owner.sessionCookie));
     expect(res.status).toBe(404);
 
     const after = await prisma.notification.findUnique({ where: { id: notifId } });
@@ -159,7 +136,7 @@ describe.skipIf(!dbUp)('US-072 integration — mark-as-read endpoints', () => {
     createdUsers.push(owner.userId);
     const res = await request(app)
       .patch('/api/v1/notifications/00000000-0000-4000-8000-000000000000/read')
-      .set('Cookie', signCookie(owner.sessionCookie));
+      .set('Cookie', sessionCookie(owner.sessionCookie));
     expect(res.status).toBe(404);
   }, 30_000);
 
@@ -174,7 +151,7 @@ describe.skipIf(!dbUp)('US-072 integration — mark-as-read endpoints', () => {
 
     const res = await request(app)
       .post('/api/v1/notifications/mark-all-read')
-      .set('Cookie', signCookie(owner.sessionCookie));
+      .set('Cookie', sessionCookie(owner.sessionCookie));
     expect(res.status).toBe(204);
 
     const inApp = await prisma.notification.count({
@@ -198,7 +175,7 @@ describe.skipIf(!dbUp)('US-072 integration — mark-as-read endpoints', () => {
 
     const res = await request(app)
       .post('/api/v1/notifications/mark-all-read?channel=all')
-      .set('Cookie', signCookie(owner.sessionCookie));
+      .set('Cookie', sessionCookie(owner.sessionCookie));
     expect(res.status).toBe(204);
 
     const stillUnread = await prisma.notification.count({
@@ -217,7 +194,7 @@ describe.skipIf(!dbUp)('US-072 integration — mark-as-read endpoints', () => {
 
     const res = await request(app)
       .post('/api/v1/notifications/mark-all-read?channel=email_simulated')
-      .set('Cookie', signCookie(owner.sessionCookie));
+      .set('Cookie', sessionCookie(owner.sessionCookie));
     expect(res.status).toBe(204);
 
     const emailRead = await prisma.notification.count({
@@ -235,7 +212,7 @@ describe.skipIf(!dbUp)('US-072 integration — mark-as-read endpoints', () => {
     createdUsers.push(owner.userId);
     const res = await request(app)
       .post('/api/v1/notifications/mark-all-read')
-      .set('Cookie', signCookie(owner.sessionCookie));
+      .set('Cookie', sessionCookie(owner.sessionCookie));
     expect(res.status).toBe(204);
   }, 30_000);
 
@@ -250,7 +227,7 @@ describe.skipIf(!dbUp)('US-072 integration — mark-as-read endpoints', () => {
   it('IT-10 (VR-02 / VR-03): Zod — `notificationId` no UUID → 400; `?channel=slack` → 400', async () => {
     const owner = await seedUserWithSession('it10');
     createdUsers.push(owner.userId);
-    const cookie = signCookie(owner.sessionCookie);
+    const cookie = sessionCookie(owner.sessionCookie);
 
     const badId = await request(app)
       .patch('/api/v1/notifications/not-a-uuid/read')
@@ -281,7 +258,7 @@ describe.skipIf(!dbUp)('US-072 integration — mark-as-read endpoints', () => {
       })),
     });
 
-    const cookie = signCookie(owner.sessionCookie);
+    const cookie = sessionCookie(owner.sessionCookie);
     const start = process.hrtime.bigint();
     const res = await request(app)
       .post('/api/v1/notifications/mark-all-read')

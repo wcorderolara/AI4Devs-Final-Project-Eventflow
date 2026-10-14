@@ -12,8 +12,8 @@ import { FIELD_FOCUS, FIELD_HEIGHT, FIELD_TEXT, fieldSurface, type FieldSize } f
  * **Decisión de implementación (cierra CMP-Q-005 para el MVP):** `<select>` nativo.
  * Motivos: ya es el patrón instalado en el frontend (filtros admin, wizard, paginación), no
  * añade dependencias, resuelve por sí solo teclado, typeahead y la hoja nativa en móvil, y
- * tolera labels traducidos largos. Headless UI queda reservado para `MultiSelect`, donde no
- * existe equivalente nativo aceptable.
+ * tolera labels traducidos largos. Headless UI queda reservado para los casos sin equivalente
+ * nativo aceptable (p. ej. selección múltiple), que hoy el MVP no requiere.
  *
  * El estilo de Stitch (`<select>` plano con borde) **no** se copia literalmente: se usan los
  * tokens `input.*` y el indicador `ChevronDown` de Lucide.

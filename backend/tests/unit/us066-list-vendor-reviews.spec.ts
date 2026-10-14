@@ -31,18 +31,19 @@ import {
   ListVendorReviewsQuerySchema,
 } from '../../src/modules/reviews-moderation/interface/list-vendor-reviews.dto.js';
 import {
-  encodeVendorReviewsCursor,
-  decodeVendorReviewsCursor,
-} from '../../src/modules/reviews-moderation/application/vendor-reviews-cursor.js';
+  CreatedAtIdCursorSchema,
+  encodeCreatedAtIdCursor as encodeVendorReviewsCursor,
+  tryDecodeCursor,
+  InvalidCursorError as Us066InvalidCursorError,
+} from '../../src/shared/pagination/cursor.js';
 import {
   toAnonymizedReview,
   type AnonymizedReviewRow,
 } from '../../src/modules/reviews-moderation/application/anonymized-review.mapper.js';
 import { GetVendorReviewsUseCase } from '../../src/modules/reviews-moderation/application/get-vendor-reviews.use-case.js';
-import {
-  VendorNotFoundForReviewsError,
-  Us066InvalidCursorError,
-} from '../../src/modules/reviews-moderation/domain/us066.errors.js';
+import { VendorNotFoundForReviewsError } from '../../src/modules/reviews-moderation/domain/us066.errors.js';
+
+const decodeVendorReviewsCursor = (t: string) => tryDecodeCursor(t, CreatedAtIdCursorSchema);
 
 const VENDOR_ID = '11111111-1111-1111-1111-111111111111';
 const REVIEW_ID = '22222222-2222-2222-2222-222222222222';

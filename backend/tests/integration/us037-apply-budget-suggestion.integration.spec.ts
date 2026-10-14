@@ -4,7 +4,6 @@
 //   - `npm run db:migrate:dev` (incluye la migración 20260714200000_us037_budget_item_ai_recommendation).
 //   - Un evento con AIRecommendation { type='budget_suggestion', status='pending' } y organizer dueño.
 // El seed (US-037 SEED-001) provee estos escenarios.
-import { PrismaClient } from '@prisma/client';
 import { afterAll, describe, expect, it, beforeAll } from 'vitest';
 import { AIRecommendationApplyStrategyRegistry } from '../../src/modules/ai-assistance/application/hitl/apply-strategy.registry.js';
 import { OutputDtoResolver } from '../../src/modules/ai-assistance/application/hitl/output-dto.resolver.js';
@@ -15,18 +14,9 @@ import { MVP_APPLY_STRATEGIES } from '../../src/modules/ai-assistance/applicatio
 import { BudgetSuggestionApplyStrategyV2 } from '../../src/modules/budget-management/application/hitl/budget-suggestion-apply.strategy.js';
 import { PrismaBudgetItemWriteRepository } from '../../src/modules/budget-management/infrastructure/prisma-budget-item-write.repository.js';
 import { PrismaServiceCategoryReadAdapter } from '../../src/modules/budget-management/infrastructure/prisma-service-category-read.adapter.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 function buildUseCase(): HitlApply {
   const v2 = new BudgetSuggestionApplyStrategyV2({

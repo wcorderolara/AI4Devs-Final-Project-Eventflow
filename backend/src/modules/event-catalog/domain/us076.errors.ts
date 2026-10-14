@@ -1,10 +1,9 @@
 // Errores de dominio del CRUD admin de `EventType` (US-076 / BE-004..006).
 // Tech Spec §7 Error Handling; Decisiones PO D4/D6/D7.
 //
-// Uniformidad: cada error extiende `AppError` con un `code` estable del catálogo. El
-// mapeo a HTTP status lo hace `errorHandlerMiddleware`. Los `details` que enriquecen
-// el envelope de respuesta se exponen como propiedades públicas para que el handler
-// las serialice sin acoplar el dominio al transporte.
+// Uniformidad: cada error extiende `AppError` con un `code` estable del catálogo y declara
+// su status HTTP y `details` (`httpStatus` / `httpDetails()`); el `errorHandlerMiddleware`
+// solo serializa el envelope.
 //
 // Diferencias vs US-075 (ServiceCategory):
 //   - Sin jerarquía → no hay `InvalidHierarchyDepthError`, `EventTypeHasChildrenError`
@@ -13,20 +12,16 @@
 //     `EventTypeInUseError` con `details.usage_count`.
 //
 // Errores compartidos con US-075 (`InvalidNameI18nError`, `ReasonRequiredError`,
-// `InvalidReasonLengthError`): se REUSAN las clases del módulo `service-catalog` en
-// lugar de duplicarlas. Motivo: el error handler global comprueba por `instanceof`
-// contra la clase concreta — duplicar la clase con el mismo `code` obligaría a
-// duplicar el branch de mapeo. Reusar la clase mantiene un único punto de mapeo y
-// un único punto de definición del `code`. El acoplamiento es un import puntual y
-// documentado — no aporta lógica cruzada entre módulos.
-import { AppError } from '../../../shared/domain/errors/app.error.js';
+// `InvalidReasonLengthError`): viven en el shared kernel (`catalog-admin.errors.ts`) para
+// mantener un único punto de definición del `code` y de su mapeo HTTP.
+import { AppError, type ErrorDetail, type HttpErrorMapping } from '../../../shared/domain/errors/app.error.js';
 import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
 
 export {
   InvalidNameI18nError,
   ReasonRequiredError,
   InvalidReasonLengthError,
-} from '../../service-catalog/domain/us075.errors.js';
+} from '../../../shared/domain/errors/catalog-admin.errors.js';
 
 /**
  * 404 uniforme cuando el EventType no existe o está soft-deleted. Decisión PO D7 +
@@ -35,8 +30,13 @@ export {
  */
 export class EventTypeNotFoundError extends AppError {
   readonly code = ErrorCodes.EVENT_TYPE_NOT_FOUND;
+  override readonly httpStatus = 404;
   constructor(message = 'Event type not found') {
     super(message);
+  }
+
+  override toHttp(): HttpErrorMapping {
+    return { ...super.toHttp(), message: 'Event type not found' };
   }
 }
 
@@ -47,11 +47,16 @@ export class EventTypeNotFoundError extends AppError {
  */
 export class EventTypeInUseError extends AppError {
   readonly code = ErrorCodes.EVENT_TYPE_IN_USE;
+  override readonly httpStatus = 409;
   constructor(
     public readonly usageCount: number,
     message = 'Event type is in use by existing events',
   ) {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'usage_count', message: String(this.usageCount) }];
   }
 }
 
@@ -62,6 +67,7 @@ export class EventTypeInUseError extends AppError {
  */
 export class DuplicateEventTypeCodeError extends AppError {
   readonly code = ErrorCodes.DUPLICATE_CODE;
+  override readonly httpStatus = 409;
   constructor(message = 'Event type code already exists') {
     super(message);
   }

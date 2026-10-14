@@ -2,8 +2,8 @@
 //
 // Endpoint de LECTURA paginada para el panel admin `GET /api/v1/admin/vendors`. Compone un
 // WHERE dinámico con los filtros combinados (Decisiones PO D2/D7) + cursor keyset
-// `(created_at DESC, id DESC)` (Decisión PO D3 — paridad exacta con US-066/US-077 vía helper
-// intra-módulo `admin-vendors-cursor.ts`).
+// `(created_at DESC, id DESC)` (Decisión PO D3 — paridad exacta con US-066/US-077 vía
+// `shared/pagination/cursor.ts`).
 //
 // El UseCase NO aplica ningún filtro de visibilidad por defecto: el admin ve TODO (incluidos
 // `pending`, `rejected`, `is_hidden=true` y — cuando el filtro `status` no se envía — también
@@ -15,15 +15,15 @@
 // user + adminAction en una única query — sin N+1.
 //
 // Errores:
-//   - `Us074InvalidCursorError` — cursor base64 malformado o payload inconsistente. Mapea a
+//   - `InvalidCursorError` — cursor base64 malformado o payload inconsistente. Mapea a
 //     `400 INVALID_CURSOR`. Reuso del código estable del catálogo (no se crea código nuevo).
 import { Prisma, VendorProfileStatus, type PrismaClient } from '@prisma/client';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
-import { Us074InvalidCursorError } from '../domain/us074.errors.js';
 import {
-  decodeAdminVendorsCursor,
-  encodeAdminVendorsCursor,
-} from './admin-vendors-cursor.js';
+  CreatedAtIdCursorSchema,
+  decodeCursor,
+  encodeCreatedAtIdCursor,
+} from '../../../shared/pagination/cursor.js';
 import {
   toAdminVendorListItem,
   type AdminVendorListItem,
@@ -45,10 +45,7 @@ export class ListVendorsForAdminUseCase {
   async execute(filters: AdminVendorsQuery): Promise<ListVendorsForAdminResult> {
     const pageSize = filters.pageSize;
 
-    const cursor = filters.cursor ? decodeAdminVendorsCursor(filters.cursor) : null;
-    if (filters.cursor && !cursor) {
-      throw new Us074InvalidCursorError();
-    }
+    const cursor = filters.cursor ? decodeCursor(filters.cursor, CreatedAtIdCursorSchema) : null;
 
     // WHERE compuesto — sólo se agregan claves cuando el filtro fue provisto (undefined ⇒ sin
     // condición). El admin no ve soft-deleted por defecto (SEC-03 alinea con el resto del
@@ -115,7 +112,7 @@ export class ListVendorsForAdminUseCase {
     let nextCursor: string | null = null;
     if (hasMore && page.length > 0) {
       const last = page[page.length - 1]!;
-      nextCursor = encodeAdminVendorsCursor({
+      nextCursor = encodeCreatedAtIdCursor({
         createdAt: new Date(last.createdAt),
         id: last.id,
       });

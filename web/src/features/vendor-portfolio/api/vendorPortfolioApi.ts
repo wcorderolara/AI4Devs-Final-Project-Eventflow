@@ -6,11 +6,12 @@
 // es `FormData`.
 import { ApiError, CORRELATION_ID_HEADER, attachCorrelationId, httpDelete, parseErrorEnvelope } from '@/shared/api-client';
 import { attachLocaleHeader } from '@/shared/i18n';
+import type { Envelope } from '@/shared/api-client';
 import type {
   DeletePortfolioImageInput,
   PortfolioImageView,
-  UploadPortfolioImageEnvelopeDTO,
   UploadPortfolioImageInput,
+  UploadPortfolioImageResponseDTO,
 } from './vendorPortfolioApi.types';
 import { toPortfolioImageView } from './vendorPortfolioApi.types';
 
@@ -88,7 +89,7 @@ export const vendorPortfolioApi = {
       });
     }
 
-    const envelope = (await response.json()) as UploadPortfolioImageEnvelopeDTO;
+    const envelope = (await response.json()) as Envelope<UploadPortfolioImageResponseDTO>;
     return toPortfolioImageView(envelope.data);
   },
 

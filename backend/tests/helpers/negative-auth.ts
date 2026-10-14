@@ -2,11 +2,10 @@
 // Centralizan: status + error code + `correlationId` (contrato US-093: `error.correlationId`, NO
 // `meta.correlationId`) + ausencia de leaks. También `agentFor` para sesiones reales (DB-gated).
 import { expect } from 'vitest';
-import request from 'supertest';
+import type request from 'supertest';
 import type { Response } from 'supertest';
 import type { Express } from 'express';
-
-const CAPTCHA = '__test__';
+import { agentFor as sessionAgentFor } from './http.js';
 
 /** Códigos de error de seguridad esperados por status. */
 export const AUTH_ERROR_CODES = {
@@ -61,9 +60,5 @@ export async function agentFor(
   role: 'organizer' | 'vendor',
   tag = 'us112',
 ): Promise<ReturnType<typeof request.agent>> {
-  const email = `${tag}_${role}_${Date.now()}_${Math.floor(Math.random() * 1e6)}@eventflow.test`;
-  const agent = request.agent(app);
-  await agent.post('/api/v1/auth/register').send({ acceptedTerms: true, email, password: 'Secret1234', ...(role === 'vendor' ? { businessName: 'Vendor Demo SA' } : { name: role }), role, captchaToken: CAPTCHA });
-  await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
-  return agent;
+  return sessionAgentFor(app, role, { tag });
 }

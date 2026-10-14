@@ -13,8 +13,8 @@ import { AppliedFilterChip } from './AppliedFilterChip';
  * (responsive: los filtros colapsan cuando el ancho no alcanza).
  *
  * - **No conoce ningún filtro de negocio.** Los controles llegan por `children` y se componen con
- *   los componentes de *Actions & Forms* ya implementados (`SearchInput`, `Select`, `MultiSelect`,
- *   `DateInput`, `Checkbox`…). El estado, la serialización y las queries pertenecen al feature.
+ *   los componentes de *Actions & Forms* ya implementados (`SearchInput`, `Select`, `DateInput`,
+ *   `Checkbox`…). El estado, la serialización y las queries pertenecen al feature.
  * - Layout: una columna en mobile → dos en tablet → tres en desktop; los chips envuelven sin
  *   provocar scroll horizontal de la página.
  * - `collapsible` oculta los controles tras un disclosure en mobile (`aria-expanded` +

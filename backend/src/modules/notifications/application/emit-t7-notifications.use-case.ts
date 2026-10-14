@@ -6,7 +6,7 @@
 //   2. Itera `EventTaskT7Repository.findT7Candidates` por chunks de `batchSize` hasta
 //      que la última página retorne < `batchSize` filas.
 //   3. Por cada candidato:
-//        * `existsTaskDueSoonForTask` → skip silencioso si ya emitido (idempotencia D2).
+//        * `exists` → skip silencioso si ya emitido (idempotencia D2).
 //        * Resuelve `languageCode` vía `OrganizerLanguageLookup`, fallback al
 //          `event.language` (D6).
 //        * Guard invariante `notification.user_id = event.owner_id` (BR-NOTIF-005).
@@ -29,8 +29,10 @@ import type {
   T7CandidateSourcePort,
 } from '../../../shared/application/t7-candidate-source.port.js';
 import type { T7LanguagePreferenceReader } from '../../../shared/application/t7-language-preference-reader.port.js';
-import type { NotificationT7Repository } from '../ports/notification-t7.repository.js';
-import type { SimulatedT7EmailPort } from '../ports/simulated-t7-email.port.js';
+import type {
+  NotificationT7Repository,
+  SimulatedT7EmailPort,
+} from '../ports/notification-channels.port.js';
 import {
   BrNotif005InvariantViolationError,
   type NotificationChannel,
@@ -153,7 +155,7 @@ export class EmitT7NotificationsUseCase {
       throw new BrNotif005InvariantViolationError(row.ownerUserId, row.ownerUserId);
     }
 
-    const alreadyEmitted = await notificationRepo.existsTaskDueSoonForTask(
+    const alreadyEmitted = await notificationRepo.exists(
       row.ownerUserId,
       row.taskId,
     );

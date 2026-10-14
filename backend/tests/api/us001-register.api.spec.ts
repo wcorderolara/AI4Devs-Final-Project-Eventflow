@@ -5,30 +5,18 @@
 // y 429 RATE_LIMIT_EXCEEDED del bucket `register` (SEC-04). Skip limpio sin BD.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
-import { PrismaClient } from '@prisma/client';
 import { createApp } from '../../src/app.js';
 import { config } from '../../src/config/env.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { CAPTCHA, uniqEmail } from '../helpers/http.js';
 
-const prisma = new PrismaClient();
-
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const app = createApp();
-const CAPTCHA = '__test__';
-const uniq = (): string => `us001api_${Date.now()}_${Math.floor(Math.random() * 1e6)}@eventflow.test`;
 
 function payload(over: Record<string, unknown> = {}): Record<string, unknown> {
   return {
-    email: uniq(),
+    email: uniqEmail('us001api'),
     password: 'segura12345',
     name: 'Organizadora Uno',
     role: 'organizer',
@@ -62,7 +50,7 @@ describe.skipIf(!dbUp)('US-001 QA-003 — POST /api/v1/auth/register', () => {
   });
 
   it('AC-02: sin preferredLanguage en el body, infiere de Accept-Language (pt-BR → pt)', async () => {
-    const email = uniq();
+    const email = uniqEmail('us001api');
     const res = await request(app)
       .post('/api/v1/auth/register')
       .set('Accept-Language', 'pt-BR,pt;q=0.9,en;q=0.5')
@@ -74,7 +62,7 @@ describe.skipIf(!dbUp)('US-001 QA-003 — POST /api/v1/auth/register', () => {
   });
 
   it('EC-01: captcha inválido → 400 CAPTCHA_INVALID sin crear el User (D1)', async () => {
-    const email = uniq();
+    const email = uniqEmail('us001api');
     const res = await request(app)
       .post('/api/v1/auth/register')
       .send(payload({ email, captchaToken: 'token-invalido' }));
@@ -92,7 +80,7 @@ describe.skipIf(!dbUp)('US-001 QA-003 — POST /api/v1/auth/register', () => {
   });
 
   it('AC-03: email duplicado (case-insensitive) → 409 EMAIL_TAKEN con mensaje neutro', async () => {
-    const email = uniq();
+    const email = uniqEmail('us001api');
     await request(app).post('/api/v1/auth/register').send(payload({ email }));
     const res = await request(app)
       .post('/api/v1/auth/register')
@@ -113,7 +101,7 @@ describe.skipIf(!dbUp)('US-001 QA-003 — POST /api/v1/auth/register', () => {
   });
 
   it('NT-04/SEC-02: intento role=admin → 400 VALIDATION_ERROR y jamás se persiste (D2)', async () => {
-    const email = uniq();
+    const email = uniqEmail('us001api');
     const res = await request(app).post('/api/v1/auth/register').send(payload({ email, role: 'admin' }));
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('VALIDATION_ERROR');
@@ -139,7 +127,7 @@ describe.skipIf(!dbUp)('US-001 QA-003/SEC-001 — 429 RATE_LIMIT_EXCEEDED bucket
     // Segunda petición con sesión activa → 409, pero cuenta para el bucket por IP.
     expect((await agent.post('/api/v1/auth/register').send(payload())).status).toBe(409);
 
-    const email = uniq();
+    const email = uniqEmail('us001api');
     const blocked = await agent.post('/api/v1/auth/register').send(payload({ email }));
     expect(blocked.status).toBe(429);
     expect(blocked.body.error.code).toBe('RATE_LIMIT_EXCEEDED');

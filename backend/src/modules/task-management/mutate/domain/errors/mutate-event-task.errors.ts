@@ -5,13 +5,14 @@
 // `CategoryNotAvailableError`, `DueDateInPastError`, `UnsupportedMediaTypeError` se REUSAN
 // del módulo `create/` (US-028). `EventNotMutableError` se reusa del módulo `bulk-confirm/`.
 // `NotFoundError` del shared kernel cubre no-revelación 404.
-import { AppError } from '../../../../../shared/domain/errors/app.error.js';
+import { AppError, type ErrorDetail } from '../../../../../shared/domain/errors/app.error.js';
 import { ErrorCodes } from '../../../../../shared/domain/errors/error-codes.js';
 import type { CanonicalEventTaskStatus } from '../EventTaskStateMachineService.js';
 
 /** 400 EMPTY_PATCH — cuerpo PATCH content sin ningún campo editable definido (EC-06, VR-05). */
 export class EmptyPatchError extends AppError {
   readonly code = ErrorCodes.EMPTY_PATCH;
+  override readonly httpStatus = 400;
   constructor() {
     super('At least one editable field must be provided.');
   }
@@ -23,6 +24,7 @@ export class EmptyPatchError extends AppError {
  */
 export class InvalidTransitionDomainError extends AppError {
   readonly code = ErrorCodes.INVALID_TRANSITION;
+  override readonly httpStatus = 409;
   readonly current: CanonicalEventTaskStatus;
   readonly requested: CanonicalEventTaskStatus;
   readonly allowed: CanonicalEventTaskStatus[];
@@ -31,5 +33,13 @@ export class InvalidTransitionDomainError extends AppError {
     this.current = current;
     this.requested = requested;
     this.allowed = allowed;
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [
+      { field: 'current_status', message: this.current },
+      { field: 'requested_status', message: this.requested },
+      { field: 'allowed_transitions', message: this.allowed.join(',') },
+    ];
   }
 }

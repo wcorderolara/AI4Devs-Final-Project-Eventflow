@@ -24,16 +24,6 @@ export interface VendorServiceDTO {
   updated_at: string;
 }
 
-export interface VendorServiceListEnvelope {
-  data: { items: VendorServiceDTO[] };
-  correlationId: string;
-}
-
-export interface VendorServiceEnvelope {
-  data: VendorServiceDTO;
-  correlationId: string;
-}
-
 export interface VendorServiceView {
   id: string;
   vendorProfileId: string;

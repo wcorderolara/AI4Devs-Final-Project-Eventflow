@@ -24,45 +24,16 @@
 //     - sin sesión ⇒ 401 AUTHENTICATION_REQUIRED (público y admin).
 import { beforeAll, describe, expect, it } from 'vitest';
 import request from 'supertest';
-import { PrismaClient } from '@prisma/client';
 import { createApp } from '../../src/app.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { rnd, sessionHelpers, type Agent, type TestRole } from '../helpers/http.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const app = createApp();
-const CAPTCHA = '__test__';
-const rnd = (): string => `${Date.now()}_${Math.floor(Math.random() * 1e9)}`;
 
-type Agent = ReturnType<typeof request.agent>;
-
-async function registerLogin(role: 'organizer' | 'vendor' | 'admin'): Promise<Agent> {
-  const email = `us075_${role}_${rnd()}@eventflow.test`;
-  const agent = request.agent(app);
-  const reg = await agent.post('/api/v1/auth/register').send({
-    acceptedTerms: true,
-    email,
-    password: 'Secret1234',
-    ...(role === 'vendor' ? { businessName: 'Vendor Demo SA' } : { name: role }),
-    role: role === 'admin' ? 'organizer' : role,
-    captchaToken: CAPTCHA,
-  });
-  const userId = reg.body.data.id as string;
-  if (role === 'admin') {
-    await prisma.user.update({ where: { id: userId }, data: { role: 'admin' } });
-  }
-  await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
-  return agent;
-}
+const session = sessionHelpers(app, { tag: 'us075', prisma });
+const registerLogin = async (role: TestRole): Promise<Agent> => (await session.registerLogin(role)).agent;
 
 const VALID_REASON = 'Ya no aplica en LATAM verificado 2026-Q3 (integration test).';
 const NAME = { 'es-LATAM': 'Test Categoría' };

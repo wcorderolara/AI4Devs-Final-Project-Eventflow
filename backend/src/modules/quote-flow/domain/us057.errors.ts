@@ -1,7 +1,7 @@
 // Errores de dominio del endpoint `GET /api/v1/events/:id/quotes/compare` (US-057 / BE-004).
 // Mapean 1:1 a los códigos estables del contrato (§7 Tech Spec) y son consumidos por el
 // `errorHandlerMiddleware` para serializar el envelope con `details`.
-import { AppError } from '../../../shared/domain/errors/app.error.js';
+import { AppError, type ErrorDetail } from '../../../shared/domain/errors/app.error.js';
 import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
 
 /**
@@ -10,8 +10,13 @@ import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
  */
 export class CompareQuotesCategoryRequiredError extends AppError {
   readonly code = ErrorCodes.INVALID_FILTERS;
+  override readonly httpStatus = 400;
   constructor(message = 'categoryCode is required') {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'categoryCode', message: 'required' }];
   }
 }
 
@@ -23,10 +28,15 @@ export class CompareQuotesCategoryRequiredError extends AppError {
  */
 export class CompareQuotesInvalidCategoryError extends AppError {
   readonly code = ErrorCodes.INVALID_CATEGORY;
+  override readonly httpStatus = 400;
   constructor(
     public readonly categoryCode: string,
     message = 'Service category is not available',
   ) {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [{ field: 'categoryCode', message: this.categoryCode }];
   }
 }

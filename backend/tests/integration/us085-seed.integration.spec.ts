@@ -2,23 +2,13 @@
 // TS-01 (volúmenes), TS-02 (idempotencia), TS-03 (is_seed), TS-04 (catálogos), TS-05 (report),
 // TS-06/AI-T-01 (AIRecommendation deterministas). Skip limpio sin BD (`describe.skipIf(!dbUp)`).
 import { createHash } from 'node:crypto';
-import { PrismaClient } from '@prisma/client';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { MockAIProvider } from '../../src/modules/ai-assistance/infrastructure/providers/mock/mock-ai-provider.js';
 import { SeedDemoDataUseCase } from '../../src/modules/seed-demo/application/seed-demo-data.use-case.js';
 import type { SeedReport } from '../../src/modules/seed-demo/domain/seed-report.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const TABLES = [
   'ai_recommendations',

@@ -4,26 +4,14 @@
 //   Replica el patrón de US-041/US-043: si no hay Postgres alcanzable, la suite gated se salta.
 import { beforeAll, describe, expect, it } from 'vitest';
 import request from 'supertest';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { createApp } from '../../src/app.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { sessionHelpers } from '../helpers/http.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const app = createApp();
-const CAPTCHA = '__test__';
-const uniq = (p: string): string =>
-  `us044_${p}_${Date.now()}_${Math.floor(Math.random() * 1e6)}@eventflow.test`;
 
 // Contract schema — QA-004. Espeja el DTO backend (`vendor-service.response.ts`).
 const vendorServiceContract = z.object({
@@ -40,24 +28,7 @@ const vendorServiceContract = z.object({
   updated_at: z.string(),
 });
 
-async function agentFor(role: 'organizer' | 'vendor'): Promise<ReturnType<typeof request.agent>> {
-  const email = uniq(role);
-  const agent = request.agent(app);
-  const payload: Record<string, unknown> = {
-    acceptedTerms: true,
-    email,
-    password: 'Secret1234',
-    role,
-    captchaToken: CAPTCHA,
-  };
-  if (role === 'vendor') payload.businessName = 'Vendor US044';
-  else payload.name = 'Organizer US044';
-  await agent.post('/api/v1/auth/register').send(payload);
-  await agent
-    .post('/api/v1/auth/login')
-    .send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
-  return agent;
-}
+const { agentFor } = sessionHelpers(app, { tag: 'us044', name: 'Organizer US044', businessName: 'Vendor US044' });
 
 describe('US-044 QA-002 (sin BD): auth y validación', () => {
   it('SEC-T: GET anónimo → 401', async () => {

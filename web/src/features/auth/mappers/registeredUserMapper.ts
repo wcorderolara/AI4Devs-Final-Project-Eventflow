@@ -1,13 +1,13 @@
-import type { AuthUserEnvelopeDTO } from '../api/authApi.types';
+import type { AuthUserDTO } from '../api/authApi.types';
 import type { RegisteredUser } from '../types';
 
 /** Mapper puro DTO → modelo frontend (Doc 15 §24: ningún componente consume DTO crudo). */
-export function mapAuthUserEnvelopeToRegisteredUser(dto: AuthUserEnvelopeDTO): RegisteredUser {
+export function mapAuthUserToRegisteredUser(user: AuthUserDTO): RegisteredUser {
   return {
-    id: dto.data.id,
-    email: dto.data.email,
-    name: dto.data.name,
-    role: dto.data.role,
-    preferredLanguage: dto.data.preferredLanguage,
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    preferredLanguage: user.preferredLanguage,
   };
 }

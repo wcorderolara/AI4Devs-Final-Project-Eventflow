@@ -301,16 +301,16 @@ i18n (`t()`), iconos `lucide-react`, WCAG 2.1 AA.
 | ------ | ---- | --------- |
 | `(public)` | Server | `<SkipLink>` + header (`<Logo>`, nav Directorio/Login/Register, `<LocaleSwitcher>`) + `<main>` + `<Footer>` |
 | `(auth)` | Server | `<SkipLink>` + header (`<Logo>`, switcher) + card centrado |
-| `(app)` | Client | `<SkipLink>` + `<Topbar>` + `<MobileNav>` (drawer) + `<main>`. Sidebar la ponen los sub-layouts |
-| `(app)/organizer` · `(app)/vendor` | Client | `<Sidebar>` contextual + `<section>` |
-| `(admin)` | Client | `<SkipLink>` + `<Topbar>` + `<MobileNav>` + `<Sidebar>` admin + `<main>` |
+| `(app)` | Client | `<AuthenticatedShell>`: skip link + top bar + sidebar + drawer según el rol de la sesión |
+| `(app)/organizer` · `(app)/vendor` | Client | `<section>` (la sidebar la pone el shell) |
+| `(admin)` | Client | `<AuthenticatedShell>` con la navegación agrupada de admin |
 
 ### Componentes (`src/shared/navigation/`)
 
-`<Topbar>`, `<Sidebar>`, `<NavLink>` (`aria-current="page"`), `<UserMenu>` (Headless UI `Menu`,
-iniciales + logout placeholder), `<MobileNav>` (Headless UI `Dialog`: focus trap + `Escape` +
-overlay), `<NotificationsBadge>` (placeholder), `<SkipLink>`, `<Footer>`, `<Logo>`. Items de nav en
-`navItems.ts` (`ORGANIZER_NAV_ITEMS`/`VENDOR_NAV_ITEMS`/`ADMIN_NAV_ITEMS`).
+`<AuthenticatedShell>` (compone `AppShell`, `TopBar`, `AppSidebar` y `MobileNavigationDrawer` del
+design system), `<UserMenu>` (sesión + logout), `<SidebarAccount>`, `<SkipLink>`, `<Footer>`,
+`<Logo>`. La navegación por rol vive en `roleNavigation.tsx` (`getRoleNavigation` +
+`resolveNavigationSections`).
 
 ### `<RoleGuard>` (`src/shared/authorization/`)
 
@@ -326,7 +326,7 @@ El `<UserMenu>` incluye "Cerrar sesión" **placeholder** (US-107): limpia la coo
 
 ### Responsive & A11y
 
-Mobile-first, breakpoint `lg` (1024 px): sidebar fija en desktop, `<MobileNav>` drawer en mobile.
+Mobile-first, breakpoint `lg` (1024 px): sidebar fija en desktop, `MobileNavigationDrawer` en mobile.
 `<SkipLink>` primer focusable → `#main-content`. `<nav aria-label>` por sidebar. Paleta semántica
 mínima en `tailwind.config.ts` (`primary`→blue, `secondary`→slate, `danger`→red, `success`→emerald).
 
@@ -437,10 +437,10 @@ src/
 ├── app/                 # App Router (mínimo en US-103; route groups en US-105)
 ├── features/            # feature-first (Doc 15 §16) — vacío
 ├── shared/
-│   ├── api-client/      design-system/  design-tokens/  hooks/  lib/  observability/
+│   ├── api-client/      design-system/  design-tokens/
 │   ├── i18n/            # next-intl config → US-104
 │   ├── providers/       # Query/Intl/Theme providers → US-106/US-107
-│   ├── auth-session/    authorization/ (UX-only, ADR-FE-003)  error-handling/
+│   ├── auth-session/    authorization/ (UX-only, ADR-FE-003)
 ├── tests/{e2e,unit,integration,msw}/
 └── messages/            # catálogos i18n → US-104
 ```

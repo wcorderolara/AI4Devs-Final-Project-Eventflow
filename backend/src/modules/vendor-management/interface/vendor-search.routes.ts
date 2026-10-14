@@ -5,10 +5,8 @@
 // exacto es distinto: `vendorProfileRouter` cubre `/vendors/me`).
 import { Router } from 'express';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { requireSession, requireRole } from '../../../infrastructure/auth-composition.js';
 import { z } from 'zod';
 import { SearchVendorsUseCase } from '../application/search-vendors.use-case.js';
 import { PrismaVendorSearchRepository } from '../infrastructure/prisma-vendor-search.repository.js';
@@ -25,15 +23,12 @@ const locationResolver = new PrismaLocationSlugResolver();
 const useCase = new SearchVendorsUseCase(repository, categoryResolver, locationResolver);
 const controller = new VendorSearchController(useCase);
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const authenticatedGuard = roleMiddleware(['organizer', 'vendor', 'admin']);
-
 export const vendorSearchRouter = Router();
 
 vendorSearchRouter.get(
   '/',
-  sessionAuth,
-  authenticatedGuard,
+  requireSession,
+  requireRole('organizer', 'vendor', 'admin'),
   validateRequestMiddleware(z.object({ query: SearchVendorsQuerySchema })),
   asyncHandler(controller.search),
 );

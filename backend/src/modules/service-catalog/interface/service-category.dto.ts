@@ -9,20 +9,18 @@
 // `ValidationError` genérica cuando Zod falla — sin acoplar el shared middleware a
 // mapeos por campo.
 import { z } from 'zod';
+import { uuidParamsSchema } from '../../../shared/validation/uuid-params.js';
+import {
+  CATALOG_DESCRIPTION_I18N_SCHEMA,
+  CATALOG_NAME_I18N_SCHEMA,
+  CATALOG_REASON_SCHEMA,
+  CATALOG_SORT_ORDER_SCHEMA,
+  CatalogDeleteBodySchema,
+} from '../../../shared/validation/catalog-admin.schemas.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Fragmentos reutilizables
 // ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * `name_i18n` como record<locale, string> no vacío. La invariante "es-LATAM
- * requerido" (Decisión PO D3 + VR-03) se valida en el UseCase con
- * `InvalidNameI18nError` para emitir el código estable `INVALID_NAME_I18N`.
- */
-const NAME_I18N_SHAPE = z.record(z.string().min(1).max(200));
-
-/** `description_i18n` opcional (Decisión PO D3). */
-const DESCRIPTION_I18N_SHAPE = z.record(z.string().max(2000));
 
 /** `code` slug estable (VR-02). */
 const CODE_SCHEMA = z
@@ -31,18 +29,11 @@ const CODE_SCHEMA = z
   .max(64)
   .regex(/^[a-z0-9-]+$/);
 
-/** `sort_order` >= 0 integer (VR-07). */
-const SORT_ORDER_SCHEMA = z.number().int().nonnegative();
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Path params
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const ServiceCategoryIdParamsSchema = z
-  .object({
-    id: z.string().uuid(),
-  })
-  .strict();
+export const ServiceCategoryIdParamsSchema = uuidParamsSchema('id');
 export type ServiceCategoryIdParams = z.infer<typeof ServiceCategoryIdParamsSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -52,11 +43,11 @@ export type ServiceCategoryIdParams = z.infer<typeof ServiceCategoryIdParamsSche
 export const CreateServiceCategoryBodySchema = z
   .object({
     code: CODE_SCHEMA,
-    name_i18n: NAME_I18N_SHAPE,
-    description_i18n: DESCRIPTION_I18N_SHAPE.optional(),
+    name_i18n: CATALOG_NAME_I18N_SCHEMA,
+    description_i18n: CATALOG_DESCRIPTION_I18N_SCHEMA.optional(),
     parent_id: z.string().uuid().nullable().optional(),
-    sort_order: SORT_ORDER_SCHEMA.optional().default(0),
-    reason: z.string().max(500).optional(),
+    sort_order: CATALOG_SORT_ORDER_SCHEMA.optional().default(0),
+    reason: CATALOG_REASON_SCHEMA,
   })
   .strict();
 export type CreateServiceCategoryBody = z.infer<typeof CreateServiceCategoryBodySchema>;
@@ -67,12 +58,12 @@ export type CreateServiceCategoryBody = z.infer<typeof CreateServiceCategoryBody
 
 export const UpdateServiceCategoryBodySchema = z
   .object({
-    name_i18n: NAME_I18N_SHAPE.optional(),
-    description_i18n: DESCRIPTION_I18N_SHAPE.optional(),
+    name_i18n: CATALOG_NAME_I18N_SCHEMA.optional(),
+    description_i18n: CATALOG_DESCRIPTION_I18N_SCHEMA.optional(),
     parent_id: z.string().uuid().nullable().optional(),
-    sort_order: SORT_ORDER_SCHEMA.optional(),
+    sort_order: CATALOG_SORT_ORDER_SCHEMA.optional(),
     is_active: z.boolean().optional(),
-    reason: z.string().max(500).optional(),
+    reason: CATALOG_REASON_SCHEMA,
   })
   .strict()
   .refine(
@@ -90,14 +81,5 @@ export type UpdateServiceCategoryBody = z.infer<typeof UpdateServiceCategoryBody
 // Soft delete body (BE-003) — DELETE /admin/service-categories/:id
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * `reason` recibido como unknown para que el controller distinga `REASON_REQUIRED`
- * (ausente / vacío) de `INVALID_REASON_LENGTH` (fuera de [10..500]) y emita códigos
- * estables. Zod solo garantiza que el body es un objeto con la única clave `reason`.
- */
-export const DeleteServiceCategoryBodySchema = z
-  .object({
-    reason: z.string().max(500).optional(),
-  })
-  .strict();
+export const DeleteServiceCategoryBodySchema = CatalogDeleteBodySchema;
 export type DeleteServiceCategoryBody = z.infer<typeof DeleteServiceCategoryBodySchema>;

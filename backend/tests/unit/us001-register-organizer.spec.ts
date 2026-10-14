@@ -7,7 +7,7 @@ import {
   Argon2idPasswordHasher,
   ARGON2ID_OPTIONS,
 } from '../../src/infrastructure/security/argon2id-password-hasher.js';
-import { BcryptPasswordHasher } from '../../src/infrastructure/security/bcrypt-password-hasher.js';
+import bcrypt from 'bcryptjs';
 import { RegisterUserRequestSchema } from '../../src/modules/identity-access/dto/index.js';
 import { resolvePreferredLanguage } from '../../src/shared/interface/http/accept-language.js';
 import { redactEmailForLog } from '../../src/infrastructure/notifications/logging-welcome-email-notifier.js';
@@ -32,7 +32,7 @@ describe('US-001 BE-005 — Argon2idPasswordHasher (AC-01, Doc 19 §11.1)', () =
   });
 
   it('verify mantiene compatibilidad con hashes bcrypt legados (fallback documentado)', async () => {
-    const bcryptHash = await new BcryptPasswordHasher(4).hash('Secret1234');
+    const bcryptHash = await bcrypt.hash('Secret1234', 4); // coste bajo para test rápido
     expect(bcryptHash.startsWith('$2')).toBe(true);
     expect(await hasher.verify('Secret1234', bcryptHash)).toBe(true);
     expect(await hasher.verify('WrongPass99', bcryptHash)).toBe(false);

@@ -45,8 +45,3 @@ export function renderQuoteReceivedTemplate(
   const template = CATALOG[language];
   return { subject: template.subject, body: template.body };
 }
-
-/** Locales soportados por el catálogo quote-received (expuesto para tests exhaustivos). */
-export function supportedQuoteReceivedLanguages(): readonly SupportedLanguage[] {
-  return Object.keys(CATALOG) as SupportedLanguage[];
-}

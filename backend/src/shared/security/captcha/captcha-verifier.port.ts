@@ -1,10 +1,10 @@
 // Puerto CaptchaVerifier (US-109 / BE-002). ADR-SEC-004; Clean/Hexagonal.
 // Abstracción de verificación de captcha server-side. Los use cases/middleware dependen de este
-// puerto; los adapters concretos (mock, reCAPTCHA, hCaptcha) viven en `infrastructure/captcha` y
+// puerto; los adapters concretos (mock, reCAPTCHA) viven en `infrastructure/captcha` y
 // se seleccionan por `CAPTCHA_PROVIDER`. El resultado es opaco al cliente: `outcome`/`score`/
 // `failureReason` son metadatos internos para logs y decisión, NUNCA se exponen en la respuesta.
 
-export type CaptchaProviderName = 'mock' | 'recaptcha' | 'hcaptcha';
+export type CaptchaProviderName = 'mock' | 'recaptcha';
 
 /** Acción esperada por endpoint (VR-07). Se compara contra la acción del token cuando aplica. */
 export type CaptchaAction = 'register' | 'login' | 'password_reset_request';

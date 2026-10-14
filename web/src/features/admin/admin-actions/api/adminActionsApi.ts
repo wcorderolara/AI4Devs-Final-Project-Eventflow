@@ -4,12 +4,8 @@
 // AC-03 · inmutabilidad arquitectónica: este cliente SOLO expone `list()`. NO existen
 // métodos `create/update/delete` — cualquier verbo de escritura contra
 // `/api/v1/admin/admin-actions/*` retorna 404 (el backend no registra esas rutas).
-import { httpGet } from '@/shared/api-client';
-import type {
-  AdminActionsListDTO,
-  AdminActionsListEnvelope,
-  AdminActionsListFilters,
-} from './adminActionsApi.types';
+import { httpGet, httpGetData } from '@/shared/api-client';
+import type { AdminActionsListDTO, AdminActionsListFilters } from './adminActionsApi.types';
 
 function toListQueryString(f: AdminActionsListFilters): string {
   const params = new URLSearchParams();
@@ -28,9 +24,6 @@ export const adminActionsApi = {
   /** US-080 / AC-01: listado admin paginado del audit log con filtros combinados. */
   async list(filters: AdminActionsListFilters = {}): Promise<AdminActionsListDTO> {
     const qs = toListQueryString(filters);
-    const envelope = await httpGet<AdminActionsListEnvelope>(
-      `/admin/admin-actions${qs ? `?${qs}` : ''}`,
-    );
-    return envelope.data;
+    return httpGetData<AdminActionsListDTO>(`/admin/admin-actions${qs ? `?${qs}` : ''}`);
   },
 };

@@ -5,11 +5,8 @@ import {
   EventPlanApplyStrategy,
   ChecklistApplyStrategy,
   BudgetSuggestionApplyStrategy,
-  VendorCategoriesApplyStrategy,
-  QuoteBriefApplyStrategy,
-  QuoteComparisonApplyStrategy,
+  NoopApplyStrategy,
   VendorBioApplyStrategy,
-  TaskPrioritizationApplyStrategy,
 } from '../../src/modules/ai-assistance/application/hitl/strategies/index.js';
 import type { AiRecommendationView } from '../../src/modules/ai-assistance/domain/ai-recommendation.js';
 import { SideEffectFailedError } from '../../src/modules/ai-assistance/domain/errors/hitl.errors.js';
@@ -165,13 +162,15 @@ describe('US-025 / QA-001 — 8 ApplyStrategy', () => {
   });
 
   it.each([
-    ['vendor_categories', VendorCategoriesApplyStrategy],
-    ['quote_brief', QuoteBriefApplyStrategy],
-    ['quote_comparison', QuoteComparisonApplyStrategy],
-    ['task_prioritization', TaskPrioritizationApplyStrategy],
-  ] as const)('%s strategy (no-op, applied_entity=null) — placeholder handoff', async (_type, Ctor) => {
+    'vendor_categories',
+    'quote_brief',
+    'quote_comparison',
+    'quote_compare_summary',
+    'task_prioritization',
+    'task_priority',
+  ] as const)('%s strategy (no-op, applied_entity=null) — placeholder handoff', async (type) => {
     const tx = txMock();
-    const s = new Ctor();
+    const s = new NoopApplyStrategy(type);
     const out = await s.applyInTransaction({
       tx: tx as never,
       recommendation: buildRec({ type: s.type }),

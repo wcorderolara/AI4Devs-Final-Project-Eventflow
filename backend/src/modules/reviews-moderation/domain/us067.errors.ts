@@ -9,7 +9,7 @@
 //   + `details.allowed`. Whitelist explícita: `published → hidden|removed`, `hidden → removed`.
 //   Otros pares (EC-01 `removed→*`, EC-02 `hidden→published`, etc.) disparan este error sin
 //   crear AdminAction (§7 UseCase; SEC-03: no hard delete significa que `removed` es final).
-import { AppError } from '../../../shared/domain/errors/app.error.js';
+import { AppError, type ErrorDetail, type HttpErrorMapping } from '../../../shared/domain/errors/app.error.js';
 import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
 
 /**
@@ -18,8 +18,13 @@ import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
  */
 export class ReviewNotFoundForModerationError extends AppError {
   readonly code = ErrorCodes.REVIEW_NOT_FOUND;
+  override readonly httpStatus = 404;
   constructor(message = 'Review not found') {
     super(message);
+  }
+
+  override toHttp(): HttpErrorMapping {
+    return { ...super.toHttp(), message: 'Review not found' };
   }
 }
 
@@ -30,6 +35,7 @@ export class ReviewNotFoundForModerationError extends AppError {
  */
 export class InvalidReviewTransitionError extends AppError {
   readonly code = ErrorCodes.INVALID_TRANSITION;
+  override readonly httpStatus = 409;
   constructor(
     public readonly from: string,
     public readonly to: string,
@@ -37,5 +43,13 @@ export class InvalidReviewTransitionError extends AppError {
     message = 'Invalid review status transition',
   ) {
     super(message);
+  }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return [
+      { field: 'from', message: this.from },
+      { field: 'to', message: this.to },
+      { field: 'allowed', message: this.allowed.join(',') },
+    ];
   }
 }

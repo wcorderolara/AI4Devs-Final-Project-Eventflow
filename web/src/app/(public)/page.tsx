@@ -8,6 +8,10 @@ import { ThrowOnParam } from '@/shared/providers/ThrowOnParam';
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
+// Hooks test-only (US-106 AC-10). Sólo el build de Playwright define la variable, así que en
+// Amplify el disparador `?throw=1` no existe y nadie puede tumbar la landing desde la URL.
+const e2eHooksEnabled = process.env.NEXT_PUBLIC_E2E_HOOKS === '1';
+
 /**
  * Metadata de la home. Server-side y localizada: el `<title>` y la descripción salen del catálogo
  * del locale que ya resolvió el middleware, igual que el resto del render.
@@ -53,9 +57,11 @@ export default function Landing(): React.JSX.Element {
 
   return (
     <>
-      <Suspense>
-        <ThrowOnParam />
-      </Suspense>
+      {e2eHooksEnabled && (
+        <Suspense>
+          <ThrowOnParam />
+        </Suspense>
+      )}
 
       <LandingPage claims={claims} />
 

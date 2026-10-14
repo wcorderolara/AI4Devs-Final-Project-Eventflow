@@ -5,11 +5,9 @@
 // La validación de path/body corre dentro del controller para poder capturar `body.ignoredFields`
 // sobre el body crudo (AC-03) — no se usa `validateRequestMiddleware`.
 import { Router } from 'express';
-import { roleMiddleware } from '../../../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../../../shared/interface/http/async-handler.js';
-import { sessionRepository, clock } from '../../../../../infrastructure/auth-composition.js';
-import { prisma } from '../../../../../shared/infrastructure/prisma/prisma.client.js';
+import { requireSession, requireRole } from '../../../../../infrastructure/auth-composition.js';
+import { prisma } from '../../../../../infrastructure/prisma/client.js';
 import { CreateEventTaskUseCase } from '../../application/create-event-task.use-case.js';
 import { CreateEventTaskTelemetry } from '../../application/create-event-task-telemetry.js';
 import { PrismaEventTaskCreateRepository } from '../../infrastructure/repositories/prisma-event-task-create.repository.js';
@@ -30,9 +28,6 @@ const useCase = new CreateEventTaskUseCase(
 );
 const controller = new CreateEventTaskController(useCase);
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const organizerOnly = roleMiddleware(['organizer']);
-
 export const eventTasksCreateRouter = Router();
 
 // SEC-02/03 (AUTH-TS-03..05): `roleMiddleware(['organizer'])` rechaza vendor/admin con 403
@@ -40,7 +35,7 @@ export const eventTasksCreateRouter = Router();
 // (SEC-04) se resuelve en el use case por `OwnedEventForCreateReader.findOwnedForUpdate` → 404.
 eventTasksCreateRouter.post(
   '/events/:eventId/tasks',
-  sessionAuth,
-  organizerOnly,
+  requireSession,
+  requireRole('organizer'),
   asyncHandler(controller.handle),
 );

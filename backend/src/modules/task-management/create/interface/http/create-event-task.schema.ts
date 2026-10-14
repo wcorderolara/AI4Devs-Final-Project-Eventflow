@@ -4,6 +4,7 @@
 // `body.ignoredFields` (§14). Las validaciones estrictas (title, description, due_date,
 // category_code) sí devuelven `400 VALIDATION` (VR-04..08).
 import { z } from 'zod';
+import { uuidParamsSchema } from '../../../../../shared/validation/uuid-params.js';
 
 /**
  * Claves controladas por el servidor. Si el cliente las envía, se descartan silenciosamente
@@ -34,9 +35,7 @@ export const ALLOWED_BODY_KEYS = [
 export const DUE_DATE_PAST_TOLERANCE_MS = 60_000;
 
 /** Path params — UUID v4 estricto (VR-01, NT-01). Body Zod `.strip()` para tolerancia. */
-export const createEventTaskParamsSchema = z
-  .object({ eventId: z.string().uuid() })
-  .strict();
+export const createEventTaskParamsSchema = uuidParamsSchema('eventId');
 
 /**
  * Body schema tolerante:

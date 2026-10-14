@@ -29,7 +29,7 @@ Navegador (HTTPS) ──► Amplify (frontend) ──► https://<eip>.sslip.io 
 
 - **Caddy** obtiene certificado Let's Encrypt automático para `<eip>.sslip.io` (sslip.io resuelve el
   hostname a la IP; no requiere dominio propio). HTTPS válido → cookies `SameSite=None; Secure` OK.
-- **Secretos** (`DATABASE_URL`, `JWT_SECRET`, `SESSION_SECRET`) se leen de **SSM** en el arranque vía
+- **Secretos** (`DATABASE_URL`, `SESSION_SECRET`) se leen de **SSM** en el arranque vía
   el **instance role** `EventflowEc2Role`; nunca en el user-data ni en la imagen (SEC-02/SEC-03).
 - **Security groups:** EC2 SG `sg-0bb160c6581409e12` (80/443 público, 22 solo operador); RDS SG
   permite 5432 solo desde el EC2 SG.
@@ -80,8 +80,8 @@ curl -fsS https://$HOST/health/ready | jq .   # postgres:ok
 
 ## Migración de vuelta a App Runner (futuro)
 
-Al habilitar App Runner (upgrade del plan de cuenta): re-ejecutar
-[`infra/apprunner/provision-apprunner.sh`](../../infra/apprunner/provision-apprunner.sh) fase 2 (usa
-la misma imagen ECR + secretos SSM + VPC connector con el SG del backend), actualizar
+Al habilitar App Runner (upgrade del plan de cuenta): el script de provisión de App Runner se retiró
+del repositorio (YAGNI); recuperarlo del historial de git (`infra/apprunner/provision-apprunner.sh`) o
+reescribirlo (misma imagen ECR + secretos SSM + VPC connector con el SG del backend), actualizar
 `NEXT_PUBLIC_API_BASE_URL` a la URL de App Runner, y retirar la instancia EC2. ADR-DEVOPS-003 vuelve
 a `Accepted`.

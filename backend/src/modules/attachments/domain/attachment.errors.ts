@@ -7,6 +7,7 @@ import { ErrorCodes } from '../../../shared/domain/errors/error-codes.js';
 /** EC-01, NT-07 — header MIME o magic-bytes fuera del allowlist. → 400 INVALID_MIME. */
 export class InvalidMimeError extends AppError {
   readonly code = ErrorCodes.INVALID_MIME;
+  override readonly httpStatus = 400;
 
   constructor(message = 'File MIME type is not allowed') {
     super(message);
@@ -16,6 +17,7 @@ export class InvalidMimeError extends AppError {
 /** Falla del decoder `sharp` — binario corrupto o formato no reconocido. → 400 INVALID_IMAGE. */
 export class InvalidImageError extends AppError {
   readonly code = ErrorCodes.INVALID_IMAGE;
+  override readonly httpStatus = 400;
 
   constructor(message = 'The uploaded image could not be processed') {
     super(message);
@@ -25,6 +27,7 @@ export class InvalidImageError extends AppError {
 /** EC-05 — path param `:workLabel` no matchea el regex D5. → 400 INVALID_WORK_LABEL. */
 export class InvalidWorkLabelError extends AppError {
   readonly code = ErrorCodes.INVALID_WORK_LABEL;
+  override readonly httpStatus = 400;
 
   constructor(message = 'The work_label is invalid') {
     super(message);
@@ -34,6 +37,7 @@ export class InvalidWorkLabelError extends AppError {
 /** AC-02 — 10 imágenes activas en el mismo `(owner_id, LOWER(work_label))`. → 409. */
 export class ImageLimitReachedError extends AppError {
   readonly code = ErrorCodes.IMAGE_LIMIT_REACHED;
+  override readonly httpStatus = 409;
 
   constructor(message = 'Reached the limit of 10 active images for this work_label') {
     super(message);
@@ -43,6 +47,7 @@ export class ImageLimitReachedError extends AppError {
 /** EC-06 / D6 — 20 `work_labels` activos distintos por vendor. → 409. */
 export class WorkLabelLimitReachedError extends AppError {
   readonly code = ErrorCodes.WORK_LABEL_LIMIT_REACHED;
+  override readonly httpStatus = 409;
 
   constructor(message = 'Reached the limit of 20 distinct work_labels') {
     super(message);
@@ -52,6 +57,7 @@ export class WorkLabelLimitReachedError extends AppError {
 /** EC-02 — multer rechaza binario > FILE_SIZE_LIMIT. → 413. */
 export class FileTooLargeError extends AppError {
   readonly code = ErrorCodes.FILE_TOO_LARGE;
+  override readonly httpStatus = 413;
 
   constructor(message = 'File exceeds the maximum allowed size') {
     super(message);
@@ -65,6 +71,7 @@ export class FileTooLargeError extends AppError {
  */
 export class PortfolioProfileNotFoundError extends AppError {
   readonly code = ErrorCodes.PROFILE_NOT_FOUND;
+  override readonly httpStatus = 404;
 
   constructor(message = 'Vendor profile not found') {
     super(message);
@@ -77,6 +84,7 @@ export class PortfolioProfileNotFoundError extends AppError {
  */
 export class PortfolioProfileHiddenError extends AppError {
   readonly code = ErrorCodes.PROFILE_HIDDEN;
+  override readonly httpStatus = 409;
 
   constructor(message = 'Vendor profile is hidden by an administrator') {
     super(message);
@@ -90,6 +98,7 @@ export class PortfolioProfileHiddenError extends AppError {
  */
 export class AttachmentNotFoundError extends AppError {
   readonly code = ErrorCodes.ATTACHMENT_NOT_FOUND;
+  override readonly httpStatus = 404;
 
   constructor(message = 'Attachment not found') {
     super(message);
@@ -104,6 +113,7 @@ export class AttachmentNotFoundError extends AppError {
  */
 export class InvalidDeletionReasonError extends AppError {
   readonly code = ErrorCodes.INVALID_DELETION_REASON;
+  override readonly httpStatus = 400;
 
   constructor(message = 'deletion_reason must be between 1 and 500 characters') {
     super(message);

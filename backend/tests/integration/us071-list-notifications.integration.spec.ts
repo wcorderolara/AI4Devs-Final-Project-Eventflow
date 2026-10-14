@@ -11,31 +11,14 @@
 //   * PERF sintético: mediana < 1500 ms sobre 50 filas seed (AC-09)
 //
 // Patrón `describe.skipIf(!dbUp)` — estándar del repo.
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import app from '../../src/app.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { pickCatalogRefs } from '../helpers/fixtures/catalog.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
-
-async function pickCatalogRefs(): Promise<{ eventTypeId: string; locationId: string } | null> {
-  const [eventType, location] = await Promise.all([
-    prisma.eventType.findFirst({ where: { isActive: true, deletedAt: null } }),
-    prisma.location.findFirst({ where: { deletedAt: null } }),
-  ]);
-  if (!eventType || !location) return null;
-  return { eventTypeId: eventType.id, locationId: location.id };
-}
+const prisma = getTestPrisma();
 
 interface UserFixture {
   userId: string;
@@ -163,7 +146,7 @@ describe.skipIf(!dbUp)('US-071 integration — GET /api/v1/notifications', () =>
   const fixtures: UserFixture[] = [];
 
   beforeAll(async () => {
-    refs = await pickCatalogRefs();
+    refs = await pickCatalogRefs(prisma);
   }, 60_000);
 
   afterAll(async () => {

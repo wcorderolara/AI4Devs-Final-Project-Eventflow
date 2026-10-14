@@ -4,7 +4,6 @@
 // `impact === 'critical'`. Aquí se audita además el catálogo completo en un solo árbol para
 // detectar colisiones de ids y nombres accesibles ausentes.
 import { render } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { screen } from '@testing-library/react';
 import { Plus, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
@@ -12,15 +11,12 @@ import { describe, expect, it } from 'vitest';
 import {
   Button,
   Checkbox,
-  CurrencyInput,
   DateInput,
   FileUpload,
   FormField,
   IconButton,
   Input,
-  MultiSelect,
   PasswordInput,
-  RadioGroup,
   SearchInput,
   Select,
   Textarea,
@@ -29,10 +25,7 @@ import {
 import { auditA11y, formatViolations } from './helpers/axe';
 
 function Catalog(): React.JSX.Element {
-  const [statuses, setStatuses] = useState<string[]>(['draft']);
-  const [amount, setAmount] = useState<number | null>(1500);
   const [search, setSearch] = useState('bodas');
-  const [radio, setRadio] = useState<string | null>('draft');
 
   return (
     <main>
@@ -112,56 +105,12 @@ function Catalog(): React.JSX.Element {
           )}
         </FormField>
 
-        <FormField label="Estados del evento">
-          {(field) => (
-            <MultiSelect
-              {...field}
-              options={[
-                { value: 'draft', label: 'Borrador' },
-                { value: 'active', label: 'Activo' },
-                { value: 'completed', label: 'Completado' },
-                { value: 'cancelled', label: 'Cancelado' },
-              ]}
-              value={statuses}
-              onChange={setStatuses}
-              placeholder="Todos los estados"
-              summaryLabel={(count) => `${count} seleccionados`}
-              removeOptionLabel={(label) => `Quitar ${label}`}
-              clearAllLabel="Limpiar todo"
-            />
-          )}
-        </FormField>
-
         <FormField label="Fecha del evento">
           {(field) => <DateInput {...field} min="2026-01-01" />}
         </FormField>
 
-        <FormField label="Monto planificado" helperText="Sin conversión de moneda.">
-          {(field) => (
-            <CurrencyInput
-              {...field}
-              currencyCode="GTQ"
-              locale="es-419"
-              value={amount}
-              onValueChange={setAmount}
-            />
-          )}
-        </FormField>
-
         <Checkbox label="Acepto los términos" description="Se aplican a todos los eventos." />
         <Checkbox label="Todos los estados" indeterminate />
-
-        <RadioGroup
-          name="axe-status"
-          legend="Estado del evento"
-          value={radio}
-          onChange={setRadio}
-          helperText="Puedes cambiarlo más tarde."
-          options={[
-            { value: 'draft', label: 'Borrador' },
-            { value: 'active', label: 'Activo' },
-          ]}
-        />
 
         <FileUpload
           dropzoneLabel="Selecciona o arrastra un archivo"
@@ -186,22 +135,12 @@ describe('PB-P2-028 · axe · design system Actions & Forms', () => {
     expect(critical, formatViolations(critical)).toEqual([]);
   });
 
-  it('el MultiSelect abierto tampoco tiene violaciones críticas', async () => {
-    const user = userEvent.setup();
-    const { container } = render(<Catalog />);
-    await user.click(screen.getByRole('combobox', { name: 'Estados del evento' }));
-    expect(screen.getByRole('listbox')).toBeInTheDocument();
-    const { critical } = await auditA11y(container);
-    expect(critical, formatViolations(critical)).toEqual([]);
-  });
-
   it('todos los controles del catálogo tienen nombre accesible', () => {
     render(<Catalog />);
     for (const control of [
       ...screen.getAllByRole('textbox'),
       ...screen.getAllByRole('button'),
       ...screen.getAllByRole('checkbox'),
-      ...screen.getAllByRole('radio'),
       ...screen.getAllByRole('combobox'),
     ]) {
       const name =

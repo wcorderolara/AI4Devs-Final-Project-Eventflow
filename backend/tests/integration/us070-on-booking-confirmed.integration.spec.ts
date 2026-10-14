@@ -10,40 +10,14 @@
 //   * IT-08 (AC-08): self-notification (event.userId == vendor.userId) → 2 filas
 //     con recipientRole='organizer' + 1 log info.
 //   * SEED-T-01 (QA-004): reuso del seed — verificación pospuesta al pipeline CI.
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import app from '../../src/app.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { pickCatalogRefsWithCategory } from '../helpers/fixtures/catalog.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
-
-async function pickCatalogRefs(): Promise<{
-  eventTypeId: string;
-  locationId: string;
-  serviceCategoryId: string;
-} | null> {
-  const [eventType, location, category] = await Promise.all([
-    prisma.eventType.findFirst({ where: { isActive: true, deletedAt: null } }),
-    prisma.location.findFirst({ where: { deletedAt: null } }),
-    prisma.serviceCategory.findFirst({ where: { isActive: true, deletedAt: null } }),
-  ]);
-  if (!eventType || !location || !category) return null;
-  return {
-    eventTypeId: eventType.id,
-    locationId: location.id,
-    serviceCategoryId: category.id,
-  };
-}
+const prisma = getTestPrisma();
 
 type ApiLanguage = 'es_LATAM' | 'pt' | 'en' | 'es_ES';
 
@@ -209,11 +183,11 @@ async function cleanupScenario(scenarios: ScenarioFixture[]): Promise<void> {
 describe.skipIf(!dbUp)(
   'US-070 integration — OnBookingConfirmedHandler via POST /api/v1/booking-intents/:id/confirm',
   () => {
-    let refs: Awaited<ReturnType<typeof pickCatalogRefs>> = null;
+    let refs: Awaited<ReturnType<typeof pickCatalogRefsWithCategory>> = null;
     const scenarios: ScenarioFixture[] = [];
 
     beforeAll(async () => {
-      refs = await pickCatalogRefs();
+      refs = await pickCatalogRefsWithCategory(prisma);
     }, 60_000);
 
     afterAll(async () => {

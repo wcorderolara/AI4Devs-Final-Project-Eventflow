@@ -1,15 +1,18 @@
 // AiGenerationService (US-097 / AI-002, SEC-003). Sanitiza input (excluye PII antes del provider,
-// VR-08), llama al LLMProvider y VALIDA el output contra el schema del feature (VR-05) → si falla,
-// AiInvalidOutputError. Idioma no soportado → UnsupportedLanguageError; input vacío → MissingInputError.
-import type { LLMProvider } from '../ports/llm-provider.js';
-import { OUTPUT_SCHEMAS, type AiFeatureType } from '../domain/ai-features.js';
-import type { AiMeta } from '../domain/ai-recommendation.js';
+// VR-08) y genera vía US-123 (timeout + fallback a mock) envuelto en US-124 (validación estricta del
+// schema del feature + 1 retry; fallback validado con el mismo schema). Output inválido tras el retry
+// → AiInvalidOutputError. Idioma no soportado → UnsupportedLanguageError; input vacío → MissingInputError.
+import type { AiFeatureType } from '../domain/ai-features.js';
+import type { AiMeta, AIRecommendationProvider } from '../domain/ai-recommendation.js';
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from '../../../shared/constants/languages.js';
 import {
   MissingInputError,
   UnsupportedLanguageError,
-  AiInvalidOutputError,
+  type AiExecutionErrorMeta,
 } from '../../../shared/domain/errors/ai.errors.js';
+import type { AIExecutionService } from './ai-execution/ai-execution.service.js';
+import type { AIExecutionInput, AIExecutionMetadata, AIExecutionResult } from './ai-execution/ai-execution-types.js';
+import type { ValidatedAIExecutionService } from './ai-validation/validated-ai-execution.service.js';
 
 const PII_KEYS = new Set(['email', 'phone', 'password', 'fiscalId', 'taxId', 'creditCard', 'ssn', 'secret', 'apiKey']);
 
@@ -218,45 +221,96 @@ export interface GenerationOutcome {
   output: unknown;
   aiMeta: AiMeta;
   sanitizedInput: Record<string, unknown>;
+  /** Metadata de ejecución US-123 (provider final, fallback, timeout, latencia). */
+  execMeta: AIExecutionMetadata;
+  /** Marker US-124: el output pasó el schema strict del feature. */
+  schemaValid: boolean;
+}
+
+export interface AiGenerationServiceDeps {
+  execution: AIExecutionService;
+  validated: ValidatedAIExecutionService;
+  /** Habilita el fallback a mock tras retry inválido (US-123/US-124); nunca con primario mock. */
+  fallbackEligible: boolean;
+}
+
+/** Metadata segura de una generación fallida, para el failure record de US-122. */
+export interface GenerationFailureMeta {
+  provider: AIRecommendationProvider;
+  fallbackUsed: boolean;
+  timeoutMs: number;
+  latencyMs: number;
 }
 
 export class AiGenerationService {
-  constructor(private readonly provider: LLMProvider) {}
+  constructor(private readonly deps: AiGenerationServiceDeps) {}
 
   async generate(
     feature: AiFeatureType,
     rawInput: Record<string, unknown> | undefined,
     languageCode: string | undefined,
     preferMock: boolean | undefined,
+    correlationId?: string,
   ): Promise<GenerationOutcome> {
     if (!rawInput || Object.keys(rawInput).length === 0) throw new MissingInputError();
     const lang = languageCode ?? 'es-LATAM';
     if (!(SUPPORTED_LANGUAGES as readonly string[]).includes(lang)) throw new UnsupportedLanguageError();
 
     const sanitizedInput = sanitize(rawInput);
-    // US-084 (BE-002): `LLMProvider.generate.languageCode` está tipado sobre `SupportedLanguage`.
-    // La guarda `SUPPORTED_LANGUAGES.includes(lang)` de arriba estrecha el string a la union
-    // para el TS strict check.
-    const result = await this.provider.generate({
+    // US-084 (BE-002): la guarda de arriba estrecha `lang` a `SupportedLanguage`.
+    const execInput: AIExecutionInput = {
       feature,
       input: sanitizedInput,
       languageCode: lang as SupportedLanguage,
+      correlationId,
       preferMock,
-    });
+    };
 
-    const parsed = OUTPUT_SCHEMAS[feature].safeParse(result.output);
-    if (!parsed.success) throw new AiInvalidOutputError();
+    // `last` = ejecución cuyo output se está validando (intento, retry o fallback).
+    let last: AIExecutionResult | undefined;
+    const { execution, validated, fallbackEligible } = this.deps;
+    const result = await validated.execute(
+      { featureType: feature, correlationId, provider: execution.primaryProviderId },
+      {
+        generate: async () => {
+          last = await execution.execute(execInput);
+          return last.output;
+        },
+        fallback: fallbackEligible
+          ? async () => {
+              last = await execution.executeMockFallback(execInput);
+              return last.output;
+            }
+          : undefined,
+      },
+    );
+    const exec = last!;
 
     return {
-      output: parsed.data,
+      output: result.output,
       aiMeta: {
-        provider: result.provider,
-        promptVersion: result.promptVersion,
-        latencyMs: result.latencyMs,
-        fallbackUsed: result.fallbackUsed,
+        provider: exec.metadata.provider,
+        promptVersion: exec.promptVersion,
+        latencyMs: exec.metadata.latencyMs,
+        fallbackUsed: exec.metadata.fallbackUsed || exec.providerFallbackUsed,
         languageCode: lang as SupportedLanguage,
       },
       sanitizedInput,
+      execMeta: exec.metadata,
+      schemaValid: result.metadata.schemaValid,
+    };
+  }
+
+  /** Deriva metadata segura de un error de generación (usa `err.meta` de US-123/US-124 si existe). */
+  failureMeta(err: unknown): GenerationFailureMeta {
+    const meta = (err as { meta?: AiExecutionErrorMeta } | null)?.meta ?? {};
+    const provider = (['openai', 'mock', 'anthropic'] as const).find((p) => p === meta.provider) ?? this.deps.execution.primaryProviderId;
+    return {
+      provider,
+      // Invariante US-122: fallback ⇒ provider mock.
+      fallbackUsed: meta.fallbackUsed === true && provider === 'mock',
+      timeoutMs: meta.timeoutMs ?? this.deps.execution.timeoutMs,
+      latencyMs: meta.latencyMs ?? 0,
     };
   }
 }

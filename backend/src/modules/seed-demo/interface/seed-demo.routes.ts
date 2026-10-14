@@ -6,10 +6,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { requireSession, requireRole } from '../../../infrastructure/auth-composition.js';
 import { prisma } from '../../../infrastructure/prisma/client.js';
 import { ResetRequestSchema } from './seed-demo.dto.js';
 import { SeedDemoController } from './seed-demo.controller.js';
@@ -40,13 +38,10 @@ const controller = new SeedDemoController({
   status: new GetSeedStatusUseCase(prisma),
 });
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const adminOnly = roleMiddleware(['admin']);
-
 export const seedDemoRouter = Router();
 
 // Guards comunes: sesión válida + rol admin.
-seedDemoRouter.use(sessionAuth, adminOnly);
+seedDemoRouter.use(requireSession, requireRole('admin'));
 
 seedDemoRouter.post(
   '/reset',

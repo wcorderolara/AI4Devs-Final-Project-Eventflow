@@ -9,7 +9,7 @@
 // respuesta AI, se muestra el banner con acción "Regenerar" que reejecuta la mutación.
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import type { ApiError } from '@/shared/api-client';
+import { resolveErrorMessageKey } from '@/shared/error-handling/errorCodeMessages';
 import {
   aiQuoteSummaryApi,
   type GenerateQuoteSummaryResponse,
@@ -30,16 +30,6 @@ const KNOWN_ERROR_CODES = [
   'AUTHENTICATION_REQUIRED',
   'FORBIDDEN',
 ] as const;
-type KnownErrorCode = (typeof KNOWN_ERROR_CODES)[number];
-
-function isKnownErrorCode(code: string | undefined): code is KnownErrorCode {
-  return typeof code === 'string' && (KNOWN_ERROR_CODES as readonly string[]).includes(code);
-}
-
-function errorMessage(err: ApiError | null, t: (k: string) => string): string {
-  if (err && isKnownErrorCode(err.code)) return t(`errors.${err.code}`);
-  return t('errors.UNEXPECTED');
-}
 
 export interface AIComparisonSummaryProps {
   eventId: string;
@@ -191,7 +181,7 @@ export function AIComparisonSummary({
           className="mt-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900"
           data-testid="ai-quote-summary-error"
         >
-          {errorMessage(error, t)}
+          {t(resolveErrorMessageKey(error, KNOWN_ERROR_CODES))}
           <button
             type="button"
             onClick={() => {

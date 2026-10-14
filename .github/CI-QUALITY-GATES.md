@@ -98,7 +98,7 @@ retención 7 días (`if: failure()`). Retries acotados a 1 en CI (`playwright.co
 - El `MockAIProvider` (US-119) es determinista, sin red — cubre US-129 (IA suite) sin costo ni
   flakiness. Ver `backend/tests/unit/us129-ai-mock-suite.spec.ts` para el catálogo canónico de 7
   features.
-- Guard runtime adicional: `backend/tests/unit/us119-mock-no-network.guard.spec.ts` (estático,
+- Guard runtime adicional: US-119 en `backend/tests/unit/architecture-guards.spec.ts` (estático,
   falla si el mock importa SDKs de IA o HTTP).
 
 ## Política `.skip` / `xfail` crítico (Doc 20 §22)

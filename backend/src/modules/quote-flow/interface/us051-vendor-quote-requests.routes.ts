@@ -7,10 +7,8 @@
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { clock, requireSession, requireRole } from '../../../infrastructure/auth-composition.js';
 import { success } from '../../../shared/response/index.js';
 import { UnauthorizedError } from '../../../shared/domain/errors/unauthorized.error.js';
 import { StructuredDomainEventLogger } from '../../../infrastructure/observability/structured-domain-event-logger.js';
@@ -24,8 +22,12 @@ import { toQuoteRequestResponse } from '../dto/quote-request.response.js';
 import { prisma } from '../../../infrastructure/prisma/client.js';
 // US-069 (PB-P2-006 / BE-005): composition root del `OnQuoteSentHandler` in-tx.
 import { OnQuoteSentHandler } from '../../notifications/application/on-quote-sent.handler.js';
-import { PrismaNotificationQuoteReceivedRepository } from '../../notifications/infrastructure/prisma-notification-quote-received.repository.js';
-import { LoggingSimulatedQuoteReceivedEmailAdapter } from '../../notifications/infrastructure/logging-simulated-quote-received-email.adapter.js';
+import { PrismaNotificationRepository } from '../../notifications/infrastructure/prisma-notification.repository.js';
+import { LoggingSimulatedEmailAdapter } from '../../notifications/infrastructure/logging-simulated-email.adapter.js';
+import {
+  QUOTE_RECEIVED_EMAIL,
+  QUOTE_RECEIVED_NOTIFICATION,
+} from '../../notifications/infrastructure/notification-channels.js';
 import { PrismaOrganizerLanguageLookup } from '../../event-planning/infrastructure/prisma-organizer-language.lookup.js';
 import { logger as sharedLogger } from '../../../shared/infrastructure/logger/index.js';
 import { us051QrIdParamSchema, type Us051QrIdParam } from '../dto/us051-qr-id.param.js';
@@ -38,8 +40,6 @@ import {
 export const qrIdParamSchema = us051QrIdParamSchema;
 export type QrIdParam = Us051QrIdParam;
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const vendorOnly = roleMiddleware(['vendor']);
 const validate = validateRequestMiddleware;
 
 const vendors = new PrismaVendorProfileReader(prisma);
@@ -51,9 +51,9 @@ const quoteRequests = new PrismaQuoteRequestRepository(prisma);
 // `OrganizerLanguagePreferenceReader` (mismo shape). Los adapters aceptan el `tx`
 // opcional cuando el handler los invoque dentro de la transacción del UC.
 const onQuoteSentHandler = new OnQuoteSentHandler({
-  notificationRepo: new PrismaNotificationQuoteReceivedRepository(prisma),
+  notificationRepo: new PrismaNotificationRepository(QUOTE_RECEIVED_NOTIFICATION, prisma),
   languageLookup: new PrismaOrganizerLanguageLookup(prisma),
-  emailAdapter: new LoggingSimulatedQuoteReceivedEmailAdapter(sharedLogger),
+  emailAdapter: new LoggingSimulatedEmailAdapter(QUOTE_RECEIVED_EMAIL, sharedLogger),
   logger: sharedLogger,
 });
 
@@ -104,16 +104,16 @@ export const us051VendorQuoteRequestsRouter = Router();
 
 us051VendorQuoteRequestsRouter.get(
   '/vendor/quote-requests/:id',
-  sessionAuth,
-  vendorOnly,
+  requireSession,
+  requireRole('vendor'),
   validate(z.object({ params: qrIdParamSchema })),
   asyncHandler(getDetailHandler),
 );
 
 us051VendorQuoteRequestsRouter.post(
   '/vendor/quote-requests/:id/mark-viewed',
-  sessionAuth,
-  vendorOnly,
+  requireSession,
+  requireRole('vendor'),
   validate(z.object({ params: qrIdParamSchema })),
   asyncHandler(markViewedHandler),
 );
@@ -121,8 +121,8 @@ us051VendorQuoteRequestsRouter.post(
 // US-052 (PB-P1-031): respuesta single-shot con Quote + 2 notifications atómicas.
 us051VendorQuoteRequestsRouter.post(
   '/vendor/quote-requests/:id/respond',
-  sessionAuth,
-  vendorOnly,
+  requireSession,
+  requireRole('vendor'),
   validate(z.object({ params: qrIdParamSchema, body: respondQuoteRequestBodySchema })),
   asyncHandler(respondHandler),
 );

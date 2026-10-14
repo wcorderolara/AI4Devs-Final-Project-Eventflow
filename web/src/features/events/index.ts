@@ -8,7 +8,6 @@ export { EditEventForm } from './components/EditEventForm';
 export { EventActions } from './components/EventActions';
 export { EventFilters } from './components/EventFilters';
 export { EventStatusBadge } from './components/EventStatusBadge';
-export { ConfirmDialog } from './components/ConfirmDialog';
 export { eventsApi } from './api/eventsApi';
 export {
   useEventsList,

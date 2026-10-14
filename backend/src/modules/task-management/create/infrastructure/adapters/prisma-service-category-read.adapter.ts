@@ -4,7 +4,7 @@
 // declarado en §17 (lookup en el hot path del insert). El cache es local por instancia y se
 // invalida por expiración — no requiere Redis en MVP.
 import type { Prisma } from '@prisma/client';
-import { prisma } from '../../../../../shared/infrastructure/prisma/prisma.client.js';
+import { prisma } from '../../../../../infrastructure/prisma/client.js';
 import type {
   ServiceCategoryReadPort,
   ServiceCategoryRow,

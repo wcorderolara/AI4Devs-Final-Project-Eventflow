@@ -9,6 +9,7 @@ import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { ApiError } from '@/shared/api-client';
+import { ConfirmationDialog } from '@/shared/design-system';
 import { useLocations } from '@/features/events/hooks/useEventsQueries';
 import {
   editVendorProfileSchema,
@@ -240,44 +241,19 @@ export function VendorProfileEditor({
       </form>
 
       {/* Confirmación previa al submit cuando hay dirty mayor sobre un perfil aprobado (D2). */}
-      {showConfirmMajor && (
-        <div
-          role="alertdialog"
-          aria-modal="true"
-          aria-labelledby="major-title"
-          aria-describedby="major-desc"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-        >
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
-            <h2 id="major-title" className="text-lg font-semibold">
-              {t('confirmMajor.title')}
-            </h2>
-            <p id="major-desc" className="mt-2 text-sm text-neutral-700">
-              {t('confirmMajor.description')}
-            </p>
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowConfirmMajor(null)}
-                className="rounded border border-neutral-300 px-4 py-2 text-sm"
-              >
-                {t('confirmMajor.cancel')}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const v = showConfirmMajor;
-                  setShowConfirmMajor(null);
-                  runSubmit(v);
-                }}
-                className="rounded bg-amber-600 px-4 py-2 text-sm font-medium text-white"
-              >
-                {t('confirmMajor.confirm')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmationDialog
+        open={showConfirmMajor !== null}
+        onClose={() => setShowConfirmMajor(null)}
+        title={t('confirmMajor.title')}
+        description={t('confirmMajor.description')}
+        confirmLabel={t('confirmMajor.confirm')}
+        cancelLabel={t('confirmMajor.cancel')}
+        onConfirm={() => {
+          const v = showConfirmMajor;
+          setShowConfirmMajor(null);
+          if (v) runSubmit(v);
+        }}
+      />
 
       <DeleteProfileDialog
         isOpen={deleteOpen}

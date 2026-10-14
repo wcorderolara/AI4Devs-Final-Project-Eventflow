@@ -1,11 +1,9 @@
-// PB-P2-028 — Controles especializados (DateInput, CurrencyInput, FileUpload).
+// PB-P2-028 — Controles especializados (DateInput, FileUpload).
 // Fuente normativa: docs/ux-ui/EventFlow-Component-Foundations.md §16, §18 y §19.
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { CurrencyInput, DateInput, FileUpload, FormField } from '@/shared/design-system';
-import { parseAmountInput, roundToDecimals } from '@/shared/design-system';
+import { DateInput, FileUpload, FormField } from '@/shared/design-system';
 
 describe('DateInput', () => {
   it('usa el control de fecha nativo con límites mínimo y máximo', () => {
@@ -31,107 +29,6 @@ describe('DateInput', () => {
     const input = screen.getByLabelText('Fecha hasta');
     expect(input).toHaveAttribute('aria-invalid', 'true');
     expect(screen.getByRole('alert')).toHaveTextContent('La fecha final no puede ser anterior');
-  });
-});
-
-describe('parseAmountInput', () => {
-  it('acepta los separadores de los cuatro locales soportados', () => {
-    expect(parseAmountInput('1234.56')).toBe(1234.56);
-    expect(parseAmountInput('1.234,56')).toBe(1234.56);
-    expect(parseAmountInput('1,234.56')).toBe(1234.56);
-    expect(parseAmountInput('1.234')).toBe(1234);
-    expect(parseAmountInput('0,5')).toBe(0.5);
-    expect(parseAmountInput('1.234.567')).toBe(1234567);
-  });
-
-  it('devuelve null cuando no hay dígitos', () => {
-    expect(parseAmountInput('')).toBeNull();
-    expect(parseAmountInput('   ')).toBeNull();
-    expect(parseAmountInput('abc')).toBeNull();
-  });
-
-  it('redondea sin arrastrar el ruido binario del float', () => {
-    expect(roundToDecimals(0.1 + 0.2, 2)).toBe(0.3);
-    expect(roundToDecimals(1234.5678, 2)).toBe(1234.57);
-  });
-});
-
-describe('CurrencyInput', () => {
-  function CurrencyHarness({
-    currencyCode = 'GTQ',
-    locale = 'es-419',
-    readOnly = false,
-    initial = 1500,
-  }: {
-    currencyCode?: string;
-    locale?: string;
-    readOnly?: boolean;
-    initial?: number | null;
-  }): React.JSX.Element {
-    const [value, setValue] = useState<number | null>(initial);
-    return (
-      <div>
-        <FormField label="Monto planificado" helperText="Sin conversión de moneda.">
-          {(field) => (
-            <CurrencyInput
-              {...field}
-              currencyCode={currencyCode}
-              locale={locale}
-              value={value}
-              onValueChange={setValue}
-              readOnly={readOnly}
-            />
-          )}
-        </FormField>
-        <output data-testid="canonical">{value === null ? 'null' : String(value)}</output>
-      </div>
-    );
-  }
-
-  it('muestra el código ISO como prefijo bloqueado y lo asocia al lector de pantalla (GTQ)', () => {
-    render(<CurrencyHarness currencyCode="GTQ" />);
-    const input = screen.getByLabelText('Monto planificado');
-    const ids = (input.getAttribute('aria-describedby') ?? '').split(' ');
-    const codeNode = screen.getByTestId('currencyInput.code');
-    expect(codeNode).toHaveTextContent('GTQ');
-    expect(ids).toContain(codeNode.id);
-    // No hay selector de moneda: la moneda del evento es inmutable (BR-EVENT-007).
-    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
-  });
-
-  it('formatea según el locale y conserva el valor canónico numérico (USD/en)', async () => {
-    const user = userEvent.setup();
-    render(<CurrencyHarness currencyCode="USD" locale="en" initial={1234.5} />);
-    const input = screen.getByLabelText('Monto planificado') as HTMLInputElement;
-    expect(input.value).toBe('1,234.50');
-
-    await user.clear(input);
-    await user.type(input, '2500.75');
-    expect(screen.getByTestId('canonical')).toHaveTextContent('2500.75');
-
-    // Al perder el foco se reformatea sin alterar el número almacenado.
-    fireEvent.blur(input);
-    expect(input.value).toBe('2,500.75');
-    expect(screen.getByTestId('canonical')).toHaveTextContent('2500.75');
-  });
-
-  it('acepta entrada con separadores es-LATAM y usa inputMode decimal', async () => {
-    const user = userEvent.setup();
-    render(<CurrencyHarness initial={null} />);
-    const input = screen.getByLabelText('Monto planificado') as HTMLInputElement;
-    expect(input).toHaveAttribute('inputmode', 'decimal');
-
-    await user.type(input, '1.500,25');
-    expect(screen.getByTestId('canonical')).toHaveTextContent('1500.25');
-  });
-
-  it('estado readOnly: el valor se muestra formateado y no entra en modo edición', async () => {
-    const user = userEvent.setup();
-    render(<CurrencyHarness readOnly initial={1500} />);
-    const input = screen.getByLabelText('Monto planificado') as HTMLInputElement;
-    expect(input).toHaveAttribute('readonly');
-    await user.click(input);
-    expect(input.value).toBe('1,500.00');
   });
 });
 

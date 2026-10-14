@@ -1,6 +1,7 @@
 // Shared kernel — PrismaPersistenceError → HTTP 500 PERSISTENCE_ERROR (US-093 / BE-003).
 // Doc 14 §18.1. Fallo en la capa de persistencia (Prisma). El `originalError` va al log interno;
 // el cliente recibe un mensaje genérico (nunca detalles de BD/SQL).
+import type { HttpErrorMapping } from './app.error.js';
 import { InfrastructureError } from './infrastructure.error.js';
 import { ErrorCodes } from './error-codes.js';
 
@@ -9,5 +10,9 @@ export class PrismaPersistenceError extends InfrastructureError {
 
   constructor(originalError?: unknown, message = 'Persistence error') {
     super(message, originalError);
+  }
+
+  override toHttp(): HttpErrorMapping {
+    return { status: 500, code: this.code, message: 'Internal server error' };
   }
 }

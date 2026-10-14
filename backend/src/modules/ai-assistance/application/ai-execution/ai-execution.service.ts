@@ -1,6 +1,7 @@
 // AIExecutionService (US-123 / BE-005, BE-006). Orquesta provider primario + timeout + fallback
 // elegible + clasificación de errores + metadata normalizada (AC-01..AC-06). Application-only:
 // depende del port `LLMProvider` (no de SDKs). No crea endpoints, no persiste, no valida JSON (US-124).
+// Consumido en producción por `AiGenerationService` (PR-5) vía `createAIExecutionService()`.
 import type { LLMProvider, LlmGenerationResult } from '../../ports/llm-provider.js';
 import type { ProviderId } from '../../ports/ai-contract.js';
 import { ErrorCodes } from '../../../../shared/domain/errors/error-codes.js';
@@ -9,6 +10,9 @@ import {
   AiProviderUnavailableError,
   AIProviderNotConfiguredError,
   AiFallbackFailedError,
+  AiInvalidOutputError,
+  AiInvalidOutputSchemaError,
+  AiOutputParseError,
 } from '../../../../shared/domain/errors/ai.errors.js';
 import { withTimeout } from './ai-timeout.service.js';
 import { FallbackService } from './fallback.service.js';
@@ -40,8 +44,26 @@ function codeOf(err: unknown): string {
   return ErrorCodes.AI_PROVIDER_UNAVAILABLE;
 }
 
+function isOutputError(err: unknown): boolean {
+  return err instanceof AiInvalidOutputError || err instanceof AiInvalidOutputSchemaError || err instanceof AiOutputParseError;
+}
+
 export class AIExecutionService {
   constructor(private readonly deps: AIExecutionServiceDeps) {}
+
+  /** Provider primario configurado (metadata de failure records, US-122). */
+  get primaryProviderId(): ProviderId {
+    return this.deps.config.llmProvider;
+  }
+
+  get timeoutMs(): number {
+    return this.deps.config.timeoutMs;
+  }
+
+  /** ¿Hay fallback a mock disponible? Nunca mock→mock (primario mock ⇒ false). */
+  isFallbackEligible(): boolean {
+    return FallbackService.isFallbackEligible(this.deps.config) && this.deps.config.llmProvider !== 'mock';
+  }
 
   /**
    * Ejecuta la generación con timeout y fallback controlado. Retorna `AIExecutionResult` en éxito
@@ -51,7 +73,6 @@ export class AIExecutionService {
     const now = this.deps.now ?? Date.now;
     const { config } = this.deps;
     const primaryId = config.llmProvider;
-    const primaryIsMock = primaryId === 'mock';
     const start = now();
     const base = { featureType: input.feature, timeoutMs: config.timeoutMs, correlationId: input.correlationId } as const;
 
@@ -62,7 +83,7 @@ export class AIExecutionService {
         { timeoutMs: config.timeoutMs },
       );
     } catch (err) {
-      return this.handlePrimaryFailure<TOutput>(input, err, primaryId, primaryIsMock, start, now);
+      return this.handlePrimaryFailure<TOutput>(input, err, primaryId, start, now);
     }
 
     // Éxito primario. `LLM_PROVIDER=mock` ⇒ mock es PRIMARIO, no fallback (AC-04): fallbackUsed=false.
@@ -74,17 +95,74 @@ export class AIExecutionService {
       latencyMs: now() - start,
       status: 'success',
     };
-    return { output: primaryResult.output as TOutput, metadata };
+    return {
+      output: primaryResult.output as TOutput,
+      metadata,
+      promptVersion: primaryResult.promptVersion,
+      providerFallbackUsed: primaryResult.fallbackUsed,
+    };
+  }
+
+  /**
+   * Fallback explícito a `MockAIProvider` (único target permitido, AC-02/AC-05). Lo usa
+   * `handlePrimaryFailure` y US-124 cuando el output del primario sigue inválido tras el retry.
+   */
+  async executeMockFallback<TOutput = unknown>(
+    input: AIExecutionInput,
+    reason: string = ErrorCodes.AI_INVALID_OUTPUT,
+    start?: number,
+  ): Promise<AIExecutionResult<TOutput>> {
+    const now = this.deps.now ?? Date.now;
+    const { config } = this.deps;
+    const primaryId = config.llmProvider;
+    const startedAt = start ?? now();
+    const meta = {
+      featureType: input.feature,
+      provider: 'mock' as ProviderId,
+      originalProvider: primaryId,
+      fallbackUsed: true,
+      fallbackReason: reason,
+      timeoutMs: config.timeoutMs,
+      correlationId: input.correlationId,
+    };
+    logAIExecutionEvent(AI_FALLBACK_USED_EVENT, meta);
+
+    try {
+      const fb = await withTimeout(
+        () => this.deps.mockProvider.generate({ feature: input.feature, input: input.input, languageCode: input.languageCode, preferMock: true }),
+        { timeoutMs: config.timeoutMs },
+      );
+      const metadata: AIExecutionMetadata = {
+        ...meta,
+        latencyMs: now() - startedAt,
+        originalErrorCode: reason,
+        status: 'fallback',
+      };
+      return {
+        output: fb.output as TOutput,
+        metadata,
+        promptVersion: fb.promptVersion,
+        providerFallbackUsed: fb.fallbackUsed,
+      };
+    } catch (fbErr) {
+      // EC-05: mock fallback también falló → error controlado, sin loop, sin Anthropic.
+      const failMeta = { ...meta, latencyMs: now() - startedAt, originalErrorCode: reason };
+      logAIExecutionEvent(AI_FALLBACK_FAILED_EVENT, { ...failMeta, errorCode: codeOf(fbErr) });
+      throw new AiFallbackFailedError('AI fallback provider failed', failMeta);
+    }
   }
 
   private async handlePrimaryFailure<TOutput>(
     input: AIExecutionInput,
     err: unknown,
     primaryId: ProviderId,
-    primaryIsMock: boolean,
     start: number,
     now: () => number,
   ): Promise<AIExecutionResult<TOutput>> {
+    // Output inválido del provider (p. ej. JSON malformado): no es falla de disponibilidad; se
+    // propaga tal cual para que US-124 aplique su retry/fallback.
+    if (isOutputError(err)) throw err;
+
     const { config } = this.deps;
     const errorCode = codeOf(err);
     const isTimeout = err instanceof AiProviderTimeoutError;
@@ -99,8 +177,7 @@ export class AIExecutionService {
       correlationId: input.correlationId,
     });
 
-    const eligible = FallbackService.isFallbackEligible(config) && !primaryIsMock;
-    if (!eligible) {
+    if (!this.isFallbackEligible()) {
       // AC-03 / EC-01: error controlado, sin llamar a MockAIProvider.
       const meta = {
         featureType: input.feature,
@@ -117,50 +194,6 @@ export class AIExecutionService {
       throw new AiProviderUnavailableError('AI provider is unavailable', meta);
     }
 
-    // Fallback: único target permitido = MockAIProvider (AC-02/AC-05).
-    logAIExecutionEvent(AI_FALLBACK_USED_EVENT, {
-      featureType: input.feature,
-      provider: 'mock',
-      originalProvider: primaryId,
-      fallbackUsed: true,
-      fallbackReason: errorCode,
-      timeoutMs: config.timeoutMs,
-      correlationId: input.correlationId,
-    });
-
-    try {
-      const fb = await withTimeout(
-        () => this.deps.mockProvider.generate({ feature: input.feature, input: input.input, languageCode: input.languageCode, preferMock: true }),
-        { timeoutMs: config.timeoutMs },
-      );
-      const metadata: AIExecutionMetadata = {
-        featureType: input.feature,
-        provider: 'mock',
-        originalProvider: primaryId,
-        fallbackUsed: true,
-        fallbackReason: errorCode,
-        timeoutMs: config.timeoutMs,
-        latencyMs: now() - start,
-        originalErrorCode: errorCode,
-        correlationId: input.correlationId,
-        status: 'fallback',
-      };
-      return { output: fb.output as TOutput, metadata };
-    } catch (fbErr) {
-      // EC-05: mock fallback también falló → error controlado, sin loop, sin Anthropic.
-      const meta = {
-        featureType: input.feature,
-        provider: 'mock' as ProviderId,
-        originalProvider: primaryId,
-        fallbackUsed: true,
-        fallbackReason: errorCode,
-        timeoutMs: config.timeoutMs,
-        latencyMs: now() - start,
-        originalErrorCode: errorCode,
-        correlationId: input.correlationId,
-      };
-      logAIExecutionEvent(AI_FALLBACK_FAILED_EVENT, { ...meta, errorCode: codeOf(fbErr) });
-      throw new AiFallbackFailedError('AI fallback provider failed', meta);
-    }
+    return this.executeMockFallback<TOutput>(input, errorCode, start);
   }
 }

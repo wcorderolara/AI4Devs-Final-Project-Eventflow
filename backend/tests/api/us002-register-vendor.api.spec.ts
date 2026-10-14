@@ -5,32 +5,20 @@
 // regression organizer. Skip limpio sin BD.
 import { describe, it, expect } from 'vitest';
 import request from 'supertest';
-import { PrismaClient } from '@prisma/client';
 import { createApp } from '../../src/app.js';
 import { config } from '../../src/config/env.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { CAPTCHA, uniqEmail } from '../helpers/http.js';
 
-const prisma = new PrismaClient();
-
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const app = createApp();
-const CAPTCHA = '__test__';
-const uniq = (): string => `us002api_${Date.now()}_${Math.floor(Math.random() * 1e6)}@eventflow.test`;
 
 function vendorPayload(over: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     role: 'vendor',
     businessName: 'Catering Luna SA',
-    email: uniq(),
+    email: uniqEmail('us002api'),
     password: 'segura12345',
     acceptedTerms: true,
     captchaToken: CAPTCHA,
@@ -40,7 +28,7 @@ function vendorPayload(over: Record<string, unknown> = {}): Record<string, unkno
 
 describe.skipIf(!dbUp)('US-002 QA-003 — POST /api/v1/auth/register (role=vendor)', () => {
   it('AC-01: 201 con role=vendor, cookie de sesión y name = businessName', async () => {
-    const email = uniq();
+    const email = uniqEmail('us002api');
     const res = await request(app).post('/api/v1/auth/register').send(vendorPayload({ email }));
     expect(res.status).toBe(201);
     expect(res.body.data).toMatchObject({ role: 'vendor', status: 'active', name: 'Catering Luna SA' });
@@ -54,7 +42,7 @@ describe.skipIf(!dbUp)('US-002 QA-003 — POST /api/v1/auth/register (role=vendo
   });
 
   it('AC-03: Accept-Language pt → preferred_language=pt persistido', async () => {
-    const email = uniq();
+    const email = uniqEmail('us002api');
     const res = await request(app)
       .post('/api/v1/auth/register')
       .set('Accept-Language', 'pt-BR,pt;q=0.9')
@@ -66,7 +54,7 @@ describe.skipIf(!dbUp)('US-002 QA-003 — POST /api/v1/auth/register (role=vendo
   });
 
   it('EC-01/SEC-001: email de organizer existente → 409 EMAIL_TAKEN con payload idéntico cross-flow', async () => {
-    const email = uniq();
+    const email = uniqEmail('us002api');
     // 1) organizer se registra primero (US-001).
     const org = await request(app).post('/api/v1/auth/register').send({
       role: 'organizer',
@@ -103,7 +91,7 @@ describe.skipIf(!dbUp)('US-002 QA-003 — POST /api/v1/auth/register (role=vendo
   });
 
   it('EC-02: captcha inválido → 400 CAPTCHA_INVALID sin persistencia (D1)', async () => {
-    const email = uniq();
+    const email = uniqEmail('us002api');
     const res = await request(app)
       .post('/api/v1/auth/register')
       .send(vendorPayload({ email, captchaToken: 'token-invalido' }));
@@ -119,7 +107,7 @@ describe.skipIf(!dbUp)('US-002 QA-003 — POST /api/v1/auth/register (role=vendo
   });
 
   it('NT-04/D2: role=admin → 400 VALIDATION_ERROR; payload vendor con name → 400 (.strict())', async () => {
-    const email = uniq();
+    const email = uniqEmail('us002api');
     const admin = await request(app).post('/api/v1/auth/register').send(vendorPayload({ email, role: 'admin' }));
     expect(admin.status).toBe(400);
     expect(await prisma.user.findUnique({ where: { email } })).toBeNull();
@@ -135,7 +123,7 @@ describe.skipIf(!dbUp)('US-002 QA-003 — POST /api/v1/auth/register (role=vendo
     const res = await request(app).post('/api/v1/auth/register').send({
       role: 'organizer',
       name: 'Regressión Organizer',
-      email: uniq(),
+      email: uniqEmail('us002api'),
       password: 'segura12345',
       acceptedTerms: true,
       captchaToken: CAPTCHA,

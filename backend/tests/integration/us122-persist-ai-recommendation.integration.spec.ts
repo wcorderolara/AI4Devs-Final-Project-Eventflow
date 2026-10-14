@@ -2,24 +2,13 @@
 // (`User`, `AIPromptVersion`), estado `pending`, metadata en `ai_meta`, rechazo de prompt version
 // inexistente y soporte de transaction client. Skip limpio si no hay BD alcanzable (patrón del repo).
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { PrismaClient } from '@prisma/client';
 import { PrismaAIRecommendationRepository } from '../../src/modules/ai-assistance/infrastructure/prisma-ai-recommendation.repository.js';
 import { syncPromptVersionsFromRegistry, promptVersionSyncRows } from '../../src/modules/ai-assistance/infrastructure/ai-prompt-version-sync.js';
 import { PersistAIRecommendationService } from '../../src/modules/ai-assistance/application/persist-ai-recommendation.service.js';
 import { AIPromptVersionNotFoundError } from '../../src/modules/ai-assistance/domain/errors/ai-recommendation-persistence.errors.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
 
-const prisma = new PrismaClient();
-
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const USER_ID = '00000000-0000-4000-8000-0000000a1122';
 const USER_EMAIL = 'us122.persist.test@example.com';

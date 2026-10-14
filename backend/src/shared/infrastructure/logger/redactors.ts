@@ -1,29 +1,15 @@
-// US-113 (PB-P2-010 / BE-003). Redactores por conjuntos fijos declarados por
-// el Tech Spec §7 D3 + SEC-01..SEC-04 de la User Story. NO reemplazan al
-// heurístico `redact()` existente (usado por el stub console-based legacy);
-// ambos coexisten (Deviation D-05 del execution record).
+// Redactor único de logs (US-108 / SEC-002 + US-113 / PB-P2-010 D3). El logger lo aplica en
+// `formatters.log` sobre CADA línea emitida, de modo que ningún módulo pueda filtrar secretos
+// aunque los incluya por error. Nunca muta la entrada: devuelve una copia.
 //
-// Contrato:
-//   * `redactSecrets(obj)`  — reemplaza VALORES de las claves de SECRET_KEYS
-//     (12 campos) por `[REDACTED]`. Case-insensitive. Aplica SIEMPRE — no
-//     depende de `NODE_ENV` (AC-03).
-//   * `redactPII(obj, env, includePII)` — reemplaza VALORES de las claves de
-//     PII_KEYS (7 campos) por `[REDACTED]`. En `NODE_ENV=development` +
-//     `LOG_INCLUDE_PII=true` NO redacta (para debug local). En cualquier otro
-//     env, redacta (AC-04, SEC-02).
-//   * `redactHeaders(headers)` — reemplaza VALORES de los headers HTTP
-//     sensibles (5 headers) por `[REDACTED]`. Aplica SIEMPRE — independiente
-//     del `NODE_ENV` (AC-07, SEC-03).
+//   * `redactSecrets(obj)` — siempre, sin depender de `NODE_ENV` (AC-03, SEC-07). Ver `isSensitiveKey`.
+//   * `redactPII(obj, env, includePII)` — PII_KEYS; sólo se omite en development + LOG_INCLUDE_PII.
+//   * `redactHeaders(headers)` — headers HTTP sensibles, primer nivel (AC-07, SEC-03).
 //
-// Semántica de profundidad (SEC-04):
-//   * Recursivo hasta `MAX_DEPTH = 5`. Excedido → se preserva el subárbol tal
-//     cual (evita loops sin descartar información legítima poco profunda).
-//
-// El logger de Pino invoca `redactSecrets` + `redactPII` en su `formatters.log`
-// (BE-004). El middleware `request-logger` invoca `redactHeaders` sobre
-// `req.headers` antes de pasarlos al context del log line.
+// Recorrido hasta MAX_DEPTH; más profundo se trunca (nunca se emite un subárbol sin redactar).
+// Los `Error` se serializan como `{ name, message, stack }`.
 
-/** Conjunto fijo de claves de secretos (D3 · SEC-01) — case-insensitive. */
+/** Claves de secretos exactas (comparación normalizada: minúsculas y sin `-`, `_`, `.`). */
 export const SECRET_KEYS: ReadonlySet<string> = new Set([
   'password',
   'pwd',
@@ -33,12 +19,18 @@ export const SECRET_KEYS: ReadonlySet<string> = new Set([
   'secret',
   'authorization',
   'cookie',
+  'set-cookie',
   'session',
+  'sid',
+  'jti',
   'refresh_token',
   'access_token',
   'jwt',
   'bearer',
 ]);
+
+/** Toda clave que CONTENGA alguno de estos fragmentos es secreta (SESSION_SECRET, captchaToken, newPassword…). */
+const SECRET_FRAGMENTS = ['secret', 'token', 'password'] as const;
 
 /** Conjunto fijo de claves de PII (D3 · SEC-02) — case-insensitive. */
 export const PII_KEYS: ReadonlySet<string> = new Set([
@@ -60,50 +52,37 @@ export const HEADER_KEYS: ReadonlySet<string> = new Set([
   'x-session-token',
 ]);
 
-/** Profundidad máxima de recursión (SEC-04). */
-const MAX_DEPTH = 5;
+const MAX_DEPTH = 8;
 
-/** Marcador emitido en lugar del valor sensible. */
 export const REDACTED = '[REDACTED]';
-
-/** Marcador emitido cuando el serializer detecta una referencia circular (EC-04). */
 export const CIRCULAR = '[CIRCULAR]';
+export const TRUNCATED = '[TRUNCATED]';
 
 type Env = 'development' | 'test' | 'production';
 
-/**
- * Redacta VALORES de claves listadas en SECRET_KEYS. Case-insensitive.
- * Aplica siempre (no depende de env).
- */
+const normalize = (key: string): string => key.toLowerCase().replace(/[-_.]/g, '');
+const NORMALIZED_SECRET_KEYS: ReadonlySet<string> = new Set([...SECRET_KEYS].map(normalize));
+
+/** ¿La clave transporta un secreto/credencial? */
+export function isSensitiveKey(key: string): boolean {
+  const n = normalize(key);
+  return NORMALIZED_SECRET_KEYS.has(n) || SECRET_FRAGMENTS.some((f) => n.includes(f));
+}
+
+const isPIIKey = (key: string): boolean => PII_KEYS.has(key.toLowerCase());
+
 export function redactSecrets(input: unknown): unknown {
-  return redactByKeys(input, SECRET_KEYS, 0, new WeakSet());
+  return redactWhere(input, isSensitiveKey, 0, new WeakSet());
 }
 
-/**
- * Redacta VALORES de claves listadas en PII_KEYS. En `development` +
- * `includePII=true` retorna el input SIN redactar (para debug local — VR-03).
- * En cualquier otro caso, redacta.
- */
-export function redactPII(
-  input: unknown,
-  env: Env,
-  includePII: boolean,
-): unknown {
+/** En `development` + `includePII=true` no redacta (debug local — VR-03). */
+export function redactPII(input: unknown, env: Env, includePII: boolean): unknown {
   if (env === 'development' && includePII) return input;
-  return redactByKeys(input, PII_KEYS, 0, new WeakSet());
+  return redactWhere(input, isPIIKey, 0, new WeakSet());
 }
 
-/**
- * Redacta VALORES de headers HTTP listados en HEADER_KEYS. Case-insensitive.
- * Aplica SIEMPRE — independiente del env (SEC-03). Retorna una copia; nunca
- * muta el objeto original.
- *
- * Acepta el shape lax de `req.headers` de Express (`Record<string, string |
- * string[] | undefined>`).
- */
-export function redactHeaders(
-  headers: Record<string, unknown>,
-): Record<string, unknown> {
+/** Acepta el shape laxo de `req.headers` de Express. */
+export function redactHeaders(headers: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(headers)) {
     out[key] = HEADER_KEYS.has(key.toLowerCase()) ? REDACTED : value;
@@ -111,26 +90,32 @@ export function redactHeaders(
   return out;
 }
 
-function redactByKeys(
+function redactWhere(
   value: unknown,
-  keys: ReadonlySet<string>,
+  isRedacted: (key: string) => boolean,
   depth: number,
-  seen: WeakSet<object>,
+  ancestors: WeakSet<object>,
 ): unknown {
   if (value === null || typeof value !== 'object') return value;
-  if (depth > MAX_DEPTH) return value; // preserva subárbol; no descarta datos legítimos.
-  if (seen.has(value as object)) return CIRCULAR;
-  seen.add(value as object);
+  if (depth >= MAX_DEPTH) return TRUNCATED;
+  if (ancestors.has(value)) return CIRCULAR;
+  if (value instanceof Date) return value;
+  if (value instanceof Error) {
+    return { name: value.name, message: value.message, stack: value.stack };
+  }
+
+  ancestors.add(value);
+  let out: unknown;
   if (Array.isArray(value)) {
-    return value.map((item) => redactByKeys(item, keys, depth + 1, seen));
-  }
-  const out: Record<string, unknown> = {};
-  for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
-    if (keys.has(key.toLowerCase())) {
-      out[key] = REDACTED;
-    } else {
-      out[key] = redactByKeys(val, keys, depth + 1, seen);
+    out = value.map((item) => redactWhere(item, isRedacted, depth + 1, ancestors));
+  } else {
+    const obj: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+      obj[key] = isRedacted(key) ? REDACTED : redactWhere(val, isRedacted, depth + 1, ancestors);
     }
+    out = obj;
   }
+  // Sólo los ancestros cuentan como ciclo: una misma referencia en dos ramas hermanas se emite.
+  ancestors.delete(value);
   return out;
 }

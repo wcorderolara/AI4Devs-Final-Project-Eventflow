@@ -8,9 +8,9 @@
 // `VALIDATION_ERROR` (400 — pageSize fuera de rango o UUID malformado en `:id`), `INVALID_CURSOR`
 // (400 — cursor no decodifica), `VENDOR_NOT_FOUND` (404 — vendor inexistente o no `approved`
 // para no-admin). Otros ⇒ `UNEXPECTED`.
-import { httpGet } from '@/shared/api-client';
+import { httpGetData } from '@/shared/api-client';
 import type {
-  ListVendorReviewsEnvelope,
+  ListVendorReviewsDTO,
   ListVendorReviewsQuery,
   ListVendorReviewsView,
 } from './vendorReviewsApi.types';
@@ -18,7 +18,7 @@ import { toListVendorReviewsView } from './vendorReviewsApi.types';
 
 export const vendorReviewsApi = {
   async list(vendorId: string, query: ListVendorReviewsQuery = {}): Promise<ListVendorReviewsView> {
-    const envelope = await httpGet<ListVendorReviewsEnvelope>(
+    const dto = await httpGetData<ListVendorReviewsDTO>(
       `/vendors/${encodeURIComponent(vendorId)}/reviews`,
       {
         query: {
@@ -27,6 +27,6 @@ export const vendorReviewsApi = {
         },
       },
     );
-    return toListVendorReviewsView(envelope.data);
+    return toListVendorReviewsView(dto);
   },
 };

@@ -1,6 +1,6 @@
 // PB-P2-031 — Componentes de Data Display del design system.
 //
-// Fuente normativa: docs/ux-ui/EventFlow-Component-Foundations.md §21 (Tabs, Accordion),
+// Fuente normativa: docs/ux-ui/EventFlow-Component-Foundations.md §21 (Tabs),
 // §22 (Card, MetricCard), §23 (Table), §20/§24 (Pagination), §13 (DescriptionList) y §26
 // (CurrencyDisplay). Regla transversal (§37): semántica nativa antes que ARIA, y el estado
 // nunca depende sólo del color.
@@ -10,10 +10,6 @@ import { Calendar } from 'lucide-react';
 import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  Accordion,
-  AccordionItem,
-  AccordionPanel,
-  AccordionTrigger,
   Card,
   CardDescription,
   CardHeader,
@@ -534,81 +530,6 @@ describe('PB-P2-031 · Tabs', () => {
     expect(screen.getByRole('tabpanel')).toHaveTextContent('Panel guests');
     await user.click(screen.getByRole('tab', { name: 'Tareas' }));
     expect(screen.getByRole('tabpanel')).toHaveTextContent('Panel tasks');
-  });
-});
-
-describe('PB-P2-031 · Accordion', () => {
-  beforeEach(cleanup);
-
-  function renderAccordion(type: 'single' | 'multiple' = 'single') {
-    return render(
-      <Accordion type={type} defaultValue={['vendors']}>
-        <AccordionItem value="vendors">
-          <AccordionTrigger>Requisitos de proveedores</AccordionTrigger>
-          <AccordionPanel>Contenido de proveedores</AccordionPanel>
-        </AccordionItem>
-        <AccordionItem value="catering">
-          <AccordionTrigger>Restricciones de catering</AccordionTrigger>
-          <AccordionPanel>Contenido de catering</AccordionPanel>
-        </AccordionItem>
-        <AccordionItem value="legal" disabled>
-          <AccordionTrigger>Legal</AccordionTrigger>
-          <AccordionPanel>Contenido legal</AccordionPanel>
-        </AccordionItem>
-      </Accordion>,
-    );
-  }
-
-  it('el trigger es un botón dentro de un heading y publica `aria-expanded`', () => {
-    renderAccordion();
-    const open = screen.getByRole('button', { name: 'Requisitos de proveedores' });
-    expect(open).toHaveAttribute('aria-expanded', 'true');
-    expect(open.closest('h3')).not.toBeNull();
-    const closed = screen.getByRole('button', { name: 'Restricciones de catering' });
-    expect(closed).toHaveAttribute('aria-expanded', 'false');
-  });
-
-  it('el panel abierto está asociado al trigger por `aria-controls`', () => {
-    renderAccordion();
-    const trigger = screen.getByRole('button', { name: 'Requisitos de proveedores' });
-    const panel = screen.getByRole('region', { name: 'Requisitos de proveedores' });
-    expect(trigger).toHaveAttribute('aria-controls', panel.id);
-    expect(panel).toHaveTextContent('Contenido de proveedores');
-  });
-
-  it('`single` cierra el anterior; `multiple` mantiene ambos abiertos', async () => {
-    const user = userEvent.setup();
-    const { unmount } = renderAccordion('single');
-    await user.click(screen.getByRole('button', { name: 'Restricciones de catering' }));
-    expect(screen.queryByText('Contenido de proveedores')).toBeNull();
-    expect(screen.getByText('Contenido de catering')).toBeInTheDocument();
-    unmount();
-
-    renderAccordion('multiple');
-    await user.click(screen.getByRole('button', { name: 'Restricciones de catering' }));
-    expect(screen.getByText('Contenido de proveedores')).toBeInTheDocument();
-    expect(screen.getByText('Contenido de catering')).toBeInTheDocument();
-  });
-
-  it('el item deshabilitado no abre y `↑`/`↓` lo saltan', async () => {
-    const user = userEvent.setup();
-    renderAccordion();
-    const disabled = screen.getByRole('button', { name: 'Legal' });
-    expect(disabled).toBeDisabled();
-
-    screen.getByRole('button', { name: 'Requisitos de proveedores' }).focus();
-    await user.keyboard('{ArrowDown}');
-    expect(screen.getByRole('button', { name: 'Restricciones de catering' })).toHaveFocus();
-    await user.keyboard('{ArrowDown}');
-    // Sólo quedan dos triggers habilitados: el recorrido es circular y omite «Legal».
-    expect(screen.getByRole('button', { name: 'Requisitos de proveedores' })).toHaveFocus();
-  });
-
-  it('el panel cerrado se desmonta en vez de animar la altura', async () => {
-    const user = userEvent.setup();
-    renderAccordion();
-    await user.click(screen.getByRole('button', { name: 'Requisitos de proveedores' }));
-    expect(screen.queryByText('Contenido de proveedores')).toBeNull();
   });
 });
 

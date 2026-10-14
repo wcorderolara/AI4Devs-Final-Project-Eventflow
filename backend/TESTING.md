@@ -222,7 +222,7 @@ composition root. En CI, `pr.yml:test-backend-coverage:env` fija
 El bloque `SEC-001 · fixtures del mock — sin PII` corre patrones defensivos
 (email, `sk-XXX`, keywords sensibles) contra el `output` serializado de cada
 feature — UUIDs se strippean antes porque son parte del contrato. El guard
-estático de código (`us119-mock-no-network.guard.spec.ts`) verifica adicional
+estático de código (US-119 en `architecture-guards.spec.ts`) verifica adicional
 que el mock no importa SDKs de IA, HTTP ni secrets.
 
 **Correrlo aislado:**

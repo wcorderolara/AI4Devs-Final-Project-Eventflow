@@ -12,16 +12,6 @@ export interface SeedResetReportDTO {
   durationMs: number;
 }
 
-export interface SeedStatusEnvelope {
-  data: SeedStatusDTO;
-  meta: { correlationId: string; timestamp: string };
-}
-
-export interface SeedResetEnvelope {
-  data: SeedResetReportDTO;
-  meta: { correlationId: string; timestamp: string };
-}
-
 export interface SeedResetInput {
   reason?: string;
 }

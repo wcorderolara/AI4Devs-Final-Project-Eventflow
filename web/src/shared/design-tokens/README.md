@@ -36,13 +36,12 @@ cromo: cards, inputs, overlays, feedback e IA siguen exactamente igual.
 primitives.ts   Valores crudos, sin significado de UI (color.violet[600], space[6], radius.md)
       ↓         Los componentes NUNCA los consumen directamente.
 semantic.ts     Propósito (text.primary, actionPrimary.background, ai.surface, focusRing.*)
-      ↓         Es la capa que consumen Tailwind, las CSS variables y el producto.
-components.ts   Alias de componente limitados (button.primary.*, input.*, card.*,
-                sidebarItem.*, aiRecommendation.*) — siempre referencian semánticos.
+                Es la capa que consumen Tailwind, las CSS variables y el producto.
 ```
 
-Regla (Design Tokens §6): **los alias de componente referencian semánticos, nunca primitivos**, y
-**los componentes consumen semánticos, nunca primitivos**.
+Regla (Design Tokens §6): **los componentes consumen semánticos, nunca primitivos**. La capa de
+alias de componente (§27) no se implementa en TS: no tenía consumidores; los componentes del
+design system consumen directamente las utilidades semánticas.
 
 ### Archivos
 
@@ -50,8 +49,7 @@ Regla (Design Tokens §6): **los alias de componente referencian semánticos, nu
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `primitives.ts` | Escalas neutral / canvas (cromo del shell) / violet / lilac / coral / green / amber / red / blue / alpha; tipografía; spacing; sizing; radius; borders; shadows; layout; breakpoints; motion; focus; opacity; z-index; iconos. |
 | `semantic.ts`   | `text`, `background`, `surface`, `borderColor`, `actionPrimary/Secondary/Ghost/Destructive/Marketing`, `feedback`, `ai`, `platform`, `marketing`, `focusRing`, `selection`, `overlay`, `radii`, `elevation`.                   |
-| `components.ts` | `button`, `input`, `card`, `sidebarItem`, `aiRecommendation`.                                                                                                                                                                  |
-| `index.ts`      | Barrel + objeto `tokens` con las tres capas + tipos.                                                                                                                                                                           |
+| `index.ts`      | Barrel de las dos capas.                                                                                                                                                                                                       |
 
 ---
 

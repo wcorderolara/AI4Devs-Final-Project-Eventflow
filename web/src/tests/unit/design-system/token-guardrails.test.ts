@@ -33,11 +33,8 @@ describe('PB-P2-028 · design system · consumo de tokens', () => {
       'Textarea.tsx',
       'SearchInput.tsx',
       'Select.tsx',
-      'MultiSelect.tsx',
       'Checkbox.tsx',
-      'RadioGroup.tsx',
       'DateInput.tsx',
-      'CurrencyInput.tsx',
       'FileUpload.tsx',
     ]) {
       expect(names, `falta ${expected}`).toContain(expected);
@@ -88,14 +85,11 @@ describe('PB-P2-028 · design system · consumo de tokens', () => {
       'ResponsiveTable.tsx',
       'Pagination.tsx',
       'Tabs.tsx',
-      'Accordion.tsx',
       'DescriptionList.tsx',
       'CurrencyDisplay.tsx',
       'Modal.tsx',
       'ConfirmationDialog.tsx',
       'DropdownMenu.tsx',
-      'Popover.tsx',
-      'Tooltip.tsx',
     ]) {
       expect(names, `falta ${expected}`).toContain(expected);
     }
@@ -130,11 +124,7 @@ describe('PB-P2-028 · design system · consumo de tokens', () => {
   // PB-P2-031 — los overlays reutilizan la primitiva accesible ya instalada en vez de añadir
   // una segunda librería de diálogos/menús.
   it('los overlays se apoyan en la primitiva accesible ya instalada', () => {
-    for (const file of [
-      'overlays/Modal.tsx',
-      'overlays/DropdownMenu.tsx',
-      'overlays/Popover.tsx',
-    ]) {
+    for (const file of ['overlays/Modal.tsx', 'overlays/DropdownMenu.tsx']) {
       expect(read(`${ROOT}/${file}`), `${file} debe reutilizar Headless UI`).toContain(
         "from '@headlessui/react'",
       );
@@ -306,7 +296,7 @@ describe('PB-P2-028 · design system · consumo de tokens', () => {
 
   it('el foco usa el tratamiento canónico focus-visible, nunca `focus:` genérico', () => {
     const interactive = sources.filter((file) =>
-      /Button\.tsx|IconButton\.tsx|ActionLink\.tsx|TextLink\.tsx|FieldAction\.tsx|MultiSelect\.tsx|fieldStyles\.ts|actionStyles\.ts/.test(
+      /Button\.tsx|IconButton\.tsx|ActionLink\.tsx|TextLink\.tsx|FieldAction\.tsx|fieldStyles\.ts|actionStyles\.ts/.test(
         file,
       ),
     );

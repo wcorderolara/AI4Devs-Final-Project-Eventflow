@@ -80,13 +80,12 @@ systemctl enable --now docker
 for i in 1 2 3 4 5; do aws ecr get-login-password --region \$REGION | docker login --username AWS --password-stdin ${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com && break || sleep 10; done
 docker pull "\$IMAGE"
 DB=\$(aws ssm get-parameter --name /eventflow/\$ENVN/DATABASE_URL --with-decryption --query Parameter.Value --output text --region \$REGION)
-JWT=\$(aws ssm get-parameter --name /eventflow/\$ENVN/JWT_SECRET --with-decryption --query Parameter.Value --output text --region \$REGION)
 SES=\$(aws ssm get-parameter --name /eventflow/\$ENVN/SESSION_SECRET --with-decryption --query Parameter.Value --output text --region \$REGION)
 docker network create eventflow || true
 docker rm -f backend caddy || true
 docker run -d --name backend --restart always --network eventflow \
   -e NODE_ENV=development -e PORT=3000 \
-  -e DATABASE_URL="\$DB" -e JWT_SECRET="\$JWT" -e SESSION_SECRET="\$SES" \
+  -e DATABASE_URL="\$DB" -e SESSION_SECRET="\$SES" \
   -e CORS_ORIGINS="https://main.d2jh1ql4whmeue.amplifyapp.com,https://staging.d2jh1ql4whmeue.amplifyapp.com" \
   -e CORS_CREDENTIALS=true -e SESSION_COOKIE_SAMESITE=none -e SESSION_COOKIE_SECURE=true \
   -e LLM_PROVIDER=mock -e CAPTCHA_PROVIDER=mock \

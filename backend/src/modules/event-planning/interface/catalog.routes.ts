@@ -5,9 +5,8 @@
 // `event-catalog` (`publicEventTypeRouter`) con shape superset spec-compliant. Este archivo
 // conserva únicamente `locationsRouter` porque `Location` no tuvo su propio módulo CRUD todavía.
 import { Router } from 'express';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { requireSession } from '../../../infrastructure/auth-composition.js';
 import { PrismaLocationRepository } from '../infrastructure/prisma-catalog.repository.js';
 import { ListActiveLocationsUseCase } from '../application/list-locations.use-case.js';
 import { CatalogController } from './catalog.controller.js';
@@ -18,7 +17,5 @@ const controller = new CatalogController({
   listLocations: new ListActiveLocationsUseCase(locationRepo),
 });
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-
 export const locationsRouter = Router();
-locationsRouter.get('/', sessionAuth, asyncHandler(controller.listLocations));
+locationsRouter.get('/', requireSession, asyncHandler(controller.listLocations));

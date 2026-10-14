@@ -10,7 +10,6 @@ const validEnv = {
   PORT: '3000',
   NODE_ENV: 'test',
   DATABASE_URL: 'postgresql://user:password@localhost:5432/eventflow_test?schema=public',
-  JWT_SECRET: 'test_jwt_secret_min_32_characters_long_xx',
   // US-094: SESSION_SECRET es requerido (min 32, sin default por seguridad — ADR-SEC-002).
   SESSION_SECRET: 'test_session_secret_min_32_characters_long_xx',
   LLM_PROVIDER: 'mock',
@@ -26,8 +25,6 @@ describe('parseConfig (US-089 config validation)', () => {
     // Defaults aplicados.
     expect(config.HELMET_ENABLED).toBe(true);
     expect(config.LOG_LEVEL).toBe('info');
-    expect(config.JWT_EXPIRES_IN).toBe('7d');
-    expect(config.SEED_ENABLED).toBe(false);
   });
 
   it('NT-01: lanza ZodError mencionando DATABASE_URL cuando falta (fail-fast, EC-01)', () => {

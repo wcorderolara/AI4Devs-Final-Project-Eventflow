@@ -1,18 +1,23 @@
 // Errores de dominio del directorio (US-045 / BE-004). Mapeados por el error handler global
 // (`error-handler.middleware.ts`) a los códigos estables `INVALID_FILTERS` / `INVALID_CURSOR`.
-import { AppError } from '../../../shared/domain/errors/app.error.js';
+import { AppError, type ErrorDetail } from '../../../shared/domain/errors/app.error.js';
+import { InvalidCursorError as SharedInvalidCursorError } from '../../../shared/pagination/cursor.js';
 
 export class InvalidFiltersError extends AppError {
   readonly code = 'INVALID_FILTERS';
+  override readonly httpStatus = 400;
 
   constructor(public readonly invalid: string[]) {
     super('Invalid search filters');
   }
+
+  protected override httpDetails(): ErrorDetail[] {
+    return this.invalid.map((field) => ({ field, message: 'invalid' }));
+  }
 }
 
-export class InvalidCursorError extends AppError {
-  readonly code = 'INVALID_CURSOR';
-
+// Mismo error compartido; el directorio conserva su mensaje histórico.
+export class InvalidCursorError extends SharedInvalidCursorError {
   constructor() {
     super('Invalid pagination cursor');
   }

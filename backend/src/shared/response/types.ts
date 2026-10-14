@@ -1,8 +1,8 @@
 // Tipos del envelope de respuesta (US-093 / BE-004). ADR-API-002.
-export interface ErrorDetail {
-  field: string;
-  message: string;
-}
+import type { ErrorDetail } from '../domain/errors/app.error.js';
+
+// `ErrorDetail` vive en el dominio (lo produce `AppError.toHttp()`); se re-exporta por compatibilidad.
+export type { ErrorDetail };
 
 export interface ErrorEnvelope {
   error: {

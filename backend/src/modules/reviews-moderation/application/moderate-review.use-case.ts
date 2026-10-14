@@ -47,6 +47,7 @@ import { Prisma, ReviewStatus, type PrismaClient } from '@prisma/client';
 import type { ClockPort } from '../../../shared/domain/clock.port.js';
 import type { DomainEventLogger } from '../../../shared/observability/domain-event-logger.js';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
+import { recordAdminAction } from '../../../infrastructure/persistence/record-admin-action.js';
 import {
   InvalidReviewTransitionError,
   ReviewNotFoundForModerationError,
@@ -138,22 +139,19 @@ export class ModerateReviewUseCase {
       // 4) INSERT AdminAction (append-only, BR-ADMIN-011). Payload snapshot en `metadata`.
       // `correlationId` va dentro de `metadata` mientras `admin_actions.correlation_id` no
       // exista como columna dedicada (deviation D-01 de US-016 — escalado a US-099).
-      const adminAction = await tx.adminAction.create({
-        data: {
-          adminUserId: currentUserId,
-          action: body.action,
-          targetEntity: 'review',
-          targetId: reviewId,
-          metadata: {
-            correlationId: ctx.correlationId ?? null,
-            reason: body.reason,
-            from_status: fromStatus,
-            to_status: targetStatus,
-            rating_snapshot: review.rating,
-            comment_snapshot: review.comment,
-          } as Prisma.InputJsonObject,
+      const adminAction = await recordAdminAction(tx, {
+        adminUserId: currentUserId,
+        action: body.action,
+        targetEntity: 'review',
+        targetId: reviewId,
+        correlationId: ctx.correlationId,
+        metadata: {
+          reason: body.reason,
+          from_status: fromStatus,
+          to_status: targetStatus,
+          rating_snapshot: review.rating,
+          comment_snapshot: review.comment,
         },
-        select: { id: true },
       });
 
       // 5) UPDATE review.admin_action_id — enlace de cadena review → último AdminAction

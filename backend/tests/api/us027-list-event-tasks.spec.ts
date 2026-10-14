@@ -4,45 +4,16 @@
 //   estado vacío TS-07, negatives NT-07..11, authorization AUTH-TS-01..05, no-revelación).
 import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
-import { PrismaClient } from '@prisma/client';
 import { createApp } from '../../src/app.js';
+import { dbUp, getTestPrisma } from '../helpers/test-db.js';
+import { sessionHelpers } from '../helpers/http.js';
 
-const prisma = new PrismaClient();
-let dbUp = false;
-try {
-  await Promise.race([
-    prisma.$queryRawUnsafe('SELECT 1'),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000)),
-  ]);
-  dbUp = true;
-} catch {
-  dbUp = false;
-}
+const prisma = getTestPrisma();
 
 const app = createApp();
-const CAPTCHA = '__test__';
 const SOME_UUID = '11111111-1111-4111-8111-111111111111';
-const uniqEmail = (p: string): string =>
-  `us027_${p}_${Date.now()}_${Math.floor(Math.random() * 1e6)}@eventflow.test`;
 
-async function agentFor(role: 'organizer' | 'vendor'): Promise<ReturnType<typeof request.agent>> {
-  const email = uniqEmail(role);
-  const agent = request.agent(app);
-  const payload: Record<string, unknown> = {
-    acceptedTerms: true,
-    email,
-    password: 'Secret1234',
-    role,
-    captchaToken: CAPTCHA,
-  };
-  if (role === 'vendor') payload.businessName = 'Vendor Demo SA';
-  else payload.name = 'Organizer';
-  await agent.post('/api/v1/auth/register').send(payload);
-  await agent
-    .post('/api/v1/auth/login')
-    .send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
-  return agent;
-}
+const { agentFor } = sessionHelpers(app, { tag: 'us027', name: 'Organizer' });
 
 describe('US-027 QA-003 (sin BD): auth y forma del payload', () => {
   it('anónimo → 401 AUTHENTICATION_REQUIRED (AUTH-TS-05)', async () => {

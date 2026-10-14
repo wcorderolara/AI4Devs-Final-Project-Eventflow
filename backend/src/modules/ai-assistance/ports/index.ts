@@ -10,3 +10,4 @@ export type {
 } from './ai-contract.js';
 export type { LLMProvider, LlmGenerationResult } from './llm-provider.js';
 export type { AIRecommendationRepository } from './ai-recommendation.repository.js';
+export type { PromptVersionIdResolver } from './prompt-version-id.resolver.js';

@@ -57,8 +57,3 @@ export function renderT7Template(
     body: interpolate(template.body, values),
   };
 }
-
-/** Locales soportados por el catálogo T-7. Expuesto para tests exhaustivos. */
-export function supportedT7Languages(): readonly SupportedLanguage[] {
-  return Object.keys(CATALOG) as SupportedLanguage[];
-}

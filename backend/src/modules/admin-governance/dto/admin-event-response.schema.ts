@@ -2,6 +2,7 @@
 // Mirrors `AdminEventReadView` (§7 DTOs). No es consumido por el runtime de la app; sirve como
 // fuente única del contrato en la documentación.
 import { z } from 'zod';
+import { uuidParamsSchema } from '../../../shared/validation/uuid-params.js';
 
 export const AdminEventOwnerSchema = z
   .object({
@@ -102,8 +103,4 @@ export const AdminEventsListResponseSchema = z
   })
   .strict();
 
-export const AdminEventIdOpenApiParamSchema = z
-  .object({
-    id: z.string().uuid(),
-  })
-  .strict();
+export const AdminEventIdOpenApiParamSchema = uuidParamsSchema('id');

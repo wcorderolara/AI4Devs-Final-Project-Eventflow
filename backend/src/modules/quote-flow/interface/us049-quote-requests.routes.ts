@@ -6,11 +6,9 @@
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { validateRequestMiddleware } from '../../../shared/interface/middlewares/validate-request.middleware.js';
-import { roleMiddleware } from '../../../shared/interface/middlewares/role.middleware.js';
-import { createSessionAuthMiddleware } from '../../../shared/interface/http/session-auth.js';
 import { asyncHandler } from '../../../shared/interface/http/async-handler.js';
 import { quoteRequestRateLimit } from '../../../shared/interface/http/quote-request-rate-limit.js';
-import { sessionRepository, clock } from '../../../infrastructure/auth-composition.js';
+import { requireSession, requireRole } from '../../../infrastructure/auth-composition.js';
 import { success } from '../../../shared/response/index.js';
 import { UnauthorizedError } from '../../../shared/domain/errors/unauthorized.error.js';
 import { logger } from '../../../shared/infrastructure/logger/index.js';
@@ -20,8 +18,12 @@ import { CreateQuoteRequestUs049UseCase } from '../application/create-quote-requ
 import { GetActiveQrCountUs050UseCase } from '../application/get-active-qr-count.us050.use-case.js';
 // US-068 (PB-P2-005 / BE-005): wiring del handler `quote_request_received` in-tx.
 import { OnQuoteRequestCreatedHandler } from '../../notifications/application/on-quote-request-created.handler.js';
-import { PrismaNotificationQrReceivedRepository } from '../../notifications/infrastructure/prisma-notification-qr-received.repository.js';
-import { LoggingSimulatedQrReceivedEmailAdapter } from '../../notifications/infrastructure/logging-simulated-qr-received-email.adapter.js';
+import { PrismaNotificationRepository } from '../../notifications/infrastructure/prisma-notification.repository.js';
+import { LoggingSimulatedEmailAdapter } from '../../notifications/infrastructure/logging-simulated-email.adapter.js';
+import {
+  QR_RECEIVED_EMAIL,
+  QR_RECEIVED_NOTIFICATION,
+} from '../../notifications/infrastructure/notification-channels.js';
 import { PrismaOrganizerLanguageLookup } from '../../event-planning/infrastructure/prisma-organizer-language.lookup.js';
 import {
   createQuoteRequestUs049BodySchema,
@@ -33,8 +35,6 @@ import {
 } from '../dto/active-qr-count.us050.query.js';
 import { prisma } from '../../../infrastructure/prisma/client.js';
 
-const sessionAuth = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
-const organizerOnly = roleMiddleware(['organizer']);
 const validate = validateRequestMiddleware;
 
 const activeCounter = new PrismaQuoteRequestActiveCounterAdapter(prisma);
@@ -44,9 +44,9 @@ const domainLogger = new StructuredDomainEventLogger();
 // se reutiliza structurally como `VendorLanguagePreferenceReader` (mismo shape). Los adapters
 // aceptan el `tx` opcional cuando el handler los invoque dentro de la transacción del UC.
 const onQrCreatedHandler = new OnQuoteRequestCreatedHandler({
-  notificationRepo: new PrismaNotificationQrReceivedRepository(prisma),
+  notificationRepo: new PrismaNotificationRepository(QR_RECEIVED_NOTIFICATION, prisma),
   languageLookup: new PrismaOrganizerLanguageLookup(prisma),
-  emailAdapter: new LoggingSimulatedQrReceivedEmailAdapter(logger),
+  emailAdapter: new LoggingSimulatedEmailAdapter(QR_RECEIVED_EMAIL, logger),
   logger,
 });
 
@@ -74,8 +74,8 @@ export const us049QuoteRequestsRouter = Router();
 // US-049: POST canónico con rate limit 10 req/min.
 us049QuoteRequestsRouter.post(
   '/quote-requests',
-  sessionAuth,
-  organizerOnly,
+  requireSession,
+  requireRole('organizer'),
   quoteRequestRateLimit,
   validate(z.object({ body: createQuoteRequestUs049BodySchema })),
   asyncHandler(createQuoteRequestHandler),
@@ -84,8 +84,8 @@ us049QuoteRequestsRouter.post(
 // US-050: GET pre-check del límite BR-QUOTE-009. Sólo lectura; usa el rate limit global.
 us049QuoteRequestsRouter.get(
   '/quote-requests/active-count',
-  sessionAuth,
-  organizerOnly,
+  requireSession,
+  requireRole('organizer'),
   validate(z.object({ query: activeQrCountUs050QuerySchema })),
   asyncHandler(activeCountHandler),
 );

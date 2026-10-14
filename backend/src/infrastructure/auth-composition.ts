@@ -2,6 +2,7 @@
 // crypto, clock, logging) como singletons. Vive en app-infra para que tanto `identity-access` como
 // `user-profile` los reutilicen sin violar boundaries (los módulos pueden importar app-infra).
 // La instanciación no abre conexión a BD (Prisma conecta perezosamente en la primera query).
+import type { RequestHandler } from 'express';
 import { PrismaUserRepository } from './persistence/prisma-user.repository.js';
 import { PrismaSessionRepository } from './persistence/prisma-session.repository.js';
 import { PrismaPasswordResetTokenRepository } from './persistence/prisma-password-reset-token.repository.js';
@@ -12,6 +13,9 @@ import { StructuredAuthEventLogger } from './observability/structured-auth-event
 import { LoggingPasswordResetNotifier } from './notifications/logging-password-reset-notifier.js';
 import { LoggingWelcomeEmailNotifier } from './notifications/logging-welcome-email-notifier.js';
 import { InMemoryAuthAttemptTracker } from './security/in-memory-auth-attempt-tracker.js';
+import type { UserRoleName } from '../shared/auth/types.js';
+import { createSessionAuthMiddleware } from '../shared/interface/http/session-auth.js';
+import { roleMiddleware } from '../shared/interface/middlewares/role.middleware.js';
 
 export const userRepository = new PrismaUserRepository();
 export const sessionRepository = new PrismaSessionRepository();
@@ -26,3 +30,13 @@ export const passwordResetNotifier = new LoggingPasswordResetNotifier();
 export const welcomeEmailNotifier = new LoggingWelcomeEmailNotifier();
 // US-003 / BE-004 (DB-001): contador In-Memory de fallos IP+email para captcha condicional N=3.
 export const authAttemptTracker = new InMemoryAuthAttemptTracker(clock);
+
+// Guards de ruta listos (US-094 sesión + US-091 rol), construidos una sola vez. Orden en cada
+// ruta: `requireSession` → `requireRole(...)`. `optionalSession` no emite 401 (US-066).
+export const requireSession = createSessionAuthMiddleware({ sessions: sessionRepository, clock });
+export const optionalSession = createSessionAuthMiddleware({
+  sessions: sessionRepository,
+  clock,
+  optional: true,
+});
+export const requireRole = (...roles: UserRoleName[]): RequestHandler => roleMiddleware(roles);

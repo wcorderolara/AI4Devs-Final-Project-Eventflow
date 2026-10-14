@@ -20,8 +20,8 @@
 #   REPO_URL               (requerido)
 #   GITHUB_ACCESS_TOKEN    (requerido)
 #   AWS_REGION             (requerido)
-#   API_BASE_URL_DEMO      URL App Runner Demo  -> NEXT_PUBLIC_API_BASE_URL (PB-P2-022; placeholder si falta)
-#   API_BASE_URL_QA        URL App Runner QA    -> NEXT_PUBLIC_API_BASE_URL (PB-P2-022; placeholder si falta)
+#   API_BASE_URL_DEMO      URL backend EC2 Demo -> NEXT_PUBLIC_API_BASE_URL (PB-P2-022; placeholder si falta)
+#   API_BASE_URL_QA        URL backend EC2 QA   -> NEXT_PUBLIC_API_BASE_URL (PB-P2-022; placeholder si falta)
 #   CAPTCHA_SITE_KEY_DEMO  site key real de captcha en Demo (opcional; provider mock si vacío)
 #
 # Uso:
@@ -106,4 +106,4 @@ done
 echo "[provision-amplify] ✓ Listo. URLs:"
 echo "  Demo (main):    https://main.${APP_ID}.amplifyapp.com"
 echo "  QA   (staging): https://staging.${APP_ID}.amplifyapp.com"
-echo "[provision-amplify] Recuerda: actualiza NEXT_PUBLIC_API_BASE_URL con las URLs reales de App Runner (PB-P2-022)."
+echo "[provision-amplify] Recuerda: actualiza NEXT_PUBLIC_API_BASE_URL con las URLs reales del backend EC2 (PB-P2-022)."

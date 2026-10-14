@@ -3,9 +3,11 @@
 // organizer_search), cursor decode inválido, encode del nextCursor cuando hay más páginas, y
 // forma del envelope `{items, pagination}`.
 import { describe, expect, it } from 'vitest';
-import { ListEventsForAdminUseCase } from '../../src/modules/admin-governance/application/list-events-for-admin.use-case.js';
-import { encodeAdminEventsCursor } from '../../src/modules/admin-governance/application/admin-events-cursor.js';
-import { Us078InvalidCursorError } from '../../src/modules/admin-governance/domain/us078.errors.js';
+import {
+  ListEventsForAdminUseCase,
+  encodeAdminEventsCursor,
+} from '../../src/modules/admin-governance/application/list-events-for-admin.use-case.js';
+import { InvalidCursorError as Us078InvalidCursorError } from '../../src/shared/pagination/cursor.js';
 import type { AdminEventsQuery } from '../../src/modules/admin-governance/interface/admin-events-query.dto.js';
 import type { PrismaClient } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';

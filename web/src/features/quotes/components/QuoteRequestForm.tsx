@@ -13,6 +13,7 @@ import { useTranslations } from 'next-intl';
 import { useActiveQrCount, useCreateQuoteRequest } from '../hooks/quotesQueries';
 import type { QuoteRequestSource } from '../api/quotesApi.types';
 import { ApiError } from '@/shared/api-client';
+import { isKnownErrorCode } from '@/shared/error-handling/errorCodeMessages';
 import { QR_LIMIT_REASON_ID, QRLimitBadge } from './QRLimitBadge';
 
 /** Códigos de error del backend que renderizan un mensaje i18n dedicado. */
@@ -28,11 +29,6 @@ const KNOWN_ERROR_CODES = [
   'AUTHENTICATION_REQUIRED',
   'FORBIDDEN',
 ] as const;
-type KnownErrorCode = (typeof KNOWN_ERROR_CODES)[number];
-
-function isKnownErrorCode(code: string | undefined): code is KnownErrorCode {
-  return typeof code === 'string' && (KNOWN_ERROR_CODES as readonly string[]).includes(code);
-}
 
 const formSchema = z.object({
   budget: z
@@ -102,7 +98,7 @@ export function QuoteRequestForm(props: QuoteRequestFormProps): JSX.Element {
   });
 
   const bannerMessage = serverErrorCode
-    ? isKnownErrorCode(serverErrorCode)
+    ? isKnownErrorCode(serverErrorCode, KNOWN_ERROR_CODES)
       ? tError(serverErrorCode)
       : tError('UNEXPECTED')
     : null;

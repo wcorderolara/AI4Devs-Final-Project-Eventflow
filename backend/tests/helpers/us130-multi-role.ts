@@ -11,9 +11,10 @@
 import type { Express } from 'express';
 import type { PrismaClient } from '@prisma/client';
 import request from 'supertest';
+import { registerLogin, sessionCookie } from './http.js';
+import { createActiveEvent } from './fixtures/events.js';
 import { Argon2idPasswordHasher } from '../../src/infrastructure/security/argon2id-password-hasher.js';
 
-const CAPTCHA = '__test__';
 const uniqTag = (label: string): string =>
   `us130_${label}_${Date.now()}_${Math.floor(Math.random() * 1e9)}`;
 
@@ -31,15 +32,8 @@ async function registerLoginPublic(
   app: Express,
   role: 'organizer' | 'vendor',
 ): Promise<RoleAgent> {
-  const email = `${uniqTag(role)}@eventflow.test`;
-  const agent = request.agent(app);
-  const body =
-    role === 'vendor'
-      ? { acceptedTerms: true, email, password: 'Secret1234', businessName: 'Vendor Demo SA', role, captchaToken: CAPTCHA }
-      : { acceptedTerms: true, email, password: 'Secret1234', name: role, role, captchaToken: CAPTCHA };
-  const reg = await agent.post('/api/v1/auth/register').send(body);
-  await agent.post('/api/v1/auth/login').send({ email, password: 'Secret1234', captchaToken: CAPTCHA });
-  return { agent, userId: reg.body.data.id as string, email, role };
+  const { agent, userId, email } = await registerLogin(app, role, { tag: 'us130' });
+  return { agent, userId, email, role };
 }
 
 /**
@@ -60,15 +54,9 @@ export async function adminAgent(app: Express, prisma: PrismaClient): Promise<Ro
     data: { userId: user.id, expiresAt },
     select: { id: true },
   });
-  const cookieSecret = process.env.SESSION_SECRET ?? '';
-  const cookieName = process.env.SESSION_COOKIE_NAME ?? 'eventflow_session';
-  // Firma HMAC exacta al patrón de `cookieParser(SESSION_SECRET)` (ver us071 integration).
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- runtime signer (test-only)
-  const signature = require('cookie-signature') as { sign: (v: string, s: string) => string };
-  const signedValue = `s:${signature.sign(session.id, cookieSecret)}`;
   const agent = request.agent(app);
   // Supertest `agent` mantiene el jar de cookies para requests subsecuentes.
-  agent.jar.setCookie(`${cookieName}=${encodeURIComponent(signedValue)}; Path=/`);
+  agent.jar.setCookie(`${sessionCookie(session.id)}; Path=/`);
   return { agent, userId: user.id, email, role: 'admin' };
 }
 
@@ -108,19 +96,8 @@ export async function vendorProfileFor(
  * Crea + activa un evento owned por el organizer agent. Requiere que existan `event_types` y
  * `locations` de referencia (los tests semillan `wedding` + Guatemala en su beforeAll).
  */
-export async function activeEvent(agent: Agent, locationId: string): Promise<string> {
-  const created = await agent.post('/api/v1/events').send({
-    eventTypeCode: 'wedding',
-    eventDate: '2026-12-31',
-    guestsCount: 50,
-    locationId,
-    estimatedBudget: '1000.00',
-    currencyCode: 'GTQ',
-    languageCode: 'es-LATAM',
-  });
-  const id = created.body.data.id as string;
-  await agent.post(`/api/v1/events/${id}/activate`);
-  return id;
+export function activeEvent(agent: Agent, locationId: string): Promise<string> {
+  return createActiveEvent(agent, locationId, { guestsCount: 50, estimatedBudget: '1000.00' });
 }
 
 /**
