@@ -39,6 +39,8 @@ beforeEach(() => {
   replace.mockClear();
   refresh.mockClear();
   meRole = 'admin';
+  // jsdom no aplica `Set-Cookie`: los handlers emulan la cookie `eventflow_role` del backend.
+  document.cookie = 'eventflow_role=admin; path=/';
   server.use(
     http.get('*/api/v1/users/me', () => {
       if (!meRole) {
@@ -52,18 +54,23 @@ beforeEach(() => {
         { status: 200 },
       );
     }),
-    http.post('*/api/v1/auth/logout', () => new HttpResponse(null, { status: 204 })),
-    http.post('*/api/v1/auth/login', () =>
-      HttpResponse.json(
+    http.post('*/api/v1/auth/logout', () => {
+      document.cookie = 'eventflow_role=; path=/; max-age=0';
+      return new HttpResponse(null, { status: 204 });
+    }),
+    http.post('*/api/v1/auth/login', () => {
+      document.cookie = 'eventflow_role=organizer; path=/';
+      return HttpResponse.json(
         { data: { ...meBase, role: 'organizer' }, meta: { correlationId: 'r', timestamp: meBase.createdAt } },
         { status: 200 },
-      ),
-    ),
+      );
+    }),
   );
 });
 
 afterEach(() => {
   vi.clearAllMocks();
+  document.cookie = 'eventflow_role=; path=/; max-age=0';
 });
 
 function Flow() {
