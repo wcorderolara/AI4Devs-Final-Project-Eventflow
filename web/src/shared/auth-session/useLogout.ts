@@ -1,8 +1,8 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
 import { ApiError, httpPost } from '@/shared/api-client';
+import { hardRedirect } from './hardRedirect';
 
 /**
  * useLogout (US-005 / FE-001..003). Llama `POST /api/v1/auth/logout` (204; el backend revoca la
@@ -11,7 +11,6 @@ import { ApiError, httpPost } from '@/shared/api-client';
  * se redirige a `/login`. Ante error de red se permanece en la página (sin toast — Deviation D2).
  */
 export function useLogout(): ReturnType<typeof useMutation<void, Error, void>> {
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   const cleanupAndRedirect = (): void => {
@@ -24,11 +23,11 @@ export function useLogout(): ReturnType<typeof useMutation<void, Error, void>> {
     });
     // Cookie UX de rol (no HttpOnly) usada por el routing guard (US-105/US-107).
     document.cookie = 'eventflow_role=; path=/; max-age=0; SameSite=Lax';
-    router.replace('/login');
-    // `replace` es una navegación *soft*: no re-ejecuta los Server Component layouts que resuelven
-    // `initialRole` desde la cookie `eventflow_role`. `router.refresh()` invalida el Router Cache
-    // para que el rol de la sesión cerrada no sobreviva en un layout cacheado tras el próximo login.
-    router.refresh();
+    // Navegación completa, no `router.replace` + `router.refresh()`: esa pareja compite (bajo carga
+    // el refresh de la ruta actual podía ganarle al replace y dejar a la persona en su panel ya sin
+    // sesión). Una carga nueva de `/login` descarta el Router Cache y los layouts que resolvieron
+    // `initialRole` desde `eventflow_role`, así el rol de la sesión cerrada no sobrevive al próximo login.
+    hardRedirect('/login');
   };
 
   return useMutation<void, Error, void>({

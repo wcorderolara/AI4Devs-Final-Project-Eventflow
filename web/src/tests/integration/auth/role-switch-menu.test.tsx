@@ -16,6 +16,8 @@ import { server } from '@/tests/msw/server';
 const push = vi.fn();
 const replace = vi.fn();
 const refresh = vi.fn();
+const hardRedirect = vi.fn();
+vi.mock('@/shared/auth-session/hardRedirect', () => ({ hardRedirect: (path: string) => hardRedirect(path) }));
 vi.mock('next/navigation', () => ({
   usePathname: () => '/organizer',
   useRouter: () => ({ push, replace, prefetch: vi.fn(), refresh }),
@@ -35,6 +37,7 @@ const meBase = {
 let meRole: 'admin' | 'organizer' | null = 'admin';
 
 beforeEach(() => {
+  hardRedirect.mockClear();
   push.mockClear();
   replace.mockClear();
   refresh.mockClear();
@@ -111,12 +114,11 @@ describe('repro — cambio de rol admin→organizer en la misma sesión', () => 
       expect(screen.getByRole('navigation', { name: 'Navegación de administración' })).toBeInTheDocument(),
     );
 
-    // 2) Logout (la sesión del backend queda revocada). Debe refrescar los Server Components para
-    //    que ningún layout cacheado conserve el rol admin en la cookie `eventflow_role`.
+    // 2) Logout (la sesión del backend queda revocada). Sale con navegación completa a /login, que
+    //    descarta los layouts cacheados con el rol admin.
     meRole = null;
     await user.click(screen.getByRole('button', { name: 'do-logout' }));
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/login'));
-    expect(refresh).toHaveBeenCalled();
+    await waitFor(() => expect(hardRedirect).toHaveBeenCalledWith('/login'));
 
     // 3) Login como organizer en la misma sesión de browser.
     meRole = 'organizer';

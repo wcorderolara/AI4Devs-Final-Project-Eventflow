@@ -14,11 +14,14 @@ import { server } from '@/tests/msw/server';
 
 const replace = vi.fn();
 const refresh = vi.fn();
+const hardRedirect = vi.fn();
+vi.mock('@/shared/auth-session/hardRedirect', () => ({ hardRedirect: (path: string) => hardRedirect(path) }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace, refresh, prefetch: vi.fn() }),
 }));
 
 afterEach(() => {
+  hardRedirect.mockClear();
   replace.mockClear();
   refresh.mockClear();
 });
@@ -55,13 +58,14 @@ describe('US-005 FE-001 — useLogout', () => {
     const { queryClient } = renderWithProviders(<LogoutProbe />);
     await user.click(screen.getByRole('button', { name: 'probe-logout' }));
 
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/login'));
+    await waitFor(() => expect(hardRedirect).toHaveBeenCalledWith('/login'));
     expect(queryClient.getQueryData(['me'])).toBeUndefined();
     expect(queryClient.getQueryData(['auth', 'x'])).toBeUndefined();
     expect(queryClient.getQueryData(['events'])).toEqual({ keep: true });
-    // Invalida el Router Cache: los Server Component layouts vuelven a leer `eventflow_role` y el
-    // rol de esta sesión no sobrevive en un layout cacheado tras el siguiente login (bug de menú).
-    expect(refresh).toHaveBeenCalled();
+    // Navegación completa (no replace + refresh de Next, que competían): ningún layout cacheado
+    // conserva el rol de esta sesión y no queda una navegación soft que la deje en su panel.
+    expect(replace).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
   });
 
   it('EC-01: 401 se trata igual que 204 (limpieza + redirect)', async () => {
@@ -76,7 +80,7 @@ describe('US-005 FE-001 — useLogout', () => {
     const user = userEvent.setup();
     const { queryClient } = renderWithProviders(<LogoutProbe />);
     await user.click(screen.getByRole('button', { name: 'probe-logout' }));
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/login'));
+    await waitFor(() => expect(hardRedirect).toHaveBeenCalledWith('/login'));
     expect(queryClient.getQueryData(['me'])).toBeUndefined();
   });
 
@@ -93,7 +97,7 @@ describe('US-005 FE-001 — useLogout', () => {
     renderWithProviders(<LogoutProbe />);
     await user.click(screen.getByRole('button', { name: 'probe-logout' }));
     await new Promise((r) => setTimeout(r, 50));
-    expect(replace).not.toHaveBeenCalled();
+    expect(hardRedirect).not.toHaveBeenCalled();
   });
 });
 
@@ -119,7 +123,7 @@ describe('US-005 FE-002/FE-003 — UserMenu integra el logout real', () => {
     const item = await screen.findByRole('menuitem', { name: 'Cerrar sesión' });
     await user.click(item);
 
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/login'));
+    await waitFor(() => expect(hardRedirect).toHaveBeenCalledWith('/login'));
     expect(logoutCalled).toBe(true);
   });
 });
