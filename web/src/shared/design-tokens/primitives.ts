@@ -17,120 +17,146 @@
  * ------------------------------------------------------------------ */
 
 /**
- * Escala neutral anclada en los valores aprobados `#FFFFFF`, `#525252` y `#262626`
- * (UI-DEC-002). `900` (`#171717`) se reserva a superficie inversa y CTA oscura de
- * marketing (UI-DEC-003) — **no** es el token de texto de cuerpo.
- * Design Tokens §8.1.
+ * Identidad visual "La fiesta, no el software" (UI-DEC-002 rev. 2 / UI-DEC-004 rev. 2).
+ *
+ * La paleta sale del mundo de las celebraciones latinoamericanas, no del catálogo de Tailwind:
+ * tinta de invitación, papel algodón, bugambilia, jade y cempasúchil. Las familias de feedback
+ * (`anil`, `bermellon`) se derivan de los mismos tintes para que la UI no tenga islas de azul o
+ * rojo "de framework". Contrastes verificados en `docs/ux-ui/EventFlow-Design-Tokens.md` §8.
+ */
+
+/**
+ * Tinta: neutrales con un leve tinte azul de tinta de imprenta. `800` (`#1E2742`) es el texto
+ * principal; `900` la superficie inversa. Design Tokens §8.1.
  */
 export const neutral = {
   0: '#FFFFFF',
-  50: '#FAFAFA',
-  100: '#F5F5F5',
-  200: '#E5E5E5',
-  300: '#D4D4D4',
-  400: '#A3A3A3',
-  500: '#737373',
-  600: '#525252',
-  700: '#404040',
-  800: '#262626',
-  900: '#171717',
-  950: '#0A0A0A',
+  50: '#F7F8F6',
+  100: '#EFF1EE',
+  200: '#E1E4E0',
+  300: '#C9CDCC',
+  400: '#9CA1AA',
+  500: '#6E7486',
+  600: '#4E5468',
+  700: '#363C52',
+  800: '#1E2742',
+  900: '#151B30',
+  950: '#0C1020',
 } as const;
 
 /**
- * Escala de **superficies de plataforma** (cromo del shell autenticado).
- *
- * Origen: screen Stitch *EventFlow - Layout Principal (Base)*
- * (`projects/10889252267442839867/screens/d1d8a7612a6a41ba84a183ec9a53f434`), que define el
- * look & feel aprobado del layout principal con una rampa de grises **cálidos** en lugar de
- * blanco puro: el lienzo es `#FCF9F8`, la sidebar se separa por tinte (`#F6F3F2`) y las zonas
- * embebidas / hover suben por la rampa.
- *
- * Sustituye el uso de `neutral.0` / `neutral.50` **sólo en el cromo** (sidebar, topbar, lienzo
- * de contenido). Las cards, inputs y overlays siguen en `neutral.0` (blanco puro), que es
- * precisamente lo que hace legible la jerarquía: contenido blanco sobre lienzo cálido.
- *
- * `outlineVariant` es el hairline violáceo del cromo; `onSurface` / `onSurfaceVariant` son los
- * textos que Stitch pinta sobre estas superficies.
+ * Papel: rampa del cromo del shell autenticado (lienzo, sidebar, zonas embebidas). Papel
+ * algodón frío en lugar de gris cálido; el contenido blanco se lee encima por contraste.
  */
 export const canvas = {
-  /** `surface` / `background` / `surface-bright` — lienzo de contenido y topbar. */
-  bright: '#FCF9F8',
-  /** `surface-container-low` — sidebar. */
-  low: '#F6F3F2',
-  /** `surface-container` — zonas embebidas (pie de sidebar, campos sobre cromo). */
-  container: '#F0EDED',
-  /** `surface-container-high` — hover de navegación. */
-  high: '#EAE7E7',
-  /** `surface-container-highest` — presionado / separadores fuertes. */
-  highest: '#E4E2E1',
-  /** `surface-dim` — límite inferior de la rampa. */
-  dim: '#DCD9D9',
-  /** `outline-variant` — hairline del cromo. */
-  outlineVariant: '#CBC3D6',
-  /** `on-surface` — texto sobre el lienzo. */
-  onSurface: '#1B1C1C',
-  /** `on-surface-variant` — texto secundario sobre el cromo. */
-  onSurfaceVariant: '#494454',
+  /** Lienzo de contenido y topbar. */
+  bright: '#F5F6F2',
+  /** Sidebar. */
+  low: '#ECEEE8',
+  /** Zonas embebidas (pie de sidebar, campos sobre cromo). */
+  container: '#E4E7E0',
+  /** Hover de navegación. */
+  high: '#DDE0D8',
+  /** Presionado / separadores fuertes. */
+  highest: '#D5D9CF',
+  /** Límite inferior de la rampa. */
+  dim: '#CBCFC4',
+  /** Hairline del cromo. */
+  outlineVariant: '#D3D7CE',
+  /** Texto sobre el lienzo. */
+  onSurface: '#1E2742',
+  /** Texto secundario sobre el cromo. */
+  onSurfaceVariant: '#4E5468',
 } as const;
 
 /**
- * Escala violeta construida alrededor del ancla aprobada `#946DF8` (UI-DEC-002).
- * `600`/`700`/`800` son derivadas porque `500` **no** cumple 4.5:1 sobre blanco
- * (3.62:1) y por tanto está prohibido como texto (Design Tokens §32).
- * Design Tokens §8.2.
+ * Bugambilia: acento de marca (CTAs, fecha del evento, foco). `600` (`#B8235A`) mide 5.9:1 sobre
+ * blanco, así que también sirve como texto de enlace; `500` y menores son sólo fondo/acento.
  */
-export const violet = {
-  50: '#F5F1FE',
-  100: '#EDE6FE',
-  200: '#DACAFC',
-  300: '#BFA5FA',
-  400: '#A582F9',
-  /** Ancla de marca. Sólo acento / borde / fondo con foreground blanco. NUNCA texto. */
-  500: '#946DF8',
-  600: '#7B4EE8',
-  700: '#6238C7',
-  800: '#4A2A99',
-  900: '#2E1B5C',
+export const bugambilia = {
+  50: '#FDF0F5',
+  100: '#FADDE8',
+  200: '#F4B8CF',
+  300: '#EA88AC',
+  400: '#DA5585',
+  500: '#C73668',
+  600: '#B8235A',
+  700: '#991B4B',
+  800: '#78163C',
+  900: '#561029',
+  950: '#330918',
 } as const;
 
-/**
- * Lila decorativo. Ancla `#C4B7E5` (UI-DEC-002). Uso decorativo y como superficie AI
- * muy clara. **Nunca** como texto ni icono principal (1.87:1 sobre blanco).
- * Design Tokens §8.3.
- */
-export const lilac = {
-  50: '#F7F5FB',
-  100: '#EFEBF6',
-  200: '#DBD1EC',
-  300: '#C4B7E5',
-  400: '#A691D5',
-} as const;
-
-/**
- * Coral decorativo. Ancla `#EE8C8D` (UI-DEC-002). **Nunca** como error, destructive,
- * texto ni icono principal (2.39:1 sobre blanco).
- * Design Tokens §8.4.
- */
-export const coral = {
-  50: '#FEF3F3',
-  100: '#FDE5E5',
-  200: '#F9C4C5',
-  300: '#EE8C8D',
-  400: '#D96667',
-} as const;
-
-/** Familia success (UI-DEC-014). Independiente de los colores de marca. Design Tokens §8.5. */
-export const green = {
-  50: '#ECFDF5',
-  100: '#D1FAE5',
-  200: '#A7F3D0',
-  600: '#16A34A',
-  700: '#15803D',
+/** Jade: dinero y confirmaciones (presupuesto, reservas, success). Design Tokens §8.5. */
+export const jade = {
+  50: '#EAF5F1',
+  100: '#CFE9E0',
+  200: '#A1D3C2',
+  300: '#6CB8A0',
+  400: '#3A9A7F',
+  500: '#1A8068',
+  600: '#0E6B58',
+  700: '#0B5747',
+  800: '#094437',
+  900: '#073228',
+  950: '#031D17',
   foreground: '#FFFFFF',
 } as const;
 
-/** Familia warning (UI-DEC-014). Design Tokens §8.5. */
+/**
+ * Cempasúchil: lo que la IA propone y aún espera tu revisión (human-in-the-loop). Nunca texto
+ * por debajo de `700`. Design Tokens §11.
+ */
+export const cempasuchil = {
+  50: '#FFF8E6',
+  100: '#FEEDBF',
+  200: '#FCD98A',
+  300: '#F7C14F',
+  400: '#EEAA1C',
+  500: '#E09A00',
+  600: '#B87A00',
+  700: '#8F5E00',
+  800: '#6A4600',
+  900: '#4A3100',
+  950: '#2B1C00',
+} as const;
+
+/** Añil (tinte índigo de los textiles): familia info. Design Tokens §8.5. */
+export const anil = {
+  50: '#EEF1F8',
+  100: '#DCE2F1',
+  200: '#BCC6E4',
+  300: '#93A2D1',
+  400: '#6C7FBA',
+  500: '#4F62A3',
+  600: '#3D4F8C',
+  700: '#2F3E72',
+  800: '#243058',
+  900: '#1A2340',
+  950: '#0F1527',
+  foreground: '#FFFFFF',
+} as const;
+
+/**
+ * Bermellón: error y acciones destructivas. Deliberadamente más naranja que la bugambilia para
+ * que "borrar" nunca se confunda con la acción principal. Design Tokens §8.5.
+ */
+export const bermellon = {
+  50: '#FDF2EE',
+  100: '#FBE1D8',
+  200: '#F6C0AE',
+  300: '#EE977B',
+  400: '#E2694A',
+  500: '#D44A2A',
+  600: '#C2361A',
+  700: '#9F2B15',
+  800: '#7C2211',
+  900: '#58180C',
+  950: '#340D06',
+  foreground: '#FFFFFF',
+} as const;
+
+/** Familia warning (UI-DEC-014). Se conserva el ámbar: distinto del cempasúchil de la IA. */
 export const amber = {
   50: '#FFFBEB',
   100: '#FEF3C7',
@@ -140,33 +166,38 @@ export const amber = {
   foreground: '#FFFFFF',
 } as const;
 
-/** Familia error / destructive (UI-DEC-014). Design Tokens §8.5. */
-export const red = {
-  50: '#FEF2F2',
-  100: '#FEE2E2',
-  200: '#FECACA',
-  600: '#DC2626',
-  700: '#B91C1C',
-  foreground: '#FFFFFF',
+/** @deprecated Alias de compatibilidad: la marca ya no es violeta. Usar `bugambilia`. */
+export const violet = bugambilia;
+/** @deprecated Alias de compatibilidad. Usar `cempasuchil` (superficies de IA / acento cálido). */
+export const lilac = {
+  50: cempasuchil[50],
+  100: cempasuchil[100],
+  200: cempasuchil[200],
+  300: cempasuchil[300],
+  400: cempasuchil[400],
 } as const;
-
-/** Familia info (UI-DEC-014). Design Tokens §8.5. */
-export const blue = {
-  50: '#EFF6FF',
-  100: '#DBEAFE',
-  200: '#BFDBFE',
-  600: '#2563EB',
-  700: '#1D4ED8',
-  foreground: '#FFFFFF',
+/** @deprecated Alias de compatibilidad. Usar `bugambilia` (acento decorativo claro). */
+export const coral = {
+  50: bugambilia[50],
+  100: bugambilia[100],
+  200: bugambilia[200],
+  300: bugambilia[300],
+  400: bugambilia[400],
 } as const;
+/** Familia success = jade. */
+export const green = jade;
+/** Familia error / destructive = bermellón. */
+export const red = bermellon;
+/** Familia info = añil. */
+export const blue = anil;
 
-/** Transparencias para overlays, hover ghost y scrims. Design Tokens §8.6. */
+/** Transparencias para overlays, hover ghost y scrims (tinta, no negro). Design Tokens §8.6. */
 export const alpha = {
-  overlay60: 'rgba(23, 23, 23, 0.60)',
-  overlay40: 'rgba(23, 23, 23, 0.40)',
-  hoverSubtle: 'rgba(23, 23, 23, 0.04)',
-  hoverStrong: 'rgba(23, 23, 23, 0.08)',
-  violetSubtle: 'rgba(148, 109, 248, 0.08)',
+  overlay60: 'rgba(21, 27, 48, 0.60)',
+  overlay40: 'rgba(21, 27, 48, 0.40)',
+  hoverSubtle: 'rgba(21, 27, 48, 0.04)',
+  hoverStrong: 'rgba(21, 27, 48, 0.08)',
+  violetSubtle: 'rgba(184, 35, 90, 0.08)',
   decorativeScrim: 'rgba(255, 255, 255, 0.70)',
 } as const;
 
@@ -174,6 +205,11 @@ export const alpha = {
 export const color = {
   neutral,
   canvas,
+  bugambilia,
+  jade,
+  cempasuchil,
+  anil,
+  bermellon,
   violet,
   lilac,
   coral,
@@ -189,15 +225,16 @@ export const color = {
  * ------------------------------------------------------------------ */
 
 /**
- * Familias aprobadas (UI-DEC-004). Los nombres reales de fuente los inyecta
- * `next/font/google` en `src/app/layout.tsx` como CSS variables; aquí se declara
- * la cadena de fallback para que un fallo de carga no rompa métricas.
+ * Familias (UI-DEC-004 rev. 2). `display` es Bodoni Moda, la letra de las invitaciones impresas:
+ * sólo para los momentos grandes (titular de la landing, nombre y fecha del evento). Todo lo
+ * demás es Figtree. Los nombres reales los inyecta `next/font/google` en `src/app/layout.tsx`.
  * Design Tokens §12.1.
  */
 export const fontFamily = {
-  heading: ['var(--font-inter-tight)', 'Inter Tight', 'system-ui', 'sans-serif'],
-  body: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
-  ui: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
+  display: ['var(--font-display)', 'Bodoni Moda', 'Didot', 'Georgia', 'serif'],
+  heading: ['var(--font-sans)', 'Figtree', 'system-ui', 'sans-serif'],
+  body: ['var(--font-sans)', 'Figtree', 'system-ui', 'sans-serif'],
+  ui: ['var(--font-sans)', 'Figtree', 'system-ui', 'sans-serif'],
 } as const;
 
 /** Pesos aprobados. Design Tokens §12.2. */
@@ -285,9 +322,9 @@ export const size = {
 export const radius = {
   none: '0px',
   sm: '4px',
-  md: '8px',
-  lg: '12px',
-  xl: '16px',
+  md: '6px',
+  lg: '8px',
+  xl: '12px',
   full: '9999px',
 } as const;
 
@@ -308,12 +345,12 @@ export const border = {
  */
 export const shadow = {
   none: 'none',
-  surfaceSubtle: '0 1px 2px rgba(23, 23, 23, 0.04)',
-  surfaceRaised: '0 2px 6px rgba(23, 23, 23, 0.06)',
-  overlayDropdown: '0 8px 16px rgba(23, 23, 23, 0.08), 0 2px 4px rgba(23, 23, 23, 0.04)',
-  overlayModal: '0 20px 40px rgba(23, 23, 23, 0.12), 0 8px 16px rgba(23, 23, 23, 0.06)',
+  surfaceSubtle: '0 1px 2px rgba(21, 27, 48, 0.04)',
+  surfaceRaised: '0 2px 6px rgba(21, 27, 48, 0.06)',
+  overlayDropdown: '0 8px 16px rgba(21, 27, 48, 0.08), 0 2px 4px rgba(21, 27, 48, 0.04)',
+  overlayModal: '0 20px 40px rgba(21, 27, 48, 0.12), 0 8px 16px rgba(21, 27, 48, 0.06)',
   marketingFloating:
-    '0 30px 60px -20px rgba(15, 13, 26, 0.15), 0 10px 20px -10px rgba(15, 13, 26, 0.08)',
+    '0 30px 60px -20px rgba(21, 27, 48, 0.15), 0 10px 20px -10px rgba(21, 27, 48, 0.08)',
 } as const;
 
 /** Design Tokens §18 (UI-DEC-012). */
@@ -376,7 +413,7 @@ export const motion = {
 export const focus = {
   ringWidth: '2px',
   ringStyle: 'solid',
-  ringColor: violet[700],
+  ringColor: bugambilia[700],
   ringOffset: '2px',
   ringOffsetColor: neutral[0],
 } as const;

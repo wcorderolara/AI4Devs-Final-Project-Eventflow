@@ -442,7 +442,7 @@ describe('PB-P2-032 · MarketingSection', () => {
 describe('PB-P2-032 · MarketingFeatureCard y Grid', () => {
   beforeEach(cleanup);
 
-  it('la card estática no es un control y usa el Card canónico', () => {
+  it('sin enlace, la capacidad es una entrada abierta y no un control', () => {
     render(
       <MarketingFeatureCard
         icon={<Sparkles />}
@@ -454,8 +454,10 @@ describe('PB-P2-032 · MarketingFeatureCard y Grid', () => {
     expect(screen.getByRole('heading', { name: 'Checklist editable' })).toBeInTheDocument();
     expect(screen.queryByRole('button')).toBeNull();
     expect(screen.queryByRole('link')).toBeNull();
-    // `data-variant` lo aporta el `Card` compartido: no hay un segundo sistema de cards.
-    expect(screen.getByTestId('feature')).toHaveAttribute('data-variant', 'default');
+    // Sin enlace no es un objeto clicable: se presenta con un hilo superior, no como caja con
+    // sombra (el `Card` queda para la variante navegable).
+    expect(screen.getByTestId('feature')).toHaveClass('border-t');
+    expect(screen.getByTestId('feature')).not.toHaveAttribute('data-variant');
   });
 
   it('con `href` es un enlace real y el icono sigue siendo decorativo', () => {

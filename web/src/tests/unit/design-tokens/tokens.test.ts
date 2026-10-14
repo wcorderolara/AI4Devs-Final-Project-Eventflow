@@ -1,8 +1,8 @@
 // PB-P2-027 — Design tokens: la capa TS es la fuente de verdad del sistema visual.
 //
-// Estos tests fijan los valores APROBADOS en `docs/ux-ui/EventFlow-Design-Tokens.md` para que
-// una regresión (p. ej. volver a `primary: colors.blue`) rompa el gate en vez de llegar a
-// producción. No validan estética: validan trazabilidad contra el documento normativo.
+// Estos tests fijan los valores APROBADOS en `docs/ux-ui/EventFlow-Design-Tokens.md` (identidad
+// "La fiesta, no el software", UI-DEC-002/004/006 rev. 2) para que una regresión —volver al
+// violeta o al azul de Tailwind, o a Inter— rompa el gate en vez de llegar a producción.
 import { describe, expect, it } from 'vitest';
 import {
   ai,
@@ -28,47 +28,46 @@ import {
   zIndex,
 } from '@/shared/design-tokens';
 
-describe('PB-P2-027 · primitivos aprobados (Design Tokens §8)', () => {
-  it('escala neutral conserva los anclas aprobados (UI-DEC-002)', () => {
+describe('PB-P2-027 · primitivos aprobados (Design Tokens §8, UI-DEC-002 rev. 2)', () => {
+  it('neutrales en tinta: blanco puro y texto principal #1E2742', () => {
     expect(color.neutral[0]).toBe('#FFFFFF');
-    expect(color.neutral[50]).toBe('#FAFAFA');
-    expect(color.neutral[100]).toBe('#F5F5F5');
-    expect(color.neutral[200]).toBe('#E5E5E5');
-    expect(color.neutral[300]).toBe('#D4D4D4');
-    expect(color.neutral[400]).toBe('#A3A3A3');
-    expect(color.neutral[500]).toBe('#737373');
-    expect(color.neutral[600]).toBe('#525252');
-    expect(color.neutral[700]).toBe('#404040');
-    expect(color.neutral[800]).toBe('#262626');
-    expect(color.neutral[900]).toBe('#171717');
+    expect(color.neutral[50]).toBe('#F7F8F6');
+    expect(color.neutral[200]).toBe('#E1E4E0');
+    expect(color.neutral[300]).toBe('#C9CDCC');
+    expect(color.neutral[500]).toBe('#6E7486');
+    expect(color.neutral[600]).toBe('#4E5468');
+    expect(color.neutral[800]).toBe('#1E2742');
+    expect(color.neutral[900]).toBe('#151B30');
   });
 
-  it('escala violeta se ancla en #946DF8 con las derivadas accesibles', () => {
-    expect(color.violet[50]).toBe('#F5F1FE');
-    expect(color.violet[500]).toBe('#946DF8');
-    expect(color.violet[600]).toBe('#7B4EE8');
-    expect(color.violet[700]).toBe('#6238C7');
-    expect(color.violet[800]).toBe('#4A2A99');
+  it('marca: bugambilia anclada en #B8235A', () => {
+    expect(color.bugambilia[50]).toBe('#FDF0F5');
+    expect(color.bugambilia[500]).toBe('#C73668');
+    expect(color.bugambilia[600]).toBe('#B8235A');
+    expect(color.bugambilia[700]).toBe('#991B4B');
+    expect(color.bugambilia[800]).toBe('#78163C');
+    // `violet` queda sólo como alias de compatibilidad de la marca.
+    expect(color.violet).toBe(color.bugambilia);
   });
 
-  it('lilac y coral conservan sus anclas decorativos', () => {
-    expect(color.lilac[300]).toBe('#C4B7E5');
-    expect(color.coral[300]).toBe('#EE8C8D');
+  it('jade (dinero/confirmaciones) y cempasúchil (propuestas de la IA)', () => {
+    expect(color.jade[600]).toBe('#0E6B58');
+    expect(color.jade[700]).toBe('#0B5747');
+    expect(color.cempasuchil[50]).toBe('#FFF8E6');
+    expect(color.cempasuchil[600]).toBe('#B87A00');
+    expect(color.cempasuchil[700]).toBe('#8F5E00');
   });
 
   it('familias semánticas son independientes de la marca (UI-DEC-014)', () => {
-    expect(color.green[600]).toBe('#16A34A');
-    expect(color.green[700]).toBe('#15803D');
-    expect(color.green[50]).toBe('#ECFDF5');
+    expect(color.green).toBe(color.jade);
+    expect(color.blue).toBe(color.anil);
+    expect(color.red).toBe(color.bermellon);
     expect(color.amber[600]).toBe('#D97706');
     expect(color.amber[700]).toBe('#B45309');
-    expect(color.amber[50]).toBe('#FFFBEB');
-    expect(color.red[600]).toBe('#DC2626');
-    expect(color.red[700]).toBe('#B91C1C');
-    expect(color.red[50]).toBe('#FEF2F2');
-    expect(color.blue[600]).toBe('#2563EB');
-    expect(color.blue[700]).toBe('#1D4ED8');
-    expect(color.blue[50]).toBe('#EFF6FF');
+    expect(color.bermellon[600]).toBe('#C2361A');
+    expect(color.anil[700]).toBe('#2F3E72');
+    // El error nunca es la bugambilia de marca: "borrar" no se confunde con la acción principal.
+    expect(color.bermellon[600]).not.toBe(color.bugambilia[600]);
   });
 
   it('NO adopta los valores semánticos de Stitch (Stitch Conflict)', () => {
@@ -77,56 +76,58 @@ describe('PB-P2-027 · primitivos aprobados (Design Tokens §8)', () => {
       expect(all, `valor Stitch no aprobado presente: ${rejected}`).not.toContain(rejected);
     }
   });
+
+  it('ya no quedan valores de la paleta por defecto de Tailwind en las familias de feedback', () => {
+    const all = JSON.stringify({ g: color.green, r: color.red, b: color.blue }).toUpperCase();
+    for (const tailwind of ['#16A34A', '#DC2626', '#2563EB', '#7B4EE8', '#946DF8']) {
+      expect(all).not.toContain(tailwind);
+    }
+  });
 });
 
 describe('PB-P2-027 · semánticos aprobados (Design Tokens §9–§11)', () => {
-  it('texto usa #262626 / #525252 y NO #171717 como cuerpo', () => {
-    expect(text.primary).toBe('#262626');
-    expect(text.secondary).toBe('#525252');
-    expect(text.muted).toBe('#737373');
-    expect(text.disabled).toBe('#A3A3A3');
+  it('texto en tinta (#1E2742 / #4E5468), nunca la superficie inversa como cuerpo', () => {
+    expect(text.primary).toBe('#1E2742');
+    expect(text.secondary).toBe('#4E5468');
+    expect(text.muted).toBe('#6E7486');
     expect(text.inverse).toBe('#FFFFFF');
-    expect(text.link).toBe('#6238C7');
-    expect(text.linkHover).toBe('#4A2A99');
-    expect(text.primary).not.toBe('#171717');
+    expect(text.link).toBe('#991B4B');
+    expect(text.linkHover).toBe('#78163C');
+    expect(text.primary).not.toBe('#151B30');
   });
 
-  it('la acción primaria es VIOLETA, no azul (FC-01)', () => {
-    expect(actionPrimary.background).toBe('#7B4EE8');
-    expect(actionPrimary.hover).toBe('#6238C7');
-    expect(actionPrimary.active).toBe('#4A2A99');
+  it('la acción primaria es bugambilia, no azul ni violeta de Tailwind (FC-01)', () => {
+    expect(actionPrimary.background).toBe('#B8235A');
+    expect(actionPrimary.hover).toBe('#991B4B');
+    expect(actionPrimary.active).toBe('#78163C');
     expect(actionPrimary.foreground).toBe('#FFFFFF');
-    // Regresión explícita: la escala azul de Tailwind queda prohibida como acción primaria.
     expect(actionPrimary.background).not.toBe('#2563EB');
+    expect(actionPrimary.background).not.toBe('#7C3AED');
   });
 
-  it('CTA de marketing es oscura y destructive es rojo semántico', () => {
-    expect(actionMarketing.background).toBe('#171717');
-    expect(actionMarketing.hover).toBe('#262626');
+  it('CTA de marketing en tinta y destructive en bermellón', () => {
+    expect(actionMarketing.background).toBe('#1E2742');
+    expect(actionMarketing.hover).toBe('#363C52');
     expect(actionMarketing.foreground).toBe('#FFFFFF');
-    expect(actionDestructive.background).toBe('#DC2626');
-    expect(actionDestructive.hover).toBe('#B91C1C');
+    expect(actionDestructive.background).toBe('#C2361A');
+    expect(actionDestructive.hover).toBe('#9F2B15');
     expect(actionDestructive.foreground).toBe('#FFFFFF');
   });
 
-  it('background y surfaces parten de blanco puro (UI-DEC-002)', () => {
+  it('background y surfaces de contenido parten de blanco puro', () => {
     expect(background.default).toBe('#FFFFFF');
     expect(surface.default).toBe('#FFFFFF');
-    expect(surface.subtle).toBe('#FAFAFA');
-    expect(surface.disabled).toBe('#F5F5F5');
-    expect(surface.inverse).toBe('#171717');
-    expect(surface.selected).toBe('#F5F1FE');
+    expect(surface.subtle).toBe('#F7F8F6');
+    expect(surface.inverse).toBe('#151B30');
+    expect(surface.selected).toBe('#FDF0F5');
   });
 
-  it('el cromo del shell usa la rampa cálida del screen Stitch del layout principal', () => {
-    // Origen: `projects/10889252267442839867/screens/d1d8a7612a6a41ba84a183ec9a53f434`.
-    // Estos valores SON el look & feel aprobado del layout principal: si alguien devuelve el
-    // cromo a blanco puro, este test falla.
-    expect(color.canvas.bright).toBe('#FCF9F8');
-    expect(color.canvas.low).toBe('#F6F3F2');
-    expect(color.canvas.container).toBe('#F0EDED');
-    expect(color.canvas.high).toBe('#EAE7E7');
-    expect(color.canvas.outlineVariant).toBe('#CBC3D6');
+  it('el cromo del shell es papel algodón; el contenido blanco se lee encima', () => {
+    expect(color.canvas.bright).toBe('#F5F6F2');
+    expect(color.canvas.low).toBe('#ECEEE8');
+    expect(color.canvas.container).toBe('#E4E7E0');
+    expect(color.canvas.high).toBe('#DDE0D8');
+    expect(color.canvas.outlineVariant).toBe('#D3D7CE');
 
     expect(platform.pageBackground).toBe(color.canvas.bright);
     expect(platform.headerBackground).toBe(color.canvas.bright);
@@ -134,16 +135,18 @@ describe('PB-P2-027 · semánticos aprobados (Design Tokens §9–§11)', () => 
     expect(platform.sidebarFooterBackground).toBe(color.canvas.container);
     expect(platform.sidebarItemHover).toBe(color.canvas.high);
     expect(platform.chromeBorder).toBe(color.canvas.outlineVariant);
-    // El lienzo de contenido ya no es `neutral.50`; el blanco puro queda para las cards.
+    // Ítem activo sobrio: tinte de bugambilia con texto oscuro, no un bloque relleno.
+    expect(platform.sidebarItemActive).toBe(color.bugambilia[50]);
+    expect(platform.sidebarItemActiveForeground).toBe(color.bugambilia[800]);
     expect(background.page).toBe(color.canvas.bright);
     expect(surface.default).toBe('#FFFFFF');
   });
 
   it('bordes exponen default/subtle/strong/interactive', () => {
-    expect(borderColor.default).toBe('#D4D4D4');
-    expect(borderColor.subtle).toBe('#E5E5E5');
-    expect(borderColor.strong).toBe('#404040');
-    expect(borderColor.interactive).toBe('#946DF8');
+    expect(borderColor.default).toBe('#C9CDCC');
+    expect(borderColor.subtle).toBe('#E1E4E0');
+    expect(borderColor.strong).toBe('#363C52');
+    expect(borderColor.interactive).toBe('#C73668');
   });
 
   it('feedback expone surface/border/text/icon por familia', () => {
@@ -152,22 +155,21 @@ describe('PB-P2-027 · semánticos aprobados (Design Tokens §9–§11)', () => 
         expect.arrayContaining(['surface', 'border', 'text', 'icon', 'strong', 'foreground']),
       );
     }
-    expect(feedback.success.text).toBe('#15803D');
+    expect(feedback.success.text).toBe('#0B5747');
     expect(feedback.warning.text).toBe('#B45309');
-    expect(feedback.error.text).toBe('#B91C1C');
-    expect(feedback.info.text).toBe('#1D4ED8');
+    expect(feedback.error.text).toBe('#9F2B15');
+    expect(feedback.info.text).toBe('#2F3E72');
   });
 });
 
 describe('PB-P2-027 · tokens AI (Design Tokens §11 / UI-DEC-010)', () => {
-  it('usa la superficie lilac y el violeta aprobados, no la escala purple de Tailwind', () => {
-    expect(ai.surface).toBe('#F7F5FB');
-    expect(ai.border).toBe('#946DF8');
-    expect(ai.label).toBe('#6238C7');
-    expect(ai.icon).toBe('#6238C7');
-    expect(ai.text).toBe('#262626');
-    expect(ai.pending).toBe('#946DF8');
-    // Regresión: `purple-50` / `purple-700` de Tailwind quedan fuera del sistema.
+  it('las propuestas de la IA son un borrador en cempasúchil, no la escala purple de Tailwind', () => {
+    expect(ai.surface).toBe('#FFF8E6');
+    expect(ai.border).toBe('#B87A00');
+    expect(ai.label).toBe('#8F5E00');
+    expect(ai.icon).toBe('#8F5E00');
+    expect(ai.text).toBe('#1E2742');
+    expect(ai.pending).toBe('#B87A00');
     expect(ai.surface).not.toBe('#FAF5FF');
     expect(ai.label).not.toBe('#6B21A8');
   });
@@ -184,42 +186,43 @@ describe('PB-P2-027 · tokens AI (Design Tokens §11 / UI-DEC-010)', () => {
     expect(keys).not.toMatch(/glow|gradient|animate/);
   });
 
-  it('ai.border se mantiene en violet-500 (CMP-Q-003 sigue provisional)', () => {
-    expect(ai.border).toBe(color.violet[500]);
-    expect(ai.border).not.toBe(color.violet[600]);
+  it('el borde de la IA cumple 3:1 no textual: cempasúchil 600, no el 500 decorativo', () => {
+    expect(ai.border).toBe(color.cempasuchil[600]);
+    expect(ai.border).not.toBe(color.cempasuchil[500]);
   });
 });
 
 describe('PB-P2-027 · foco, forma, elevación, layout, motion, z-index', () => {
-  it('focus ring canónico: 2px #6238C7 con offset blanco de 2px (TOK-DEC-016)', () => {
+  it('focus ring canónico: 2px #991B4B con offset blanco de 2px (TOK-DEC-016)', () => {
     expect(focusRing.ringWidth).toBe('2px');
     expect(focusRing.ringStyle).toBe('solid');
-    expect(focusRing.ringColor).toBe('#6238C7');
+    expect(focusRing.ringColor).toBe('#991B4B');
     expect(focusRing.ringOffset).toBe('2px');
     expect(focusRing.ringOffsetColor).toBe('#FFFFFF');
   });
 
-  it('radios aprobados (UI-DEC-006)', () => {
-    expect(radii.button).toBe('8px');
-    expect(radii.input).toBe('8px');
-    expect(radii.card).toBe('12px');
-    expect(radii.cardProminent).toBe('16px');
-    expect(radii.modal).toBe('16px');
-    expect(radii.drawer).toBe('16px');
+  it('radios aprobados (UI-DEC-006 rev. 2): esquinas de papel, más contenidas', () => {
+    expect(radii.button).toBe('6px');
+    expect(radii.input).toBe('6px');
+    expect(radii.card).toBe('8px');
+    expect(radii.cardProminent).toBe('12px');
+    expect(radii.modal).toBe('12px');
+    expect(radii.drawer).toBe('12px');
     expect(radii.badge).toBe('9999px');
   });
 
   it('sombras aprobadas exactas (Design Tokens §17)', () => {
-    expect(elevation.surfaceSubtle).toBe('0 1px 2px rgba(23, 23, 23, 0.04)');
-    expect(elevation.surfaceRaised).toBe('0 2px 6px rgba(23, 23, 23, 0.06)');
+    // Sombras teñidas de tinta (#151B30), no negro neutro.
+    expect(elevation.surfaceSubtle).toBe('0 1px 2px rgba(21, 27, 48, 0.04)');
+    expect(elevation.surfaceRaised).toBe('0 2px 6px rgba(21, 27, 48, 0.06)');
     expect(elevation.overlayDropdown).toBe(
-      '0 8px 16px rgba(23, 23, 23, 0.08), 0 2px 4px rgba(23, 23, 23, 0.04)',
+      '0 8px 16px rgba(21, 27, 48, 0.08), 0 2px 4px rgba(21, 27, 48, 0.04)',
     );
     expect(elevation.overlayModal).toBe(
-      '0 20px 40px rgba(23, 23, 23, 0.12), 0 8px 16px rgba(23, 23, 23, 0.06)',
+      '0 20px 40px rgba(21, 27, 48, 0.12), 0 8px 16px rgba(21, 27, 48, 0.06)',
     );
     expect(elevation.marketingFloating).toBe(
-      '0 30px 60px -20px rgba(15, 13, 26, 0.15), 0 10px 20px -10px rgba(15, 13, 26, 0.08)',
+      '0 30px 60px -20px rgba(21, 27, 48, 0.15), 0 10px 20px -10px rgba(21, 27, 48, 0.08)',
     );
   });
 
@@ -270,11 +273,14 @@ describe('PB-P2-027 · foco, forma, elevación, layout, motion, z-index', () => 
 });
 
 describe('PB-P2-027 · tipografía y arquitectura de capas', () => {
-  it('familias aprobadas: Inter Tight (headings) e Inter (body/UI)', () => {
-    expect(fontFamily.heading.join(' ')).toContain('Inter Tight');
-    expect(fontFamily.heading[0]).toBe('var(--font-inter-tight)');
-    expect(fontFamily.body.join(' ')).toContain('Inter');
-    expect(fontFamily.body[0]).toBe('var(--font-inter)');
+  it('familias aprobadas (UI-DEC-004 rev. 2): Bodoni Moda (display) y Figtree (UI)', () => {
+    expect(fontFamily.display[0]).toBe('var(--font-display)');
+    expect(fontFamily.display.join(' ')).toContain('Bodoni Moda');
+    expect(fontFamily.display).toContain('serif');
+    expect(fontFamily.heading[0]).toBe('var(--font-sans)');
+    expect(fontFamily.body.join(' ')).toContain('Figtree');
+    expect(fontFamily.body[0]).toBe('var(--font-sans)');
+    expect(fontFamily.body.join(' ')).not.toContain('Inter');
     // Fallback obligatorio para que un fallo de carga no rompa métricas.
     expect(fontFamily.body).toContain('system-ui');
   });

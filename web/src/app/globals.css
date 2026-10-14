@@ -19,131 +19,131 @@
   :root {
     /* --- Text (Design Tokens 9.1) ------------------------------------------ */
     /* `#171717` NO es texto de cuerpo: se reserva a superficie inversa / CTA marketing. */
-    --color-text-primary: #262626;
-    --color-text-secondary: #525252;
-    --color-text-muted: #737373;
-    --color-text-disabled: #a3a3a3;
+    --color-text-primary: #1e2742;
+    --color-text-secondary: #4e5468;
+    --color-text-muted: #6e7486;
+    --color-text-disabled: #9ca1aa;
     --color-text-inverse: #ffffff;
-    --color-text-link: #6238c7;
-    --color-text-link-hover: #4a2a99;
+    --color-text-link: #991b4b;
+    --color-text-link-hover: #78163c;
 
     /* --- Background & surface (9.2, 10.2) ---------------------------------- */
     --color-background-default: #ffffff;
-    --color-background-subtle: #fafafa;
+    --color-background-subtle: #f7f8f6;
     /* Lienzo del area de contenido: gris calido del screen Stitch del layout principal. */
-    --color-background-page: #fcf9f8;
+    --color-background-page: #f5f6f2;
     --color-surface-default: #ffffff;
-    --color-surface-subtle: #fafafa;
+    --color-surface-subtle: #f7f8f6;
     --color-surface-elevated: #ffffff;
-    --color-surface-disabled: #f5f5f5;
-    --color-surface-inverse: #171717;
-    --color-surface-selected: #f5f1fe;
+    --color-surface-disabled: #eff1ee;
+    --color-surface-inverse: #151b30;
+    --color-surface-selected: #fdf0f5;
 
     /* --- Borders (9.3, 16) ------------------------------------------------- */
-    --color-border-default: #d4d4d4;
-    --color-border-subtle: #e5e5e5;
-    --color-border-strong: #404040;
-    --color-border-interactive: #946df8;
-    --color-border-disabled: #e5e5e5;
-    --color-border-separator: #e5e5e5;
+    --color-border-default: #c9cdcc;
+    --color-border-subtle: #e1e4e0;
+    --color-border-strong: #363c52;
+    --color-border-interactive: #c73668;
+    --color-border-disabled: #e1e4e0;
+    --color-border-separator: #e1e4e0;
     --border-width-default: 1px;
     --border-width-strong: 2px;
 
     /* --- Actions (9.4, 10.1, 10.2) ----------------------------------------- */
-    --color-action-primary: #7b4ee8;
-    --color-action-primary-hover: #6238c7;
-    --color-action-primary-active: #4a2a99;
+    --color-action-primary: #b8235a;
+    --color-action-primary-hover: #991b4b;
+    --color-action-primary-active: #78163c;
     --color-action-primary-foreground: #ffffff;
-    --color-action-primary-disabled-background: #e5e5e5;
-    --color-action-primary-disabled-foreground: #a3a3a3;
+    --color-action-primary-disabled-background: #e1e4e0;
+    --color-action-primary-disabled-foreground: #9ca1aa;
     --color-action-secondary: #ffffff;
-    --color-action-secondary-hover: #fafafa;
-    --color-action-secondary-foreground: #262626;
-    --color-action-secondary-border: #d4d4d4;
-    --color-action-ghost-hover: rgba(23, 23, 23, 0.04);
-    --color-action-ghost-foreground: #262626;
-    --color-action-destructive: #dc2626;
-    --color-action-destructive-hover: #b91c1c;
+    --color-action-secondary-hover: #f7f8f6;
+    --color-action-secondary-foreground: #1e2742;
+    --color-action-secondary-border: #c9cdcc;
+    --color-action-ghost-hover: rgba(21, 27, 48, 0.04);
+    --color-action-ghost-foreground: #1e2742;
+    --color-action-destructive: #c2361a;
+    --color-action-destructive-hover: #9f2b15;
     --color-action-destructive-foreground: #ffffff;
-    --color-action-marketing: #171717;
-    --color-action-marketing-hover: #262626;
+    --color-action-marketing: #1e2742;
+    --color-action-marketing-hover: #363c52;
     --color-action-marketing-foreground: #ffffff;
 
     /* --- Feedback (9.5) — independientes de los colores de marca ----------- */
-    --color-feedback-success-surface: #ecfdf5;
-    --color-feedback-success-border: #a7f3d0;
-    --color-feedback-success-text: #15803d;
-    --color-feedback-success-icon: #16a34a;
-    --color-feedback-success-strong: #16a34a;
+    --color-feedback-success-surface: #eaf5f1;
+    --color-feedback-success-border: #a1d3c2;
+    --color-feedback-success-text: #0b5747;
+    --color-feedback-success-icon: #0e6b58;
+    --color-feedback-success-strong: #0e6b58;
     --color-feedback-warning-surface: #fffbeb;
     --color-feedback-warning-border: #fde68a;
     --color-feedback-warning-text: #b45309;
     --color-feedback-warning-icon: #d97706;
     --color-feedback-warning-strong: #d97706;
-    --color-feedback-error-surface: #fef2f2;
-    --color-feedback-error-border: #fecaca;
-    --color-feedback-error-text: #b91c1c;
-    --color-feedback-error-icon: #dc2626;
-    --color-feedback-error-strong: #dc2626;
-    --color-feedback-info-surface: #eff6ff;
-    --color-feedback-info-border: #bfdbfe;
-    --color-feedback-info-text: #1d4ed8;
-    --color-feedback-info-icon: #2563eb;
-    --color-feedback-info-strong: #2563eb;
+    --color-feedback-error-surface: #fdf2ee;
+    --color-feedback-error-border: #f6c0ae;
+    --color-feedback-error-text: #9f2b15;
+    --color-feedback-error-icon: #c2361a;
+    --color-feedback-error-strong: #c2361a;
+    --color-feedback-info-surface: #eef1f8;
+    --color-feedback-info-border: #bcc6e4;
+    --color-feedback-info-text: #2f3e72;
+    --color-feedback-info-icon: #3d4f8c;
+    --color-feedback-info-strong: #3d4f8c;
 
     /* --- AI (11) — human-in-the-loop --------------------------------------- */
     /* Estos valores SIEMPRE acompañan icono + label "Sugerencia de IA" (UI-DEC-010). */
-    --color-ai-surface: #f7f5fb;
-    --color-ai-surface-hover: #efebf6;
-    --color-ai-border: #946df8;
-    --color-ai-border-strong: #6238c7;
-    --color-ai-text: #262626;
-    --color-ai-icon: #6238c7;
-    --color-ai-label: #6238c7;
-    --color-ai-pending: #946df8;
+    --color-ai-surface: #fff8e6;
+    --color-ai-surface-hover: #feedbf;
+    --color-ai-border: #b87a00;
+    --color-ai-border-strong: #8f5e00;
+    --color-ai-text: #1e2742;
+    --color-ai-icon: #8f5e00;
+    --color-ai-label: #8f5e00;
+    --color-ai-pending: #b87a00;
 
     /* --- Platform & marketing aliases (10) --------------------------------- */
     /* Cromo del shell autenticado — screen Stitch "EventFlow - Layout Principal (Base)".
        Rampa de grises calidos para sidebar/topbar/lienzo; item activo RELLENO en violeta. */
-    --color-platform-sidebar-background: #f6f3f2;
-    --color-platform-sidebar-footer-background: #f0eded;
-    --color-platform-sidebar-item-hover: #eae7e7;
-    --color-platform-sidebar-item-active: #7b4ee8;
-    --color-platform-sidebar-item-active-foreground: #ffffff;
-    --color-platform-header-background: #fcf9f8;
-    --color-platform-chrome-border: #cbc3d6;
-    --color-marketing-accent-lilac: #c4b7e5;
-    --color-marketing-accent-coral: #ee8c8d;
-    --color-marketing-hero-surface: #fafafa;
+    --color-platform-sidebar-background: #eceee8;
+    --color-platform-sidebar-footer-background: #e4e7e0;
+    --color-platform-sidebar-item-hover: #dde0d8;
+    --color-platform-sidebar-item-active: #fdf0f5;
+    --color-platform-sidebar-item-active-foreground: #78163c;
+    --color-platform-header-background: #f5f6f2;
+    --color-platform-chrome-border: #d3d7ce;
+    --color-marketing-accent-lilac: #f7c14f;
+    --color-marketing-accent-coral: #ea88ac;
+    --color-marketing-hero-surface: #f7f8f6;
 
     /* --- Focus (21, TOK-DEC-016) ------------------------------------------- */
     /* El offset blanco es MANDATORIO: sin el, el anillo sobre violeta mide 1.41:1. */
     --focus-ring-width: 2px;
     --focus-ring-style: solid;
-    --focus-ring-color: #6238c7;
+    --focus-ring-color: #991b4b;
     --focus-ring-offset: 2px;
     --focus-ring-offset-color: #ffffff;
 
     /* --- Selection & overlay (9.7, 9.8) ------------------------------------ */
-    --color-selection-background: #ede6fe;
-    --color-selection-foreground: #262626;
-    --color-overlay-scrim: rgba(23, 23, 23, 0.6);
-    --color-overlay-scrim-light: rgba(23, 23, 23, 0.4);
+    --color-selection-background: #fadde8;
+    --color-selection-foreground: #1e2742;
+    --color-overlay-scrim: rgba(21, 27, 48, 0.60);
+    --color-overlay-scrim-light: rgba(21, 27, 48, 0.40);
 
     /* --- Radius (15.2) ------------------------------------------------------ */
-    --radius-button: 8px;
-    --radius-input: 8px;
-    --radius-card: 12px;
-    --radius-card-prominent: 16px;
-    --radius-modal: 16px;
-    --radius-drawer: 16px;
+    --radius-button: 6px;
+    --radius-input: 6px;
+    --radius-card: 8px;
+    --radius-card-prominent: 12px;
+    --radius-modal: 12px;
+    --radius-drawer: 12px;
     --radius-badge: 9999px;
 
     /* --- Elevation (17) ----------------------------------------------------- */
-    --shadow-surface-subtle: 0 1px 2px rgba(23, 23, 23, 0.04);
-    --shadow-surface-raised: 0 2px 6px rgba(23, 23, 23, 0.06);
-    --shadow-overlay-dropdown: 0 8px 16px rgba(23, 23, 23, 0.08), 0 2px 4px rgba(23, 23, 23, 0.04);
-    --shadow-overlay-modal: 0 20px 40px rgba(23, 23, 23, 0.12), 0 8px 16px rgba(23, 23, 23, 0.06);
+    --shadow-surface-subtle: 0 1px 2px rgba(21, 27, 48, 0.04);
+    --shadow-surface-raised: 0 2px 6px rgba(21, 27, 48, 0.06);
+    --shadow-overlay-dropdown: 0 8px 16px rgba(21, 27, 48, 0.08), 0 2px 4px rgba(21, 27, 48, 0.04);
+    --shadow-overlay-modal: 0 20px 40px rgba(21, 27, 48, 0.12), 0 8px 16px rgba(21, 27, 48, 0.06);
     --shadow-marketing-floating:
       0 30px 60px -20px rgba(15, 13, 26, 0.15), 0 10px 20px -10px rgba(15, 13, 26, 0.08);
 
@@ -203,7 +203,7 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* Los headings pueden optar por Inter Tight con `font-heading`; no se fuerza aqui
+  /* Los headings pueden optar por `font-heading` (Figtree) o `font-display` (Bodoni Moda); no se fuerza aqui
      para no alterar la tipografia de las vistas aun sin migrar. */
 
   ::selection {

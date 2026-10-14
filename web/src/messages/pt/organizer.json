@@ -295,6 +295,22 @@
       "browseVendors": "Explorar fornecedores",
       "tasks": "Revisar tarefas",
       "notifications": "Ver notificações"
+    },
+    "greeting": "Olá, {name}",
+    "activity": {
+      "heading": "Sua atividade",
+      "eventsDetail": "{active} ativos, {draft} em rascunho",
+      "quotesDetail": "{accepted} aceitas, {received} para revisar"
+    },
+    "nextEvent": {
+      "heading": "Seu próximo evento",
+      "countdown": "{days, plural, =0 {É hoje.} one {Falta # dia.} other {Faltam # dias.}}",
+      "guests": "{count} convidados",
+      "open": "Abrir evento",
+      "tasks": "Ver tarefas",
+      "emptyTitle": "Você ainda não tem um evento no calendário.",
+      "emptyBody": "Conte o que você vai celebrar e o EventFlow sugere o checklist e o orçamento para começar.",
+      "emptyCta": "Criar evento"
     }
   }
 }

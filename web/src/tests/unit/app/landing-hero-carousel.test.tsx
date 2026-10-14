@@ -26,7 +26,7 @@ type Locale = keyof typeof CATALOG;
 const SLIDE_IDS = ['wedding', 'celebration', 'baptism', 'birthday', 'corporate'] as const;
 
 /** El componente avanza cada 5,5 s; los tests usan timers falsos para no esperar de verdad. */
-const AUTOPLAY_MS = 5500;
+const AUTOPLAY_MS = 6500;
 
 const preview = (locale: Locale = 'es-LATAM') => CATALOG[locale].landing.preview;
 
@@ -80,11 +80,13 @@ describe('carrusel del hero — render inicial', () => {
     expect(cardText(container)).toContain(preview().slides.wedding.title);
   });
 
-  it('muestra antetítulo, título y descripción traducidos', () => {
+  it('muestra el evento de ejemplo: etiqueta, nombre, lugar y propuesta de la IA traducidos', () => {
     const { container } = renderCarousel();
     const card = cardText(container);
-    expect(card).toContain(preview().slides.wedding.eyebrow);
+    expect(card).toContain(preview().sampleLabel);
     expect(card).toContain(preview().slides.wedding.title);
+    expect(card).toContain(preview().slides.wedding.place);
+    expect(card).toContain(preview().aiLabel);
     expect(card).toContain(preview().slides.wedding.description);
   });
 
@@ -323,7 +325,7 @@ describe('carrusel del hero — internacionalización', () => {
       // Ninguna ruta de clave cruda visible (`common.landing.preview.…`, `slides.wedding.title`).
       expect(text).not.toMatch(/common\.landing|preview\.|slides\.|controls\./);
 
-      expect(text).toContain(preview(locale).slides.wedding.eyebrow);
+      expect(text).toContain(preview(locale).aiLabel);
       expect(text).toContain(preview(locale).slides.wedding.title);
       expect(text).toContain(preview(locale).slides.wedding.description);
     },
@@ -335,12 +337,12 @@ describe('carrusel del hero — internacionalización', () => {
       const catalog = preview(locale);
       for (const id of SLIDE_IDS) {
         const slide = catalog.slides[id];
-        for (const key of ['eyebrow', 'title', 'description', 'imageAlt'] as const) {
+        for (const key of ['title', 'place', 'description', 'imageAlt'] as const) {
           expect(slide[key], `${locale}/${id}.${key}`).toBeTruthy();
         }
         expect(catalog.controls[id], `${locale}/controls.${id}`).toBeTruthy();
       }
-      for (const key of ['ariaLabel', 'pause', 'resume', 'slideStatus'] as const) {
+      for (const key of ['ariaLabel', 'pause', 'resume', 'slideStatus', 'sampleLabel', 'aiLabel', 'pending'] as const) {
         expect(catalog[key], `${locale}/${key}`).toBeTruthy();
       }
     },
@@ -372,7 +374,9 @@ describe('carrusel del hero — estabilidad de layout', () => {
   it('la tarjeta está fuera del flujo: su longitud no empuja el layout', () => {
     const { container } = renderCarousel();
     const card = container.querySelector('[data-testid="hero-carousel-card"]');
-    // Una descripción más larga en otro idioma no puede cambiar el alto del hero.
-    expect(card?.parentElement?.className).toContain('absolute');
+    // Una descripción más larga en otro idioma no puede cambiar el alto del hero: la tarjeta va
+    // en posición absoluta dentro de una escena de alto fijo.
+    expect(card?.className).toContain('absolute');
+    expect(card?.parentElement?.className).toMatch(/\bh-\[/);
   });
 });

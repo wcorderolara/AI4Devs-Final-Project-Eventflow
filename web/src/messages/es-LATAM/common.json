@@ -29,8 +29,8 @@
   },
   "landing": {
     "eyebrow": "Planificación asistida por IA",
-    "heading": "Convierte la idea de tu evento en un <em>plan accionable</em>",
-    "description": "EventFlow te propone checklist y presupuesto editables, te ayuda a descubrir proveedores aprobados y a pedir cotizaciones estructuradas. Cada sugerencia de IA queda pendiente de tu revisión: nada se aplica hasta que tú lo apruebas.",
+    "heading": "Del primer sí al último brindis.",
+    "description": "EventFlow arma contigo el checklist, el presupuesto y la lista de proveedores de tu boda, bautizo, XV años o cumpleaños. Todo lo que propone la IA queda en borrador hasta que tú lo apruebas.",
     "ctaGroupLabel": "Empezar con EventFlow",
     "featuresHeading": "Lo que puedes hacer hoy",
     "featuresDescription": "Estas son las capacidades disponibles en EventFlow. Ni más, ni menos.",
@@ -62,53 +62,62 @@
       }
     },
     "metadata": {
-      "title": "EventFlow — Convierte la idea de tu evento en un plan accionable",
+      "title": "EventFlow — Del primer sí al último brindis",
       "description": "Planifica bodas, XV años, bautizos, baby showers, cumpleaños y eventos corporativos pequeños con ayuda de IA: checklist y presupuesto editables, proveedores aprobados y cotizaciones comparables. Cada sugerencia queda pendiente de tu aprobación."
     },
     "preview": {
-      "ariaLabel": "Historias de planificación de eventos",
+      "ariaLabel": "Eventos de ejemplo planificados con EventFlow",
       "pause": "Pausar carrusel",
       "resume": "Reanudar carrusel",
       "slideStatus": "Diapositiva {current} de {total}",
       "controls": {
-        "wedding": "Mostrar sugerencia para boda",
-        "celebration": "Mostrar sugerencia para celebración",
-        "baptism": "Mostrar sugerencia para bautizo",
-        "birthday": "Mostrar sugerencia para cumpleaños o baby shower",
-        "corporate": "Mostrar sugerencia para evento corporativo"
+        "wedding": "Ver ejemplo de boda",
+        "celebration": "Ver ejemplo de XV años",
+        "baptism": "Ver ejemplo de bautizo",
+        "birthday": "Ver ejemplo de cumpleaños",
+        "corporate": "Ver ejemplo de evento corporativo"
       },
       "slides": {
         "wedding": {
-          "eyebrow": "Sugerencia de IA",
-          "title": "Optimización de presupuesto",
-          "description": "Detectamos oportunidades para reducir costos sin afectar la experiencia ni la calidad de tu evento.",
+          "title": "Boda de Ana y Luis",
+          "place": "Panajachel, Sololá",
+          "description": "Reservar la marimba antes de julio: en temporada de bodas es lo primero que se agota.",
           "imageAlt": "Recepción de boda elegante con invitados y decoración floral."
         },
         "celebration": {
-          "eyebrow": "Recomendación inteligente",
-          "title": "Ideas que se adaptan a ti",
-          "description": "Recibe sugerencias de decoración, servicios y experiencias según tu estilo, presupuesto y número de invitados.",
+          "title": "XV años de Valeria",
+          "place": "Guadalajara, Jalisco",
+          "description": "Pedir dos cotizaciones más de banquete: la que tienes se lleva el 40 % del presupuesto.",
           "imageAlt": "Celebración social con invitados, decoración cuidada e iluminación cálida."
         },
         "baptism": {
-          "eyebrow": "Checklist personalizado",
-          "title": "Avanza paso a paso",
-          "description": "EventFlow crea un plan de tareas adaptado a tu evento para que siempre sepas qué hacer y cuándo hacerlo.",
+          "title": "Bautizo de Mateo",
+          "place": "Medellín, Antioquia",
+          "description": "Confirmar la iglesia y el salón el mismo día para que no se crucen los horarios.",
           "imageAlt": "Celebración de bautizo con decoración delicada y ambiente familiar."
         },
         "birthday": {
-          "eyebrow": "Planificación inteligente",
-          "title": "Todo bajo control",
-          "description": "Organiza cada detalle, proveedor y fecha importante desde un solo lugar, sin perder de vista ningún pendiente.",
+          "title": "Los 40 de Andrés",
+          "place": "Ciudad de Guatemala",
+          "description": "Pasar el pastel a las tareas de esta semana: la pastelería pide 15 días de anticipación.",
           "imageAlt": "Celebración de cumpleaños o baby shower con decoración elegante y ambiente cálido."
         },
         "corporate": {
-          "eyebrow": "Gestión centralizada",
-          "title": "Proveedores mejor coordinados",
-          "description": "Compara propuestas, controla entregables y mantén toda la información de tus proveedores organizada en un mismo espacio.",
+          "title": "Aniversario de Café Cobán",
+          "place": "Cobán, Alta Verapaz",
+          "description": "Separar el presupuesto de audio y video: hoy está mezclado con decoración.",
           "imageAlt": "Evento corporativo premium con asistentes en un espacio elegante."
         }
-      }
+      },
+      "sampleLabel": "Evento de ejemplo",
+      "countdown": "Faltan {days} días.",
+      "guests": "{count} invitados",
+      "checklist": "Checklist",
+      "checklistProgress": "{done} de {total} tareas",
+      "budget": "Presupuesto",
+      "budgetCommitted": "{percent} % ya comprometido",
+      "aiLabel": "La IA propone",
+      "pending": "Pendiente de tu revisión. No se aplica hasta que la aceptes."
     },
     "howItWorks": {
       "eyebrow": "Cómo funciona",

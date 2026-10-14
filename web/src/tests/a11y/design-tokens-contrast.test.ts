@@ -156,7 +156,8 @@ describe('PB-P2-027 · combinaciones aprobadas cumplen WCAG 2.1 AA', () => {
 describe('PB-P2-027 · combinaciones prohibidas por el sistema (Design Tokens §32)', () => {
   // Estas NO deben usarse jamás como texto: el test documenta y fija la prohibición.
   const forbidden: Array<{ label: string; fg: string }> = [
-    { label: 'violet.500 como texto sobre blanco', fg: color.violet[500] },
+    { label: 'bugambilia.400 como texto sobre blanco', fg: color.bugambilia[400] },
+    { label: 'cempasuchil.500 como texto sobre blanco', fg: color.cempasuchil[500] },
     { label: 'lilac.300 como texto sobre blanco', fg: color.lilac[300] },
     { label: 'coral.300 como texto sobre blanco', fg: color.coral[300] },
   ];
@@ -165,7 +166,7 @@ describe('PB-P2-027 · combinaciones prohibidas por el sistema (Design Tokens §
     expect(contrastRatio(fg, background.default)).toBeLessThan(4.5);
   });
 
-  it('el focus ring SIN offset blanco no cumple sobre la CTA violeta: el offset es mandatorio', () => {
+  it('el focus ring SIN offset blanco no cumple sobre la CTA de marca: el offset es mandatorio', () => {
     expect(contrastRatio(focusRing.ringColor, actionPrimary.background)).toBeLessThan(3);
     // Mitigación aprobada (TOK-DEC-016): el offset blanco aporta la separación requerida.
     expect(

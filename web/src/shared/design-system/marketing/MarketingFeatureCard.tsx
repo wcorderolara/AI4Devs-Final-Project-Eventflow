@@ -42,32 +42,42 @@ export function MarketingFeatureCard({
   className,
   'data-testid': testId,
 }: MarketingFeatureCardProps): React.JSX.Element {
+  // Con `href` sigue siendo una Card navegable. Sin enlace, una capacidad no es un objeto
+  // clicable: se presenta como entrada abierta con un hilo superior, no como caja con sombra.
+  if (href) {
+    return (
+      <Card href={href} aria-label={ariaLabel} data-testid={testId} className={cx('group h-full', className)}>
+        {icon ? (
+          <span aria-hidden="true" className="mb-4 inline-flex text-link [&>svg]:h-icon-lg [&>svg]:w-icon-lg">
+            {icon}
+          </span>
+        ) : null}
+        <CardTitle headingLevel={headingLevel}>{title}</CardTitle>
+        {description ? <CardDescription>{description}</CardDescription> : null}
+      </Card>
+    );
+  }
+
+  const Heading = `h${headingLevel}` as 'h2' | 'h3' | 'h4';
   return (
-    <Card
-      href={href}
-      variant={emphasis && !href ? 'selected' : undefined}
+    <div
       aria-label={ariaLabel}
       data-testid={testId}
       className={cx(
-        'group h-full',
-        // Una card de capacidad no es interactiva (no navega), pero sigue mereciendo respuesta al
-        // puntero: eleva y marca el borde en `hover` como el `Card` interactivo, sin fingir que es
-        // un enlace. El icono acompaña el gesto. Se apaga con `prefers-reduced-motion`.
-        !href &&
-          'transition-[box-shadow,border-color] duration-standard ease-standard hover:border-interactive hover:shadow-surface-raised motion-reduce:transition-none',
+        'h-full border-t pt-6',
+        emphasis ? 'border-interactive' : 'border-default',
         className,
       )}
     >
       {icon ? (
-        <span
-          aria-hidden="true"
-          className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-card bg-ai-surface text-ai-icon ring-1 ring-inset ring-ai-border/40 transition-colors duration-standard ease-standard group-hover:bg-ai-surface-hover [&>svg]:h-icon-md [&>svg]:w-icon-md"
-        >
+        <span aria-hidden="true" className="mb-4 inline-flex text-link [&>svg]:h-icon-lg [&>svg]:w-icon-lg">
           {icon}
         </span>
       ) : null}
-      <CardTitle headingLevel={headingLevel}>{title}</CardTitle>
-      {description ? <CardDescription>{description}</CardDescription> : null}
-    </Card>
+      <Heading className="font-heading text-body-lg font-semibold text-primary">{title}</Heading>
+      {description ? (
+        <p className="mt-2 font-body text-body-md text-secondary">{description}</p>
+      ) : null}
+    </div>
   );
 }

@@ -15,7 +15,6 @@ import { useTranslations } from 'next-intl';
 import type { SessionClaims } from '@/shared/authorization';
 import {
   ActionLink,
-  Badge,
   MarketingCTAGroup,
   MarketingFeatureCard,
   MarketingFeatureGrid,
@@ -112,23 +111,9 @@ export function LandingPage({ claims }: LandingPageProps): React.JSX.Element {
         layout="split"
         data-testid="landing-hero"
         className="bg-marketing-hero"
-        eyebrow={
-          // El `eyebrow` del hero se pinta en versalitas; el badge del screen Stitch es una
-          // píldora con capitalización normal, así que se neutralizan ambas heredadas.
-          <Badge
-            variant="role"
-            size="md"
-            icon={<Sparkles />}
-            className="normal-case tracking-ef-normal"
-          >
-            {t('eyebrow')}
-          </Badge>
-        }
-        // El resaltado del titular llega como markup de la traducción (`<em>`), no partiendo la
-        // frase en dos claves: cada idioma decide qué parte enfatiza y dónde cae en el orden.
-        heading={t.rich('heading', {
-          em: (chunks) => <em className="not-italic text-link">{chunks}</em>,
-        })}
+        // Sin píldora de "IA" ni palabra resaltada en el titular: la personalidad la pone la
+        // tipografía display, y la IA se explica en la tarjeta del evento como lo que es.
+        heading={t('heading')}
         description={t('description')}
         ctaGroupLabel={t('ctaGroupLabel')}
         primaryCta={
@@ -146,7 +131,6 @@ export function LandingPage({ claims }: LandingPageProps): React.JSX.Element {
 
       <MarketingSection
         id={PUBLIC_SECTION_ID.howItWorks}
-        eyebrow={t('howItWorks.eyebrow')}
         heading={t('howItWorks.heading')}
         description={t('howItWorks.description')}
         align="center"
@@ -173,7 +157,6 @@ export function LandingPage({ claims }: LandingPageProps): React.JSX.Element {
         id={PUBLIC_SECTION_ID.features}
         heading={t('featuresHeading')}
         description={t('featuresDescription')}
-        background="subtle"
         align="center"
         data-testid="landing-features"
       >
@@ -193,7 +176,7 @@ export function LandingPage({ claims }: LandingPageProps): React.JSX.Element {
 
       <MarketingSection
         id={PUBLIC_SECTION_ID.forVendors}
-        eyebrow={t('forVendors.eyebrow')}
+        background="subtle"
         heading={t('forVendors.heading')}
         description={t('forVendors.description')}
         data-testid="landing-for-vendors"
@@ -222,15 +205,11 @@ export function LandingPage({ claims }: LandingPageProps): React.JSX.Element {
       </MarketingSection>
 
       <MarketingSection
-        background="inverse"
         align="center"
         heading={t('finalCta.heading')}
         description={t('finalCta.description')}
         data-testid="landing-final-cta"
-        // Halo violeta detrás del cierre: da profundidad a la banda oscura para que se lea como un
-        // final intencional y no como un rectángulo negro vacío. Puramente decorativo
-        // (`before:`), no afecta al contraste del texto blanco encima.
-        className="relative isolate overflow-hidden before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:-z-10 before:h-full before:bg-[radial-gradient(60%_120%_at_50%_-10%,rgba(123,78,232,0.28),transparent_70%)] before:content-['']"
+        className="border-t border-subtle"
       >
         <MarketingCTAGroup
           align="center"

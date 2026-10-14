@@ -41,7 +41,7 @@ describe('landing pública — estructura', () => {
     const { container } = renderLanding();
     const h1s = container.querySelectorAll('h1');
     expect(h1s).toHaveLength(1);
-    expect(h1s[0]?.textContent).toContain('plan accionable');
+    expect(h1s[0]?.textContent).toContain('último brindis');
   });
 
   it('la jerarquía de encabezados no salta niveles', () => {
@@ -233,7 +233,7 @@ describe('landing pública — internacionalización', () => {
   it('renderiza el catálogo del locale activo', () => {
     const { container } = renderLanding(ANONYMOUS, 'en');
     const text = container.textContent ?? '';
-    expect(text).toContain('actionable plan');
+    expect(text).toContain('last toast');
     expect(text).toContain(enCommon.landing.howItWorks.heading);
     expect(text).toContain(enNavigation.public.cta.register);
   });

@@ -100,7 +100,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       {isLoading ? (
         <Spinner className={ICON_SIZE[size]} />
       ) : leadingIcon ? (
-        <span aria-hidden="true" className={cx('shrink-0', ICON_SIZE[size])}>
+        <span aria-hidden="true" className={cx('shrink-0 [&>svg]:h-full [&>svg]:w-full', ICON_SIZE[size])}>
           {leadingIcon}
         </span>
       ) : null}
@@ -108,7 +108,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         {isLoading && loadingLabel !== undefined ? loadingLabel : children}
       </span>
       {!isLoading && trailingIcon ? (
-        <span aria-hidden="true" className={cx('shrink-0', ICON_SIZE[size])}>
+        <span aria-hidden="true" className={cx('shrink-0 [&>svg]:h-full [&>svg]:w-full', ICON_SIZE[size])}>
           {trailingIcon}
         </span>
       ) : null}

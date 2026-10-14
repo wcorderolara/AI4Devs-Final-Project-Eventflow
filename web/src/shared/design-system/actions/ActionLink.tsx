@@ -72,13 +72,13 @@ export const ActionLink = forwardRef<HTMLAnchorElement, ActionLinkProps>(functio
       )}
     >
       {leadingIcon ? (
-        <span aria-hidden="true" className={cx('shrink-0', ACTION_ICON_SIZE[size])}>
+        <span aria-hidden="true" className={cx('shrink-0 [&>svg]:h-full [&>svg]:w-full', ACTION_ICON_SIZE[size])}>
           {leadingIcon}
         </span>
       ) : null}
       <span className="truncate">{children}</span>
       {trailingIcon ? (
-        <span aria-hidden="true" className={cx('shrink-0', ACTION_ICON_SIZE[size])}>
+        <span aria-hidden="true" className={cx('shrink-0 [&>svg]:h-full [&>svg]:w-full', ACTION_ICON_SIZE[size])}>
           {trailingIcon}
         </span>
       ) : null}

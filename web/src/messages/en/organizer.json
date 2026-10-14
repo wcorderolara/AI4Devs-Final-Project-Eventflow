@@ -295,6 +295,22 @@
       "browseVendors": "Browse vendors",
       "tasks": "Review tasks",
       "notifications": "See notifications"
+    },
+    "greeting": "Hi, {name}",
+    "activity": {
+      "heading": "Your activity",
+      "eventsDetail": "{active} active, {draft} in draft",
+      "quotesDetail": "{accepted} accepted, {received} to review"
+    },
+    "nextEvent": {
+      "heading": "Your next event",
+      "countdown": "{days, plural, =0 {It is today.} one {# day to go.} other {# days to go.}}",
+      "guests": "{count} guests",
+      "open": "Open event",
+      "tasks": "See tasks",
+      "emptyTitle": "You do not have an event on the calendar yet.",
+      "emptyBody": "Tell us what you are celebrating and EventFlow suggests a checklist and budget to get you started.",
+      "emptyCta": "Create event"
     }
   }
 }

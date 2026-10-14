@@ -57,19 +57,19 @@ export function MarketingHero({
 
   const copy = (
     <div className={cx('min-w-0', centered && 'mx-auto text-center')}>
-      {eyebrow ? <p className="font-ui text-eyebrow uppercase text-link">{eyebrow}</p> : null}
+      {eyebrow ? <p className="font-ui text-body-sm font-medium text-secondary">{eyebrow}</p> : null}
       <h1
         id={headingId}
         // `text-balance` + ancho relativo: una traducción un 30 % más larga sigue leyéndose
         // bien y no fuerza saltos raros (§32: evitar anchos fijos que rompan traducciones).
-        className="mt-3 text-balance font-heading text-h1 font-semibold text-primary sm:text-display"
+        className="mt-3 text-balance font-display text-[2.75rem] font-medium leading-[1.02] tracking-[-0.015em] text-primary sm:text-[4rem] lg:text-[5.25rem]"
       >
         {heading}
       </h1>
       {description ? (
         <p
           className={cx(
-            'mt-4 max-w-content text-balance font-body text-body-lg text-secondary',
+            'mt-6 max-w-[34rem] font-body text-body-lg text-secondary',
             centered && 'mx-auto',
           )}
         >
@@ -78,7 +78,7 @@ export function MarketingHero({
       ) : null}
       {primaryCta ? (
         <MarketingCTAGroup
-          className="mt-8"
+          className="mt-10"
           align={centered ? 'center' : 'start'}
           ariaLabel={ctaGroupLabel}
           primary={primaryCta}
