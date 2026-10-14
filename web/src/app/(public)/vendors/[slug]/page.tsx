@@ -4,11 +4,17 @@
 // D6 (uniform 404 sin distinguir "no existe" vs "no aprobado").
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 import { PublicVendorProfile } from '@/features/vendor-public/components/PublicVendorProfile';
 import { JsonLdLocalBusiness } from '@/features/vendor-public/components/JsonLdLocalBusiness';
 import { vendorsPublicApi } from '@/features/vendor-public/api/vendorPublicApi';
 
 export const revalidate = 300;
+
+// Una sola llamada al backend por render: `generateMetadata` y la página comparten el resultado.
+// El endpoint público tiene rate limit (60 req/min por IP, US-046 D7) y todas las llamadas SSR
+// salen desde la IP del servidor de Next, así que cada petición duplicada gasta el cupo de todos.
+const getVendor = cache((slug: string) => vendorsPublicApi.get(slug));
 
 // La página se renderiza dinámicamente por slug la primera vez y luego se cachea con ISR.
 // `dynamicParams: true` permite generar bajo demanda cualquier slug no listado en
@@ -29,7 +35,7 @@ function truncateBio(bio: string, max = 160): string {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const result = await vendorsPublicApi.get(params.slug);
+  const result = await getVendor(params.slug);
   const siteUrl = resolveSiteUrl();
 
   if (result.status !== 'ok') {
@@ -66,14 +72,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function PublicVendorPage({ params }: PageProps) {
-  const result = await vendorsPublicApi.get(params.slug);
+  const result = await getVendor(params.slug);
   if (result.status === 'not_found') {
     notFound();
   }
   if (result.status !== 'ok') {
-    // Cualquier otro error (500, 429, network) hace fallback a 404 uniforme (D6 spirit) —
-    // evita filtrar el estado real del backend a un cliente anónimo.
-    notFound();
+    // 429/5xx/red NO son "no existe": un 404 aquí haría desaparecer a un proveedor aprobado y ISR
+    // lo cachearía. Se lanza para que lo atienda `(public)/error.tsx` (mensaje genérico + reintento,
+    // sin detalles del backend) y la ruta se vuelva a generar en la próxima visita. El 404 uniforme
+    // de D6 sigue aplicando a lo que el backend responde como no encontrado (no existe/no aprobado).
+    throw new Error('public vendor profile unavailable');
   }
   const vendor = result.data;
   const siteUrl = resolveSiteUrl();

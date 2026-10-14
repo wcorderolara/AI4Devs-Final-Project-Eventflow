@@ -83,6 +83,9 @@ export function VendorCard({
         {profileHref ? (
           <Link
             href={profileHref}
+            // Sin prefetch por viewport: con infinite scroll, cada tarjeta visible pediría su perfil
+            // al backend (rate limit público 60 req/min por IP) aunque nadie lo abra.
+            prefetch={false}
             className="focus-ring after:absolute after:inset-0 after:content-[''] hover:text-link"
           >
             {vendor.businessName}
