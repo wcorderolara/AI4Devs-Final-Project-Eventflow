@@ -172,6 +172,7 @@ describe('toVendorCardResponse', () => {
     locationDisplay: 'Ciudad de Guatemala, Guatemala, Guatemala',
     categoryCodes: ['catering'],
     categoryLabels: [{ code: 'catering', label: 'Banquetes y catering' }],
+    coverAttachmentId: null,
     ratingAvg: 4.6,
     reviewsCount: 12,
     priceMin: '150.00',
@@ -193,6 +194,12 @@ describe('toVendorCardResponse', () => {
     expect(card.locationDisplay).toBe('Ciudad de Guatemala, Guatemala, Guatemala');
     expect(card.categories).toEqual(['catering']);
     expect(card.categoryLabels).toEqual([{ code: 'catering', name: 'Banquetes y catering' }]);
+  });
+
+  it('thumbnailUrl es la ruta pública de la portada, o null sin portafolio', () => {
+    expect(toVendorCardResponse(baseRow).thumbnailUrl).toBeNull();
+    const card = toVendorCardResponse({ ...baseRow, coverAttachmentId: 'aaaaaaaa-0000-4000-8000-000000000001' });
+    expect(card.thumbnailUrl).toBe('/api/v1/public/portfolio/aaaaaaaa-0000-4000-8000-000000000001');
   });
 
   it('deja priceRange en null cuando no hay currency', () => {
@@ -228,6 +235,7 @@ function makeRow(overrides: Partial<VendorSearchRow>, i = 0): VendorSearchRow {
     locationDisplay: 'Ciudad de Guatemala, Guatemala, Guatemala',
     categoryCodes: ['catering'],
     categoryLabels: [{ code: 'catering', label: 'Banquetes y catering' }],
+    coverAttachmentId: null,
     ratingAvg: null,
     reviewsCount: 0,
     priceMin: null,

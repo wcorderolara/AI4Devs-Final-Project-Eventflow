@@ -69,6 +69,18 @@ describe('US-045 QA-005 — VendorCard', () => {
     expect(screen.queryByText('catering')).toBeNull();
   });
 
+  it('con portada muestra la foto decorativa; sin portada sólo el sello', () => {
+    const { container, rerender } = render(
+      wrap(<VendorCard vendor={card({ thumbnailUrl: '/api/v1/public/portfolio/abc' })} />),
+    );
+    const img = container.querySelector('img');
+    expect(img?.getAttribute('src')).toBe('/api/v1/public/portfolio/abc');
+    // Decorativa: el nombre del proveedor ya está en el encabezado.
+    expect(img?.getAttribute('alt')).toBe('');
+    rerender(wrap(<VendorCard vendor={card({ thumbnailUrl: null })} />));
+    expect(container.querySelector('img')).toBeNull();
+  });
+
   it('muestra "Desde" con el precio mínimo formateado cuando hay rango', () => {
     render(wrap(<VendorCard vendor={card({ priceRange: { min: '150.00', max: '450.00', currency: 'GTQ' } })} />));
     expect(screen.getByText(/^Desde/)).toBeDefined();

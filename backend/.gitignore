@@ -9,3 +9,6 @@ prisma/generated/
 
 # US-098: viewer local derivado (no canónico)
 openapi-docs.html
+
+# Binarios de adjuntos (uploads y copias del seed de portafolio): nunca al repo.
+storage/

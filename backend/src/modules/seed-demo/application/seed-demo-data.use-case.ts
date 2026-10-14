@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import type { Prisma, PrismaClient } from '@prisma/client';
 import {
   EVENT_TYPES,
@@ -681,19 +683,32 @@ export class SeedDemoDataUseCase {
   ): Promise<void> {
     if (vendors.length === 0) return;
 
+    // Un trabajo por proveedor visible, con fotos reales de `prisma/seed-assets/portfolio/<categoría>`
+    // (Wikimedia Commons, licencias libres; créditos en `CREDITS.md`). `vendors[0]` (9) y
+    // `vendors[1]` (10, el límite por trabajo: el 11º se bloquea) conservan los escenarios de tests.
     const scenarios: { vendorIndex: number; workLabel: string; count: number }[] = [
       { vendorIndex: 0, workLabel: 'boda-pareja-2024', count: 9 },
-    ];
-    if (vendors.length > 1) {
-      scenarios.push({ vendorIndex: 1, workLabel: 'xv-anos-2024', count: 10 });
-    }
+      { vendorIndex: 1, workLabel: 'xv-anos-2024', count: 10 },
+      { vendorIndex: 5, workLabel: 'boda-al-aire-libre-2024', count: 5 },
+      { vendorIndex: 6, workLabel: 'xv-anos-2025', count: 5 },
+      { vendorIndex: 7, workLabel: 'ramos-de-novia-2025', count: 5 },
+      { vendorIndex: 8, workLabel: 'mesa-de-postres-2025', count: 5 },
+      { vendorIndex: 9, workLabel: 'invitaciones-boda-2025', count: 4 },
+      { vendorIndex: 10, workLabel: 'auto-de-novios-2024', count: 4 },
+      { vendorIndex: 11, workLabel: 'novia-2025', count: 4 },
+    ].filter((scenario) => scenario.vendorIndex < vendors.length);
 
     for (const scenario of scenarios) {
       const vendor = vendors[scenario.vendorIndex]!;
+      const category = VENDORS[scenario.vendorIndex]?.categoryCode;
       // Idempotente vía `ensure` por índice (fileName determinista): la primera pasada crea
       // N attachments, la segunda encuentra los mismos → suma a `unchanged` (US-085 TS-02).
       for (let i = 0; i < scenario.count; i += 1) {
         const fileName = `${scenario.workLabel}-${i + 1}.jpg`;
+        const storageUrl = `seed/${vendor.id}/${fileName}`;
+        // El binario se copia aunque el registro ya exista: una base re-sembrada en otra máquina
+        // (o un volumen nuevo) necesita el archivo para que la ruta pública lo sirva.
+        const sizeBytes = category ? copySeedPortfolioImage(category, i + 1, storageUrl) : null;
         await ensure(
           () =>
             tx.attachment.findFirst({
@@ -711,11 +726,11 @@ export class SeedDemoDataUseCase {
                 ownerType: 'vendor_work',
                 ownerId: vendor.id,
                 status: 'active',
-                url: `seed/${vendor.id}/${fileName}`,
+                url: storageUrl,
                 fileName,
                 mimeType: 'image/jpeg',
                 workLabel: scenario.workLabel,
-                sizeBytes: 200_000 + i * 1_000,
+                sizeBytes: sizeBytes ?? 200_000 + i * 1_000,
                 uploadedBy: vendor.userId,
                 isSeed: true,
               },
@@ -1580,4 +1595,28 @@ function featureScope(feature: SeedAiFeature): 'event' | 'vendor' | 'quote' {
 
 function seedInputForFeature(feature: SeedAiFeature): Record<string, unknown> {
   return { feature, scenario: 'seed-demo', locale: 'es-LATAM' };
+}
+
+/**
+ * Copia la foto N de la categoría (`prisma/seed-assets/portfolio/<categoría>/NN.jpg`) a
+ * `FILE_STORAGE_PATH/<storageUrl>` si todavía no está. Devuelve el tamaño en bytes, o `null` si el
+ * asset no existe (el registro se crea igual, como antes de tener fotos).
+ */
+function copySeedPortfolioImage(category: string, index: number, storageUrl: string): number | null {
+  const source = path.resolve(
+    process.cwd(),
+    'prisma/seed-assets/portfolio',
+    category,
+    `${String(index).padStart(2, '0')}.jpg`,
+  );
+  if (!fs.existsSync(source)) return null;
+  const base = path.resolve(process.cwd(), process.env.FILE_STORAGE_PATH ?? './storage/uploads');
+  const target = path.resolve(base, storageUrl);
+  if (!target.startsWith(base + path.sep)) return null;
+  const { size } = fs.statSync(source);
+  if (!fs.existsSync(target) || fs.statSync(target).size !== size) {
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.copyFileSync(source, target);
+  }
+  return size;
 }

@@ -52,13 +52,29 @@ export function VendorCard({
   return (
     <article
       aria-labelledby={titleId}
-      className={`relative flex h-full flex-col border border-subtle bg-surface p-6${
+      className={`group relative flex h-full flex-col overflow-hidden border border-subtle bg-surface p-6${
         profileHref
           ? ' transition-[border-color,box-shadow] duration-fast ease-standard hover:border-strong hover:shadow-surface-raised motion-reduce:transition-none'
           : ''
       }`}
     >
-      <CategoryStamp code={categories[0]?.code} />
+      {vendor.thumbnailUrl ? (
+        // Portada: la primera foto del portafolio, a sangre, con el sello montado encima.
+        <div className="relative -mx-6 -mt-6 mb-2">
+          <div className="aspect-[4/3] overflow-hidden bg-surface-subtle">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={vendor.thumbnailUrl}
+              alt=""
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-slow ease-standard group-hover:scale-[1.03] motion-reduce:transition-none"
+            />
+          </div>
+          <CategoryStamp code={categories[0]?.code} className="absolute -bottom-5 left-6 bg-surface" />
+        </div>
+      ) : (
+        <CategoryStamp code={categories[0]?.code} />
+      )}
 
       <Heading
         id={titleId}

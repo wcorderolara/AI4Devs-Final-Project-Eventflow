@@ -38,6 +38,11 @@ function locationDisplay(loc: RawLocationRow): string | null {
   return bits.length === 0 ? null : bits.join(', ');
 }
 
+interface RawCoverRow {
+  vendor_profile_id: string;
+  attachment_id: string;
+}
+
 interface RawCategoryRow {
   vendor_profile_id: string;
   code: string;
@@ -156,7 +161,7 @@ export class PrismaVendorSearchRepository implements VendorSearchRepository {
     const vendorIds = rows.map((r) => r.id);
     const locationIds = uniqueDefined(rows.map((r) => r.location_id));
 
-    const [locations, categories, priceAggs] = await Promise.all([
+    const [locations, categories, priceAggs, covers] = await Promise.all([
       locationIds.length === 0
         ? Promise.resolve([] as RawLocationRow[])
         : this.prisma.$queryRawUnsafe<RawLocationRow[]>(
@@ -186,7 +191,17 @@ export class PrismaVendorSearchRepository implements VendorSearchRepository {
             vendorIds,
             input.filters.currency,
           ),
+      // Portada: la primera imagen activa del portafolio de cada proveedor.
+      this.prisma.$queryRawUnsafe<RawCoverRow[]>(
+        `SELECT DISTINCT ON (a."owner_id") a."owner_id" AS vendor_profile_id, a."id" AS attachment_id
+         FROM "attachments" a
+         WHERE a."owner_type" = 'vendor_work' AND a."status" = 'active' AND a."deleted_at" IS NULL
+           AND a."owner_id" = ANY($1::uuid[])
+         ORDER BY a."owner_id", a."work_label" ASC, a."created_at" ASC, a."file_name" ASC`,
+        vendorIds,
+      ),
     ]);
+    const coverById = new Map(covers.map((c) => [c.vendor_profile_id, c.attachment_id] as const));
 
     const locationById = new Map(locations.map((l) => [l.id, l] as const));
     const categoriesById = groupBy(categories, (r) => r.vendor_profile_id, (r) => r.code);
@@ -208,6 +223,7 @@ export class PrismaVendorSearchRepository implements VendorSearchRepository {
         locationDisplay: location ? locationDisplay(location) : null,
         categoryCodes: categoriesById.get(row.id) ?? [],
         categoryLabels: categoryLabelsById.get(row.id) ?? [],
+        coverAttachmentId: coverById.get(row.id) ?? null,
         ratingAvg: row.rating_avg === null ? null : Number(row.rating_avg),
         reviewsCount: Number(row.reviews_count),
         priceMin: priceRow?.price_min ?? null,

@@ -26,6 +26,7 @@ export interface PublicVendorPackageRecord {
 
 export interface PublicVendorPortfolioAttachmentRecord {
   workLabel: string;
+  /** URL pública servible (`/api/v1/public/portfolio/:id`), nunca la clave de almacenamiento. */
   url: string;
 }
 

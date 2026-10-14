@@ -48,14 +48,18 @@ export function PortfolioGallery({ groups, vendorName }: Props) {
                 <h3 className="font-heading text-body-lg font-semibold text-primary">
                   {humanizeWorkLabel(group.workLabel)}
                 </h3>
-                <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                {/* Composición editorial: la primera foto destaca (2×2) y el resto la acompaña. */}
+                <ul className="grid auto-rows-[9rem] grid-cols-2 gap-2 sm:auto-rows-[11rem] sm:grid-cols-4">
                   {images.map((url, idx) => (
-                    <li key={`${group.workLabel}-${idx}`} className="aspect-[4/5] overflow-hidden bg-surface-subtle">
+                    <li
+                      key={`${group.workLabel}-${idx}`}
+                      className={`overflow-hidden bg-surface-subtle ${idx === 0 ? 'col-span-2 row-span-2' : ''}`}
+                    >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={url}
                         alt={t('imageAlt', { vendor: vendorName, work: humanizeWorkLabel(group.workLabel), index: idx + 1 })}
-                        loading="lazy"
+                        loading={idx === 0 ? 'eager' : 'lazy'}
                         className="h-full w-full object-cover"
                       />
                     </li>

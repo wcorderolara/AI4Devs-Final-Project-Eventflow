@@ -34,6 +34,8 @@ export interface VendorSearchRow {
   categoryCodes: string[];
   /** Mismo orden que `categoryCodes`, con la etiqueta del catálogo. */
   categoryLabels: Array<{ code: string; label: string }>;
+  /** Primera imagen activa del portafolio (portada de la tarjeta); `null` sin portafolio. */
+  coverAttachmentId: string | null;
   ratingAvg: number | null;
   reviewsCount: number;
   priceMin: string | null;
