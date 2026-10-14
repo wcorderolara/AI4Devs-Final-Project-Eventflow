@@ -433,7 +433,10 @@
     },
     "loadMore": {
       "label": "Load more",
-      "loading": "Loading more…"
+      "loading": "Loading more…",
+      "end": "You have seen all vendors.",
+      "error": "We could not load more vendors.",
+      "retry": "Try again"
     },
     "filters": {
       "formLabel": "Search filters",

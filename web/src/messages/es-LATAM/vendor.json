@@ -433,7 +433,10 @@
     },
     "loadMore": {
       "label": "Cargar más",
-      "loading": "Cargando más…"
+      "loading": "Cargando más…",
+      "end": "Ya viste todos los proveedores.",
+      "error": "No pudimos cargar más proveedores.",
+      "retry": "Reintentar"
     },
     "filters": {
       "formLabel": "Filtros de búsqueda",

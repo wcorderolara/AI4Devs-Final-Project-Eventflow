@@ -10,10 +10,11 @@
 // prima la fluidez y no hay SEO que preservar.
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
-import { VendorCard, type VendorFiltersValue } from '@/features/vendor-directory';
+import { type VendorFiltersValue, type VendorSearchQuery } from '@/features/vendor-directory';
 import { Alert } from '@/shared/design-system';
 import { publicVendorDirectoryApi } from '../api/publicVendorDirectoryApi';
 import { PublicVendorDirectoryFilters } from './PublicVendorDirectoryFilters';
+import { PublicVendorGrid } from './PublicVendorGrid';
 
 /** Query params soportados. Cualquier otro se ignora: el backend valida en estricto. */
 export interface PublicVendorDirectorySearchParams {
@@ -52,12 +53,15 @@ export async function PublicVendorDirectory({
   const t = await getTranslations('vendor.directory');
   const filters = readFilters(searchParams);
 
-  const result = await publicVendorDirectoryApi.list({
+  const query: VendorSearchQuery = {
     categoryCode: searchParams.categoryCode || undefined,
     locationCode: searchParams.locationCode || undefined,
     priceMin: searchParams.priceMin || undefined,
     priceMax: searchParams.priceMax || undefined,
-    currency: (searchParams.currency || undefined) as never,
+    currency: (searchParams.currency || undefined) as VendorSearchQuery['currency'],
+  };
+  const result = await publicVendorDirectoryApi.list({
+    ...query,
     cursor: searchParams.cursor || undefined,
   });
 
@@ -97,27 +101,15 @@ export async function PublicVendorDirectory({
         ) : null}
 
         {items.length > 0 ? (
-          <ul
-            aria-label={t('grid.ariaLabel')}
-            className="grid list-none gap-5 sm:grid-cols-2 lg:grid-cols-3"
-          >
-            {items.map((vendor) => (
-              <li key={vendor.id}>
-                {/* `h2`: el `h1` es el título del directorio y no hay nivel intermedio. */}
-                <VendorCard vendor={vendor} linkToProfile headingLevel={2} />
-              </li>
-            ))}
-          </ul>
-        ) : null}
-
-        {hasNext ? (
-          <Link
-            href={nextPageHref(searchParams, nextCursor)}
-            rel="next"
-            className="focus-ring mt-6 inline-flex min-h-touch items-center rounded-button border border-action-secondary bg-action-secondary px-4 font-ui text-body-sm font-semibold text-primary hover:bg-action-secondary-hover"
-          >
-            {t('loadMore.label')}
-          </Link>
+          // `key`: cambiar de filtros reinicia el listado acumulado del infinite scroll.
+          <PublicVendorGrid
+            key={JSON.stringify(query)}
+            initialItems={items}
+            initialCursor={nextCursor}
+            initialHasNext={hasNext}
+            query={JSON.parse(JSON.stringify(query)) as VendorSearchQuery}
+            nextHref={hasNext && nextCursor ? nextPageHref(searchParams, nextCursor) : null}
+          />
         ) : null}
       </div>
     </div>

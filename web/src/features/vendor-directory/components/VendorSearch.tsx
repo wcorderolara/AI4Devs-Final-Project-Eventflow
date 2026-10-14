@@ -9,6 +9,7 @@ import { useMemo, useState } from 'react';
 import { useVendorDirectorySearch } from '../hooks/vendorDirectoryQueries';
 import type { VendorCurrencyCode } from '../api/vendorDirectoryApi.types';
 import { Button } from '@/shared/design-system';
+import { InfiniteLoader } from './InfiniteLoader';
 import { VendorCard } from './VendorCard';
 import { VendorFilters, type VendorFiltersValue } from './VendorFilters';
 
@@ -122,17 +123,20 @@ export function VendorSearch(): JSX.Element {
         </ul>
       ) : null}
 
-      {search.hasNextPage ? (
-        <Button
-          type="button"
-          variant="secondary"
-          className="self-start"
-          onClick={() => void search.fetchNextPage()}
-          disabled={search.isFetchingNextPage}
-          aria-busy={search.isFetchingNextPage}
-        >
-          {search.isFetchingNextPage ? t('loadMore.loading') : t('loadMore.label')}
-        </Button>
+      {items.length > 0 ? (
+        <InfiniteLoader
+          hasMore={Boolean(search.hasNextPage)}
+          isLoading={search.isFetchingNextPage}
+          hasError={search.isFetchNextPageError}
+          onLoadMore={() => void search.fetchNextPage()}
+          labels={{
+            loadMore: t('loadMore.label'),
+            loading: t('loadMore.loading'),
+            end: t('loadMore.end'),
+            error: t('loadMore.error'),
+            retry: t('loadMore.retry'),
+          }}
+        />
       ) : null}
     </div>
   );
