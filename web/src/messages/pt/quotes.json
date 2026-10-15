@@ -46,7 +46,7 @@
     },
     "pickVendor": {
       "title": "Escolha um fornecedor",
-      "body": "Esta solicitação precisa de um fornecedor. Encontre-o no diretório de fornecedores.",
+      "body": "Procure o fornecedor no diretório e toque em «Pedir orçamento» no perfil dele.",
       "cta": "Ir ao diretório"
     },
     "loadError": {

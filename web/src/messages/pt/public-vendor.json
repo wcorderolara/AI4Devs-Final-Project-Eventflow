@@ -40,5 +40,20 @@
     "creditLicense": "Foto com licença <license></license>.",
     "source": "Ver original",
     "sourceCommons": "Ver original no Wikimedia Commons"
+  },
+  "requestQuote": {
+    "cta": "Pedir orçamento",
+    "dialog": {
+      "title": "Para qual evento é o orçamento?",
+      "description": "Escolha o evento; no próximo passo você conta ao fornecedor o que precisa.",
+      "eventsLabel": "Seus eventos ativos",
+      "continue": "Continuar",
+      "cancel": "Cancelar"
+    },
+    "noActive": {
+      "title": "Você precisa de um evento ativo",
+      "body": "Os orçamentos são pedidos para um evento ativo. Ative um dos seus eventos ou crie um novo.",
+      "cta": "Ver meus eventos"
+    }
   }
 }

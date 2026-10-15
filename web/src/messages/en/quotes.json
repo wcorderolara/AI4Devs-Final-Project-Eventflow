@@ -46,7 +46,7 @@
     },
     "pickVendor": {
       "title": "Choose a vendor",
-      "body": "This request needs a vendor. Find one in the vendor directory.",
+      "body": "Find the vendor in the directory and select “Request a quote” on their profile.",
       "cta": "Go to the directory"
     },
     "loadError": {

@@ -8,7 +8,8 @@
 //     aparte para no depender del glifo ★.
 //   - jest-axe: 0 violaciones serias en las 3 vistas (table, cards, indicator).
 import React from 'react';
-import { describe, expect, it } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { NextIntlClientProvider } from 'next-intl';
@@ -201,7 +202,8 @@ describe('US-057 · QuoteComparisonTable', () => {
     expect(markBtn).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('AC-04: CTA "Resumir con IA" presente con ≥2 quotes', () => {
+  it('AC-04: CTA "Resumir con IA" abre el panel del comparador (no navega a otra ruta)', async () => {
+    const onOpenAiSummary = vi.fn();
     render(
       withIntl(
         <QuoteComparisonTable
@@ -210,17 +212,16 @@ describe('US-057 · QuoteComparisonTable', () => {
           categoryName="Catering"
           currencyCode="GTQ"
           items={items}
+          onOpenAiSummary={onOpenAiSummary}
         />,
       ),
     );
-    const ai = screen.getByRole('link', { name: 'Resumir con IA' });
-    expect(ai).toHaveAttribute(
-      'href',
-      `/organizer/events/${EVENT_ID}/quotes/compare/ai-summary?category=${CATEGORY}`,
-    );
+    expect(screen.queryByRole('link', { name: 'Resumir con IA' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Resumir con IA' }));
+    expect(onOpenAiSummary).toHaveBeenCalledTimes(1);
   });
 
-  it('AC-04: CTA "Resumir con IA" ausente con 1 quote', () => {
+  it('AC-04: sin resumen disponible (sin callback) no hay CTA', () => {
     render(
       withIntl(
         <QuoteComparisonTable
@@ -232,7 +233,7 @@ describe('US-057 · QuoteComparisonTable', () => {
         />,
       ),
     );
-    expect(screen.queryByRole('link', { name: 'Resumir con IA' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Resumir con IA' })).toBeNull();
   });
 
   it('CTA "Marcar preferred" (US-058 button) es interactivo y refleja isPreferred=true de la quote preferred', () => {

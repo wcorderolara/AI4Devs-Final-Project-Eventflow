@@ -16,7 +16,8 @@ function formatDate(iso: string | null | undefined, locale: string): string | nu
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
-  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(d);
+  // La fecha del evento no tiene hora: se formatea en UTC para no correrla un día al oeste de UTC.
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeZone: 'UTC' }).format(d);
 }
 
 export function EventSnapshotCard(props: EventSnapshotCardProps): JSX.Element {

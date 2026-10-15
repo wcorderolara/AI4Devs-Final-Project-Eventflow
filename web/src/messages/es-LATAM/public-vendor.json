@@ -40,5 +40,20 @@
     "creditLicense": "Foto con licencia <license></license>.",
     "source": "Ver original",
     "sourceCommons": "Ver original en Wikimedia Commons"
+  },
+  "requestQuote": {
+    "cta": "Pedir cotización",
+    "dialog": {
+      "title": "¿Para qué evento es la cotización?",
+      "description": "Elige el evento; en el siguiente paso le cuentas al proveedor qué necesitas.",
+      "eventsLabel": "Tus eventos activos",
+      "continue": "Continuar",
+      "cancel": "Cancelar"
+    },
+    "noActive": {
+      "title": "Necesitas un evento activo",
+      "body": "Las cotizaciones se piden para un evento activo. Activa uno de tus eventos o crea uno nuevo.",
+      "cta": "Ver mis eventos"
+    }
   }
 }

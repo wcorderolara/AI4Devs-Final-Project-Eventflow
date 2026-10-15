@@ -40,5 +40,20 @@
     "creditLicense": "Photo licensed <license></license>.",
     "source": "View original",
     "sourceCommons": "View original on Wikimedia Commons"
+  },
+  "requestQuote": {
+    "cta": "Request a quote",
+    "dialog": {
+      "title": "Which event is the quote for?",
+      "description": "Choose the event; in the next step you tell the vendor what you need.",
+      "eventsLabel": "Your active events",
+      "continue": "Continue",
+      "cancel": "Cancel"
+    },
+    "noActive": {
+      "title": "You need an active event",
+      "body": "Quotes are requested for an active event. Activate one of your events or create a new one.",
+      "cta": "See my events"
+    }
   }
 }

@@ -3,6 +3,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { CategoryStamp } from '@/features/vendor-directory';
 import type { PublicVendorDTO } from '../api/vendorPublicApi.types';
+import { RequestQuoteCta } from './RequestQuoteCta';
 
 interface Props {
   vendor: PublicVendorDTO;
@@ -64,6 +65,10 @@ export function VendorHero({ vendor }: Props) {
               ))}
             </ul>
           ) : null}
+
+          <div className="mt-6">
+            <RequestQuoteCta vendorSlug={vendor.slug} />
+          </div>
         </div>
       </div>
 
