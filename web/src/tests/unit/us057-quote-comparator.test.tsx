@@ -216,7 +216,7 @@ describe('US-057 · QuoteComparisonTable', () => {
     const ai = screen.getByRole('link', { name: 'Resumir con IA' });
     expect(ai).toHaveAttribute(
       'href',
-      `/organizer/events/${EVENT_ID}/quotes/compare/ai-summary?categoryCode=${CATEGORY}`,
+      `/organizer/events/${EVENT_ID}/quotes/compare/ai-summary?category=${CATEGORY}`,
     );
   });
 

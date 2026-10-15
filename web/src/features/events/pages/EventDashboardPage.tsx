@@ -61,7 +61,7 @@ export function EventDashboardPage({ eventId }: { eventId: string }): React.JSX.
       next.set('tab', id);
       // Los filtros del checklist (`status`, `page`, `range`) viven en el mismo query string;
       // se limpian al cambiar de tab para no arrastrar una página 3 de tareas al volver.
-      for (const key of ['status', 'page', 'range', 'categoryCode', 'aiGenerated']) {
+      for (const key of ['status', 'page', 'range', 'category', 'ai']) {
         next.delete(key);
       }
       router.replace(`${pathname}?${next.toString()}`, { scroll: false });

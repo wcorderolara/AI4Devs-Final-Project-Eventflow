@@ -2,7 +2,7 @@
 
 // US-027 (PB-P1-018 / FE-003) — Barra de filtros URL-driven.
 // Cada cambio actualiza la URL con `useSearchParams`/`useRouter` (shareability + back button).
-// Filtros: status (enum), aiGenerated (bool), categoryCode (string). `<fieldset>` + `<legend>`
+// Filtros en la URL: `status` (enum), `ai` (bool) y `category` (código). `<fieldset>` + `<legend>`
 // para agrupación semántica accesible; `<details>` en mobile para colapso.
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -23,8 +23,8 @@ export function TaskFilters(): JSX.Element {
   const t = useTranslations('checklist');
 
   const status = search.get('status') ?? '';
-  const aiGenerated = search.get('aiGenerated') ?? '';
-  const categoryCode = search.get('categoryCode') ?? '';
+  const aiGenerated = search.get('ai') ?? '';
+  const categoryCode = search.get('category') ?? '';
 
   function updateParam(key: string, value: string): void {
     const params = new URLSearchParams(search.toString());
@@ -62,7 +62,7 @@ export function TaskFilters(): JSX.Element {
             value={aiGenerated}
             selectSize="md"
             onChange={(e: ChangeEvent<HTMLSelectElement>) =>
-              updateParam('aiGenerated', e.target.value)
+              updateParam('ai', e.target.value)
             }
           >
             <option value="">{t('filters.aiGenerated.any')}</option>
@@ -79,9 +79,9 @@ export function TaskFilters(): JSX.Element {
             value={categoryCode}
             placeholder={t('filters.categoryCode.placeholder')}
             clearLabel={t('filters.categoryCode.clear')}
-            onClear={() => updateParam('categoryCode', '')}
+            onClear={() => updateParam('category', '')}
             onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              updateParam('categoryCode', e.target.value.trim())
+              updateParam('category', e.target.value.trim())
             }
           />
         </label>

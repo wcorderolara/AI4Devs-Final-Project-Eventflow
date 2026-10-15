@@ -59,7 +59,7 @@ export function QuoteComparisonTable({
 
   const aiSummaryHref = `/organizer/events/${encodeURIComponent(
     eventId,
-  )}/quotes/compare/ai-summary?categoryCode=${encodeURIComponent(categoryCode)}`;
+  )}/quotes/compare/ai-summary?category=${encodeURIComponent(categoryCode)}`;
 
   // La primera columna queda fija al hacer scroll horizontal: la fila sigue siendo legible
   // cuando hay muchas cotizaciones. `bg-surface` es obligatorio para que el contenido no se

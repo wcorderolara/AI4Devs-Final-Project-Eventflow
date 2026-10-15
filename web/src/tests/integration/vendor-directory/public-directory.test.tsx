@@ -143,10 +143,12 @@ describe('directorio público — paginación (infinite scroll)', () => {
 
   it('el enlace del HTML del servidor conserva los filtros activos', async () => {
     respondWith([vendor()], { cursor: 'CURSOR_2', hasNext: true });
-    const html = await renderDirectoryHtml({ categoryCode: 'catering', locationCode: 'GT-GUA' });
+    // Nombres públicos de la URL (`category`, `city`), no los de la API.
+    const html = await renderDirectoryHtml({ category: 'catering', city: 'GT-GUA' });
     const href = /href="([^"]*cursor=CURSOR_2[^"]*)"/.exec(html)?.[1]?.replace(/&amp;/g, '&') ?? '';
-    expect(href).toContain('categoryCode=catering');
-    expect(href).toContain('locationCode=GT-GUA');
+    expect(href).toContain('category=catering');
+    expect(href).toContain('city=GT-GUA');
+    expect(href).not.toContain('categoryCode');
   });
 
   it('con JavaScript, "Cargar más" agrega la página siguiente debajo de la primera', async () => {
@@ -186,7 +188,7 @@ describe('directorio público — estados de fallo', () => {
       ),
     );
 
-    await renderDirectory({ categoryCode: 'no-existe' });
+    await renderDirectory({ category: 'no-existe' });
 
     expect(screen.getByText(esLatamVendor.directory.invalidFilters)).toBeInTheDocument();
     expect(screen.queryByText(esLatamVendor.directory.error)).not.toBeInTheDocument();
@@ -205,6 +207,30 @@ describe('directorio público — estados de fallo', () => {
 
     await expect(renderDirectory()).resolves.toBeDefined();
     expect(screen.getByText(esLatamVendor.directory.error)).toBeInTheDocument();
+  });
+});
+
+describe('directorio público — nombres de la URL', () => {
+  it('traduce category/city/minPrice/maxPrice de la URL a los parámetros de la API', async () => {
+    let received = new URLSearchParams();
+    server.use(
+      http.get(ENDPOINT, ({ request }) => {
+        received = new URL(request.url).searchParams;
+        return HttpResponse.json({
+          data: { items: [], page: { cursor: null, limit: 20, hasNext: false } },
+        });
+      }),
+    );
+
+    await renderDirectory({ category: 'hora_loca', city: 'GT-GUA', minPrice: '100', maxPrice: '900', currency: 'GTQ' });
+
+    expect(Object.fromEntries(received)).toMatchObject({
+      categoryCode: 'hora_loca',
+      locationCode: 'GT-GUA',
+      priceMin: '100',
+      priceMax: '900',
+      currency: 'GTQ',
+    });
   });
 });
 

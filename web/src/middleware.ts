@@ -1,6 +1,7 @@
 import { match } from '@formatjs/intl-localematcher';
 import { NextResponse, type NextRequest } from 'next/server';
 import { roleGuardMiddleware } from '@/shared/authorization';
+import { legacyQueryParamsRedirect } from '@/shared/routing/legacyQueryParams';
 import { cookieName, defaultLocale, isSupportedLocale, locales, type Locale } from '@/shared/i18n/config';
 import { mapToBcp47 } from '@/shared/i18n/format';
 
@@ -80,9 +81,13 @@ export function localeMiddleware(req: NextRequest): NextResponse {
 /**
  * Composición del middleware (US-104 + US-105): `localeMiddleware → roleGuardMiddleware`.
  * El role guard (redirect UX) tiene prioridad; en pass-through se devuelve la response del locale
- * middleware (que preserva el header `x-locale` para el render server-side).
+ * middleware (que preserva el header `x-locale` para el render server-side). Antes de ambos, los
+ * enlaces con nombres de query params anteriores se redirigen (308) a los actuales.
  */
 export default function middleware(req: NextRequest): NextResponse {
+  const legacyRedirect = legacyQueryParamsRedirect(req);
+  if (legacyRedirect) return legacyRedirect;
+
   const localeResponse = localeMiddleware(req);
   const guardResponse = roleGuardMiddleware(req);
   return guardResponse ?? localeResponse;

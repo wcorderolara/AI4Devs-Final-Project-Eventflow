@@ -10,39 +10,25 @@
 // prima la fluidez y no hay SEO que preservar.
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
-import { type VendorFiltersValue, type VendorSearchQuery } from '@/features/vendor-directory';
+import {
+  DIRECTORY_CURSOR_PARAM,
+  directoryFiltersToSearchParams,
+  readDirectoryFilters,
+  type VendorSearchQuery,
+} from '@/features/vendor-directory';
 import { Alert } from '@/shared/design-system';
 import { publicVendorDirectoryApi } from '../api/publicVendorDirectoryApi';
 import { PublicVendorDirectoryFilters } from './PublicVendorDirectoryFilters';
 import { PublicVendorGrid } from './PublicVendorGrid';
 
-/** Query params soportados. Cualquier otro se ignora: el backend valida en estricto. */
-export interface PublicVendorDirectorySearchParams {
-  categoryCode?: string;
-  locationCode?: string;
-  priceMin?: string;
-  priceMax?: string;
-  currency?: string;
-  cursor?: string;
-}
+/**
+ * Query params de la página (nombres públicos de `DIRECTORY_URL_PARAMS`: `category`, `city`,
+ * `minPrice`, `maxPrice`, `currency`, `cursor`). Cualquier otro se ignora.
+ */
+export type PublicVendorDirectorySearchParams = Partial<Record<string, string | string[]>>;
 
-function readFilters(params: PublicVendorDirectorySearchParams): VendorFiltersValue {
-  return {
-    categoryCode: params.categoryCode ?? '',
-    locationCode: params.locationCode ?? '',
-    priceMin: params.priceMin ?? '',
-    priceMax: params.priceMax ?? '',
-    currency: (params.currency ?? '') as VendorFiltersValue['currency'],
-  };
-}
-
-/** Enlace a la siguiente página conservando los filtros activos. */
-function nextPageHref(params: PublicVendorDirectorySearchParams, cursor: string): string {
-  const next = new URLSearchParams();
-  for (const [key, value] of Object.entries({ ...params, cursor })) {
-    if (value) next.set(key, value);
-  }
-  return `/vendors?${next.toString()}`;
+function firstOf(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
 }
 
 export async function PublicVendorDirectory({
@@ -51,19 +37,17 @@ export async function PublicVendorDirectory({
   searchParams?: PublicVendorDirectorySearchParams;
 }): Promise<React.JSX.Element> {
   const t = await getTranslations('vendor.directory');
-  const filters = readFilters(searchParams);
+  const filters = readDirectoryFilters((name) => firstOf(searchParams[name]));
+  const cursor = firstOf(searchParams[DIRECTORY_CURSOR_PARAM]) || undefined;
 
   const query: VendorSearchQuery = {
-    categoryCode: searchParams.categoryCode || undefined,
-    locationCode: searchParams.locationCode || undefined,
-    priceMin: searchParams.priceMin || undefined,
-    priceMax: searchParams.priceMax || undefined,
-    currency: (searchParams.currency || undefined) as VendorSearchQuery['currency'],
+    categoryCode: filters.categoryCode || undefined,
+    locationCode: filters.locationCode || undefined,
+    priceMin: filters.priceMin || undefined,
+    priceMax: filters.priceMax || undefined,
+    currency: (filters.currency || undefined) as VendorSearchQuery['currency'],
   };
-  const result = await publicVendorDirectoryApi.list({
-    ...query,
-    cursor: searchParams.cursor || undefined,
-  });
+  const result = await publicVendorDirectoryApi.list({ ...query, cursor });
 
   const items = result.status === 'ok' ? result.data.items : [];
   const nextCursor = result.status === 'ok' ? result.data.page.cursor : null;
@@ -108,7 +92,11 @@ export async function PublicVendorDirectory({
             initialCursor={nextCursor}
             initialHasNext={hasNext}
             query={JSON.parse(JSON.stringify(query)) as VendorSearchQuery}
-            nextHref={hasNext && nextCursor ? nextPageHref(searchParams, nextCursor) : null}
+            nextHref={
+            hasNext && nextCursor
+              ? `/vendors?${directoryFiltersToSearchParams(filters, nextCursor).toString()}`
+              : null
+          }
           />
         ) : null}
       </div>

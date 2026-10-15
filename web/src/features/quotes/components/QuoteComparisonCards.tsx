@@ -144,7 +144,7 @@ export function QuoteComparisonCards({
   const [error, setError] = useState<string | null>(null);
   const aiSummaryHref = `/organizer/events/${encodeURIComponent(
     eventId,
-  )}/quotes/compare/ai-summary?categoryCode=${encodeURIComponent(categoryCode)}`;
+  )}/quotes/compare/ai-summary?category=${encodeURIComponent(categoryCode)}`;
   return (
     <div className="space-y-3" data-testid="quote-comparison-cards">
       {items.map((item) => (

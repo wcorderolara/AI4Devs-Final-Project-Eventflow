@@ -6,32 +6,13 @@
 import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import { directoryFiltersToSearchParams, readDirectoryFilters } from '../directoryUrl';
 import { useVendorDirectorySearch } from '../hooks/vendorDirectoryQueries';
 import type { VendorCurrencyCode } from '../api/vendorDirectoryApi.types';
 import { Button } from '@/shared/design-system';
 import { InfiniteLoader } from './InfiniteLoader';
 import { VendorCard } from './VendorCard';
 import { VendorFilters, type VendorFiltersValue } from './VendorFilters';
-
-function readFromSearchParams(sp: URLSearchParams): VendorFiltersValue {
-  return {
-    categoryCode: sp.get('categoryCode') ?? '',
-    locationCode: sp.get('locationCode') ?? '',
-    priceMin: sp.get('priceMin') ?? '',
-    priceMax: sp.get('priceMax') ?? '',
-    currency: (sp.get('currency') as VendorFiltersValue['currency']) ?? '',
-  };
-}
-
-function serializeToSearchParams(value: VendorFiltersValue): URLSearchParams {
-  const params = new URLSearchParams();
-  if (value.categoryCode.trim()) params.set('categoryCode', value.categoryCode.trim());
-  if (value.locationCode.trim()) params.set('locationCode', value.locationCode.trim());
-  if (value.priceMin.trim()) params.set('priceMin', value.priceMin.trim());
-  if (value.priceMax.trim()) params.set('priceMax', value.priceMax.trim());
-  if (value.currency) params.set('currency', value.currency);
-  return params;
-}
 
 export function VendorSearch(): JSX.Element {
   const t = useTranslations('vendor.directory');
@@ -41,7 +22,7 @@ export function VendorSearch(): JSX.Element {
   // La URL es la fuente de verdad; el estado local es un draft para poder editar filtros sin
   // ejecutar una nueva búsqueda hasta que el usuario presione "Aplicar".
   const initialFromUrl = useMemo(
-    () => readFromSearchParams(new URLSearchParams(searchParams?.toString() ?? '')),
+    () => readDirectoryFilters((name) => searchParams?.get(name)),
     [searchParams],
   );
   const [draft, setDraft] = useState<VendorFiltersValue>(initialFromUrl);
@@ -57,7 +38,7 @@ export function VendorSearch(): JSX.Element {
   });
 
   function applyFilters(next: VendorFiltersValue) {
-    const params = serializeToSearchParams(next);
+    const params = directoryFiltersToSearchParams(next);
     router.push(`?${params.toString()}`);
   }
 

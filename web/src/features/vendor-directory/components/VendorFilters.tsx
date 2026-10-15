@@ -6,6 +6,7 @@
 import { useTranslations } from 'next-intl';
 import { useId, type FormEvent } from 'react';
 import { Button } from '@/shared/design-system';
+import { DIRECTORY_URL_PARAMS } from '../directoryUrl';
 import { useDirectoryCatalogs } from '../hooks/useDirectoryCatalogs';
 
 const FIELD =
@@ -65,7 +66,7 @@ export function VendorFilters(props: VendorFiltersProps): JSX.Element {
           {catalogs.categories ? (
             <select
               id={ids.category}
-              name="categoryCode"
+              name={DIRECTORY_URL_PARAMS.categoryCode}
               value={props.value.categoryCode}
               onChange={(e) => update('categoryCode', e.target.value)}
               className={FIELD}
@@ -92,7 +93,7 @@ export function VendorFilters(props: VendorFiltersProps): JSX.Element {
           ) : (
             <input
               id={ids.category}
-              name="categoryCode"
+              name={DIRECTORY_URL_PARAMS.categoryCode}
               type="text"
               value={props.value.categoryCode}
               onChange={(e) => update('categoryCode', e.target.value)}
@@ -109,7 +110,7 @@ export function VendorFilters(props: VendorFiltersProps): JSX.Element {
           {catalogs.locations ? (
             <select
               id={ids.location}
-              name="locationCode"
+              name={DIRECTORY_URL_PARAMS.locationCode}
               value={props.value.locationCode}
               onChange={(e) => update('locationCode', e.target.value)}
               className={FIELD}
@@ -128,7 +129,7 @@ export function VendorFilters(props: VendorFiltersProps): JSX.Element {
           ) : (
             <input
               id={ids.location}
-              name="locationCode"
+              name={DIRECTORY_URL_PARAMS.locationCode}
               type="text"
               value={props.value.locationCode}
               onChange={(e) => update('locationCode', e.target.value)}
@@ -144,7 +145,7 @@ export function VendorFilters(props: VendorFiltersProps): JSX.Element {
           </label>
           <input
             id={ids.priceMin}
-            name="priceMin"
+            name={DIRECTORY_URL_PARAMS.priceMin}
             type="number"
             min="0"
             step="0.01"
@@ -160,7 +161,7 @@ export function VendorFilters(props: VendorFiltersProps): JSX.Element {
           </label>
           <input
             id={ids.priceMax}
-            name="priceMax"
+            name={DIRECTORY_URL_PARAMS.priceMax}
             type="number"
             min="0"
             step="0.01"
@@ -176,7 +177,7 @@ export function VendorFilters(props: VendorFiltersProps): JSX.Element {
           </label>
           <select
             id={ids.currency}
-            name="currency"
+            name={DIRECTORY_URL_PARAMS.currency}
             value={props.value.currency}
             onChange={(e) => update('currency', e.target.value as VendorFiltersValue['currency'])}
             className={FIELD}

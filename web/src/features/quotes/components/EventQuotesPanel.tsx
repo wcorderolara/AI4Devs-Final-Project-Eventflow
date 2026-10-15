@@ -165,7 +165,7 @@ export function EventQuotesPanel({
                 <TableCell align="end">
                   {comparable ? (
                     <TextLink
-                      href={`/organizer/events/${encodeURIComponent(eventId)}/quotes/compare?categoryCode=${encodeURIComponent(category.code)}`}
+                      href={`/organizer/events/${encodeURIComponent(eventId)}/quotes/compare?category=${encodeURIComponent(category.code)}`}
                     >
                       {t('actions.compare')}
                     </TextLink>

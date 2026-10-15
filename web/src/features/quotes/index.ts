@@ -2,6 +2,7 @@
 export { EventSnapshotCard } from './components/EventSnapshotCard';
 export { VendorCardSummary } from './components/VendorCardSummary';
 export { QuoteRequestForm } from './components/QuoteRequestForm';
+export { NewQuoteRequestPage } from './components/NewQuoteRequestPage';
 export { QRLimitBadge, QR_LIMIT_REASON_ID } from './components/QRLimitBadge';
 // US-057 (FE-002): comparador de Quotes por categoría.
 export { QuoteComparator } from './components/QuoteComparator';

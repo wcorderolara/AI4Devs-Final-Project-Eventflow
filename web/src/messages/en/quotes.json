@@ -43,6 +43,19 @@
       "AUTHENTICATION_REQUIRED": "You need to sign in to send the request.",
       "FORBIDDEN": "Your role cannot create quote requests.",
       "UNEXPECTED": "An unexpected error occurred. Please try again."
+    },
+    "pickVendor": {
+      "title": "Choose a vendor",
+      "body": "This request needs a vendor. Find one in the vendor directory.",
+      "cta": "Go to the directory"
+    },
+    "loadError": {
+      "title": "We couldn't prepare the request",
+      "body": "We couldn't find the event or the vendor, or they aren't available. Choose the vendor again in the directory."
+    },
+    "category": {
+      "label": "Service you want a quote for",
+      "placeholder": "Choose a service"
     }
   },
   "limit": {

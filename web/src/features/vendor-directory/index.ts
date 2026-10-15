@@ -7,6 +7,12 @@ export { CategoryStamp, categoryVisual } from './components/categoryVisuals';
 export { vendorsApi } from './api/vendorDirectoryApi';
 export type { VendorFiltersValue } from './components/VendorFilters';
 export {
+  DIRECTORY_CURSOR_PARAM,
+  DIRECTORY_URL_PARAMS,
+  directoryFiltersToSearchParams,
+  readDirectoryFilters,
+} from './directoryUrl';
+export {
   VENDOR_CURRENCY_CODES,
   type VendorCardDTO,
   type VendorCurrencyCode,
