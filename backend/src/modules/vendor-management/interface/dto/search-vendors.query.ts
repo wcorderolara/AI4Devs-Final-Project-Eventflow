@@ -11,6 +11,9 @@ import { z } from 'zod';
 import { SUPPORTED_CURRENCIES } from '../../../../shared/constants/currencies.js';
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i;
+// Los códigos de categoría del catálogo canónico usan también guion bajo (`music_dj`, `hora_loca`;
+// Doc 11 §ServiceCategory). Aceptarlo aquí: con el slug estricto esos filtros daban 400.
+const CATEGORY_CODE_RE = /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/i;
 const PRICE_RE = /^\d+(\.\d{1,2})?$/;
 const LIMIT_MIN = 1;
 const LIMIT_MAX = 50;
@@ -23,7 +26,7 @@ export const SearchVendorsQuerySchema = z
       .trim()
       .min(1)
       .max(64)
-      .regex(SLUG_RE, 'categoryCode must be a slug')
+      .regex(CATEGORY_CODE_RE, 'categoryCode must be a category code')
       .optional(),
     locationCode: z
       .string()

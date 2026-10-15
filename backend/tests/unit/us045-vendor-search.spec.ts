@@ -149,6 +149,18 @@ describe('SearchVendorsQuerySchema', () => {
     expect(result.success).toBe(false);
   });
 
+  it('acepta códigos de categoría con guion bajo del catálogo canónico (music_dj, hora_loca)', () => {
+    for (const categoryCode of ['music_dj', 'hora_loca', 'photography']) {
+      expect(SearchVendorsQuerySchema.safeParse({ categoryCode }).success).toBe(true);
+    }
+  });
+
+  it('rechaza códigos de categoría mal formados', () => {
+    for (const categoryCode of ['_hora', 'hora__loca', 'hora_', 'hora loca', 'hora;loca']) {
+      expect(SearchVendorsQuerySchema.safeParse({ categoryCode }).success).toBe(false);
+    }
+  });
+
   it('rechaza slug con espacios', () => {
     const result = SearchVendorsQuerySchema.safeParse({ categoryCode: 'foo bar' });
     expect(result.success).toBe(false);
