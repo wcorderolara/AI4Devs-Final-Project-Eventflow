@@ -54,3 +54,10 @@ export interface VendorSearchQuery {
   cursor?: string;
   limit?: number;
 }
+
+/**
+ * Tamaño de página de los directorios (público y del organizador). Múltiplo de 2 y 3 para que las
+ * filas de la cuadrícula (2 columnas en tablet, 3 en escritorio) queden completas, y lo bastante
+ * chico para que el infinite scroll se note con catálogos pequeños.
+ */
+export const DIRECTORY_PAGE_SIZE = 12;

@@ -12,6 +12,7 @@ import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import {
   DIRECTORY_CURSOR_PARAM,
+  DIRECTORY_PAGE_SIZE,
   directoryFiltersToSearchParams,
   readDirectoryFilters,
   type VendorSearchQuery,
@@ -46,6 +47,8 @@ export async function PublicVendorDirectory({
     priceMin: filters.priceMin || undefined,
     priceMax: filters.priceMax || undefined,
     currency: (filters.currency || undefined) as VendorSearchQuery['currency'],
+    // Viaja también a las páginas siguientes (el grid reenvía `query` con cada cursor).
+    limit: DIRECTORY_PAGE_SIZE,
   };
   const result = await publicVendorDirectoryApi.list({ ...query, cursor });
 

@@ -13,6 +13,7 @@ export {
   readDirectoryFilters,
 } from './directoryUrl';
 export {
+  DIRECTORY_PAGE_SIZE,
   VENDOR_CURRENCY_CODES,
   type VendorCardDTO,
   type VendorCurrencyCode,

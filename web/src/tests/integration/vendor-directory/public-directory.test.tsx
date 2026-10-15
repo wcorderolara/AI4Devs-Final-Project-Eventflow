@@ -155,8 +155,10 @@ describe('directorio público — paginación (infinite scroll)', () => {
     respondWith([vendor()], { cursor: 'CURSOR_2', hasNext: true });
     await renderDirectory();
     // Página 2: otro proveedor y sin más páginas.
+    let page2Limit: string | null = null;
     server.use(
       http.get(ENDPOINT, ({ request }) =>
+        (page2Limit = new URL(request.url).searchParams.get('limit')) !== null &&
         new URL(request.url).searchParams.get('cursor') === 'CURSOR_2'
           ? HttpResponse.json({
               data: {
@@ -171,6 +173,8 @@ describe('directorio público — paginación (infinite scroll)', () => {
     await waitFor(() => expect(screen.getByText('Flores de la Sabana')).toBeInTheDocument());
     expect(screen.getByText('Catering La Ceiba')).toBeInTheDocument();
     expect(screen.getByText(esLatamVendor.directory.loadMore.end)).toBeInTheDocument();
+    // Las páginas siguientes mantienen el mismo tamaño de página.
+    expect(page2Limit).toBe('12');
   });
 
   it('no ofrece siguiente página cuando no la hay', async () => {
@@ -230,6 +234,7 @@ describe('directorio público — nombres de la URL', () => {
       priceMin: '100',
       priceMax: '900',
       currency: 'GTQ',
+      limit: '12',
     });
   });
 });

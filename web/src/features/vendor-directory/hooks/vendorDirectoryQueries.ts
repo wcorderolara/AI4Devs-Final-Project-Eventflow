@@ -5,7 +5,11 @@
 // (comportamiento esperado por AC-01/AC-03 — filtros ⇒ nueva búsqueda).
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { vendorsApi } from '../api/vendorDirectoryApi';
-import type { VendorSearchDataDTO, VendorSearchQuery } from '../api/vendorDirectoryApi.types';
+import {
+  DIRECTORY_PAGE_SIZE,
+  type VendorSearchDataDTO,
+  type VendorSearchQuery,
+} from '../api/vendorDirectoryApi.types';
 
 export const vendorDirectoryKeys = {
   all: ['vendor', 'directory'] as const,
@@ -21,10 +25,8 @@ export interface NormalizedFilters {
   limit: number;
 }
 
-const DEFAULT_LIMIT = 20;
-
 export function normalizeFilters(input: Partial<VendorSearchQuery>): NormalizedFilters {
-  const limit = input.limit ?? DEFAULT_LIMIT;
+  const limit = input.limit ?? DIRECTORY_PAGE_SIZE;
   return {
     categoryCode: emptyToUndefined(input.categoryCode),
     locationCode: emptyToUndefined(input.locationCode),
