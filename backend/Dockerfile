@@ -37,6 +37,10 @@ COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/dist ./dist
 COPY --from=build --chown=node:node /app/prisma ./prisma
 COPY --from=build --chown=node:node /app/package.json ./package.json
+# Almacenamiento local de archivos (`FILE_STORAGE_PATH`, default `./storage/uploads`): `/app` es de
+# root, así que la carpeta se crea aquí con dueño `node`; si no, el usuario no-root no puede escribir
+# (subidas del portafolio, fotos del seed). En EC2 se monta un volumen del host en esta ruta.
+RUN mkdir -p /app/storage/uploads && chown -R node:node /app/storage
 # AC-04 / SEC-02: el contenedor corre como usuario no-root.
 USER node
 EXPOSE 3000
