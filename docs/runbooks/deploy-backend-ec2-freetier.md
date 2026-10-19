@@ -64,6 +64,28 @@ aws ssm send-command --region us-east-1 --instance-ids i-0a5a6fdd3f1f41799 \
 O `git revert` + re-ejecutar el pipeline (`.github/workflows/deploy-backend.yml`, adaptar el paso de
 deploy a SSM Run Command en lugar de App Runner cuando se consolide).
 
+## Archivos subidos (volumen persistente)
+
+El backend guarda los archivos (portafolio de proveedores, fotos del seed demo) en
+`FILE_STORAGE_PATH=/app/storage/uploads`. El documento `EventflowRedeploy` monta ahí el directorio
+del host `/opt/eventflow/uploads` (dueño uid 1000 = usuario `node` de la imagen). Así los archivos
+sobreviven a cada redeploy, que borra y recrea el contenedor. Sin el volumen se pierden en cada
+deploy, y sin la carpeta creada en el Dockerfile el usuario no-root no puede escribirlos.
+
+## Seed demo
+
+El seed (`dist/scripts/seed.js`) es idempotente: hace upsert de los registros sembrados y no borra
+los datos creados por usuarios. Copia las fotos de `prisma/seed-assets/portfolio` al volumen de
+uploads, así que se ejecuta **dentro del contenedor `backend`**, después del redeploy (la migración
+ya aplicada):
+```bash
+aws ssm send-command --region us-east-1 --instance-ids i-0a5a6fdd3f1f41799 \
+  --document-name AWS-RunShellScript \
+  --parameters 'commands=["docker exec -e SEED_DEMO_ENABLED=true -e LLM_PROVIDER=mock backend node dist/scripts/seed.js"]'
+```
+El gate del seed exige `SEED_DEMO_ENABLED=true` y `NODE_ENV!=production` (el contenedor corre en
+`development`, ver Deviaciones).
+
 ## Smoke
 
 ```bash
