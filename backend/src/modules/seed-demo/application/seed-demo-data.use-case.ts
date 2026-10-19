@@ -1,14 +1,29 @@
 import { randomUUID } from 'node:crypto';
-import type { Prisma, PrismaClient } from '@prisma/client';
+import fs from 'node:fs';
+import path from 'node:path';
+import { Prisma, type PrismaClient } from '@prisma/client';
 import {
+  CORE_VENDOR_COUNT,
   EVENT_TYPES,
+  EVENTS,
+  LOCAL_CURRENCY,
   LOCATIONS,
   ORGANIZER_NAMES,
+  REVIEWER_ORGANIZER_NAMES,
+  REVIEWS,
   SERVICE_CATEGORIES,
   VENDOR_BUSINESSES,
+  VENDORS,
+  WELCOME_NOTIFICATION,
+  legacyEventTitle,
+  roundPrice,
+  seedPrice,
+  type SeedCurrency,
 } from '../infrastructure/data/latam-data.js';
+import { BOOKING_DISCLAIMER_COPY_VERSION } from '../../../shared/booking/disclaimer.js';
 import { seedEmail } from '../domain/seed-key.js';
 import { type DomainCounts, emptyCounts, type SeedReport } from '../domain/seed-report.js';
+import { buildReviewHistoryPlan } from './review-history-plan.js';
 
 const SCRIPT_VERSION = '1.0.0';
 // Hash bcrypt REAL de la contraseña demo `Demo1234!` (cost=12). Permite login efectivo con
@@ -127,6 +142,86 @@ async function ensure<T>(
   return created;
 }
 
+/** Igualdad tolerante a Date, Decimal (vs number), null/undefined y orden de claves de jsonb. */
+function sameValue(a: unknown, b: unknown): boolean {
+  if (a instanceof Date || b instanceof Date) {
+    return a instanceof Date && b instanceof Date && a.getTime() === b.getTime();
+  }
+  if (a === null || a === undefined || b === null || b === undefined) return (a ?? null) === (b ?? null);
+  if (typeof b === 'number' && typeof a === 'object') return Number(String(a)) === b;
+  if (Array.isArray(a) || Array.isArray(b)) {
+    return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => sameValue(v, b[i]));
+  }
+  if (typeof a === 'object' && typeof b === 'object') {
+    const ra = a as Record<string, unknown>;
+    const rb = b as Record<string, unknown>;
+    const keys = new Set([...Object.keys(ra), ...Object.keys(rb)]);
+    return [...keys].every((k) => sameValue(ra[k], rb[k]));
+  }
+  return a === b;
+}
+
+/**
+ * Como `ensure`, pero además alinea los campos de `desired` en filas ya existentes (contenido demo
+ * y fechas relativas). Cuenta exactamente uno de created/updated/unchanged: una segunda corrida el
+ * mismo día no encuentra diferencias y reporta `unchanged`.
+ */
+async function syncSeed<T extends object>(
+  find: () => Promise<T | null>,
+  create: () => Promise<T>,
+  desired: object,
+  update: (existing: T) => Promise<T>,
+  counts: DomainCounts,
+): Promise<T> {
+  const existing = await find();
+  if (!existing) {
+    const created = await create();
+    counts.created += 1;
+    return created;
+  }
+  const current = existing as Record<string, unknown>;
+  const drift = Object.entries(desired).some(([k, v]) => !sameValue(current[k], v));
+  if (!drift) {
+    counts.unchanged += 1;
+    return existing;
+  }
+  const updated = await update(existing);
+  counts.updated += 1;
+  return updated;
+}
+
+function addDays(date: Date, days: number): Date {
+  return new Date(date.getTime() + days * 86_400_000);
+}
+
+/** Partidas base del presupuesto de cada evento demo (porcentaje del presupuesto estimado). */
+const BUDGET_ITEM_TEMPLATES = [
+  { label: 'Catering', categoryCode: 'catering', share: 0.35 },
+  { label: 'Decoración', categoryCode: 'decoration', share: 0.12 },
+] as const;
+
+/** Evento sembrado con lo que necesitan los pasos posteriores (cotizaciones, reservas, reseñas). */
+interface SeededEvent {
+  id: string;
+  userId: string;
+  eventTypeId: string;
+  locationId: string | null;
+  currency: SeedCurrency;
+  eventDate: Date;
+  daysFromSeed: number;
+  guestsCount: number;
+  estimatedBudget: number;
+}
+
+/** Reserva confirmada del historial que respalda la reseña `REVIEWS[reviewIndex]`. */
+interface HistoryBooking {
+  reviewIndex: number;
+  bookingIntentId: string;
+  vendorProfileId: string;
+  authorId: string;
+  completedAt: Date;
+}
+
 export class SeedDemoDataUseCase {
   private readonly prisma: PrismaClient;
   private readonly ai: SeedAiProvider;
@@ -191,22 +286,13 @@ export class SeedDemoDataUseCase {
     );
     const quotes = await run('quotes', (c) =>
       this.prisma.$transaction(
-        (tx) => this.seedQuotes(tx, c, events, catalogs.categories, vendors),
+        (tx) => this.seedQuotes(tx, c, events, vendors),
         TX_OPTS,
       ),
     );
     await run('bookings', (c) =>
       this.prisma.$transaction(async (tx) => {
-        const result = await this.seedBookingsAndReviews(
-          tx,
-          c,
-          report,
-          quotes,
-          catalogs.categories,
-          identities.organizers,
-          identities.admin,
-          events,
-        );
+        const result = await this.seedBookings(tx, c, quotes, catalogs.categories, events);
         if (this.hooks.extendBookingsAndReviews) {
           await this.hooks.extendBookingsAndReviews(tx, {
             organizers: identities.organizers,
@@ -218,10 +304,27 @@ export class SeedDemoDataUseCase {
         return result;
       }, TX_OPTS),
     );
-    await run('ai', (c) => this.seedAIRecommendations(c, events, vendors, quotes.quoteRequests, identities.organizers));
+    // Historial de eventos ya realizados (organizadores con historial) con la cadena completa
+    // cotización → reserva confirmada que respalda cada reseña, como la crearía la app (US-065).
+    const history = await run('review-history', (c) =>
+      this.prisma.$transaction(
+        (tx) =>
+          this.seedReviewHistory(tx, c, identities.reviewers, vendors, catalogs.eventTypes, catalogs.locations),
+        TX_OPTS,
+      ),
+    );
+    await run('reviews', (c) =>
+      this.prisma.$transaction((tx) => this.seedReviews(tx, c, identities.admin, history), TX_OPTS),
+    );
+    await run('ai',(c) => this.seedAIRecommendations(c, events, vendors, quotes.quoteRequests, identities.organizers));
     await run('notifications', (c) =>
       this.prisma.$transaction(
-        (tx) => this.seedNotifications(tx, c, [identities.admin, ...identities.organizers, ...identities.vendorUsers]),
+        (tx) =>
+          this.seedNotifications(tx, c, [
+            { id: identities.admin.id, role: 'admin' as const },
+            ...identities.organizers.map((u) => ({ id: u.id, role: 'organizer' as const })),
+            ...identities.vendorUsers.map((u) => ({ id: u.id, role: 'vendor' as const })),
+          ]),
         TX_OPTS,
       ),
     );
@@ -242,6 +345,7 @@ export class SeedDemoDataUseCase {
     // `vendor_profiles` a partir de las reviews sembradas. Idempotente: fija el estado exacto
     // en cada ejecución (setea 0/NULL si no hay reviews).
     await this.recomputeVendorRatingAggregates();
+    await this.recomputeSeedBudgetTotals();
 
     const finishedAt = new Date();
     report.finishedAt = finishedAt.toISOString();
@@ -377,7 +481,12 @@ export class SeedDemoDataUseCase {
     const locations = [];
     for (const loc of LOCATIONS) {
       const created = await ensure(
-        () => tx.location.findFirst({ where: { country: loc.country, city: loc.city, isSeed: true } }),
+        // Por ciudad seed o por código (`code` es único: no se duplica una fila existente).
+        () =>
+          tx.location.findFirst({
+            where: { OR: [{ country: loc.country, city: loc.city, isSeed: true }, { code: loc.code }] },
+            orderBy: { createdAt: 'asc' },
+          }),
         () =>
           tx.location.create({
             data: {
@@ -487,7 +596,31 @@ export class SeedDemoDataUseCase {
       );
     }
 
-    return { admin, organizers, vendorUsers };
+    // Organizadores con historial (autores de las reseñas), a continuación de los 6 demo.
+    const reviewers = [];
+    for (let j = 0; j < REVIEWER_ORGANIZER_NAMES.length; j += 1) {
+      const email = seedEmail('organizer', ORGANIZER_NAMES.length + j);
+      reviewers.push(
+        await ensure(
+          () => tx.user.findUnique({ where: { email } }),
+          () =>
+            tx.user.create({
+              data: {
+                email,
+                passwordHash: SEED_PASSWORD_HASH,
+                fullName: REVIEWER_ORGANIZER_NAMES[j]!,
+                role: 'organizer',
+                status: 'active',
+                preferredLanguage: 'es_LATAM',
+                isSeed: true,
+              },
+            }),
+          counts,
+        ),
+      );
+    }
+
+    return { admin, organizers, vendorUsers, reviewers };
   }
 
   private async seedVendors(
@@ -495,64 +628,96 @@ export class SeedDemoDataUseCase {
     counts: DomainCounts,
     vendorUsers: { id: string }[],
     categories: { id: string; code: string }[],
-    locations: { id: string }[],
+    locations: { id: string; code: string | null }[],
   ) {
     const vendors = [];
     for (let i = 0; i < vendorUsers.length; i += 1) {
       const user = vendorUsers[i]!;
+      const seed = VENDORS[i]!;
+      // Categoría y ubicación explícitas por proveedor (coherentes con su nombre).
+      const category = categories.find((c) => c.code === seed.categoryCode)!;
+      const location = locations.find((l) => l.code === seed.locationCode)!;
+      const currency = LOCAL_CURRENCY[seed.locationCode];
       // US-042 SEED-001: el primer vendor demo carga `categoryChangeCount=4` para poder
       // demostrar el bloqueo `409 CATEGORY_CHANGE_LIMIT` al 5to/6to cambio sin scripting.
       const isCategoryLimitDemoVendor = i === 0;
       // El directorio y el perfil público navegan por `slug` (`/vendors/:slug`): sin él la card
       // enlaza a `/vendors/null`. `VENDOR_BUSINESSES` son únicos, así que el slug también.
-      const slug = seedVendorSlug(VENDOR_BUSINESSES[i]!);
-      let profile = await ensure(
+      const profileData = {
+        slug: seedVendorSlug(seed.businessName),
+        businessName: seed.businessName,
+        bio: seed.bio,
+        locationId: location.id,
+      };
+      const profile = await syncSeed(
         () => tx.vendorProfile.findUnique({ where: { userId: user.id } }),
         () =>
           tx.vendorProfile.create({
             data: {
               userId: user.id,
-              slug,
-              businessName: VENDOR_BUSINESSES[i]!,
-              bio: `${VENDOR_BUSINESSES[i]} — proveedor demo de eventos LATAM.`,
+              ...profileData,
               status: 'approved',
-              locationId: locations[i % locations.length]!.id,
               languagesSupported: ['es-LATAM', 'es-ES'],
               categoryChangeCount: isCategoryLimitDemoVendor ? 4 : 0,
               requiresAdminReview: isCategoryLimitDemoVendor,
               isSeed: true,
             },
           }),
+        profileData,
+        (p) => tx.vendorProfile.update({ where: { id: p.id }, data: profileData }),
         counts,
       );
-      // Re-run sobre una BD sembrada antes de este fix: completa el slug faltante.
-      if (profile.slug === null) {
-        profile = await tx.vendorProfile.update({ where: { id: profile.id }, data: { slug } });
-      }
-      // Un servicio por vendor, categoría rotada.
-      const category = categories[i % categories.length]!;
-      await ensure(
+      // Un paquete por vendor. Se busca por vendor (no por categoría) para corregir en sitio
+      // filas sembradas antes con otra categoría.
+      const serviceData = {
+        serviceCategoryId: category.id,
+        packageName: seed.packageName,
+        description: seed.packageDescription,
+        basePrice: seedPrice(seed.referencePriceGtq, currency),
+        currencyCode: currency,
+        isActive: true,
+      };
+      const extraNames = seed.extraPackage ? [seed.extraPackage.packageName] : [];
+      await syncSeed(
         () =>
           tx.vendorService.findFirst({
-            where: { vendorProfileId: profile.id, serviceCategoryId: category.id, isSeed: true },
+            where: { vendorProfileId: profile.id, isSeed: true, packageName: { notIn: extraNames } },
+            orderBy: { createdAt: 'asc' },
           }),
-        () =>
-          tx.vendorService.create({
-            data: {
-              vendorProfileId: profile.id,
-              serviceCategoryId: category.id,
-              packageName: `${VENDOR_BUSINESSES[i]} — ${category.code}`,
-              description: `Paquete demo de ${VENDOR_BUSINESSES[i]} en la categoría ${category.code}. Incluye servicios base para eventos.`,
-              basePrice: 1000,
-              currencyCode: 'GTQ',
-              isActive: true,
-              isSeed: true,
-            },
-          }),
+        () => tx.vendorService.create({ data: { vendorProfileId: profile.id, ...serviceData, isSeed: true } }),
+        serviceData,
+        (s) => tx.vendorService.update({ where: { id: s.id }, data: serviceData }),
         counts,
       );
-      // US-042: pobla la M:N `vendor_profile_categories` alineada con la categoría del
-      // servicio del vendor. La PK compuesta previene duplicados en re-runs (idempotente).
+      // Segundo paquete opcional, identificado por su nombre dentro del proveedor.
+      if (seed.extraPackage) {
+        const extra = seed.extraPackage;
+        const extraData = {
+          serviceCategoryId: category.id,
+          description: extra.packageDescription,
+          basePrice: seedPrice(extra.referencePriceGtq, currency),
+          currencyCode: currency,
+          isActive: true,
+        };
+        await syncSeed(
+          () =>
+            tx.vendorService.findFirst({
+              where: { vendorProfileId: profile.id, isSeed: true, packageName: extra.packageName },
+            }),
+          () =>
+            tx.vendorService.create({
+              data: { vendorProfileId: profile.id, packageName: extra.packageName, ...extraData, isSeed: true },
+            }),
+          extraData,
+          (s) => tx.vendorService.update({ where: { id: s.id }, data: extraData }),
+          counts,
+        );
+      }
+      // US-042: la M:N `vendor_profile_categories` queda alineada con la categoría del paquete.
+      // La PK compuesta previene duplicados; los vínculos de categorías previas se retiran.
+      await tx.vendorProfileCategory.deleteMany({
+        where: { vendorProfileId: profile.id, serviceCategoryId: { not: category.id } },
+      });
       const existingLink = await tx.vendorProfileCategory.findUnique({
         where: {
           vendorProfileId_serviceCategoryId: {
@@ -566,7 +731,7 @@ export class SeedDemoDataUseCase {
           data: { vendorProfileId: profile.id, serviceCategoryId: category.id },
         });
       }
-      vendors.push({ id: profile.id, userId: user.id });
+      vendors.push({ id: profile.id, userId: user.id, categoryId: category.id });
     }
     return vendors;
   }
@@ -578,8 +743,10 @@ export class SeedDemoDataUseCase {
    * - Marca `vendors[2]` (si existe) como `status='hidden'` para AUTH-TS-04. Se mantiene
    *   `deletedAt=null` para diferenciar del soft-deleted (US-041).
    *
-   * Idempotente: cada attachment se crea sólo si no existe otro `isSeed=true` con el mismo
-   * `(ownerId, workLabel)` — el `count` alinea la re-ejecución sin duplicar binarios lógicos.
+   * - Proveedores agregados después: un trabajo con las fotos de `vendors/<slug>/` que existan.
+   *
+   * Idempotente: cada attachment se busca por `(ownerId, workLabel, fileName)` con `isSeed=true`;
+   * el crédito (`attribution`, de `credits.json`) se alinea en sitio.
    */
   private async seedVendorPortfolios(
     tx: Tx,
@@ -588,20 +755,50 @@ export class SeedDemoDataUseCase {
   ): Promise<void> {
     if (vendors.length === 0) return;
 
-    const scenarios: { vendorIndex: number; workLabel: string; count: number }[] = [
+    // Un trabajo por proveedor visible, con fotos reales de `prisma/seed-assets/portfolio/<carpeta>`
+    // (Wikimedia Commons, licencias libres; créditos en `CREDITS.md` / `credits.json`). `vendors[0]`
+    // (9) y `vendors[1]` (10, el límite por trabajo: el 11º se bloquea) conservan los escenarios de
+    // tests. Los 12 originales toman las fotos de la carpeta de su categoría (`NN.jpg` = foto N).
+    const scenarios: { vendorIndex: number; workLabel: string; assetDir: string | null; photos: number[] }[] = [
       { vendorIndex: 0, workLabel: 'boda-pareja-2024', count: 9 },
-    ];
-    if (vendors.length > 1) {
-      scenarios.push({ vendorIndex: 1, workLabel: 'xv-anos-2024', count: 10 });
-    }
+      { vendorIndex: 1, workLabel: 'xv-anos-2024', count: 10 },
+      { vendorIndex: 5, workLabel: 'boda-al-aire-libre-2024', count: 5 },
+      { vendorIndex: 6, workLabel: 'xv-anos-2025', count: 5 },
+      { vendorIndex: 7, workLabel: 'ramos-de-novia-2025', count: 5 },
+      { vendorIndex: 8, workLabel: 'mesa-de-postres-2025', count: 5 },
+      { vendorIndex: 9, workLabel: 'invitaciones-boda-2025', count: 4 },
+      { vendorIndex: 10, workLabel: 'auto-de-novios-2024', count: 4 },
+      { vendorIndex: 11, workLabel: 'novia-2025', count: 4 },
+    ].map(({ vendorIndex, workLabel, count }) => ({
+      vendorIndex,
+      workLabel,
+      assetDir: VENDORS[vendorIndex]?.categoryCode ?? null,
+      photos: Array.from({ length: count }, (_, i) => i + 1),
+    }));
+    // Proveedores agregados después: un trabajo con las fotos que existan hoy en
+    // `vendors/<slug>/NN.jpg` (sin fotos ⇒ sin trabajo).
+    VENDORS.forEach((seed, vendorIndex) => {
+      if (!seed.portfolioWorkLabel) return;
+      const assetDir = `vendors/${seedVendorSlug(seed.businessName)}`;
+      const photos = listSeedPortfolioPhotos(assetDir);
+      if (photos.length > 0) scenarios.push({ vendorIndex, workLabel: seed.portfolioWorkLabel, assetDir, photos });
+    });
+    const credits = loadSeedPortfolioCredits();
 
-    for (const scenario of scenarios) {
+    for (const scenario of scenarios.filter((s) => s.vendorIndex < vendors.length)) {
       const vendor = vendors[scenario.vendorIndex]!;
-      // Idempotente vía `ensure` por índice (fileName determinista): la primera pasada crea
-      // N attachments, la segunda encuentra los mismos → suma a `unchanged` (US-085 TS-02).
-      for (let i = 0; i < scenario.count; i += 1) {
-        const fileName = `${scenario.workLabel}-${i + 1}.jpg`;
-        await ensure(
+      // Idempotente por (vendor, trabajo, fileName determinista): la primera pasada crea N
+      // attachments, la segunda encuentra los mismos → suma a `unchanged` (US-085 TS-02). El crédito
+      // (`attribution`) se alinea en sitio si falta o cambió.
+      for (const [i, photo] of scenario.photos.entries()) {
+        const fileName = `${scenario.workLabel}-${photo}.jpg`;
+        const storageUrl = `seed/${vendor.id}/${fileName}`;
+        const assetKey = scenario.assetDir ? `${scenario.assetDir}/${String(photo).padStart(2, '0')}.jpg` : null;
+        // El binario se copia aunque el registro ya exista: una base re-sembrada en otra máquina
+        // (o un volumen nuevo) necesita el archivo para que la ruta pública lo sirva.
+        const sizeBytes = assetKey ? copySeedPortfolioImage(assetKey, storageUrl) : null;
+        const attribution = (assetKey && credits[assetKey]) || null;
+        await syncSeed(
           () =>
             tx.attachment.findFirst({
               where: {
@@ -618,15 +815,19 @@ export class SeedDemoDataUseCase {
                 ownerType: 'vendor_work',
                 ownerId: vendor.id,
                 status: 'active',
-                url: `seed/${vendor.id}/${fileName}`,
+                url: storageUrl,
                 fileName,
                 mimeType: 'image/jpeg',
                 workLabel: scenario.workLabel,
-                sizeBytes: 200_000 + i * 1_000,
+                sizeBytes: sizeBytes ?? 200_000 + i * 1_000,
+                attribution: attribution ?? Prisma.DbNull,
                 uploadedBy: vendor.userId,
                 isSeed: true,
               },
             }),
+          { attribution },
+          (a) =>
+            tx.attachment.update({ where: { id: a.id }, data: { attribution: attribution ?? Prisma.DbNull } }),
           counts,
         );
       }
@@ -658,20 +859,15 @@ export class SeedDemoDataUseCase {
     tx: Tx,
     counts: DomainCounts,
     organizers: { id: string }[],
-    eventTypes: { id: string }[],
-    locations: { id: string }[],
-  ) {
-    const eventCount = 12;
+    eventTypes: { id: string; code: string }[],
+    locations: { id: string; code: string | null }[],
+  ): Promise<SeededEvent[]> {
+    const eventCount = EVENTS.length;
     // US-087 AC-01 — Mix garantizado: draft≥2, active≥4, completed≥2, cancelled≥1 (total 10–15).
-    // Plan por defecto (12): completed×3, active×5, draft×2, cancelled×2. El hook `eventStatusPlan`
-    // (US-087 override) puede sustituirlo, pero el default ya satisface los AC.
-    const defaultPlan: Array<'draft' | 'active' | 'completed' | 'cancelled'> = [
-      'completed', 'completed', 'completed',
-      'active', 'active', 'active', 'active', 'active',
-      'draft', 'draft',
-      'cancelled', 'cancelled',
-    ];
-    const statusPlan = this.hooks.eventStatusPlan?.(eventCount) ?? defaultPlan;
+    // Plan por defecto (12): completed×4, active×4, draft×2, cancelled×2, definido en `EVENTS`.
+    // Los eventos 0..4 (con reservas confirmadas y reseñas) ya ocurrieron. El hook
+    // `eventStatusPlan` (US-087 override) puede sustituir el plan.
+    const statusPlan = this.hooks.eventStatusPlan?.(eventCount) ?? EVENTS.map((e) => e.status);
 
     // AC-04 — Un mismo organizador (organizers[0]) ancla un evento en cada estado.
     const ANCHOR_COMPLETED = 0;
@@ -680,73 +876,87 @@ export class SeedDemoDataUseCase {
     const ANCHOR_CANCELLED = 10;
     const anchorIndices = new Set([ANCHOR_COMPLETED, ANCHOR_ACTIVE, ANCHOR_DRAFT, ANCHOR_CANCELLED]);
 
-    const events = [];
+    const events: SeededEvent[] = [];
     for (let i = 0; i < eventCount; i += 1) {
+      const seed = EVENTS[i]!;
       // AC-04: los índices ancla van al organizador 0; el resto rota.
       const organizer = anchorIndices.has(i) ? organizers[0]! : organizers[i % organizers.length]!;
-      const eventType = eventTypes[i % eventTypes.length]!;
-      const title = `Evento Demo #${i + 1}`;
-      const status = statusPlan[i] ?? 'draft';
-      // AC-03 — Multi-currency (GTQ/USD) y multi-locale (es-LATAM/en) por paridad de índice.
-      const currency = i % 2 === 0 ? 'GTQ' : 'USD';
-      const language = i % 2 === 0 ? 'es_LATAM' : 'en';
-      // AC-02 — Un evento completed con auto_completed=true + completed_at; y un evento active
-      // "cercano a auto-completar" con event_date = hoy − 2 días (dinámico, EC-03).
+      const eventType = eventTypes.find((t) => t.code === seed.eventTypeCode)!;
+      const locationId = locations.find((l) => l.code === seed.locationCode)?.id ?? null;
+      const status = statusPlan[i] ?? seed.status;
+      // Fechas relativas al día de la corrida: activos/borradores en el futuro, completados y
+      // cancelados en el pasado. Si el hook cambia el estado, se ajusta el signo del offset.
+      // AC-02 / EC-03: el ancla activa queda en hoy − 2 días (cercano a auto-completar).
+      const isPast = status === 'completed' || status === 'cancelled';
+      const daysFromSeed =
+        i === ANCHOR_ACTIVE || status === seed.status
+          ? seed.daysFromSeed
+          : isPast
+            ? -Math.abs(seed.daysFromSeed)
+            : Math.abs(seed.daysFromSeed);
+      const eventDate = relativeSeedDate(daysFromSeed);
+      // AC-02 — Un evento completed con auto_completed=true (job T+2 → completed_at = fecha + 2);
+      // el resto de completados se cerró manualmente al día siguiente del evento.
       const autoCompleted = i === ANCHOR_COMPLETED;
       const completedAt =
-        status === 'completed'
-          ? autoCompleted
-            ? relativeSeedDate(-1)
-            : new Date('2026-05-01T00:00:00Z')
-          : null;
-      const eventDate = i === ANCHOR_ACTIVE ? relativeSeedDate(-2) : new Date('2026-08-15T00:00:00Z');
+        status === 'completed' ? addDays(eventDate, autoCompleted ? 2 : 1) : null;
       // El schema MVP (US-099) no tiene `cancelled_reason`; la traza de cancelación va en `notes`
-      // (ver desviación D1 de US-087). Migraciones nuevas son responsabilidad de US-100.
-      const notes = status === 'cancelled' ? 'Cancelado (demo): proveedor no disponible en la fecha.' : null;
-      const event = await ensure(
-        () => tx.event.findFirst({ where: { title, isSeed: true } }),
+      // (ver desviación D1 de US-087).
+      const notes =
+        status === 'cancelled' ? (seed.notes ?? 'Cancelado: cambio de planes de los anfitriones.') : null;
+      const eventData = {
+        userId: organizer.id,
+        eventTypeId: eventType.id,
+        locationId,
+        title: seed.title,
+        status,
+        currency: seed.currency,
+        language: seed.language,
+        eventDate,
+        guestsCount: seed.guestsCount,
+        estimatedBudget: seed.estimatedBudget,
+        autoCompleted,
+        completedAt,
+        notes,
+      };
+      // Clave estable: título actual o el legado (`Evento Demo #N`) de BDs sembradas antes.
+      const event = await syncSeed(
         () =>
-          tx.event.create({
-            data: {
-              userId: organizer.id,
-              eventTypeId: eventType.id,
-              locationId: locations[i % locations.length]!.id,
-              title,
-              status,
-              currency,
-              language,
-              eventDate,
-              guestsCount: 50 + i * 10,
-              estimatedBudget: 20000 + i * 5000,
-              autoCompleted,
-              completedAt,
-              notes,
-              isSeed: true,
-            },
+          tx.event.findFirst({
+            where: { title: { in: [seed.title, legacyEventTitle(i)] }, isSeed: true },
           }),
+        () => tx.event.create({ data: { ...eventData, isSeed: true } }),
+        eventData,
+        (e) => tx.event.update({ where: { id: e.id }, data: eventData }),
         counts,
       );
-      // Budget 1:1 + 2 items.
+      // Budget 1:1 + partidas base. Montos y comprometido los alinea `syncBudgetItems`.
       const budget = await ensure(
         () => tx.budget.findUnique({ where: { eventId: event.id } }),
-        () => tx.budget.create({ data: { eventId: event.id, totalPlanned: 20000, totalCommitted: 5000, isSeed: true } }),
+        () => tx.budget.create({ data: { eventId: event.id, totalPlanned: 0, totalCommitted: 0, isSeed: true } }),
         counts,
       );
-      for (const label of ['Catering', 'Decoración']) {
+      for (const item of BUDGET_ITEM_TEMPLATES) {
         await ensure(
-          () => tx.budgetItem.findFirst({ where: { budgetId: budget.id, label, isSeed: true } }),
-          () => tx.budgetItem.create({ data: { budgetId: budget.id, label, amountPlanned: 8000, amountCommitted: 2000, isSeed: true } }),
+          () => tx.budgetItem.findFirst({ where: { budgetId: budget.id, label: item.label, isSeed: true } }),
+          () =>
+            tx.budgetItem.create({
+              data: {
+                budgetId: budget.id,
+                label: item.label,
+                categoryCode: item.categoryCode,
+                amountPlanned: Math.round(seed.estimatedBudget * item.share),
+                amountCommitted: 0,
+                isSeed: true,
+              },
+            }),
           counts,
         );
       }
-      // Una tarea por evento. US-034 (PB-P2-004 / SEED-001): setear `dueDate =
-      // event.eventDate - 7 días` para que el `EmitT7NotificationsJob` pueda emitir
-      // una notificación T-7 sobre el organizer demo cuando el clock se posicione en
-      // `event.eventDate - 14 días` (según §15 Seed / Demo Data Impact del tech spec).
-      // Sólo se calcula si `eventDate` existe; no se agregan filas nuevas ni se cambia
-      // la cardinalidad — `us085-seed.integration.spec.ts` no verifica `event_tasks.count`.
-      const taskDueDate = calculateT7SeedDueDate(eventDate);
-      await ensure(
+      // Una tarea por evento. US-034 (PB-P2-004 / SEED-001): `dueDate = event.eventDate - 7 días`
+      // para que el `EmitT7NotificationsJob` pueda emitir la notificación T-7 del organizer demo.
+      const taskData = { dueDate: calculateT7SeedDueDate(eventDate) };
+      await syncSeed(
         () => tx.eventTask.findFirst({ where: { eventId: event.id, title: 'Confirmar proveedores', isSeed: true } }),
         () =>
           tx.eventTask.create({
@@ -755,13 +965,25 @@ export class SeedDemoDataUseCase {
               title: 'Confirmar proveedores',
               status: 'pending',
               origin: 'manual',
-              dueDate: taskDueDate,
+              ...taskData,
               isSeed: true,
             },
           }),
+        taskData,
+        (t) => tx.eventTask.update({ where: { id: t.id }, data: taskData }),
         counts,
       );
-      events.push({ id: event.id, userId: organizer.id });
+      events.push({
+        id: event.id,
+        userId: organizer.id,
+        eventTypeId: eventType.id,
+        locationId,
+        currency: seed.currency,
+        eventDate,
+        daysFromSeed,
+        guestsCount: seed.guestsCount,
+        estimatedBudget: seed.estimatedBudget,
+      });
     }
     return events;
   }
@@ -769,94 +991,101 @@ export class SeedDemoDataUseCase {
   private async seedQuotes(
     tx: Tx,
     counts: DomainCounts,
-    events: { id: string }[],
-    categories: { id: string }[],
-    vendors: { id: string }[],
+    events: SeededEvent[],
+    vendors: { id: string; categoryId: string }[],
   ) {
     const quoteRequests: { id: string; eventId: string; serviceCategoryId: string; vendorProfileId: string }[] = [];
     const quotes: { id: string; quoteRequestId: string; vendorProfileId: string; amount: number }[] = [];
+    // Brief con el shape canónico de US-049 (lo que guarda una solicitud real).
+    const briefFor = (event: SeededEvent, vendorIndex: number, budget: number) => ({
+      budget: String(budget),
+      currency_code: event.currency,
+      message: VENDORS[vendorIndex]!.briefMessage,
+      source: 'manual',
+      aiGenerated: false,
+      event_snapshot: {
+        event_type_id: event.eventTypeId,
+        event_date: event.eventDate.toISOString(),
+        location_id: event.locationId,
+        guests_count: event.guestsCount,
+      },
+    });
+    // 20 cadenas: el evento e recibe cotizaciones de los proveedores 2e y 2e+1 (mismo país), cada
+    // una en la categoría del proveedor y en la moneda del evento.
+    // Sólo los 12 proveedores originales participan de la matriz (los demás suman historial).
     const chains = 20;
+    const coreVendors = Math.min(vendors.length, CORE_VENDOR_COUNT);
     for (let k = 0; k < chains; k += 1) {
       const event = events[Math.floor(k / 2) % events.length]!;
-      const category = categories[k % categories.length]!;
-      const vendor = vendors[k % vendors.length]!;
-      const qr = await ensure(
-        () =>
-          tx.quoteRequest.findFirst({
-            where: { eventId: event.id, serviceCategoryId: category.id, vendorProfileId: vendor.id, isSeed: true },
-          }),
+      const vendorIndex = k % coreVendors;
+      const vendor = vendors[vendorIndex]!;
+      const reference = VENDORS[vendorIndex]!.referencePriceGtq;
+      const amount = seedPrice(reference * (1 + ((k % 3) - 1) * 0.06), event.currency);
+      const qrData = {
+        serviceCategoryId: vendor.categoryId,
+        brief: briefFor(event, vendorIndex, seedPrice(reference * 1.15, event.currency)),
+      };
+      // Clave estable (evento, proveedor): única por diseño de las cadenas.
+      const qr = await syncSeed(
+        () => tx.quoteRequest.findFirst({ where: { eventId: event.id, vendorProfileId: vendor.id, isSeed: true } }),
         () =>
           tx.quoteRequest.create({
-            data: {
-              eventId: event.id,
-              serviceCategoryId: category.id,
-              vendorProfileId: vendor.id,
-              status: 'responded',
-              brief: { summary: 'Solicitud demo', requirements: ['LATAM'] },
-              isSeed: true,
-            },
+            data: { eventId: event.id, vendorProfileId: vendor.id, status: 'responded', ...qrData, isSeed: true },
           }),
+        qrData,
+        (r) => tx.quoteRequest.update({ where: { id: r.id }, data: qrData }),
         counts,
       );
-      quoteRequests.push({ id: qr.id, eventId: event.id, serviceCategoryId: category.id, vendorProfileId: vendor.id });
-      const quote = await ensure(
+      quoteRequests.push({ id: qr.id, eventId: event.id, serviceCategoryId: vendor.categoryId, vendorProfileId: vendor.id });
+      const quoteData = { serviceCategoryId: vendor.categoryId, amount, currency: event.currency };
+      const quote = await syncSeed(
         () => tx.quote.findFirst({ where: { quoteRequestId: qr.id, vendorProfileId: vendor.id, isSeed: true } }),
         () =>
           tx.quote.create({
             data: {
               quoteRequestId: qr.id,
               vendorProfileId: vendor.id,
-              // US-058 (PB-P1-035 / DB-002): columnas denormalizadas ahora requeridas.
+              // US-058 (PB-P1-035 / DB-002): columnas denormalizadas requeridas.
               eventId: event.id,
-              serviceCategoryId: category.id,
-              amount: 5000 + k * 250,
-              currency: 'GTQ',
+              ...quoteData,
               status: 'accepted',
-              // US-058: UNIQUE parcial `(event_id, service_category_id) WHERE is_preferred=true`
-              // exige que sólo UNA Quote por (event, category) sea preferred. Se relaja el patrón
-              // `k % 3 === 0` a `k === 0` para garantizar unicidad — cada iteración usa una
-              // combinación distinta de (event, category) por diseño del loop, pero la seguridad
-              // se refuerza con esta simplificación.
+              // US-058: UNIQUE parcial `(event_id, service_category_id) WHERE is_preferred=true`;
+              // sólo la primera cadena queda preferida.
               isPreferred: k === 0,
               isSeed: true,
             },
           }),
+        quoteData,
+        (q) => tx.quote.update({ where: { id: q.id }, data: quoteData }),
         counts,
       );
-      quotes.push({ id: quote.id, quoteRequestId: qr.id, vendorProfileId: vendor.id, amount: 5000 + k * 250 });
+      quotes.push({ id: quote.id, quoteRequestId: qr.id, vendorProfileId: vendor.id, amount });
     }
 
     // US-056 (BE-007): QR viewed sin Quote para el demo del "cancel válido" (AC-01). El
     // demo del "cancel bloqueado por confirmed_intent" (EC-01) queda cubierto por los índices
     // de `bookingPlan` con `kind: 'confirmed'` en `seedBookingsAndReviews` — cancelar los QRs
     // asociados a esos quotes falla con `QR_HAS_CONFIRMED_BOOKING`.
-    if (events.length > 0 && categories.length > 0 && vendors.length > 0) {
+    if (events.length > 0 && vendors.length > 0) {
       const demoEvent = events[0]!;
-      const demoCategory = categories[categories.length - 1]!;
-      const demoVendor = vendors[vendors.length - 1]!;
-      await ensure(
+      const demoVendorIndex = Math.min(vendors.length, CORE_VENDOR_COUNT) - 1;
+      const demoVendor = vendors[demoVendorIndex]!;
+      const viewedData = {
+        serviceCategoryId: demoVendor.categoryId,
+        brief: briefFor(demoEvent, demoVendorIndex, seedPrice(VENDORS[demoVendorIndex]!.referencePriceGtq, demoEvent.currency)),
+        viewedAt: relativeSeedDate(Math.min(demoEvent.daysFromSeed - 20, -1)),
+      };
+      await syncSeed(
         () =>
           tx.quoteRequest.findFirst({
-            where: {
-              eventId: demoEvent.id,
-              serviceCategoryId: demoCategory.id,
-              vendorProfileId: demoVendor.id,
-              status: 'viewed',
-              isSeed: true,
-            },
+            where: { eventId: demoEvent.id, vendorProfileId: demoVendor.id, status: 'viewed', isSeed: true },
           }),
         () =>
           tx.quoteRequest.create({
-            data: {
-              eventId: demoEvent.id,
-              serviceCategoryId: demoCategory.id,
-              vendorProfileId: demoVendor.id,
-              status: 'viewed',
-              brief: { summary: 'QR demo cancelable (US-056)', requirements: ['LATAM'] },
-              viewedAt: new Date('2026-05-01T10:00:00Z'),
-              isSeed: true,
-            },
+            data: { eventId: demoEvent.id, vendorProfileId: demoVendor.id, status: 'viewed', ...viewedData, isSeed: true },
           }),
+        viewedData,
+        (r) => tx.quoteRequest.update({ where: { id: r.id }, data: viewedData }),
         counts,
       );
     }
@@ -864,140 +1093,347 @@ export class SeedDemoDataUseCase {
     return { quoteRequests, quotes };
   }
 
-  private async seedBookingsAndReviews(
+  private async seedBookings(
     tx: Tx,
     counts: DomainCounts,
-    report: SeedReport,
     quotes: {
       quoteRequests: { id: string; eventId: string; serviceCategoryId: string; vendorProfileId: string }[];
       quotes: { id: string; quoteRequestId: string; vendorProfileId: string; amount: number }[];
     },
-    _categories: { id: string }[],
-    organizers: { id: string }[],
-    admin: { id: string },
-    events: { id: string; userId: string }[],
+    categories: { id: string; code: string }[],
+    events: SeededEvent[],
   ) {
     // US-060 (PB-P1-036 / DB-002): `booking_intents.created_by` es `NOT NULL`. Se resuelve por
     // `eventId → event.userId` (organizer dueño del evento — semántica de la creación real vía
-    // POST /booking-intents). Fallback defensivo a `organizers[0]` si el mapeo faltara.
-    const eventOwnerByEventId = new Map(events.map((e) => [e.id, e.userId]));
-    const reviewCounts = report.domains.reviews ?? emptyCounts();
-    report.domains.reviews = reviewCounts;
+    // POST /booking-intents).
+    const eventById = new Map(events.map((e) => [e.id, e]));
 
     // US-088 AC-01/AC-02 — Matriz de BookingIntent (8): 5 confirmed_intent, 1 pending,
     // 1 cancelado-desde-pending, 1 cancelado-desde-confirmed. Los confirmed usan quotes de EVENTOS
-    // DISTINTOS (índices 0,2,4,6,8) → (event, category) distinto (uq confirmed C-037) y presupuesto
-    // no ambiguo (AC-05). FKs a quotes `accepted` de seedQuotes. is_simulated + is_seed siempre.
-    const CONFIRMED_AT = new Date('2026-05-10T00:00:00Z');
-    const CANCELLED_AT = new Date('2026-05-15T00:00:00Z'); // > confirmedAt (BR-BOOKING-009, EC-03).
+    // DISTINTOS (índices 0,2,5,6,8 → eventos 0..4, ya realizados) → (event, category) distinto
+    // (uq confirmed C-037) y presupuesto no ambiguo (AC-05). Se eligen proveedores visibles en el
+    // directorio donde se puede, para que sus reseñas se vean. is_simulated + is_seed siempre.
     const bookingPlan: Array<{ idx: number; kind: 'confirmed' | 'pending' | 'cancelled_pending' | 'cancelled_confirmed' }> = [
-      { idx: 0, kind: 'confirmed' }, { idx: 2, kind: 'confirmed' }, { idx: 4, kind: 'confirmed' },
+      { idx: 0, kind: 'confirmed' }, { idx: 2, kind: 'confirmed' }, { idx: 5, kind: 'confirmed' },
       { idx: 6, kind: 'confirmed' }, { idx: 8, kind: 'confirmed' },
       { idx: 1, kind: 'pending' },
       { idx: 3, kind: 'cancelled_pending' },
-      { idx: 5, kind: 'cancelled_confirmed' },
+      { idx: 4, kind: 'cancelled_confirmed' },
     ];
-
-    const confirmedBookings: { id: string; eventId: string; vendorProfileId: string; amount: number }[] = [];
+    const confirmedBookings: { id: string; eventId: string; vendorProfileId: string; serviceCategoryId: string; amount: number }[] = [];
 
     for (const { idx, kind } of bookingPlan) {
       const quote = quotes.quotes[idx]!;
       const qr = quotes.quoteRequests.find((r) => r.id === quote.quoteRequestId)!;
+      const event = eventById.get(qr.eventId)!;
       const status = kind === 'confirmed' ? 'confirmed_intent' : kind === 'pending' ? 'pending' : 'cancelled';
       const cancelledFromConfirmed = kind === 'cancelled_confirmed';
-      const confirmedAt = kind === 'confirmed' || cancelledFromConfirmed ? CONFIRMED_AT : null;
       const isCancelled = status === 'cancelled';
-      const booking = await ensure(
-        () => tx.bookingIntent.findFirst({ where: { eventId: qr.eventId, serviceCategoryId: qr.serviceCategoryId, isSeed: true } }),
+      // Fechas relativas: la reserva se confirma ~1 mes antes del evento (nunca en el futuro) y la
+      // cancelación ocurre después de la confirmación (BR-BOOKING-009, EC-03).
+      const confirmedDay = Math.min(event.daysFromSeed - 30, -5);
+      const confirmedAt = kind === 'confirmed' || cancelledFromConfirmed ? relativeSeedDate(confirmedDay) : null;
+      const cancelledAt = isCancelled ? relativeSeedDate(cancelledFromConfirmed ? confirmedDay + 3 : Math.min(event.daysFromSeed - 25, -3)) : null;
+      const bookingData = {
+        serviceCategoryId: qr.serviceCategoryId,
+        vendorProfileId: qr.vendorProfileId,
+        status,
+        confirmedAt,
+        cancelledAt,
+        cancelledBy: isCancelled ? event.userId : null,
+        cancellationReason: isCancelled
+          ? cancelledFromConfirmed
+            ? 'Cambiamos la fecha del evento y el proveedor ya no tenía disponibilidad.'
+            : 'Elegimos otra propuesta que se ajustaba mejor al presupuesto.'
+          : null,
+        // US-039 (SEED-001): estado post-sync del handler `UpdateCommittedFromBookingIntent`.
+        committedSyncedAt: kind === 'confirmed' ? new Date(confirmedAt!.getTime() + 1000) : null,
+        committedSyncedAmount: kind === 'confirmed' ? quote.amount : null,
+      } as const;
+      // Clave estable: el quote (1 reserva por quote en el plan).
+      const booking = await syncSeed(
+        () => tx.bookingIntent.findFirst({ where: { quoteId: quote.id, isSeed: true } }),
         () =>
           tx.bookingIntent.create({
             data: {
               quoteId: quote.id,
               eventId: qr.eventId,
-              serviceCategoryId: qr.serviceCategoryId,
-              vendorProfileId: qr.vendorProfileId,
-              createdBy: eventOwnerByEventId.get(qr.eventId) ?? organizers[0]!.id,
-              status,
+              createdBy: event.userId,
               isSimulated: true,
-              confirmedAt,
-              cancelledAt: isCancelled ? CANCELLED_AT : null,
-              cancelledBy: isCancelled ? organizers[0]!.id : null,
-              cancellationReason: isCancelled
-                ? cancelledFromConfirmed
-                  ? 'Cancelado tras confirmación (demo): cambio de fecha del evento.'
-                  : 'Cancelado desde pendiente (demo): el cliente eligió otro proveedor.'
-                : null,
+              ...bookingData,
+              createdAt: relativeSeedDate(confirmedDay - 3),
               isSeed: true,
             },
           }),
+        bookingData,
+        (b) => tx.bookingIntent.update({ where: { id: b.id }, data: bookingData }),
         counts,
       );
       if (kind === 'confirmed') {
-        confirmedBookings.push({ id: booking.id, eventId: qr.eventId, vendorProfileId: qr.vendorProfileId, amount: quote.amount });
+        confirmedBookings.push({
+          id: booking.id,
+          eventId: qr.eventId,
+          vendorProfileId: qr.vendorProfileId,
+          serviceCategoryId: qr.serviceCategoryId,
+          amount: quote.amount,
+        });
       }
     }
 
-    // US-088 AC-05 — `BudgetItem.committed` refleja el monto del quote por cada confirmed_intent.
-    // Set fijo (idempotente): re-ejecutar deja el mismo valor. Eventos distintos → sin sobreescritura.
-    // US-039 (SEED-001): además del monto en el item, marca `booking_intents.committed_synced_at`
-    // y `committed_synced_amount` para reflejar el estado post-sync del handler
-    // `UpdateCommittedFromBookingIntent`. Consistente con la demo D1 (idempotencia).
-    const SYNCED_AT = new Date('2026-05-10T00:00:01Z');
-    for (const cb of confirmedBookings) {
-      const budget = await tx.budget.findUnique({ where: { eventId: cb.eventId }, select: { id: true } });
+    // US-088 AC-05 — `BudgetItem.committed` refleja el monto del quote por cada confirmed_intent,
+    // en la partida de la misma categoría (se crea si el evento no la tenía).
+    const categoryById = new Map(categories.map((c) => [c.id, c.code]));
+    for (const event of events) {
+      const budget = await tx.budget.findUnique({ where: { eventId: event.id }, select: { id: true } });
       if (!budget) continue;
-      const item = await tx.budgetItem.findFirst({ where: { budgetId: budget.id, isSeed: true }, orderBy: { label: 'asc' }, select: { id: true } });
-      if (item) await tx.budgetItem.update({ where: { id: item.id }, data: { amountCommitted: cb.amount } });
-      await tx.bookingIntent.update({
-        where: { id: cb.id },
-        data: { committedSyncedAt: SYNCED_AT, committedSyncedAmount: cb.amount },
-      });
+      const booked = confirmedBookings.filter((b) => b.eventId === event.id);
+      const items = BUDGET_ITEM_TEMPLATES.map((t) => ({
+        label: t.label as string,
+        categoryCode: t.categoryCode as string,
+        planned: Math.round(event.estimatedBudget * t.share),
+      }));
+      for (const b of booked) {
+        const code = categoryById.get(b.serviceCategoryId)!;
+        if (!items.some((it) => it.categoryCode === code)) {
+          const label = SERVICE_CATEGORIES.find((c) => c.code === code)?.label ?? code;
+          items.push({ label, categoryCode: code, planned: 0 });
+        }
+      }
+      for (const it of items) {
+        const committed = booked.find((b) => categoryById.get(b.serviceCategoryId) === it.categoryCode)?.amount ?? 0;
+        const itemData = {
+          categoryCode: it.categoryCode,
+          amountPlanned: Math.max(it.planned, committed > 0 ? roundPrice(committed * 1.1, event.currency) : 0),
+          amountCommitted: committed,
+        };
+        await syncSeed(
+          () => tx.budgetItem.findFirst({ where: { budgetId: budget.id, label: it.label, isSeed: true } }),
+          () => tx.budgetItem.create({ data: { budgetId: budget.id, label: it.label, ...itemData, isSeed: true } }),
+          itemData,
+          (row) => tx.budgetItem.update({ where: { id: row.id }, data: itemData }),
+          counts,
+        );
+      }
     }
+    return {};
+  }
 
-    // US-088 AC-03/EC-04 — Reseñas (24): asociadas SOLO a confirmed_intent; ~70/20/10
-    // published/hidden/removed; multi-locale (es-LATAM/en); rating 1..5; (booking, author) distinto.
-    const REVIEW_TOTAL = 24;
-    const nConfirmed = confirmedBookings.length;
-    for (let i = 0; i < REVIEW_TOTAL; i += 1) {
-      const booking = confirmedBookings[i % nConfirmed]!;
-      const author = organizers[Math.floor(i / nConfirmed) % organizers.length]!;
-      const status = i < 17 ? 'published' : i < 22 ? 'hidden' : 'removed';
-      const review = await ensure(
-        () => tx.review.findFirst({ where: { bookingIntentId: booking.id, authorId: author.id, isSeed: true } }),
-        () =>
-          tx.review.create({
-            data: {
-              bookingIntentId: booking.id,
-              vendorProfileId: booking.vendorProfileId,
-              authorId: author.id,
-              rating: 1 + (i % 5),
-              comment: i % 2 === 0
-                ? 'Excelente servicio, muy recomendado. Superó nuestras expectativas (demo).'
-                : 'Outstanding service, highly recommended. Exceeded our expectations (demo).',
-              status,
-              isSeed: true,
-            },
-          }),
-        reviewCounts,
+  /**
+   * Historial de eventos ya realizados que sostiene las reseñas (`buildReviewHistoryPlan`). Cada
+   * reseña tiene su cadena completa, en el mismo shape que deja la app: evento `completed` del
+   * organizador autor → solicitud `responded` → cotización `accepted` → reserva `confirmed_intent`
+   * (disclaimer aceptado en creación y confirmación, comprometido sincronizado al presupuesto).
+   * Fechas relativas al día de la corrida; claves estables: título del evento, (evento, proveedor),
+   * solicitud y cotización.
+   */
+  private async seedReviewHistory(
+    tx: Tx,
+    counts: DomainCounts,
+    reviewers: { id: string }[],
+    vendors: { id: string; userId: string; categoryId: string }[],
+    eventTypes: { id: string; code: string }[],
+    locations: { id: string; code: string | null }[],
+  ): Promise<HistoryBooking[]> {
+    const history: HistoryBooking[] = [];
+    for (const planned of buildReviewHistoryPlan()) {
+      if (planned.bookings.length === 0) continue;
+      const owner = reviewers[planned.seed.organizer]!;
+      const eventType = eventTypes.find((t) => t.code === planned.seed.eventTypeCode)!;
+      const locationId = locations.find((l) => l.code === planned.locationCode)?.id ?? null;
+      const eventDate = relativeSeedDate(planned.seed.daysFromSeed);
+      // Cerrado manualmente al día siguiente: la ventana de reseña (30 días) corre desde aquí.
+      const completedAt = addDays(eventDate, 1);
+      const eventData = {
+        userId: owner.id,
+        eventTypeId: eventType.id,
+        locationId,
+        title: planned.seed.title,
+        status: 'completed' as const,
+        currency: planned.currency,
+        language: 'es_LATAM' as const,
+        eventDate,
+        guestsCount: planned.seed.guestsCount,
+        estimatedBudget: planned.estimatedBudget,
+        autoCompleted: false,
+        completedAt,
+        createdAt: addDays(eventDate, -120),
+      };
+      const event = await syncSeed(
+        () => tx.event.findFirst({ where: { title: planned.seed.title, isSeed: true } }),
+        () => tx.event.create({ data: { ...eventData, isSeed: true } }),
+        eventData,
+        (e) => tx.event.update({ where: { id: e.id }, data: eventData }),
+        counts,
       );
+      const budget = await ensure(
+        () => tx.budget.findUnique({ where: { eventId: event.id } }),
+        () => tx.budget.create({ data: { eventId: event.id, totalPlanned: 0, totalCommitted: 0, isSeed: true } }),
+        counts,
+      );
+
+      for (const [b, planBooking] of planned.bookings.entries()) {
+        const vendor = vendors[planBooking.vendorIndex]!;
+        const vendorSeed = VENDORS[planBooking.vendorIndex]!;
+        const requestedAt = addDays(eventDate, -75 + (b % 5));
+        const qrData = {
+          serviceCategoryId: vendor.categoryId,
+          status: 'responded' as const,
+          brief: {
+            budget: String(roundPrice(planBooking.amount * 1.15, planned.currency)),
+            currency_code: planned.currency,
+            message: vendorSeed.briefMessage,
+            source: 'manual',
+            aiGenerated: false,
+            event_snapshot: {
+              event_type_id: eventType.id,
+              event_date: eventDate.toISOString(),
+              location_id: locationId,
+              guests_count: planned.seed.guestsCount,
+            },
+          },
+          viewedAt: addDays(requestedAt, 1),
+          viewedBy: vendor.userId,
+          createdAt: requestedAt,
+        };
+        const qr = await syncSeed(
+          () => tx.quoteRequest.findFirst({ where: { eventId: event.id, vendorProfileId: vendor.id, isSeed: true } }),
+          () =>
+            tx.quoteRequest.create({
+              data: { eventId: event.id, vendorProfileId: vendor.id, ...qrData, isSeed: true },
+            }),
+          qrData,
+          (r) => tx.quoteRequest.update({ where: { id: r.id }, data: qrData }),
+          counts,
+        );
+
+        const sentAt = addDays(requestedAt, 3);
+        const acceptedAt = addDays(requestedAt, 10);
+        const quoteData = {
+          eventId: event.id,
+          serviceCategoryId: vendor.categoryId,
+          amount: planBooking.amount,
+          currency: planned.currency,
+          status: 'accepted' as const,
+          sentAt,
+          acceptedAt,
+          createdAt: sentAt,
+        };
+        const quote = await syncSeed(
+          () => tx.quote.findFirst({ where: { quoteRequestId: qr.id, vendorProfileId: vendor.id, isSeed: true } }),
+          () =>
+            tx.quote.create({
+              data: { quoteRequestId: qr.id, vendorProfileId: vendor.id, ...quoteData, isPreferred: false, isSeed: true },
+            }),
+          quoteData,
+          (q) => tx.quote.update({ where: { id: q.id }, data: quoteData }),
+          counts,
+        );
+
+        const confirmedAt = addDays(acceptedAt, 2);
+        const bookingData = {
+          eventId: event.id,
+          serviceCategoryId: vendor.categoryId,
+          vendorProfileId: vendor.id,
+          status: 'confirmed_intent' as const,
+          createdBy: owner.id,
+          confirmedAt,
+          disclaimerAcceptedAtCreate: acceptedAt,
+          disclaimerCopyVersionCreate: BOOKING_DISCLAIMER_COPY_VERSION,
+          disclaimerAcceptedAtConfirm: confirmedAt,
+          disclaimerCopyVersionConfirm: BOOKING_DISCLAIMER_COPY_VERSION,
+          committedSyncedAt: new Date(confirmedAt.getTime() + 1000),
+          committedSyncedAmount: planBooking.amount,
+          createdAt: acceptedAt,
+        };
+        const booking = await syncSeed(
+          () => tx.bookingIntent.findFirst({ where: { quoteId: quote.id, isSeed: true } }),
+          () => tx.bookingIntent.create({ data: { quoteId: quote.id, isSimulated: true, ...bookingData, isSeed: true } }),
+          bookingData,
+          (bi) => tx.bookingIntent.update({ where: { id: bi.id }, data: bookingData }),
+          counts,
+        );
+
+        // Partida del presupuesto con el comprometido de la reserva (lo que deja el sync US-039).
+        const label = SERVICE_CATEGORIES.find((c) => c.code === vendorSeed.categoryCode)?.label ?? vendorSeed.categoryCode;
+        const itemData = {
+          categoryCode: vendorSeed.categoryCode,
+          amountPlanned: roundPrice(planBooking.amount * 1.1, planned.currency),
+          amountCommitted: planBooking.amount,
+        };
+        await syncSeed(
+          () => tx.budgetItem.findFirst({ where: { budgetId: budget.id, label, isSeed: true } }),
+          () => tx.budgetItem.create({ data: { budgetId: budget.id, label, ...itemData, isSeed: true } }),
+          itemData,
+          (row) => tx.budgetItem.update({ where: { id: row.id }, data: itemData }),
+          counts,
+        );
+
+        history.push({
+          reviewIndex: planBooking.reviewIndex,
+          bookingIntentId: booking.id,
+          vendorProfileId: vendor.id,
+          authorId: owner.id,
+          completedAt,
+        });
+      }
+    }
+    return history;
+  }
+
+  /**
+   * US-088 AC-03/EC-04 — Reseñas seed: una por reserva confirmada del historial, escrita por el
+   * dueño del evento dentro de la ventana de 30 días tras el cierre. ~95% publicadas; las ocultas
+   * (datos de contacto) y eliminadas (contenido ajeno) llevan su `AdminAction` y columnas audit.
+   * Clave estable: el texto (único entre las reseñas seed), lo que permite reubicar en sitio las
+   * reseñas de BDs sembradas antes sin duplicarlas.
+   */
+  private async seedReviews(
+    tx: Tx,
+    counts: DomainCounts,
+    admin: { id: string },
+    history: HistoryBooking[],
+  ) {
+    const byReview = new Map(history.map((h) => [h.reviewIndex, h]));
+    const seededIds: string[] = [];
+    for (const [i, seed] of REVIEWS.entries()) {
+      const slot = byReview.get(i);
+      if (!slot) continue;
+      // El estado sólo se fija al crear: una moderación hecha en la demo no se revierte.
+      const status = seed.status ?? 'published';
+      const reviewData = {
+        bookingIntentId: slot.bookingIntentId,
+        vendorProfileId: slot.vendorProfileId,
+        authorId: slot.authorId,
+        rating: seed.rating,
+        createdAt: new Date(addDays(slot.completedAt, 1 + (i % 10)).getTime() + (i % 12) * 3_600_000),
+      };
+      const review = await syncSeed(
+        () => tx.review.findFirst({ where: { comment: seed.comment, isSeed: true } }),
+        () => tx.review.create({ data: { comment: seed.comment, status, ...reviewData, isSeed: true } }),
+        reviewData,
+        (r) => tx.review.update({ where: { id: r.id }, data: reviewData }),
+        counts,
+      );
+      seededIds.push(review.id);
       // US-088 AC-04 — Trazabilidad de moderación: `AdminAction` por cada review hidden/removed.
       // US-067 (PB-P1-040 / BE-006): además del AdminAction se pueblan las 4 columnas audit
       // en `reviews` (`moderated_by`, `moderated_at`, `moderation_reason`, `admin_action_id`)
-      // introducidas por la migración `20260720150000_us067_reviews_moderation_audit_columns`.
-      // Esto habilita la demo del admin panel — `ReviewModerationTable` muestra el badge del
-      // AdminAction y el `moderatedAt` sin depender de una moderación runtime posterior. El
-      // UPDATE es idempotente: `ensure` no lo re-ejecuta si el `admin_action_id` ya está seteado.
+      // con el mismo shape que produce `ModerateReviewUseCase` en runtime (Decisión PO D8).
       if (status !== 'published') {
-        // Nombres canónicos del contrato admin US-067 (`hide` | `remove`). Se preservan las
-        // constantes históricas del seed (`HIDE_REVIEW`/`REMOVE_REVIEW`) sólo si ya existieran
-        // en snapshots previos — no las usamos aquí para mantener paridad EXACTA con el shape
-        // que produce `ModerateReviewUseCase` en runtime (Decisión PO D8).
         const action = status === 'hidden' ? 'hide' : 'remove';
         const reason = status === 'hidden'
-          ? 'Contenido marcado para revisión (demo).'
-          : 'Reseña eliminada por incumplir políticas (demo).';
-        const moderatedAt = new Date('2026-05-20T12:00:00Z'); // determinista
-        const adminAction = await ensure(
+          ? 'La reseña incluye datos de contacto; queda oculta mientras se revisa.'
+          : 'El contenido no corresponde al servicio contratado.';
+        const actionData = {
+          metadata: {
+            reason,
+            from_status: 'published',
+            to_status: status,
+            rating_snapshot: review.rating,
+            comment_snapshot: review.comment,
+          },
+        };
+        const adminAction = await syncSeed(
           () => tx.adminAction.findFirst({ where: { action, targetEntity: 'review', targetId: review.id, isSeed: true } }),
           () =>
             tx.adminAction.create({
@@ -1006,31 +1442,36 @@ export class SeedDemoDataUseCase {
                 action,
                 targetEntity: 'review',
                 targetId: review.id,
-                metadata: {
-                  reason,
-                  from_status: 'published',
-                  to_status: status,
-                  rating_snapshot: review.rating,
-                  comment_snapshot: review.comment,
-                },
+                ...actionData,
                 isSeed: true,
               },
             }),
+          actionData,
+          (a) => tx.adminAction.update({ where: { id: a.id }, data: actionData }),
           counts,
         );
         // UPDATE idempotente de columnas audit + chain al AdminAction (BR-ADMIN-011).
-        if (review.adminActionId !== adminAction.id) {
-          await tx.review.update({
-            where: { id: review.id },
-            data: {
-              moderatedBy: admin.id,
-              moderatedAt,
-              moderationReason: reason,
-              adminActionId: adminAction.id,
-            },
-          });
+        const auditData = {
+          moderatedBy: admin.id,
+          moderatedAt: addDays(review.createdAt, 1),
+          moderationReason: reason,
+          adminActionId: adminAction.id,
+        };
+        if (Object.entries(auditData).some(([k, v]) => !sameValue((review as Record<string, unknown>)[k], v))) {
+          await tx.review.update({ where: { id: review.id }, data: auditData });
         }
       }
+    }
+    // EC-04: reseñas seed que ya no están en el catálogo (planes anteriores) se retiran junto con
+    // su AdminAction seed.
+    const stale = await tx.review.findMany({
+      where: { isSeed: true, id: { notIn: seededIds } },
+      select: { id: true },
+    });
+    if (stale.length > 0) {
+      const ids = stale.map((r) => r.id);
+      await tx.review.deleteMany({ where: { id: { in: ids } } });
+      await tx.adminAction.deleteMany({ where: { targetEntity: 'review', targetId: { in: ids }, isSeed: true } });
     }
     return {};
   }
@@ -1110,33 +1551,28 @@ export class SeedDemoDataUseCase {
       //     (D5 rechaza cancelled/completed con 409 EVENT_NOT_EDITABLE).
       //  2. Al menos un BudgetItem con `aiRecommendationId` de la recomendación previa
       //     `accepted` de budget_suggestion, para demoar el reemplazo D2.
-      // US-087 default plan: events[0..2]=completed, events[3..7]=active, events[8..9]=draft.
-      // El seed genera events con currency alternado por índice (GTQ pares, USD impares).
-      // El mock provider genera `budget_suggestion.currencyCode='GTQ'` por default (sin
-      // `input.currencyCode`), por lo que necesitamos un evento editable **y** con
-      // currency='GTQ' para evitar `CurrencyMismatchError` en el apply (AC-08 defensa profunda).
-      const editableEvents = await tx.event.findMany({
-        where: {
-          id: { in: events.map((e) => e.id) },
-          status: { in: ['draft', 'active'] },
-          currency: 'GTQ',
-        },
-        select: { id: true },
-        take: 1,
-      });
-      const pendingBudgetEventTarget = editableEvents[0] ?? events[0]!;
+      // El mock provider genera `budget_suggestion.currencyCode='GTQ'` por default, así que el
+      // evento debe ser editable, futuro (el job T+2 no lo cerrará) y en GTQ para evitar
+      // `CurrencyMismatchError` en el apply (AC-08). Orden determinista (el de `EVENTS`).
+      const editableIds = new Set(
+        (
+          await tx.event.findMany({
+            where: {
+              id: { in: events.map((e) => e.id) },
+              status: { in: ['draft', 'active'] },
+              currency: 'GTQ',
+              eventDate: { gt: new Date() },
+            },
+            select: { id: true },
+          })
+        ).map((e) => e.id),
+      );
+      const pendingBudgetEventTarget = events.find((e) => editableIds.has(e.id)) ?? events[0]!;
       const pendingBudgetGen = generated.find((g) => g.feature === 'budget_suggestion');
       if (pendingBudgetGen) {
-        await ensure(
-          () =>
-            tx.aIRecommendation.findFirst({
-              where: {
-                kind: 'budget_suggestion',
-                status: 'pending',
-                eventId: pendingBudgetEventTarget.id,
-                isSeed: true,
-              },
-            }),
+        const pendingData = { eventId: pendingBudgetEventTarget.id };
+        await syncSeed(
+          () => tx.aIRecommendation.findFirst({ where: { kind: 'budget_suggestion', status: 'pending', isSeed: true } }),
           () =>
             tx.aIRecommendation.create({
               data: {
@@ -1159,6 +1595,8 @@ export class SeedDemoDataUseCase {
                 isSeed: true,
               },
             }),
+          pendingData,
+          (r) => tx.aIRecommendation.update({ where: { id: r.id }, data: pendingData }),
           counts,
         );
       }
@@ -1185,7 +1623,7 @@ export class SeedDemoDataUseCase {
                 budgetId: budgetOfMainEvent.id,
                 label: 'Salón (IA previo)',
                 categoryCode: 'venue',
-                amountPlanned: 3500,
+                amountPlanned: 18000,
                 amountCommitted: 0,
                 aiRecommendationId: acceptedRec.id,
                 isSeed: true,
@@ -1194,7 +1632,7 @@ export class SeedDemoDataUseCase {
                 budgetId: budgetOfMainEvent.id,
                 label: 'Catering (IA previo)',
                 categoryCode: 'catering',
-                amountPlanned: 2500,
+                amountPlanned: 30000,
                 amountCommitted: 0,
                 aiRecommendationId: acceptedRec.id,
                 isSeed: true,
@@ -1207,16 +1645,21 @@ export class SeedDemoDataUseCase {
     return {};
   }
 
-  private async seedNotifications(tx: Tx, counts: DomainCounts, users: { id: string }[]) {
+  private async seedNotifications(
+    tx: Tx,
+    counts: DomainCounts,
+    users: { id: string; role: keyof typeof WELCOME_NOTIFICATION }[],
+  ) {
     for (let i = 0; i < users.length && i < 18; i += 1) {
       const user = users[i]!;
+      // El `type` es la clave estable; título y cuerpo van en el payload (lo que lee la bandeja).
       const type = `seed.demo.welcome.${i}`;
-      await ensure(
+      const data = { payload: { ...WELCOME_NOTIFICATION[user.role], channel: 'in_app', languageCode: 'es-LATAM' } };
+      await syncSeed(
         () => tx.notification.findFirst({ where: { userId: user.id, type, isSeed: true } }),
-        () =>
-          tx.notification.create({
-            data: { userId: user.id, type, payload: { message: 'Bienvenido a EventFlow (demo)' }, status: 'unread', isSeed: true },
-          }),
+        () => tx.notification.create({ data: { userId: user.id, type, ...data, status: 'unread', isSeed: true } }),
+        data,
+        (n) => tx.notification.update({ where: { id: n.id }, data }),
         counts,
       );
     }
@@ -1224,9 +1667,10 @@ export class SeedDemoDataUseCase {
   }
 
   private async seedAdminActions(tx: Tx, counts: DomainCounts, admin: { id: string }, vendors: { id: string }[]) {
+    const data = { metadata: { note: 'Perfil revisado y aprobado para el directorio.' } };
     for (let i = 0; i < vendors.length && i < 6; i += 1) {
       const vendor = vendors[i]!;
-      await ensure(
+      await syncSeed(
         () =>
           tx.adminAction.findFirst({
             where: { adminUserId: admin.id, action: 'vendor.approve', targetId: vendor.id, isSeed: true },
@@ -1238,10 +1682,12 @@ export class SeedDemoDataUseCase {
               action: 'vendor.approve',
               targetEntity: 'VendorProfile',
               targetId: vendor.id,
-              metadata: { note: 'Aprobación demo' },
+              ...data,
               isSeed: true,
             },
           }),
+        data,
+        (a) => tx.adminAction.update({ where: { id: a.id }, data }),
         counts,
       );
     }
@@ -1280,14 +1726,14 @@ export class SeedDemoDataUseCase {
       {
         vendorIndex: 3,
         action: 'hide',
-        reason: 'Perfil ocultado temporalmente por revisión de contenido (demo seed).',
+        reason: 'Perfil ocultado temporalmente mientras se verifican las fotos del portafolio.',
         updateData: { isHidden: true },
         metadataDelta: { from_status: 'approved', to_status: 'approved', from_is_hidden: false, to_is_hidden: true },
       },
       {
         vendorIndex: 4,
         action: 'reject',
-        reason: 'Documentación insuficiente para publicación en el directorio (demo seed).',
+        reason: 'Falta documentación del negocio para publicar el perfil en el directorio.',
         updateData: { status: 'rejected' },
         metadataDelta: { from_status: 'approved', to_status: 'rejected', from_is_hidden: false, to_is_hidden: false },
       },
@@ -1303,10 +1749,23 @@ export class SeedDemoDataUseCase {
       // referencia una AdminAction distinta (action='hide'|'reject').
       const existingChain = await tx.vendorProfile.findFirst({
         where: { id: vendor.id, adminActionId: { not: null } },
-        select: { id: true },
+        select: { id: true, adminActionId: true, moderationReason: true },
       });
       if (existingChain !== null) {
-        counts.unchanged = (counts.unchanged ?? 0) + 1;
+        // Sólo se realinea el texto del motivo (BDs sembradas con el texto anterior).
+        if (existingChain.moderationReason === scenario.reason) {
+          counts.unchanged += 1;
+          continue;
+        }
+        await tx.vendorProfile.update({ where: { id: vendor.id }, data: { moderationReason: scenario.reason } });
+        const action = await tx.adminAction.findUnique({ where: { id: existingChain.adminActionId! } });
+        if (action) {
+          await tx.adminAction.update({
+            where: { id: action.id },
+            data: { metadata: { ...(action.metadata as Record<string, unknown>), reason: scenario.reason } },
+          });
+        }
+        counts.updated += 1;
         continue;
       }
 
@@ -1369,6 +1828,28 @@ export class SeedDemoDataUseCase {
       WHERE vp."id" = agg.vpid
     `);
   }
+
+  /**
+   * Totales del presupuesto = suma de sus partidas (mismo criterio que `recomputeBudgetTotals` en
+   * budget-management). Sólo toca presupuestos seed y sólo si cambian.
+   */
+  private async recomputeSeedBudgetTotals(): Promise<void> {
+    await this.prisma.$executeRawUnsafe(`
+      UPDATE "budgets" b
+      SET "total_planned" = agg."planned", "total_committed" = agg."committed"
+      FROM (
+        SELECT b2."id" AS bid,
+          COALESCE(SUM(i."amount_planned"), 0) AS "planned",
+          COALESCE(SUM(i."amount_committed"), 0) AS "committed"
+        FROM "budgets" b2
+        LEFT JOIN "budget_items" i ON i."budget_id" = b2."id"
+        WHERE b2."is_seed" = true
+        GROUP BY b2."id"
+      ) agg
+      WHERE b."id" = agg.bid
+        AND (b."total_planned" <> agg."planned" OR b."total_committed" <> agg."committed")
+    `);
+  }
 }
 
 function featureScope(feature: SeedAiFeature): 'event' | 'vendor' | 'quote' {
@@ -1379,4 +1860,70 @@ function featureScope(feature: SeedAiFeature): 'event' | 'vendor' | 'quote' {
 
 function seedInputForFeature(feature: SeedAiFeature): Record<string, unknown> {
   return { feature, scenario: 'seed-demo', locale: 'es-LATAM' };
+}
+
+/** Raíz de las fotos demo versionadas en el repo (relativa al directorio del backend). */
+const SEED_PORTFOLIO_DIR = 'prisma/seed-assets/portfolio';
+
+/** Créditos de las fotos demo, `credits.json` → `{ "<carpeta>/NN.jpg": { title, author, … } }`. */
+type SeedAttribution = {
+  title: string | null;
+  author: string | null;
+  license: string;
+  licenseUrl: string | null;
+  source: string | null;
+};
+
+function loadSeedPortfolioCredits(): Record<string, SeedAttribution> {
+  const file = path.resolve(process.cwd(), SEED_PORTFOLIO_DIR, 'credits.json');
+  if (!fs.existsSync(file)) return {};
+  const raw = JSON.parse(fs.readFileSync(file, 'utf8')) as Record<string, Record<string, unknown> | null>;
+  const text = (v: unknown): string | null => (typeof v === 'string' && v.trim().length > 0 ? v : null);
+  const credits: Record<string, SeedAttribution> = {};
+  for (const [key, c] of Object.entries(raw)) {
+    // Sin licencia no hay crédito utilizable: la foto queda con `attribution = null`. El dominio
+    // público no tiene URL de licencia (`licenseUrl = null`).
+    const license = text(c?.license);
+    if (!c || !license) continue;
+    credits[key] = {
+      title: text(c.title),
+      author: text(c.author),
+      license,
+      licenseUrl: text(c.licenseUrl),
+      source: text(c.source),
+    };
+  }
+  return credits;
+}
+
+/** Números de foto (`NN.jpg`) presentes en una carpeta de assets, en orden. */
+function listSeedPortfolioPhotos(assetDir: string): number[] {
+  const dir = path.resolve(process.cwd(), SEED_PORTFOLIO_DIR, assetDir);
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir)
+    .map((f) => /^(\d{2})\.jpg$/.exec(f)?.[1])
+    .filter((n): n is string => n !== undefined)
+    .map(Number)
+    .filter((n) => n >= 1 && n <= 10)
+    .sort((a, b) => a - b);
+}
+
+/**
+ * Copia la foto `assetKey` (`<carpeta>/NN.jpg` dentro de `prisma/seed-assets/portfolio`) a
+ * `FILE_STORAGE_PATH/<storageUrl>` si todavía no está. Devuelve el tamaño en bytes, o `null` si el
+ * asset no existe (el registro se crea igual, como antes de tener fotos).
+ */
+function copySeedPortfolioImage(assetKey: string, storageUrl: string): number | null {
+  const source = path.resolve(process.cwd(), SEED_PORTFOLIO_DIR, assetKey);
+  if (!fs.existsSync(source)) return null;
+  const base = path.resolve(process.cwd(), process.env.FILE_STORAGE_PATH ?? './storage/uploads');
+  const target = path.resolve(base, storageUrl);
+  if (!target.startsWith(base + path.sep)) return null;
+  const { size } = fs.statSync(source);
+  if (!fs.existsSync(target) || fs.statSync(target).size !== size) {
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.copyFileSync(source, target);
+  }
+  return size;
 }

@@ -19,7 +19,7 @@ interface Props {
 
 export function PublicVendorProfile({ vendor }: Props) {
   return (
-    <article className="mx-auto flex w-full max-w-5xl flex-col gap-10 p-6">
+    <article className="mx-auto flex w-full max-w-[60rem] flex-col gap-10 px-page-mobile py-10 sm:px-page-tablet sm:py-14">
       <VendorHero vendor={vendor} />
       <PortfolioGallery groups={vendor.portfolio} vendorName={vendor.businessName} />
       <PackageList packages={vendor.packages} />

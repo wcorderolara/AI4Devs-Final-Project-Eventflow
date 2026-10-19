@@ -43,26 +43,46 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // --- Escalas de marca (decorativas / acento) -------------------------------
-        // `lilac` y `coral` son SOLO decorativos: prohibido usarlos como texto, icono
-        // principal o estado semántico (UI-DEC-002, UI-DEC-014).
-        violet: color.violet,
+        // --- Identidad (UI-DEC-002 rev. 2) ------------------------------------------
+        // Escalas de marca para acentos puntuales; los componentes deben preferir las
+        // utilidades semánticas (`bg-action-primary`, `text-link`, `bg-ai-surface`, …).
+        brand: color.bugambilia,
+        jade: color.jade,
+        cempasuchil: color.cempasuchil,
+        anil: color.anil,
+        bermellon: color.bermellon,
+
+        // --- Remapeo de transición (DEPRECATED) -------------------------------------
+        // El código de features todavía usa las paletas por defecto de Tailwind escritas a
+        // mano (~1,300 clases: `neutral-*`, `red-*`, `blue-*`, `purple-*`…). Se redirigen a
+        // la identidad para que ninguna pantalla quede con el "look Tailwind" mientras se
+        // migran a utilidades semánticas. No usar estos nombres en código nuevo.
+        neutral: color.neutral,
+        gray: color.neutral,
+        violet: color.bugambilia,
+        purple: color.bugambilia,
+        indigo: color.anil,
+        blue: color.anil,
+        sky: color.anil,
+        red: color.bermellon,
+        rose: color.bermellon,
+        green: color.jade,
+        emerald: color.jade,
+        teal: color.jade,
+        /** @deprecated Sin consumidores; alias de compatibilidad. */
         lilac: color.lilac,
+        /** @deprecated Sin consumidores; alias de compatibilidad. */
         coral: color.coral,
 
         // --- Aliases de compatibilidad (DEPRECATED) --------------------------------
-        // Mapeados a valores EventFlow aprobados para no romper consumidores existentes.
-        // `primary` pasó de `colors.blue` (Tailwind) a la escala violeta aprobada (FC-01).
-        // Migrar a las utilidades semánticas (`bg-action-primary`, `text-link`, …) y
-        // eliminar estos aliases en la fase de migración de componentes.
         /** @deprecated Usar `bg-action-primary` / `text-link` / `bg-surface-selected`. */
-        primary: color.violet,
+        primary: color.bugambilia,
         /** @deprecated Usar `text-secondary` / `bg-surface-subtle` / `border-subtle`. */
         secondary: color.neutral,
         /** @deprecated Usar `bg-action-destructive` / `text-feedback-error`. */
-        danger: { ...color.red, 500: color.red[600] },
+        danger: color.bermellon,
         /** @deprecated Usar `bg-feedback-success-strong` / `text-feedback-success`. */
-        success: color.green,
+        success: color.jade,
       },
 
       // --- Text ------------------------------------------------------------------
@@ -188,6 +208,7 @@ const config: Config = {
       fontFamily: {
         // Se copian los arrays porque los tokens son `readonly` (`as const`) y Tailwind
         // espera `string[]` mutable.
+        display: [...fontFamily.display],
         heading: [...fontFamily.heading],
         body: [...fontFamily.body],
         ui: [...fontFamily.ui],

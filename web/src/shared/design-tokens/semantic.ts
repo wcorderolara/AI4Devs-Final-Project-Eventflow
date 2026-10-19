@@ -10,25 +10,24 @@
 import {
   alpha,
   amber,
-  blue,
+  anil,
+  bermellon,
   border,
   breakpoint,
+  bugambilia,
   canvas,
-  coral,
+  cempasuchil,
   focus,
-  green,
   icon,
+  jade,
   layout,
-  lilac,
   motion,
   neutral,
   opacity,
   radius,
-  red,
   shadow,
   size,
   space,
-  violet,
   zIndex,
 } from './primitives';
 
@@ -37,8 +36,8 @@ import {
  * ------------------------------------------------------------------ */
 
 /**
- * `primary` es `neutral.800` (`#262626`), NO `neutral.900`.
- * `#171717` está reservado a `surface.inverse` y a la CTA oscura de marketing (UI-DEC-003).
+ * `primary` es la tinta `neutral.800` (`#1E2742`), NO `neutral.900`, que queda para
+ * `surface.inverse` y la CTA oscura de marketing (UI-DEC-003).
  */
 export const text = {
   primary: neutral[800],
@@ -46,8 +45,8 @@ export const text = {
   muted: neutral[500],
   disabled: neutral[400],
   inverse: neutral[0],
-  link: violet[700],
-  linkHover: violet[800],
+  link: bugambilia[700],
+  linkHover: bugambilia[800],
 } as const;
 
 /* ------------------------------------------------------------------ *
@@ -75,7 +74,7 @@ export const surface = {
   /** Superficie oscura: CTA de landing, footer inverso. */
   inverse: neutral[900],
   /** Selección / item activo. */
-  selected: violet[50],
+  selected: bugambilia[50],
 } as const;
 
 /* ------------------------------------------------------------------ *
@@ -87,7 +86,7 @@ export const borderColor = {
   subtle: neutral[200],
   strong: neutral[700],
   /** Border activo/focus base, previo al focus ring. */
-  interactive: violet[500],
+  interactive: bugambilia[500],
   disabled: neutral[200],
   separator: neutral[200],
 } as const;
@@ -98,11 +97,11 @@ export const borderWidth = border.width;
  * Actions — Design Tokens §9.4, §10.1, §10.2
  * ------------------------------------------------------------------ */
 
-/** CTA primaria de plataforma (UI-DEC-003). Violeta, nunca azul. */
+/** CTA primaria de plataforma (UI-DEC-003). Bugambilia. */
 export const actionPrimary = {
-  background: violet[600],
-  hover: violet[700],
-  active: violet[800],
+  background: bugambilia[600],
+  hover: bugambilia[700],
+  active: bugambilia[800],
   foreground: neutral[0],
   disabledBackground: neutral[200],
   disabledForeground: neutral[400],
@@ -121,17 +120,17 @@ export const actionGhost = {
   foreground: neutral[800],
 } as const;
 
-/** Acción destructiva (UI-DEC-003, UI-DEC-014). Rojo semántico, nunca coral. */
+/** Acción destructiva (UI-DEC-003, UI-DEC-014). Bermellón, nunca la bugambilia de marca. */
 export const actionDestructive = {
-  background: red[600],
-  hover: red[700],
+  background: bermellon[600],
+  hover: bermellon[700],
   foreground: neutral[0],
 } as const;
 
-/** CTA oscura de la landing (UI-DEC-003). */
+/** CTA oscura de la landing (UI-DEC-003): tinta. */
 export const actionMarketing = {
-  background: neutral[900],
-  hover: neutral[800],
+  background: neutral[800],
+  hover: neutral[700],
   foreground: neutral[0],
 } as const;
 
@@ -145,12 +144,12 @@ export const actionMarketing = {
  */
 export const feedback = {
   success: {
-    surface: green[50],
-    border: green[200],
-    text: green[700],
-    icon: green[600],
-    strong: green[600],
-    foreground: green.foreground,
+    surface: jade[50],
+    border: jade[200],
+    text: jade[700],
+    icon: jade[600],
+    strong: jade[600],
+    foreground: jade.foreground,
   },
   warning: {
     surface: amber[50],
@@ -161,20 +160,20 @@ export const feedback = {
     foreground: amber.foreground,
   },
   error: {
-    surface: red[50],
-    border: red[200],
-    text: red[700],
-    icon: red[600],
-    strong: red[600],
-    foreground: red.foreground,
+    surface: bermellon[50],
+    border: bermellon[200],
+    text: bermellon[700],
+    icon: bermellon[600],
+    strong: bermellon[600],
+    foreground: bermellon.foreground,
   },
   info: {
-    surface: blue[50],
-    border: blue[200],
-    text: blue[700],
-    icon: blue[600],
-    strong: blue[600],
-    foreground: blue.foreground,
+    surface: anil[50],
+    border: anil[200],
+    text: anil[700],
+    icon: anil[600],
+    strong: anil[600],
+    foreground: anil.foreground,
   },
 } as const;
 
@@ -192,19 +191,19 @@ export const feedback = {
  * - No existen tokens de glow ni gradientes animados.
  * - Al aceptarse, el contenido deja de consumir `ai.*` y pasa al lenguaje visual normal.
  *
- * `border` se mantiene en `violet.500` (3.35:1 sobre `ai.surface`, cumple 3:1 no textual).
- * CMP-Q-003 mantiene abierta la validación visual; promoverlo a `violet.600` sigue siendo
- * PROVISIONAL y no se aplica en esta implementación.
+ * Lo que propone la IA se pinta como un borrador "a lápiz" en cempasúchil: pendiente de tu
+ * revisión. `border` usa `cempasuchil.600` (3.6:1 sobre `ai.surface`, cumple 3:1 no textual);
+ * label e icono `700` (5.5:1).
  */
 export const ai = {
-  surface: lilac[50],
-  surfaceHover: lilac[100],
-  border: violet[500],
-  borderStrong: violet[700],
+  surface: cempasuchil[50],
+  surfaceHover: cempasuchil[100],
+  border: cempasuchil[600],
+  borderStrong: cempasuchil[700],
   text: neutral[800],
-  icon: violet[700],
-  label: violet[700],
-  pending: violet[500],
+  icon: cempasuchil[700],
+  label: cempasuchil[700],
+  pending: cempasuchil[600],
   accepted: feedback.success.strong,
   edited: feedback.info.strong,
   rejected: neutral[500],
@@ -219,18 +218,16 @@ export const ai = {
 /**
  * Cromo del shell autenticado (sidebar, topbar, lienzo de contenido).
  *
- * Los valores replican el screen Stitch *EventFlow - Layout Principal (Base)*, que es la
- * referencia visual aprobada del layout principal: cromo en grises cálidos (`canvas.*`),
- * contenido blanco encima, e ítem de navegación activo **relleno** en violeta de marca con
- * texto blanco — no el chip violeta claro anterior.
+ * El cromo es papel (`canvas.*`) y se mantiene sobrio: la audacia de la identidad vive en el
+ * contenido (la fecha del evento), no en la navegación. El ítem activo es un tinte suave de
+ * bugambilia con texto bugambilia oscuro, peso semibold y la marca vertical de acento.
  *
  * Contraste verificado (WCAG 2.1 AA):
- * - `sidebarItemActiveForeground` (`#FFFFFF`) sobre `sidebarItemActive` (`violet.600`): 5.12:1.
- * - Texto secundario (`#525252`) sobre `sidebarBackground` (`#F6F3F2`): 7.4:1.
- * - Texto primario (`#262626`) sobre `pageBackground` (`#FCF9F8`): 13.9:1.
+ * - `sidebarItemActiveForeground` (`#78163C`) sobre `sidebarItemActive` (`#FDF0F5`): 10.6:1.
+ * - Texto secundario (`#4E5468`) sobre `sidebarBackground` (`#ECEEE8`): 6.7:1.
+ * - Texto primario (`#1E2742`) sobre `pageBackground` (`#F5F6F2`): 14.0:1.
  *
- * El estado activo **sigue sin depender sólo del color** (UI-DEC-014): además del relleno lleva
- * peso semibold y la marca vertical de acento que `SidebarItem` invierte a blanco.
+ * El estado activo no depende sólo del color (UI-DEC-014).
  */
 export const platform = {
   /** Sidebar: tinte cálido que la separa del lienzo sin necesidad de sombra. */
@@ -238,8 +235,8 @@ export const platform = {
   /** Pie de la sidebar (bloque de identidad): un paso más en la rampa. */
   sidebarFooterBackground: canvas.container,
   sidebarItemHover: canvas.high,
-  sidebarItemActive: violet[600],
-  sidebarItemActiveForeground: neutral[0],
+  sidebarItemActive: bugambilia[50],
+  sidebarItemActiveForeground: bugambilia[800],
   /** Topbar: mismo lienzo que el contenido; el hairline es el único separador. */
   headerBackground: canvas.bright,
   /** Hairline del cromo (`outline-variant` de Stitch). */
@@ -251,8 +248,8 @@ export const marketing = {
   ctaBackground: actionMarketing.background,
   ctaHover: actionMarketing.hover,
   ctaForeground: actionMarketing.foreground,
-  accentLilac: lilac[300],
-  accentCoral: coral[300],
+  accentLilac: cempasuchil[300],
+  accentCoral: bugambilia[300],
   heroSurface: neutral[50],
 } as const;
 
@@ -263,7 +260,7 @@ export const marketing = {
 export const focusRing = focus;
 
 export const selection = {
-  background: violet[100],
+  background: bugambilia[100],
   foreground: neutral[800],
 } as const;
 

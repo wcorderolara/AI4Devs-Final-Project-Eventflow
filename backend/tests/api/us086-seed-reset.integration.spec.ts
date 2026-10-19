@@ -67,7 +67,8 @@ describe.skipIf(!dbUp)('US-086 — Reset surgical Demo (endpoint HTTP)', () => {
     // Repobló datos seed.
     expect(await prisma.user.count({ where: { isSeed: true } })).toBeGreaterThan(0);
     expect(await prisma.event.count({ where: { isSeed: true } })).toBeGreaterThan(0);
-    expect(await prisma.aIRecommendation.count({ where: { isSeed: true } })).toBe(8);
+    // 10 features accepted + 1 budget_suggestion pending (US-037 SEED-001), igual que US-085 TS-06.
+    expect(await prisma.aIRecommendation.count({ where: { isSeed: true } })).toBe(11);
   }, 60_000);
 
   it('TS-03: AdminAction SEED_RESET registrado (isSeed=false, correlationId en metadata)', async () => {

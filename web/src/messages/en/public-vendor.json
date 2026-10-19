@@ -10,7 +10,10 @@
   "portfolio": {
     "title": "Portfolio",
     "empty": "This vendor hasn't published any work yet.",
-    "imageAlt": "{vendor} — {work}, image {index}"
+    "imageAlt": "{vendor} — {work}, image {index}",
+    "photos": "{count, plural, one {# photo} other {# photos}}",
+    "imagesUnavailable": "Photos of this work are not yet available on the public profile.",
+    "creditNote": "Sample photos under free licenses. Open a photo to see its author and license."
   },
   "packages": {
     "title": "Packages",
@@ -25,5 +28,32 @@
     "title": "Vendor not found",
     "body": "The vendor you're looking for doesn't exist or is no longer available.",
     "cta": "Back to directory"
+  },
+  "backToDirectory": "Vendor directory",
+  "gallery": {
+    "open": "View photo {index} of {total} from {work}",
+    "close": "Close gallery",
+    "previous": "Previous photo",
+    "next": "Next photo",
+    "counter": "{index} of {total}",
+    "creditBy": "Photo by {author}, licensed <license></license>.",
+    "creditLicense": "Photo licensed <license></license>.",
+    "source": "View original",
+    "sourceCommons": "View original on Wikimedia Commons"
+  },
+  "requestQuote": {
+    "cta": "Request a quote",
+    "dialog": {
+      "title": "Which event is the quote for?",
+      "description": "Choose the event; in the next step you tell the vendor what you need.",
+      "eventsLabel": "Your active events",
+      "continue": "Continue",
+      "cancel": "Cancel"
+    },
+    "noActive": {
+      "title": "You need an active event",
+      "body": "Quotes are requested for an active event. Activate one of your events or create a new one.",
+      "cta": "See my events"
+    }
   }
 }

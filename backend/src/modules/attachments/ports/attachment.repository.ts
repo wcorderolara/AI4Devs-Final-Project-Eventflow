@@ -73,3 +73,18 @@ export interface AttachmentRepository {
    */
   softDeleteByIdOwned(input: SoftDeleteAttachmentInput): Promise<boolean>;
 }
+
+/** Imagen de portafolio servible públicamente: trabajo activo de un proveedor visible. */
+export interface PublicPortfolioImage {
+  /** Ruta relativa a `FILE_STORAGE_PATH` (nunca absoluta). */
+  storageUrl: string;
+  mimeType: string;
+}
+
+export interface PublicPortfolioImageReader {
+  /**
+   * Devuelve la imagen sólo si es un trabajo `active` no borrado de un proveedor `approved`,
+   * no oculto y no borrado — la misma visibilidad que el perfil público (US-046 / US-047).
+   */
+  findVisibleById(attachmentId: string): Promise<PublicPortfolioImage | null>;
+}

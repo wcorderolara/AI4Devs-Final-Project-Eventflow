@@ -43,6 +43,19 @@
       "AUTHENTICATION_REQUIRED": "É necessário iniciar sessão para enviar a solicitação.",
       "FORBIDDEN": "Seu perfil não pode criar solicitações de cotação.",
       "UNEXPECTED": "Ocorreu um erro inesperado. Tente novamente."
+    },
+    "pickVendor": {
+      "title": "Escolha um fornecedor",
+      "body": "Procure o fornecedor no diretório e toque em «Pedir orçamento» no perfil dele.",
+      "cta": "Ir ao diretório"
+    },
+    "loadError": {
+      "title": "Não conseguimos preparar a solicitação",
+      "body": "Não encontramos o evento ou o fornecedor, ou eles não estão disponíveis. Escolha o fornecedor de novo no diretório."
+    },
+    "category": {
+      "label": "Serviço que você quer orçar",
+      "placeholder": "Escolha um serviço"
     }
   },
   "limit": {

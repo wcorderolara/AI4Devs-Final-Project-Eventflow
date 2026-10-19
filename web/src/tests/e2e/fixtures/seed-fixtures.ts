@@ -18,6 +18,7 @@
 export const DEMO_ORGANIZER_ID = 'a1b2c3d4-0000-4000-8000-000000000001';
 export const DEMO_EVENT_ID = '00000000-0000-4000-8000-000000000101';
 export const DEMO_VENDOR_ID = '00000000-0000-4000-8000-000000000201';
+export const DEMO_VENDOR_SLUG = 'demo-vendor';
 export const DEMO_QUOTE_ID = '00000000-0000-4000-8000-000000000301';
 export const DEMO_BOOKING_ID = '00000000-0000-4000-8000-000000000401';
 export const DEMO_AI_PLAN_ID = '00000000-0000-4000-8000-000000000501';
@@ -170,7 +171,7 @@ export function vendorDirectoryEnvelope() {
       items: [
         {
           id: DEMO_VENDOR_ID,
-          slug: 'demo-vendor',
+          slug: DEMO_VENDOR_SLUG,
           businessName: 'Demo Vendor',
           serviceCategoryCode: 'venue',
           approved: true,

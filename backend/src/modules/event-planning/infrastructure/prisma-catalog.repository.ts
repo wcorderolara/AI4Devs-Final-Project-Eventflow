@@ -44,9 +44,9 @@ export class PrismaLocationRepository implements LocationRepository {
   async listActive(): Promise<LocationOptionView[]> {
     const rows = await this.prisma.location.findMany({
       where: { deletedAt: null },
-      select: { id: true, country: true, region: true, city: true },
+      select: { id: true, code: true, country: true, region: true, city: true },
       orderBy: [{ country: 'asc' }, { city: 'asc' }],
     });
-    return rows.map((r) => ({ id: r.id, country: r.country, region: r.region, city: r.city }));
+    return rows.map((r) => ({ id: r.id, code: r.code, country: r.country, region: r.region, city: r.city }));
   }
 }

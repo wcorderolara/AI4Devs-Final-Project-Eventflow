@@ -43,6 +43,19 @@
       "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para enviar la solicitud.",
       "FORBIDDEN": "Tu rol no puede crear solicitudes de presupuesto.",
       "UNEXPECTED": "Se ha producido un error inesperado. Inténtalo de nuevo."
+    },
+    "pickVendor": {
+      "title": "Elige un proveedor",
+      "body": "Busca el proveedor en el directorio y pulsa «Pedir presupuesto» en su perfil.",
+      "cta": "Ir al directorio"
+    },
+    "loadError": {
+      "title": "No hemos podido preparar la solicitud",
+      "body": "No encontramos el evento o el proveedor, o no están disponibles. Vuelve a elegir el proveedor en el directorio."
+    },
+    "category": {
+      "label": "Servicio que quieres presupuestar",
+      "placeholder": "Elige un servicio"
     }
   },
   "limit": {

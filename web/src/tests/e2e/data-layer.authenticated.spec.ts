@@ -1,7 +1,10 @@
 import { expect, test } from '@playwright/test';
 
 // AC-10 / TS-16: con /users/me respondiendo 200, la sesión expone user y role.
-test('sesión autenticada cuando /users/me responde 200', async ({ page }) => {
+test('sesión autenticada cuando /users/me responde 200', async ({ page, context, baseURL }) => {
+  // El backend emite `eventflow_role` junto con la cookie de sesión; sin ella el cliente no consulta
+  // `/users/me` (visitante anónimo).
+  await context.addCookies([{ name: 'eventflow_role', value: 'organizer', url: baseURL ?? 'http://localhost:3000' }]);
   await page.route('**/users/me', (route) =>
     route.fulfill({
       status: 200,

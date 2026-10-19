@@ -23,6 +23,7 @@ vi.mock('next/navigation', () => ({
 afterEach(() => {
   refresh.mockClear();
   document.cookie = 'eventflow_locale=; path=/; max-age=0';
+  document.cookie = 'eventflow_role=; path=/; max-age=0';
 });
 
 function renderWithSession(locale = 'es-LATAM') {
@@ -42,6 +43,8 @@ function renderWithSession(locale = 'es-LATAM') {
 
 describe('US-081 IT — cambio de idioma end-to-end', () => {
   it('AC-01 authenticated: cambio dispara PATCH y persiste', async () => {
+    // Cookie legible que el backend emite junto con la de sesión (jsdom no aplica `Set-Cookie`).
+    document.cookie = 'eventflow_role=organizer; path=/';
     let patchBody: unknown = null;
     server.use(
       authenticatedMeHandler,

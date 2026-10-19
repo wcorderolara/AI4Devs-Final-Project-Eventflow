@@ -1,14 +1,14 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
-const sizeClasses = { sm: 'text-lg', md: 'text-xl', lg: 'text-2xl' } as const;
+const sizeClasses = { sm: 'text-lg sm:text-xl', md: 'text-xl sm:text-2xl', lg: 'text-3xl' } as const;
 
 /**
- * `brand` es el tratamiento por defecto (violeta sobre superficie clara). `inverse` es para
- * superficies oscuras de marca — el único caso hoy es el panel de `AuthSplitShell`, donde el
- * violeta de `text-link` no alcanzaría contraste.
+ * Wordmark en Bodoni Moda (la letra de las invitaciones), en tinta. El color de marca ya vive en
+ * las CTAs y en la fecha del evento; repetirlo en el logo lo diluiría. `inverse` es para
+ * superficies oscuras (panel de `AuthSplitShell`).
  */
-const toneClasses = { brand: 'text-link', inverse: 'text-inverse' } as const;
+const toneClasses = { brand: 'text-primary', inverse: 'text-inverse' } as const;
 
 export interface LogoProps {
   variant?: 'full' | 'icon';
@@ -23,7 +23,7 @@ export function Logo({ variant = 'full', size = 'md', tone = 'brand' }: LogoProp
     <Link
       href="/"
       aria-label={t('logo.label')}
-      className={`focus-ring font-heading font-bold ${toneClasses[tone]} ${sizeClasses[size]}`}
+      className={`focus-ring shrink-0 whitespace-nowrap font-display font-semibold tracking-[-0.01em] ${toneClasses[tone]} ${sizeClasses[size]}`}
     >
       {variant === 'icon' ? 'EF' : 'EventFlow'}
     </Link>

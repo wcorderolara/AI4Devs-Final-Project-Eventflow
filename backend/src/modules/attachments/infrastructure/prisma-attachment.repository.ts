@@ -8,6 +8,8 @@ import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.j
 import type { AttachmentView } from '../domain/attachment.js';
 import { OWNER_TYPE_VENDOR_WORK, type AttachmentOwnerType } from '../domain/constants.js';
 import type {
+  PublicPortfolioImage,
+  PublicPortfolioImageReader,
   ActiveAttachmentSnapshot,
   AttachmentRepository,
   CreateAttachmentInput,
@@ -149,5 +151,31 @@ export class PrismaVendorProfileForPortfolioReader implements VendorProfileForPo
     });
     if (!row) return null;
     return { id: row.id, status: row.status, deletedAt: row.deletedAt };
+  }
+}
+
+/** Lector de imágenes de portafolio públicas: misma visibilidad que el perfil público (US-046). */
+export class PrismaPublicPortfolioImageReader implements PublicPortfolioImageReader {
+  constructor(private readonly prisma: PrismaClient = defaultPrisma) {}
+
+  async findVisibleById(attachmentId: string): Promise<PublicPortfolioImage | null> {
+    const attachment = await this.prisma.attachment.findFirst({
+      where: {
+        id: attachmentId,
+        ownerType: OWNER_TYPE_VENDOR_WORK,
+        status: 'active',
+        deletedAt: null,
+      },
+      select: { ownerId: true, url: true, mimeType: true },
+    });
+    if (!attachment) return null;
+
+    const vendor = await this.prisma.vendorProfile.findFirst({
+      where: { id: attachment.ownerId, status: 'approved', isHidden: false, deletedAt: null },
+      select: { id: true },
+    });
+    if (!vendor) return null;
+
+    return { storageUrl: attachment.url, mimeType: attachment.mimeType ?? 'image/jpeg' };
   }
 }

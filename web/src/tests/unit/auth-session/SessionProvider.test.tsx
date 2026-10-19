@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import type { ReactNode } from 'react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { SessionProvider, useSession } from '@/shared/auth-session';
 import { server } from '@/tests/msw/server';
 
@@ -26,8 +26,34 @@ function renderSession(children: ReactNode) {
   );
 }
 
+// El backend emite la cookie de sesión (HTTP-only) junto con `eventflow_role`; aquí se simula esa
+// cookie legible porque jsdom no aplica el `Set-Cookie` de las respuestas mockeadas.
+const setRoleCookie = (role: string): void => {
+  document.cookie = `eventflow_role=${role}; path=/`;
+};
+
+afterEach(() => {
+  document.cookie = 'eventflow_role=; path=/; max-age=0';
+});
+
 describe('<SessionProvider> hidratado', () => {
+  it('sin cookie de rol → anónimo sin llamar a /users/me', async () => {
+    let calls = 0;
+    server.use(
+      http.get('*/api/v1/users/me', () => {
+        calls += 1;
+        return HttpResponse.json({ error: { code: 'AUTHENTICATION_REQUIRED', message: 'x' } }, { status: 401 });
+      }),
+    );
+    renderSession(<Consumer />);
+    await waitFor(() => expect(screen.getByTestId('auth')).toHaveTextContent('false'));
+    expect(screen.getByTestId('error')).toHaveTextContent('false');
+    expect(calls).toBe(0);
+  });
+
   it('401 → sesión anónima (no error)', async () => {
+    // Cookie de rol vencida o huérfana: el backend tiene la última palabra.
+    setRoleCookie('organizer');
     renderSession(<Consumer />);
     await waitFor(() => expect(screen.getByTestId('auth')).toHaveTextContent('false'));
     expect(screen.getByTestId('error')).toHaveTextContent('false');
@@ -42,6 +68,7 @@ describe('<SessionProvider> hidratado', () => {
         }),
       ),
     );
+    setRoleCookie('organizer');
     renderSession(<Consumer />);
     await waitFor(() => expect(screen.getByTestId('auth')).toHaveTextContent('true'));
     expect(screen.getByTestId('role')).toHaveTextContent('organizer');

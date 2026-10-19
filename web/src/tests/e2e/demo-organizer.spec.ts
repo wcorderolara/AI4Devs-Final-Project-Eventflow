@@ -31,7 +31,7 @@ import {
   vendorDirectoryEnvelope,
   DEMO_EVENT_ID,
   DEMO_QUOTE_ID,
-  DEMO_VENDOR_ID,
+  DEMO_VENDOR_SLUG,
 } from './fixtures/seed-fixtures';
 
 const demoReady = process.env.E2E_DEMO_READY === 'true';
@@ -178,7 +178,7 @@ test.describe('US-128 · camino demo del organizador (E2E on mocked contract)', 
     await expect(page.getByRole('main').first()).toBeVisible();
 
     // TS-06 · quote request + comparación.
-    await page.goto(`/organizer/events/${DEMO_EVENT_ID}/quotes/new?vendorId=${DEMO_VENDOR_ID}`);
+    await page.goto(`/organizer/events/${DEMO_EVENT_ID}/quotes/new?vendor=${DEMO_VENDOR_SLUG}`);
     await expect(page.getByRole('main').first()).toBeVisible();
     await page.goto(`/organizer/events/${DEMO_EVENT_ID}/quotes/compare`);
     await expect(page.getByRole('main').first()).toBeVisible();

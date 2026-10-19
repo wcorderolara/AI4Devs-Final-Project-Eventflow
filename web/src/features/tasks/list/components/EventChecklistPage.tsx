@@ -63,8 +63,8 @@ export function EventChecklistPage({ eventId, eventStatus, embedded = false }: P
   const t = useTranslations('checklist');
   const filters = {
     status: parseStatus(search.get('status')),
-    aiGenerated: parseAiGenerated(search.get('aiGenerated')),
-    categoryCode: search.get('categoryCode') || undefined,
+    aiGenerated: parseAiGenerated(search.get('ai')),
+    categoryCode: search.get('category') || undefined,
     // US-032 (FE-002): rango temporal opcional del URL state.
     range: parseRange(search.get('range')),
   };

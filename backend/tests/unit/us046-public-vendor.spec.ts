@@ -69,9 +69,20 @@ function baseRecord(overrides: Partial<PublicVendorRecord> = {}): PublicVendorRe
       },
     ],
     portfolio: [
-      { workLabel: 'boda-clasica', url: 'https://cdn/1.jpg' },
-      { workLabel: 'boda-clasica', url: 'https://cdn/2.jpg' },
-      { workLabel: 'quince-anos', url: 'https://cdn/3.jpg' },
+      {
+        workLabel: 'boda-clasica',
+        url: 'https://cdn/1.jpg',
+        attribution: {
+          title: 'Mesa de boda',
+          author: 'Ana Pérez',
+          license: 'CC BY-SA 4.0',
+          licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0',
+          source: 'https://commons.wikimedia.org/wiki/File:Mesa.jpg',
+          internalNote: 'no debe salir',
+        },
+      },
+      { workLabel: 'boda-clasica', url: 'https://cdn/2.jpg', attribution: { author: 'Sin licencia' } },
+      { workLabel: 'quince-anos', url: 'https://cdn/3.jpg', attribution: null },
     ],
     reviews: [
       {
@@ -110,9 +121,23 @@ describe('US-046 · toPublicVendorDto (whitelist mapper)', () => {
     }
   });
 
+  it('cada imagen lleva su crédito con whitelist; sin licencia no hay crédito', () => {
+    const dto = toPublicVendorDto(baseRecord());
+    const [boda] = dto.portfolio;
+    expect(boda?.images[0]?.credit).toEqual({
+      title: 'Mesa de boda',
+      author: 'Ana Pérez',
+      license: 'CC BY-SA 4.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0',
+      source: 'https://commons.wikimedia.org/wiki/File:Mesa.jpg',
+    });
+    expect(boda?.images[1]?.credit).toBeNull();
+    expect(dto.portfolio[1]?.images[0]?.credit).toBeNull();
+  });
+
   it('agrupa portfolio por workLabel preservando orden', () => {
     const dto = toPublicVendorDto(baseRecord());
-    expect(dto.portfolio).toEqual([
+    expect(dto.portfolio.map(({ workLabel, thumbnails }) => ({ workLabel, thumbnails }))).toEqual([
       { workLabel: 'boda-clasica', thumbnails: ['https://cdn/1.jpg', 'https://cdn/2.jpg'] },
       { workLabel: 'quince-anos', thumbnails: ['https://cdn/3.jpg'] },
     ]);

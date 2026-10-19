@@ -29,7 +29,13 @@ export interface VendorSearchRow {
   slug: string | null;
   businessName: string;
   locationCode: string | null;
+  /** "Ciudad, Región, País" legible; `null` sin ubicación. */
+  locationDisplay: string | null;
   categoryCodes: string[];
+  /** Mismo orden que `categoryCodes`, con la etiqueta del catálogo. */
+  categoryLabels: Array<{ code: string; label: string }>;
+  /** Primera imagen activa del portafolio (portada de la tarjeta); `null` sin portafolio. */
+  coverAttachmentId: string | null;
   ratingAvg: number | null;
   reviewsCount: number;
   priceMin: string | null;

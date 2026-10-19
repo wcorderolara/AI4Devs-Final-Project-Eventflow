@@ -12,6 +12,22 @@ Todas las entidades sembradas quedan marcadas con `is_seed=true`.
 | Mix de estados de evento `draft/active/completed` | hook `eventStatusPlan` | US-087 |
 | `confirmed_intent` + reseña verificada + cancelación | hook `extendBookingsAndReviews` | US-088 |
 
+## Datos demo
+
+- **Directorio**: 33 proveedores (`vendor0..32@seed.eventflow.test`), 30 aprobados y visibles en 9
+  ciudades de Guatemala, México y Colombia; paquetes en la moneda local. Los 12 originales sostienen
+  la matriz de cotizaciones/reservas (US-087/US-088) y los escenarios por índice (2 oculto,
+  3 moderado, 4 rechazado).
+- **Reseñas**: cada proveedor visible tiene entre 2 y 8 reseñas publicadas (promedios ~2.3–4.9), más
+  los ejemplos ocultos/eliminados con su `AdminAction`. Cada reseña cuelga de su propia cadena
+  evento `completed` → solicitud → cotización `accepted` → reserva `confirmed_intent` de un
+  organizador con historial (`organizer6..20@…`), escrita por el dueño del evento dentro de la
+  ventana de 30 días (mismas reglas que `CreateReviewUseCase`). Plan puro en
+  `application/review-history-plan.ts`; datos en `infrastructure/data/latam-data.ts`.
+- **Portafolio**: fotos de `prisma/seed-assets/portfolio/<categoría>/` (12 originales) y
+  `vendors/<slug>/` (agregados; sólo las que existan). El crédito de cada foto se copia de
+  `credits.json` a `attachments.attribution`.
+
 ## Endpoints (US-086)
 
 | Método | Ruta | Propósito | Auth | Éxito |

@@ -3,6 +3,7 @@
 // `onReset`, y ausencia de violaciones axe.
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NextIntlClientProvider } from 'next-intl';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { describe, expect, it, vi } from 'vitest';
@@ -21,9 +22,11 @@ const initial: VendorFiltersValue = {
 
 function wrap(node: React.ReactNode): React.ReactElement {
   return (
-    <NextIntlClientProvider locale="es-LATAM" messages={{ vendor: esLatamVendor }}>
-      {node}
-    </NextIntlClientProvider>
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <NextIntlClientProvider locale="es-LATAM" messages={{ vendor: esLatamVendor }}>
+        {node}
+      </NextIntlClientProvider>
+    </QueryClientProvider>
   );
 }
 
@@ -70,8 +73,25 @@ describe('US-045 QA-005 — VendorFilters', () => {
         <VendorFilters value={initial} onChange={onChange} onSubmit={() => {}} onReset={() => {}} />,
       ),
     );
-    await userEvent.type(screen.getByLabelText(/categoría/i), 'c');
-    expect(onChange).toHaveBeenCalled();
+    await userEvent.type(screen.getByLabelText(/precio mínimo/i), '5');
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ priceMin: '5' }));
+  });
+
+  it('con catálogos, categoría y ciudad son listas con nombres legibles agrupados', async () => {
+    const onChange = vi.fn();
+    render(
+      wrap(
+        <VendorFilters value={initial} onChange={onChange} onSubmit={() => {}} onReset={() => {}} />,
+      ),
+    );
+    // Marimba es subcategoría de Música: aparece dentro de su grupo, con su nombre, no su código.
+    const marimba = await screen.findByRole('option', { name: 'Marimba' });
+    expect(marimba.closest('optgroup')?.getAttribute('label')).toBe('Música');
+    await userEvent.selectOptions(screen.getByLabelText(/categoría/i), 'marimba');
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ categoryCode: 'marimba' }));
+
+    const city = await screen.findByRole('option', { name: 'Ciudad de México' });
+    expect(city.getAttribute('value')).toBe('MX-CDMX');
   });
 
   it('A11Y: sin violaciones axe', async () => {

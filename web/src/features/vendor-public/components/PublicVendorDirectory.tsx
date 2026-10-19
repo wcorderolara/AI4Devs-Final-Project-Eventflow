@@ -10,38 +10,26 @@
 // prima la fluidez y no hay SEO que preservar.
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
-import { VendorCard, type VendorFiltersValue } from '@/features/vendor-directory';
+import {
+  DIRECTORY_CURSOR_PARAM,
+  DIRECTORY_PAGE_SIZE,
+  directoryFiltersToSearchParams,
+  readDirectoryFilters,
+  type VendorSearchQuery,
+} from '@/features/vendor-directory';
 import { Alert } from '@/shared/design-system';
 import { publicVendorDirectoryApi } from '../api/publicVendorDirectoryApi';
 import { PublicVendorDirectoryFilters } from './PublicVendorDirectoryFilters';
+import { PublicVendorGrid } from './PublicVendorGrid';
 
-/** Query params soportados. Cualquier otro se ignora: el backend valida en estricto. */
-export interface PublicVendorDirectorySearchParams {
-  categoryCode?: string;
-  locationCode?: string;
-  priceMin?: string;
-  priceMax?: string;
-  currency?: string;
-  cursor?: string;
-}
+/**
+ * Query params de la página (nombres públicos de `DIRECTORY_URL_PARAMS`: `category`, `city`,
+ * `minPrice`, `maxPrice`, `currency`, `cursor`). Cualquier otro se ignora.
+ */
+export type PublicVendorDirectorySearchParams = Partial<Record<string, string | string[]>>;
 
-function readFilters(params: PublicVendorDirectorySearchParams): VendorFiltersValue {
-  return {
-    categoryCode: params.categoryCode ?? '',
-    locationCode: params.locationCode ?? '',
-    priceMin: params.priceMin ?? '',
-    priceMax: params.priceMax ?? '',
-    currency: (params.currency ?? '') as VendorFiltersValue['currency'],
-  };
-}
-
-/** Enlace a la siguiente página conservando los filtros activos. */
-function nextPageHref(params: PublicVendorDirectorySearchParams, cursor: string): string {
-  const next = new URLSearchParams();
-  for (const [key, value] of Object.entries({ ...params, cursor })) {
-    if (value) next.set(key, value);
-  }
-  return `/vendors?${next.toString()}`;
+function firstOf(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
 }
 
 export async function PublicVendorDirectory({
@@ -50,26 +38,31 @@ export async function PublicVendorDirectory({
   searchParams?: PublicVendorDirectorySearchParams;
 }): Promise<React.JSX.Element> {
   const t = await getTranslations('vendor.directory');
-  const filters = readFilters(searchParams);
+  const filters = readDirectoryFilters((name) => firstOf(searchParams[name]));
+  const cursor = firstOf(searchParams[DIRECTORY_CURSOR_PARAM]) || undefined;
 
-  const result = await publicVendorDirectoryApi.list({
-    categoryCode: searchParams.categoryCode || undefined,
-    locationCode: searchParams.locationCode || undefined,
-    priceMin: searchParams.priceMin || undefined,
-    priceMax: searchParams.priceMax || undefined,
-    currency: (searchParams.currency || undefined) as never,
-    cursor: searchParams.cursor || undefined,
-  });
+  const query: VendorSearchQuery = {
+    categoryCode: filters.categoryCode || undefined,
+    locationCode: filters.locationCode || undefined,
+    priceMin: filters.priceMin || undefined,
+    priceMax: filters.priceMax || undefined,
+    currency: (filters.currency || undefined) as VendorSearchQuery['currency'],
+    // Viaja también a las páginas siguientes (el grid reenvía `query` con cada cursor).
+    limit: DIRECTORY_PAGE_SIZE,
+  };
+  const result = await publicVendorDirectoryApi.list({ ...query, cursor });
 
   const items = result.status === 'ok' ? result.data.items : [];
   const nextCursor = result.status === 'ok' ? result.data.page.cursor : null;
   const hasNext = result.status === 'ok' && result.data.page.hasNext && nextCursor !== null;
 
   return (
-    <div className="mx-auto w-full max-w-marketing px-page-mobile py-10 sm:px-page-tablet">
-      <header className="mb-6">
-        <h1 className="font-heading text-h1 font-semibold text-primary">{t('title')}</h1>
-        <p className="mt-2 font-body text-body-md text-secondary">{t('subtitle')}</p>
+    <div className="mx-auto w-full max-w-marketing px-page-mobile py-12 sm:px-page-tablet sm:py-16">
+      <header className="mb-8">
+        <h1 className="font-display text-[2.75rem] font-medium leading-[1.05] text-primary sm:text-[3.5rem]">
+          {t('title')}
+        </h1>
+        <p className="mt-3 max-w-[60ch] font-body text-body-lg text-secondary">{t('subtitle')}</p>
       </header>
 
       <PublicVendorDirectoryFilters value={filters} />
@@ -83,8 +76,8 @@ export async function PublicVendorDirectory({
         {result.status === 'error' ? <Alert variant="error">{t('error')}</Alert> : null}
 
         {result.status === 'ok' && items.length === 0 ? (
-          <div className="rounded-card border border-subtle bg-surface-subtle p-6">
-            <p className="font-body text-body-md text-secondary">{t('empty.body')}</p>
+          <div className="border border-dashed border-default bg-surface px-6 py-10">
+            <p className="font-display text-[1.5rem] font-medium text-primary">{t('empty.body')}</p>
             <Link
               href="/vendors"
               className="focus-ring mt-3 inline-flex font-ui text-body-sm font-semibold text-link hover:text-link-hover"
@@ -95,27 +88,19 @@ export async function PublicVendorDirectory({
         ) : null}
 
         {items.length > 0 ? (
-          <ul
-            aria-label={t('grid.ariaLabel')}
-            className="grid list-none gap-4 sm:grid-cols-2 lg:grid-cols-3"
-          >
-            {items.map((vendor) => (
-              <li key={vendor.id}>
-                {/* `h2`: el `h1` es el título del directorio y no hay nivel intermedio. */}
-                <VendorCard vendor={vendor} linkToProfile headingLevel={2} />
-              </li>
-            ))}
-          </ul>
-        ) : null}
-
-        {hasNext ? (
-          <Link
-            href={nextPageHref(searchParams, nextCursor)}
-            rel="next"
-            className="focus-ring mt-6 inline-flex min-h-touch items-center rounded-button border border-action-secondary bg-action-secondary px-4 font-ui text-body-sm font-semibold text-primary hover:bg-action-secondary-hover"
-          >
-            {t('loadMore.label')}
-          </Link>
+          // `key`: cambiar de filtros reinicia el listado acumulado del infinite scroll.
+          <PublicVendorGrid
+            key={JSON.stringify(query)}
+            initialItems={items}
+            initialCursor={nextCursor}
+            initialHasNext={hasNext}
+            query={JSON.parse(JSON.stringify(query)) as VendorSearchQuery}
+            nextHref={
+            hasNext && nextCursor
+              ? `/vendors?${directoryFiltersToSearchParams(filters, nextCursor).toString()}`
+              : null
+          }
+          />
         ) : null}
       </div>
     </div>

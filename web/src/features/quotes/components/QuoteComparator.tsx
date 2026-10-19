@@ -65,6 +65,21 @@ export function QuoteComparator({ eventId, categoryCode }: QuoteComparatorProps)
     if (aiTriggerAvailable) setAiOpen(true);
   }, [aiTriggerAvailable]);
 
+  // CTA "Resumir con IA" de la tabla/cards: abre el panel (si estaba cerrado) y lleva el foco a él.
+  const [focusAiPanel, setFocusAiPanel] = useState(false);
+  const openAiSummary = aiTriggerAvailable
+    ? (): void => {
+        setAiOpen(true);
+        setFocusAiPanel(true);
+      }
+    : undefined;
+  useEffect(() => {
+    if (!focusAiPanel || !aiOpen) return;
+    // `focus()` también desplaza el panel a la vista si estaba fuera de pantalla.
+    document.getElementById('ai-quote-summary-panel-region')?.focus();
+    setFocusAiPanel(false);
+  }, [focusAiPanel, aiOpen]);
+
   // US-059 (FE-001 / AC-01): fetch del último resumen persistido. `enabled` sólo cuando el
   // comparador tiene la categoría lista y ≥ 2 quotes elegibles (evita 404 ruidosos al vuelo).
   const latest = useLatestQuoteSummary({
@@ -179,6 +194,7 @@ export function QuoteComparator({ eventId, categoryCode }: QuoteComparatorProps)
               categoryName={data.category.name}
               currencyCode={data.currencyCode}
               items={data.items}
+              onOpenAiSummary={openAiSummary}
             />
           </div>
           <div className="md:hidden">
@@ -188,11 +204,16 @@ export function QuoteComparator({ eventId, categoryCode }: QuoteComparatorProps)
               categoryName={data.category.name}
               currencyCode={data.currencyCode}
               items={data.items}
+              onOpenAiSummary={openAiSummary}
             />
           </div>
         </div>
         {aiOpen && (
-          <div id="ai-quote-summary-panel-region" className="lg:sticky lg:top-4 lg:self-start">
+          <div
+            id="ai-quote-summary-panel-region"
+            tabIndex={-1}
+            className="focus-ring lg:sticky lg:top-4 lg:self-start"
+          >
             <AIComparisonSummary
               eventId={eventId}
               categoryCode={categoryCode}

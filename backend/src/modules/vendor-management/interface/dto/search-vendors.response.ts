@@ -1,8 +1,9 @@
 // Response DTO — Directorio de vendors (US-045 / BE-006, §9 US Response Shape).
 // Superficie HTTP en camelCase para alinear con el contrato de la US (D1); no reutiliza el
 // snake_case histórico de otros vendor endpoints para no distorsionar el shape declarado.
-// `thumbnailUrl` es siempre `null` en MVP: la relación con el portafolio del vendor todavía no
-// tiene un query de "imagen destacada" y se cubrirá en la US pública US-046.
+// `thumbnailUrl` es la primera imagen activa del portafolio, servida por la ruta pública
+// `/api/v1/public/portfolio/:id`; `null` si el proveedor no tiene portafolio.
+import { publicPortfolioImagePath } from '../../../../shared/http/public-portfolio-path.js';
 import type { VendorSearchRow } from '../../ports/vendor-search.repository.js';
 
 export interface VendorPriceRange {
@@ -16,7 +17,11 @@ export interface VendorCardResponse {
   slug: string | null;
   businessName: string;
   locationCode: string | null;
+  /** Aditivo: ubicación legible para la UI ("Antigua Guatemala, Sacatepéquez, Guatemala"). */
+  locationDisplay: string | null;
   categories: string[];
+  /** Aditivo: categorías con su nombre de catálogo, en el mismo orden que `categories`. */
+  categoryLabels: Array<{ code: string; name: string }>;
   ratingAvg: number | null;
   reviewsCount: number;
   priceRange: VendorPriceRange | null;
@@ -44,10 +49,12 @@ export function toVendorCardResponse(row: VendorSearchRow): VendorCardResponse {
     slug: row.slug,
     businessName: row.businessName,
     locationCode: row.locationCode,
+    locationDisplay: row.locationDisplay,
     categories: row.categoryCodes,
+    categoryLabels: row.categoryLabels.map((c) => ({ code: c.code, name: c.label })),
     ratingAvg: row.ratingAvg,
     reviewsCount: row.reviewsCount,
     priceRange,
-    thumbnailUrl: null,
+    thumbnailUrl: row.coverAttachmentId ? publicPortfolioImagePath(row.coverAttachmentId) : null,
   };
 }

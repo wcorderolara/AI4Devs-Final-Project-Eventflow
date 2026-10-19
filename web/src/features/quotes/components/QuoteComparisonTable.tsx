@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   Alert,
+  Button,
   Table,
   TableBody,
   TableCell,
@@ -32,6 +33,11 @@ export interface QuoteComparisonTableProps {
   categoryName: string;
   currencyCode: string;
   items: CompareQuoteItemView[];
+  /**
+   * Abre el panel de resumen IA del comparador. Sólo se pasa cuando el resumen está disponible
+   * (≥ 2 cotizaciones activas, US-022 D7); sin él no se muestra el CTA.
+   */
+  onOpenAiSummary?: () => void;
 }
 
 /** Slug vacío = vendor sin perfil público disponible (edge case histórico). */
@@ -53,13 +59,10 @@ export function QuoteComparisonTable({
   categoryName,
   currencyCode,
   items,
+  onOpenAiSummary,
 }: QuoteComparisonTableProps): JSX.Element {
   const t = useTranslations('organizer.quote.compare');
   const [error, setError] = useState<string | null>(null);
-
-  const aiSummaryHref = `/organizer/events/${encodeURIComponent(
-    eventId,
-  )}/quotes/compare/ai-summary?categoryCode=${encodeURIComponent(categoryCode)}`;
 
   // La primera columna queda fija al hacer scroll horizontal: la fila sigue siendo legible
   // cuando hay muchas cotizaciones. `bg-surface` es obligatorio para que el contenido no se
@@ -235,17 +238,20 @@ export function QuoteComparisonTable({
         />
       ) : null}
 
-      {items.length >= 2 ? (
+      {onOpenAiSummary ? (
         <div className="mt-4 flex justify-end">
-          {/* Deep-link a la síntesis de IA: el icono acompaña al label, nunca lo sustituye
-              (UI-DEC-010). Violeta de marca, no indigo. */}
-          <TextLink
-            href={aiSummaryHref}
-            className="text-body-sm font-semibold"
+          {/* Abre el panel de resumen IA del propio comparador: el icono acompaña al label,
+              nunca lo sustituye (UI-DEC-010). */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
             leadingIcon={<Sparkles />}
+            onClick={onOpenAiSummary}
+            aria-controls="ai-quote-summary-panel-region"
           >
             {t('table.aiSummaryCta')}
-          </TextLink>
+          </Button>
         </div>
       ) : null}
     </div>

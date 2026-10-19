@@ -1,5 +1,5 @@
 // Página `/organizer/events/[eventId]/quotes/compare` (US-057 / FE-001).
-// Server Component ligero que resuelve `categoryCode` desde `?categoryCode=` y monta el
+// Server Component ligero que resuelve la categoría desde `?category=<code>` y monta el
 // `QuoteComparator` (client). No hace fetching server-side: la query TanStack corre en cliente
 // para reflejar cambios post-mount (si el organizer regresa a la página tras marcar preferred).
 import { getTranslations } from 'next-intl/server';
@@ -20,7 +20,7 @@ export default async function OrganizerCompareQuotesPage({
   searchParams,
 }: PageProps): Promise<JSX.Element> {
   const t = await getTranslations('organizer.quote.compare');
-  const categoryCode = firstOf(searchParams.categoryCode) ?? '';
+  const categoryCode = firstOf(searchParams.category) ?? '';
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-6">

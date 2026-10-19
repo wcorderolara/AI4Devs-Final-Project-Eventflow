@@ -72,7 +72,7 @@ export function MarketingSection({
       aria-labelledby={heading ? headingId : undefined}
       data-testid={testId}
       className={cx(
-        'w-full px-page-mobile py-12 sm:px-page-tablet sm:py-16',
+        'w-full px-page-mobile py-16 sm:px-page-tablet sm:py-24',
         // El salto a un ancla debe dejar el heading visible bajo el header sticky, no debajo.
         id && 'scroll-mt-header',
         BACKGROUND[background],
@@ -88,8 +88,8 @@ export function MarketingSection({
             {eyebrow ? (
               <p
                 className={cx(
-                  'font-ui text-eyebrow uppercase',
-                  background === 'inverse' ? 'text-inverse' : 'text-link',
+                  'font-ui text-body-sm font-medium',
+                  background === 'inverse' ? 'text-inverse' : 'text-secondary',
                 )}
               >
                 {eyebrow}
@@ -99,7 +99,7 @@ export function MarketingSection({
               <Heading
                 id={headingId}
                 className={cx(
-                  'mt-2 font-heading text-h2 font-semibold',
+                  'mt-2 text-balance font-display text-[2.25rem] font-medium leading-[1.08] tracking-[-0.01em] sm:text-[2.75rem]',
                   background === 'inverse' ? 'text-inverse' : 'text-primary',
                 )}
               >
@@ -109,7 +109,7 @@ export function MarketingSection({
             {description ? (
               <p
                 className={cx(
-                  'mt-3 text-balance font-body text-body-lg',
+                  'mt-4 font-body text-body-lg',
                   background === 'inverse' ? 'text-inverse' : 'text-secondary',
                 )}
               >

@@ -4,8 +4,11 @@
 // Lo que se protege: que el listado se renderice en servidor (es superficie SEO y debe funcionar
 // sin JavaScript), que las tarjetas lleven al perfil público, que la paginación sea navegable por
 // enlaces, y que un filtro inválido se distinga de una caída del backend.
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { renderToString } from 'react-dom/server';
 import { http, HttpResponse } from 'msw';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NextIntlClientProvider } from 'next-intl';
 import { describe, expect, it, vi } from 'vitest';
 import { PublicVendorDirectory, publicVendorDirectoryApi } from '@/features/vendor-public';
@@ -62,9 +65,11 @@ function respondWith(items: unknown[], page: Record<string, unknown> = {}) {
 async function renderDirectory(searchParams = {}) {
   const ui = await PublicVendorDirectory({ searchParams });
   return render(
-    <NextIntlClientProvider locale="es-LATAM" messages={{ vendor: esLatamVendor }} timeZone="UTC">
-      {ui}
-    </NextIntlClientProvider>,
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <NextIntlClientProvider locale="es-LATAM" messages={{ vendor: esLatamVendor }} timeZone="UTC">
+        {ui}
+      </NextIntlClientProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -116,39 +121,66 @@ describe('directorio público — listado', () => {
   });
 });
 
-describe('directorio público — paginación', () => {
-  it('la siguiente página es un enlace navegable, no un botón de JavaScript', async () => {
+/** HTML que entrega el servidor (lo que ven buscadores y navegadores sin JavaScript). */
+async function renderDirectoryHtml(searchParams = {}): Promise<string> {
+  const ui = await PublicVendorDirectory({ searchParams });
+  return renderToString(
+    <QueryClientProvider client={new QueryClient()}>
+      <NextIntlClientProvider locale="es-LATAM" messages={{ vendor: esLatamVendor }} timeZone="UTC">
+        {ui}
+      </NextIntlClientProvider>
+    </QueryClientProvider>,
+  );
+}
+
+describe('directorio público — paginación (infinite scroll)', () => {
+  it('el HTML del servidor trae la siguiente página como enlace rastreable', async () => {
     respondWith([vendor()], { cursor: 'CURSOR_2', hasNext: true });
-
-    await renderDirectory();
-
-    // Enlace real: rastreable, compartible y funcional sin JS.
-    expect(
-      screen.getByRole('link', { name: esLatamVendor.directory.loadMore.label }),
-    ).toHaveAttribute('href', '/vendors?cursor=CURSOR_2');
+    const html = await renderDirectoryHtml();
+    // Sin JS (y para buscadores) el directorio sigue siendo navegable página a página.
+    expect(html).toMatch(/<a[^>]*href="\/vendors\?cursor=CURSOR_2"[^>]*rel="next"|<a[^>]*rel="next"[^>]*href="\/vendors\?cursor=CURSOR_2"/);
   });
 
-  it('el enlace de la siguiente página conserva los filtros activos', async () => {
+  it('el enlace del HTML del servidor conserva los filtros activos', async () => {
     respondWith([vendor()], { cursor: 'CURSOR_2', hasNext: true });
+    // Nombres públicos de la URL (`category`, `city`), no los de la API.
+    const html = await renderDirectoryHtml({ category: 'catering', city: 'GT-GUA' });
+    const href = /href="([^"]*cursor=CURSOR_2[^"]*)"/.exec(html)?.[1]?.replace(/&amp;/g, '&') ?? '';
+    expect(href).toContain('category=catering');
+    expect(href).toContain('city=GT-GUA');
+    expect(href).not.toContain('categoryCode');
+  });
 
-    await renderDirectory({ categoryCode: 'catering', locationCode: 'GT-GUA' });
-
-    const href = screen
-      .getByRole('link', { name: esLatamVendor.directory.loadMore.label })
-      .getAttribute('href') as string;
-    expect(href).toContain('categoryCode=catering');
-    expect(href).toContain('locationCode=GT-GUA');
-    expect(href).toContain('cursor=CURSOR_2');
+  it('con JavaScript, "Cargar más" agrega la página siguiente debajo de la primera', async () => {
+    respondWith([vendor()], { cursor: 'CURSOR_2', hasNext: true });
+    await renderDirectory();
+    // Página 2: otro proveedor y sin más páginas.
+    let page2Limit: string | null = null;
+    server.use(
+      http.get(ENDPOINT, ({ request }) =>
+        (page2Limit = new URL(request.url).searchParams.get('limit')) !== null &&
+        new URL(request.url).searchParams.get('cursor') === 'CURSOR_2'
+          ? HttpResponse.json({
+              data: {
+                items: [vendor({ id: '22222222-2222-2222-2222-222222222222', slug: 'flores-de-la-sabana', businessName: 'Flores de la Sabana' })],
+                page: { cursor: null, limit: 20, hasNext: false },
+              },
+            })
+          : HttpResponse.json({ data: { items: [], page: { cursor: null, limit: 20, hasNext: false } } }),
+      ),
+    );
+    await userEvent.click(await screen.findByRole('button', { name: esLatamVendor.directory.loadMore.label }));
+    await waitFor(() => expect(screen.getByText('Flores de la Sabana')).toBeInTheDocument());
+    expect(screen.getByText('Catering La Ceiba')).toBeInTheDocument();
+    expect(screen.getByText(esLatamVendor.directory.loadMore.end)).toBeInTheDocument();
+    // Las páginas siguientes mantienen el mismo tamaño de página.
+    expect(page2Limit).toBe('12');
   });
 
   it('no ofrece siguiente página cuando no la hay', async () => {
     respondWith([vendor()], { cursor: null, hasNext: false });
-
-    await renderDirectory();
-
-    expect(
-      screen.queryByRole('link', { name: esLatamVendor.directory.loadMore.label }),
-    ).not.toBeInTheDocument();
+    const html = await renderDirectoryHtml();
+    expect(html).not.toContain('rel="next"');
   });
 });
 
@@ -160,7 +192,7 @@ describe('directorio público — estados de fallo', () => {
       ),
     );
 
-    await renderDirectory({ categoryCode: 'no-existe' });
+    await renderDirectory({ category: 'no-existe' });
 
     expect(screen.getByText(esLatamVendor.directory.invalidFilters)).toBeInTheDocument();
     expect(screen.queryByText(esLatamVendor.directory.error)).not.toBeInTheDocument();
@@ -179,6 +211,31 @@ describe('directorio público — estados de fallo', () => {
 
     await expect(renderDirectory()).resolves.toBeDefined();
     expect(screen.getByText(esLatamVendor.directory.error)).toBeInTheDocument();
+  });
+});
+
+describe('directorio público — nombres de la URL', () => {
+  it('traduce category/city/minPrice/maxPrice de la URL a los parámetros de la API', async () => {
+    let received = new URLSearchParams();
+    server.use(
+      http.get(ENDPOINT, ({ request }) => {
+        received = new URL(request.url).searchParams;
+        return HttpResponse.json({
+          data: { items: [], page: { cursor: null, limit: 20, hasNext: false } },
+        });
+      }),
+    );
+
+    await renderDirectory({ category: 'hora_loca', city: 'GT-GUA', minPrice: '100', maxPrice: '900', currency: 'GTQ' });
+
+    expect(Object.fromEntries(received)).toMatchObject({
+      categoryCode: 'hora_loca',
+      locationCode: 'GT-GUA',
+      priceMin: '100',
+      priceMax: '900',
+      currency: 'GTQ',
+      limit: '12',
+    });
   });
 });
 

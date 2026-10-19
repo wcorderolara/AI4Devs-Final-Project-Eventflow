@@ -10,7 +10,10 @@
   "portfolio": {
     "title": "Portafolio",
     "empty": "Este proveedor aún no publica trabajos.",
-    "imageAlt": "{vendor} — {work}, imagen {index}"
+    "imageAlt": "{vendor} — {work}, imagen {index}",
+    "photos": "{count, plural, one {# foto} other {# fotos}}",
+    "imagesUnavailable": "Las fotos de estos trabajos todavía no se pueden ver en el perfil público.",
+    "creditNote": "Fotos de muestra con licencia libre. Abre una foto para ver su autor y licencia."
   },
   "packages": {
     "title": "Paquetes",
@@ -25,5 +28,32 @@
     "title": "Proveedor no encontrado",
     "body": "El proveedor que buscas no existe o ya no está disponible.",
     "cta": "Volver al directorio"
+  },
+  "backToDirectory": "Directorio de proveedores",
+  "gallery": {
+    "open": "Ver foto {index} de {total} de {work}",
+    "close": "Cerrar galería",
+    "previous": "Foto anterior",
+    "next": "Foto siguiente",
+    "counter": "{index} de {total}",
+    "creditBy": "Foto de {author}, licencia <license></license>.",
+    "creditLicense": "Foto con licencia <license></license>.",
+    "source": "Ver original",
+    "sourceCommons": "Ver original en Wikimedia Commons"
+  },
+  "requestQuote": {
+    "cta": "Pedir cotización",
+    "dialog": {
+      "title": "¿Para qué evento es la cotización?",
+      "description": "Elige el evento; en el siguiente paso le cuentas al proveedor qué necesitas.",
+      "eventsLabel": "Tus eventos activos",
+      "continue": "Continuar",
+      "cancel": "Cancelar"
+    },
+    "noActive": {
+      "title": "Necesitas un evento activo",
+      "body": "Las cotizaciones se piden para un evento activo. Activa uno de tus eventos o crea uno nuevo.",
+      "cta": "Ver mis eventos"
+    }
   }
 }

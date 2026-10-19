@@ -33,8 +33,8 @@ async function seedSession(context: BrowserContext, page: Page, role: 'organizer
   await page.route('**/auth/logout', (route) =>
     route.fulfill({
       status: 204,
-      // Limpieza de la cookie de sesión HttpOnly (equivalente al Set-Cookie del backend real).
-      headers: { 'set-cookie': 'eventflow_session=; Path=/; Max-Age=0' },
+      // Limpieza de las cookies de sesión y de rol (equivalente a los Set-Cookie del backend real).
+      headers: { 'set-cookie': 'eventflow_session=; Path=/; Max-Age=0\neventflow_role=; Path=/; Max-Age=0' },
     }),
   );
 }
@@ -45,8 +45,14 @@ for (const role of ['organizer', 'vendor', 'admin'] as const) {
     await page.goto(`/${role}`);
 
     const logoutRequest = page.waitForRequest((req) => req.url().includes('/auth/logout') && req.method() === 'POST');
-    await page.getByRole('button', { name: /Ana/ }).click();
-    await page.getByRole('menuitem', { name: 'Cerrar sesión' }).click();
+    // El clic puede llegar antes de que el menú esté interactivo (hidratación bajo carga): se
+    // reintenta abrirlo hasta que aparezca la opción, en lugar de esperar un menú que nunca abre.
+    const logoutItem = page.getByRole('menuitem', { name: 'Cerrar sesión' });
+    await expect(async () => {
+      await page.getByRole('button', { name: /Ana/ }).click();
+      await expect(logoutItem).toBeVisible({ timeout: 1_000 });
+    }).toPass({ timeout: 15_000 });
+    await logoutItem.click();
     await logoutRequest;
 
     await expect(page).toHaveURL(/\/login/);

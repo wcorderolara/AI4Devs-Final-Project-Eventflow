@@ -43,6 +43,19 @@
       "AUTHENTICATION_REQUIRED": "Necesitas iniciar sesión para enviar la solicitud.",
       "FORBIDDEN": "Tu rol no puede crear solicitudes de cotización.",
       "UNEXPECTED": "Ocurrió un error inesperado. Intenta nuevamente."
+    },
+    "pickVendor": {
+      "title": "Elige un proveedor",
+      "body": "Busca el proveedor en el directorio y pulsa «Pedir cotización» en su perfil.",
+      "cta": "Ir al directorio"
+    },
+    "loadError": {
+      "title": "No pudimos preparar la solicitud",
+      "body": "No encontramos el evento o el proveedor, o no están disponibles. Vuelve a elegir el proveedor en el directorio."
+    },
+    "category": {
+      "label": "Servicio que quieres cotizar",
+      "placeholder": "Elige un servicio"
     }
   },
   "limit": {

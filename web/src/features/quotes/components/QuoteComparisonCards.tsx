@@ -3,10 +3,11 @@
 // QuoteComparisonCards (US-057 / FE-002).
 // Vista responsive mobile (< md). Cada Quote es una `<article>` (card) con `aria-labelledby`
 // apuntando al título del vendor. Los CTAs son idénticos al desktop (deep-links a US-058 / US-022).
-import Link from 'next/link';
+import { Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import type { CompareQuoteItemView } from '../api/quotesApi.types';
+import { Button } from '@/shared/design-system';
 import { QuoteStatusIndicator } from './QuoteStatusIndicator';
 import { PreferredToggleButton } from './PreferredToggleButton';
 
@@ -16,6 +17,8 @@ export interface QuoteComparisonCardsProps {
   categoryName: string;
   currencyCode: string;
   items: CompareQuoteItemView[];
+  /** Abre el panel de resumen IA del comparador (sólo con el resumen disponible). */
+  onOpenAiSummary?: () => void;
 }
 
 function isSelectable(status: CompareQuoteItemView['status']): boolean {
@@ -139,12 +142,10 @@ export function QuoteComparisonCards({
   categoryName: _categoryName,
   currencyCode,
   items,
+  onOpenAiSummary,
 }: QuoteComparisonCardsProps): JSX.Element {
   const t = useTranslations('organizer.quote.compare');
   const [error, setError] = useState<string | null>(null);
-  const aiSummaryHref = `/organizer/events/${encodeURIComponent(
-    eventId,
-  )}/quotes/compare/ai-summary?categoryCode=${encodeURIComponent(categoryCode)}`;
   return (
     <div className="space-y-3" data-testid="quote-comparison-cards">
       {items.map((item) => (
@@ -166,14 +167,18 @@ export function QuoteComparisonCards({
           {error}
         </div>
       ) : null}
-      {items.length >= 2 ? (
+      {onOpenAiSummary ? (
         <div className="pt-2">
-          <Link
-            href={aiSummaryHref}
-            className="inline-flex w-full items-center justify-center rounded-md border border-indigo-300 px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          <Button
+            type="button"
+            variant="secondary"
+            fullWidth
+            leadingIcon={<Sparkles />}
+            onClick={onOpenAiSummary}
+            aria-controls="ai-quote-summary-panel-region"
           >
             {t('table.aiSummaryCta')}
-          </Link>
+          </Button>
         </div>
       ) : null}
     </div>

@@ -5,7 +5,11 @@
 // formulario a una nueva URL, que es la fuente de verdad de los filtros.
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { VendorFilters, type VendorFiltersValue } from '@/features/vendor-directory';
+import {
+  VendorFilters,
+  directoryFiltersToSearchParams,
+  type VendorFiltersValue,
+} from '@/features/vendor-directory';
 
 export interface PublicVendorDirectoryFiltersProps {
   /** Filtros ya aplicados, leídos de la URL por el Server Component. */
@@ -20,15 +24,6 @@ const EMPTY: VendorFiltersValue = {
   currency: '',
 };
 
-function toSearchParams(value: VendorFiltersValue): string {
-  const params = new URLSearchParams();
-  for (const [key, raw] of Object.entries(value)) {
-    const trimmed = raw.trim();
-    if (trimmed) params.set(key, trimmed);
-  }
-  return params.toString();
-}
-
 export function PublicVendorDirectoryFilters({
   value,
 }: PublicVendorDirectoryFiltersProps): React.JSX.Element {
@@ -41,7 +36,7 @@ export function PublicVendorDirectoryFilters({
   useEffect(() => setDraft(value), [value]);
 
   function apply(next: VendorFiltersValue): void {
-    const qs = toSearchParams(next);
+    const qs = directoryFiltersToSearchParams(next).toString();
     // Sin cursor: cambiar los filtros empieza una búsqueda nueva, no continúa la paginación.
     router.push(qs ? `/vendors?${qs}` : '/vendors');
   }

@@ -5,6 +5,7 @@
 // (BE-003). Los reviews traen `authorId` para que el mapper pueda pseudonimizar el nombre;
 // el `Attachment` polimórfico se lee por separado con el key `owner_type='vendor_work'`
 // (Doc 18 §19) para preservar el patrón del módulo `attachments`.
+import { publicPortfolioImagePath } from '../../../shared/http/public-portfolio-path.js';
 import type { PrismaClient } from '@prisma/client';
 import { prisma as defaultPrisma } from '../../../infrastructure/prisma/client.js';
 import type {
@@ -65,13 +66,17 @@ export class PrismaPublicVendorRepository implements PublicVendorRepository {
         status: 'active',
         deletedAt: null,
       },
-      select: { url: true, workLabel: true, createdAt: true },
-      orderBy: [{ workLabel: 'asc' }, { createdAt: 'asc' }],
+      select: { id: true, workLabel: true, createdAt: true, attribution: true },
+      orderBy: [{ workLabel: 'asc' }, { createdAt: 'asc' }, { fileName: 'asc' }],
     });
 
     const portfolio: PublicVendorPortfolioAttachmentRecord[] = attachments
       .filter((a) => a.workLabel !== null)
-      .map((a) => ({ workLabel: a.workLabel as string, url: a.url }));
+      .map((a) => ({
+        workLabel: a.workLabel as string,
+        url: publicPortfolioImagePath(a.id),
+        attribution: a.attribution,
+      }));
 
     return {
       // US-066 (PB-P1-039): expone `id` para consumo del listado paginado desde el cliente.

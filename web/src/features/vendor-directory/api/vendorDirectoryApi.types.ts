@@ -23,7 +23,11 @@ export interface VendorCardDTO {
   slug: string | null;
   businessName: string;
   locationCode: string | null;
+  /** Aditivo (backend): "Ciudad, Región, País" legible. Opcional mientras convive con backends previos. */
+  locationDisplay?: string | null;
   categories: string[];
+  /** Aditivo (backend): categorías con su nombre de catálogo, en el orden de `categories`. */
+  categoryLabels?: Array<{ code: string; name: string }>;
   ratingAvg: number | null;
   reviewsCount: number;
   priceRange: VendorPriceRangeDTO | null;
@@ -50,3 +54,10 @@ export interface VendorSearchQuery {
   cursor?: string;
   limit?: number;
 }
+
+/**
+ * Tamaño de página de los directorios (público y del organizador). Múltiplo de 2 y 3 para que las
+ * filas de la cuadrícula (2 columnas en tablet, 3 en escritorio) queden completas, y lo bastante
+ * chico para que el infinite scroll se note con catálogos pequeños.
+ */
+export const DIRECTORY_PAGE_SIZE = 12;

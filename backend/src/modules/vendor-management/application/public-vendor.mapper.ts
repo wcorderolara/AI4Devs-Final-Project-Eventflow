@@ -10,7 +10,9 @@
 // repository.
 import type {
   PublicVendorDto,
+  PublicVendorImageCreditDto,
   PublicVendorPortfolioGroupDto,
+  PublicVendorPortfolioImageDto,
 } from '../interface/dto/public-vendor.response.js';
 import type { PublicVendorRecord } from '../ports/public-vendor.repository.js';
 
@@ -34,18 +36,36 @@ function resolveLocationDisplay(record: PublicVendorRecord['location']): string 
   return bits.length === 0 ? '' : bits.join(', ');
 }
 
+/** Whitelist del crédito: sólo campos de texto conocidos; cualquier otra forma se descarta. */
+function toCredit(raw: unknown): PublicVendorImageCreditDto | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const r = raw as Record<string, unknown>;
+  const text = (v: unknown): string | null => (typeof v === 'string' && v.trim().length > 0 ? v : null);
+  const license = text(r.license);
+  if (!license) return null;
+  return {
+    title: text(r.title),
+    author: text(r.author),
+    license,
+    licenseUrl: text(r.licenseUrl),
+    source: text(r.source),
+  };
+}
+
 function groupPortfolio(
   attachments: PublicVendorRecord['portfolio'],
 ): PublicVendorPortfolioGroupDto[] {
-  const groups = new Map<string, string[]>();
+  const groups = new Map<string, PublicVendorPortfolioImageDto[]>();
   for (const a of attachments) {
+    const image = { url: a.url, credit: toCredit(a.attribution) };
     const list = groups.get(a.workLabel);
-    if (list) list.push(a.url);
-    else groups.set(a.workLabel, [a.url]);
+    if (list) list.push(image);
+    else groups.set(a.workLabel, [image]);
   }
-  return Array.from(groups.entries()).map(([workLabel, thumbnails]) => ({
+  return Array.from(groups.entries()).map(([workLabel, images]) => ({
     workLabel,
-    thumbnails,
+    thumbnails: images.map((i) => i.url),
+    images,
   }));
 }
 

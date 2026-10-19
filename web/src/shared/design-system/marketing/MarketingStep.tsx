@@ -42,43 +42,35 @@ export function MarketingStep({
   'data-testid': testId,
 }: MarketingStepProps): React.JSX.Element {
   const Heading = `h${headingLevel}` as 'h2' | 'h3' | 'h4';
-  const ordinal = String(index).padStart(2, '0');
   const hasConnector = index < total;
 
   return (
-    <div data-testid={testId} className={cx('group relative h-full', className)}>
-      {/* Conector hacia el siguiente paso: sólo desktop y nunca en el último. Es la línea que
-          convierte tres tarjetas sueltas en un flujo leído de izquierda a derecha. `aria-hidden`
-          porque el orden ya lo anuncia el `<ol>`. */}
-      {hasConnector ? (
+    <div data-testid={testId} className={cx('relative h-full', className)}>
+      <div className="flex items-end gap-4">
+        {/* Numeral de programa impreso: el `<ol>` ya anuncia el orden, así que es decorativo. */}
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute left-14 right-[-1.5rem] top-6 hidden border-t border-dashed border-ai-border/50 lg:block"
-        />
-      ) : null}
-
-      <div className="flex items-center gap-4">
-        <span
-          aria-hidden="true"
-          className="relative z-base inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ai-surface font-heading text-h3 font-semibold text-link ring-1 ring-inset ring-ai-border/50 transition-transform duration-standard ease-standard group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
+          className="font-display text-[3.5rem] font-medium leading-none text-link"
         >
-          {ordinal}
+          {index}
         </span>
+        {/* Hilo hacia el siguiente paso (sólo desktop y nunca en el último). */}
+        {hasConnector ? (
+          <span aria-hidden="true" className="mb-3 hidden flex-1 border-t border-default lg:block" />
+        ) : null}
         {icon ? (
           <span
             aria-hidden="true"
-            className="text-muted [&>svg]:h-icon-md [&>svg]:w-icon-md"
+            // En desktop el hilo entre numerales ya hace de guía; el icono sólo ayuda en mobile.
+            className="mb-2 text-muted lg:hidden [&>svg]:h-icon-md [&>svg]:w-icon-md"
           >
             {icon}
           </span>
         ) : null}
       </div>
-
-      <Heading className="mt-5 font-heading text-body-md font-semibold text-primary">
-        {title}
-      </Heading>
+      <Heading className="mt-5 font-heading text-body-lg font-semibold text-primary">{title}</Heading>
       {description ? (
-        <p className="mt-2 font-body text-body-sm text-secondary">{description}</p>
+        <p className="mt-2 max-w-[34ch] font-body text-body-md text-secondary">{description}</p>
       ) : null}
     </div>
   );

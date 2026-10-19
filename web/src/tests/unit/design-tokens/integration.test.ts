@@ -136,42 +136,54 @@ describe('PB-P2-027 · CSS custom properties sincronizadas con la capa TS', () =
 describe('PB-P2-027 · Tailwind expone las utilidades semánticas', () => {
   const extend = tailwindConfig.theme?.extend ?? {};
 
-  it('la acción primaria de Tailwind es violeta, no azul (FC-01)', () => {
+  it('la acción primaria de Tailwind es bugambilia, no azul ni violeta (FC-01)', () => {
     const bg = extend.backgroundColor as Record<string, Record<string, string>>;
-    expect(bg['action-primary']?.DEFAULT).toBe('#7B4EE8');
-    expect(bg['action-primary']?.hover).toBe('#6238C7');
-    // El alias de compatibilidad `primary` ya NO es la escala azul de Tailwind.
+    expect(bg['action-primary']?.DEFAULT).toBe('#B8235A');
+    expect(bg['action-primary']?.hover).toBe('#991B4B');
     const colors = extend.colors as Record<string, Record<string, string>>;
-    expect(colors.primary?.[600]).toBe('#7B4EE8');
+    expect(colors.brand?.[600]).toBe('#B8235A');
+    expect(colors.primary?.[600]).toBe('#B8235A');
     expect(colors.primary?.[600]).not.toBe('#2563eb');
+  });
+
+  it('las paletas por defecto de Tailwind escritas a mano se redirigen a la identidad', () => {
+    // Transición: ~1,300 clases `neutral-*`, `blue-*`, `red-*`, `purple-*`… en features. Hasta
+    // migrarlas a utilidades semánticas, ninguna puede volver a pintar el "look Tailwind".
+    const colors = extend.colors as Record<string, Record<string, string>>;
+    expect(colors.neutral?.[800]).toBe('#1E2742');
+    expect(colors.blue?.[700]).toBe('#2F3E72');
+    expect(colors.red?.[600]).toBe('#C2361A');
+    expect(colors.purple?.[600]).toBe('#B8235A');
+    expect(colors.emerald?.[600]).toBe('#0E6B58');
   });
 
   it('expone text/border/ring semánticos', () => {
     const textColor = extend.textColor as Record<string, string>;
-    expect(textColor.primary).toBe('#262626');
-    expect(textColor.secondary).toBe('#525252');
-    expect(textColor.muted).toBe('#737373');
-    expect(textColor.link).toBe('#6238C7');
-    expect(textColor['ai-label']).toBe('#6238C7');
+    expect(textColor.primary).toBe('#1E2742');
+    expect(textColor.secondary).toBe('#4E5468');
+    expect(textColor.muted).toBe('#6E7486');
+    expect(textColor.link).toBe('#991B4B');
+    expect(textColor['ai-label']).toBe('#8F5E00');
 
     const border = extend.borderColor as Record<string, string>;
-    expect(border.default).toBe('#D4D4D4');
-    expect(border.subtle).toBe('#E5E5E5');
-    expect(border.ai).toBe('#946DF8');
+    expect(border.default).toBe('#C9CDCC');
+    expect(border.subtle).toBe('#E1E4E0');
+    expect(border.ai).toBe('#B87A00');
 
-    expect((extend.ringColor as Record<string, string>).focus).toBe('#6238C7');
+    expect((extend.ringColor as Record<string, string>).focus).toBe('#991B4B');
     expect((extend.ringOffsetColor as Record<string, string>).focus).toBe('#FFFFFF');
   });
 
   it('expone fuentes, radios, sombras, z-index y breakpoints aprobados', () => {
     const families = extend.fontFamily as Record<string, string[]>;
-    expect(families.heading?.join(' ')).toContain('Inter Tight');
-    expect(families.body?.join(' ')).toContain('Inter');
+    expect(families.display?.join(' ')).toContain('Bodoni Moda');
+    expect(families.heading?.join(' ')).toContain('Figtree');
+    expect(families.body?.join(' ')).toContain('Figtree');
 
     const radius = extend.borderRadius as Record<string, string>;
-    expect(radius.button).toBe('8px');
-    expect(radius.card).toBe('12px');
-    expect(radius.modal).toBe('16px');
+    expect(radius.button).toBe('6px');
+    expect(radius.card).toBe('8px');
+    expect(radius.modal).toBe('12px');
 
     const shadows = extend.boxShadow as Record<string, string>;
     expect(shadows['surface-subtle']).toBe(elevation.surfaceSubtle);
@@ -211,9 +223,9 @@ describe('PB-P2-027 · restricciones de alcance MVP', () => {
 
   it('las fuentes aprobadas se cargan con next/font (sin <link> a red)', () => {
     expect(layoutTsx).toContain("from 'next/font/google'");
-    expect(layoutTsx).toMatch(/Inter\s*,\s*Inter_Tight|Inter_Tight/);
-    expect(layoutTsx).toContain('--font-inter');
-    expect(layoutTsx).toContain('--font-inter-tight');
+    expect(layoutTsx).toMatch(/Bodoni_Moda\s*,\s*Figtree/);
+    expect(layoutTsx).toContain('--font-sans');
+    expect(layoutTsx).toContain('--font-display');
     expect(layoutTsx).not.toMatch(/fonts\.googleapis\.com|fonts\.gstatic\.com/);
   });
 });
@@ -225,11 +237,17 @@ describe('PB-P2-027 · consumidores migrados', () => {
     ...listFiles('src/shared', ['.tsx']),
   ];
 
-  it('no quedan clases `brand-*` inexistentes en código de producción', () => {
-    const offenders = productionSources.filter((f) =>
-      /\b(bg|text|border|ring)-brand-/.test(read(f)),
+  it('las clases `brand-*` de producción usan tonos que existen en la escala de marca', () => {
+    // `brand` es la escala bugambilia expuesta en Tailwind (UI-DEC-002 rev. 2). Un tono que no
+    // existe (`brand-450`) no genera CSS y deja el elemento sin color: eso es lo que se vigila.
+    const brand = (tailwindConfig.theme?.extend?.colors as Record<string, Record<string, string>>).brand;
+    expect(brand).toBeDefined();
+    const offenders = productionSources.flatMap((f) =>
+      Array.from(read(f).matchAll(/\b(?:bg|text|border|ring)-brand-(\d{2,3})\b/g))
+        .filter((m) => !(m[1]! in brand!))
+        .map((m) => `${f}: ${m[0]}`),
     );
-    expect(offenders, `clases brand-* en ${offenders.join(', ')}`).toEqual([]);
+    expect(offenders).toEqual([]);
   });
 
   it('no queda ningún anillo de foco `purple-400` (falla WCAG 1.4.11 · 2.64:1)', () => {

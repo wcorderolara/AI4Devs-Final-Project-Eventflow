@@ -41,15 +41,49 @@ describe('US-045 QA-005 — VendorCard', () => {
     expect(article).toBeDefined();
   });
 
-  it('muestra rating con aria-label descriptivo cuando existe', () => {
+  it('describe el rating completo para lectores de pantalla cuando existe', () => {
     render(wrap(<VendorCard vendor={card()} />));
     // aria-label incluye avg y count.
-    expect(screen.getByLabelText(/4\.6 estrellas, 12 reviews/i)).toBeDefined();
+    expect(screen.getByText('4.6 de 5 estrellas, 12 reseñas')).toBeDefined();
   });
 
-  it('muestra "Sin reviews aún" cuando ratingAvg es null', () => {
+  it('muestra "Aún sin reseñas" cuando ratingAvg es null', () => {
     render(wrap(<VendorCard vendor={card({ ratingAvg: null, reviewsCount: 0 })} />));
-    expect(screen.getByText(/sin reviews aún/i)).toBeDefined();
+    expect(screen.getByText('Aún sin reseñas')).toBeDefined();
+  });
+
+  it('muestra ciudad y país legibles y el nombre de la categoría, nunca los códigos', () => {
+    render(
+      wrap(
+        <VendorCard
+          vendor={card({
+            locationDisplay: 'Antigua Guatemala, Sacatepéquez, Guatemala',
+            categoryLabels: [{ code: 'catering', name: 'Banquetes y Catering' }],
+          })}
+        />,
+      ),
+    );
+    expect(screen.getByText('Antigua Guatemala, Guatemala')).toBeDefined();
+    expect(screen.getByText('Banquetes y Catering')).toBeDefined();
+    expect(screen.queryByText('GT-GUA')).toBeNull();
+    expect(screen.queryByText('catering')).toBeNull();
+  });
+
+  it('con portada muestra la foto decorativa; sin portada sólo el sello', () => {
+    const { container, rerender } = render(
+      wrap(<VendorCard vendor={card({ thumbnailUrl: '/api/v1/public/portfolio/abc' })} />),
+    );
+    const img = container.querySelector('img');
+    expect(img?.getAttribute('src')).toBe('/api/v1/public/portfolio/abc');
+    // Decorativa: el nombre del proveedor ya está en el encabezado.
+    expect(img?.getAttribute('alt')).toBe('');
+    rerender(wrap(<VendorCard vendor={card({ thumbnailUrl: null })} />));
+    expect(container.querySelector('img')).toBeNull();
+  });
+
+  it('muestra "Desde" con el precio mínimo formateado cuando hay rango', () => {
+    render(wrap(<VendorCard vendor={card({ priceRange: { min: '150.00', max: '450.00', currency: 'GTQ' } })} />));
+    expect(screen.getByText(/^Desde/)).toBeDefined();
   });
 
   it('oculta el bloque de priceRange cuando es null', () => {

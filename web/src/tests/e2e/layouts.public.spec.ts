@@ -189,7 +189,7 @@ test('la paginación cambia imagen y tarjeta a la vez, sin mover el layout', asy
     'aria-hidden',
     'false',
   );
-  await expect(page.getByTestId('hero-carousel-card')).toContainText('Better coordinated vendors');
+  await expect(page.getByTestId('hero-carousel-card')).toContainText('Café Cobán anniversary');
 
   const after = await carousel.boundingBox();
   expect(Math.round(after!.height)).toBe(Math.round(before!.height));

@@ -10,7 +10,10 @@
   "portfolio": {
     "title": "Portfólio",
     "empty": "Este fornecedor ainda não publicou trabalhos.",
-    "imageAlt": "{vendor} — {work}, imagem {index}"
+    "imageAlt": "{vendor} — {work}, imagem {index}",
+    "photos": "{count, plural, one {# foto} other {# fotos}}",
+    "imagesUnavailable": "As fotos destes trabalhos ainda não podem ser vistas no perfil público.",
+    "creditNote": "Fotos de exemplo com licença livre. Abra uma foto para ver o autor e a licença."
   },
   "packages": {
     "title": "Pacotes",
@@ -25,5 +28,32 @@
     "title": "Fornecedor não encontrado",
     "body": "O fornecedor que você procura não existe ou já não está disponível.",
     "cta": "Voltar ao diretório"
+  },
+  "backToDirectory": "Diretório de fornecedores",
+  "gallery": {
+    "open": "Ver foto {index} de {total} de {work}",
+    "close": "Fechar galeria",
+    "previous": "Foto anterior",
+    "next": "Próxima foto",
+    "counter": "{index} de {total}",
+    "creditBy": "Foto de {author}, licença <license></license>.",
+    "creditLicense": "Foto com licença <license></license>.",
+    "source": "Ver original",
+    "sourceCommons": "Ver original no Wikimedia Commons"
+  },
+  "requestQuote": {
+    "cta": "Pedir orçamento",
+    "dialog": {
+      "title": "Para qual evento é o orçamento?",
+      "description": "Escolha o evento; no próximo passo você conta ao fornecedor o que precisa.",
+      "eventsLabel": "Seus eventos ativos",
+      "continue": "Continuar",
+      "cancel": "Cancelar"
+    },
+    "noActive": {
+      "title": "Você precisa de um evento ativo",
+      "body": "Os orçamentos são pedidos para um evento ativo. Ative um dos seus eventos ou crie um novo.",
+      "cta": "Ver meus eventos"
+    }
   }
 }

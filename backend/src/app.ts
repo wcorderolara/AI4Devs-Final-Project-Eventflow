@@ -80,7 +80,7 @@ import {
   adminEventTypeRouter,
   publicEventTypeRouter,
 } from './modules/event-catalog/interface/index.js';
-import { portfolioRouter } from './modules/attachments/interface/index.js';
+import { portfolioRouter, publicPortfolioRouter } from './modules/attachments/interface/index.js';
 // US-065 (PB-P1-038): endpoint atómico `POST /api/v1/organizer/reviews` — crea la reseña
 // verificada + denormalize `VendorProfile.rating_avg/reviews_count` + 2 notifs `review.published`
 // al vendor dentro de una única transacción (ver `CreateReviewUseCase`).
@@ -192,6 +192,8 @@ export function createApp(): Express {
   // propio router. Se monta ANTES de `/vendors` para preservar el prefijo `/public/*` como
   // namespace exclusivo de endpoints públicos y evitar cualquier colisión con `/vendors/me[...]`.
   apiV1.use('/public/vendors', publicVendorRouter);
+  // Imágenes del portafolio público (perfil US-046): sólo proveedores aprobados y visibles.
+  apiV1.use('/public/portfolio', publicPortfolioRouter);
   apiV1.use('/vendors/me/services', vendorServiceRouter);
   apiV1.use('/vendors', vendorProfileRouter);
   // US-045 (PB-P1-028): directorio autenticado `GET /api/v1/vendors`. Se monta como último

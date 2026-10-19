@@ -433,7 +433,10 @@
     },
     "loadMore": {
       "label": "Carregar mais",
-      "loading": "Carregando mais…"
+      "loading": "Carregando mais…",
+      "end": "Você já viu todos os fornecedores.",
+      "error": "Não foi possível carregar mais fornecedores.",
+      "retry": "Tentar novamente"
     },
     "filters": {
       "formLabel": "Filtros de busca",
@@ -446,15 +449,19 @@
       "currency": "Moeda",
       "currencyAny": "Qualquer",
       "submit": "Aplicar",
-      "reset": "Limpar"
+      "reset": "Limpar",
+      "categoryAny": "Todas",
+      "locationAny": "Todas"
     },
     "card": {
       "rating": "Avaliação",
-      "noRating": "Sem avaliações ainda",
+      "noRating": "Ainda sem avaliações",
       "categories": "Categorias",
       "noCategories": "Sem categorias",
       "priceRange": "Faixa de preço",
-      "ratingAria": "{avg} estrelas, {count} avaliações"
+      "ratingAria": "{avg} de 5 estrelas, {count} avaliações",
+      "reviews": "{count, plural, one {# avaliação} other {# avaliações}}",
+      "priceFrom": "A partir de <price></price>"
     },
     "invalidFilters": "Algum dos filtros não é válido. Revise-os ou limpe-os para começar de novo.",
     "metadata": {
